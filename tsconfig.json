@@ -19,8 +19,9 @@
     "baseUrl": ".",
     "paths": {
       "@core/*": ["core/*"],
-      "@interfaces/*": ["interfaces/*"]
+      "@interfaces/*": ["interfaces/*"],
+      "@data/*": ["data/*"]
     }
   },
-  "include": ["src", "core", "interfaces", "tests"]
+  "include": ["src", "core", "interfaces", "tests", "data"]
 }

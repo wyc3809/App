@@ -361,3 +361,97 @@ body {
 .game {
   overflow-y: auto;
 }
+
+.btn-year {
+  margin-top: 4px;
+}
+
+.btn-choice {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #2a1c14;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-choice:hover {
+  border-color: var(--accent-dim);
+}
+
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-panel h3 {
+  color: var(--accent);
+}
+
+.summary-text {
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.save-hint {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.attr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  font-size: 0.85rem;
+}
+
+.debug-panel {
+  font-size: 0.75rem;
+}
+
+.debug-json {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  background: #0d0806;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.debug-ids {
+  word-break: break-all;
+  display: block;
+  margin-top: 8px;
+}
+
+.debug-import {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}

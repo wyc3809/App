@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@core': path.resolve(__dirname, 'core'),
       '@interfaces': path.resolve(__dirname, 'interfaces'),
+      '@data': path.resolve(__dirname, 'data'),
     },
   },
 });
