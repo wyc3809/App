@@ -8,7 +8,19 @@
 - NPC 與玩家共用同一套角色、屬性、人格與模擬邏輯
 - 行動寫入歷史；死亡後世界與 NPC 仍持續運轉
 
-## 開發
+## 手機遊玩（網頁版）
+
+部署後用手機瀏覽器開啟：
+
+**https://wyc3809.github.io/App/**
+
+- 建議用 Chrome（Android）或 Safari（iPhone）
+- iPhone：Safari → 分享 → **加入主畫面**，可像 App 全螢幕開啟
+- 進度會自動存於本機瀏覽器（換手機需重新開始）
+
+若連結暫時 404，請在 GitHub 倉庫 **Settings → Pages** 確認來源為 **GitHub Actions**，並等 `Deploy to GitHub Pages` 工作流程跑完。
+
+## 本地開發
 
 ```bash
 npm install
