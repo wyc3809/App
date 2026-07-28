@@ -12,6 +12,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
@@ -19,8 +20,9 @@
     "baseUrl": ".",
     "paths": {
       "@core/*": ["core/*"],
-      "@interfaces/*": ["interfaces/*"]
+      "@interfaces/*": ["interfaces/*"],
+      "@data/*": ["data/*"]
     }
   },
-  "include": ["src", "core", "interfaces", "tests"]
+  "include": ["src", "core", "interfaces", "tests", "data"]
 }

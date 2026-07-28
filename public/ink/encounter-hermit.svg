@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="水墨奇遇老人">
+  <defs>
+    <linearGradient id="paper" x1="0" x2="1"><stop stop-color="#f5eedc"/><stop offset="1" stop-color="#d1bf93"/></linearGradient>
+    <radialGradient id="lamp" cx="52%" cy="46%" r="28%"><stop stop-color="#d1a44a" stop-opacity=".8"/><stop offset="1" stop-color="#d1a44a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="900" height="260" rx="18" fill="url(#paper)"/>
+  <rect width="900" height="260" fill="url(#lamp)"/>
+  <path d="M0 174 C128 112 226 132 344 78 C462 24 590 128 704 76 C790 36 842 60 900 42 L900 260 L0 260Z" fill="#17130f" opacity=".16"/>
+  <path d="M0 220 C182 178 290 198 430 158 C568 118 708 176 900 126 L900 260 L0 260Z" fill="#17130f" opacity=".18"/>
+  <path d="M252 76c-22 34-26 84-8 138M238 110c-54 32-76 62-86 104M252 114c50 34 78 66 86 102" stroke="#17130f" stroke-width="10" fill="none" opacity=".84" stroke-linecap="round"/>
+  <circle cx="252" cy="70" r="18" fill="#17130f" opacity=".78"/>
+  <path d="M310 112l58 34M366 146v36" stroke="#17130f" stroke-width="5" opacity=".75" stroke-linecap="round"/>
+  <rect x="350" y="178" width="32" height="42" rx="5" fill="#2b241d" opacity=".72"/>
+  <circle cx="366" cy="198" r="18" fill="#d1a44a" opacity=".55"/>
+  <path d="M620 100c-16 22-22 56-14 96M612 122c-32 26-54 54-68 86M618 122c44 24 74 52 94 86" stroke="#17130f" stroke-width="8" fill="none" opacity=".72" stroke-linecap="round"/>
+  <circle cx="620" cy="94" r="13" fill="#17130f" opacity=".8"/>
+</svg>

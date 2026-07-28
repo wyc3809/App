@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "name", "location_id"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "location_id": {"type": "string"},
+    "role": {"type": "string"}
+  }
+}

@@ -1,4 +1,30 @@
-node_modules
-dist
+node_modules/
+dist/
 *.local
 .DS_Store
+
+# === Claude Code Game Studios ===
+.claude/settings.local.json
+CLAUDE.local.md
+production/session-logs/
+docs/consistency-failures.md
+
+# === Secrets ===
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# === OS / IDE ===
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+
+# Import archives (keep content/, not raw zips)
+imports/*.zip
+imports/*.tar.gz

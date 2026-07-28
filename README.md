@@ -1,87 +1,73 @@
-# 江湖引擎 Jianghu Engine™ 2.1
+# 江湖一生 Jianghu Life Engine V1.0
 
-直版 **BitLife 風格**武俠人生模擬器（Web / React），依產品規格 Volume 01、04、07 與 Memory 架構實作核心引擎與可玩原型。
+**BitLife × 武俠人生模擬** — 玩家體驗可重玩的武俠人生，內容由 **JSON 事件引擎** 驅動。
 
-## 設計原則
+## 核心循環
 
-- 萬物由引擎推演（種子 RNG，禁止 `Math.random()`）
-- NPC 與玩家共用同一套角色、屬性、人格與模擬邏輯
-- 行動寫入歷史；死亡後世界與 NPC 仍持續運轉
+出生 → 家庭 → 成長 → 拜師 → 江湖 → 戀愛 → 門派 → 戰鬥 → 財富 → 老年 → 死亡 → 人生總結 → 傳承
 
-## 手機打不開？（重要）
+## 技術棧
 
-目前 GitHub 倉庫 **App 是私人（Private）**。在免費方案下，**私人倉庫的 GitHub Pages 不會對外公開**，手機用瀏覽器開 `https://wyc3809.github.io/App/` 會一直 **404**（與你有沒有設定 Pages 無關）。
+| 層級 | 技術 |
+|------|------|
+| UI | React + TypeScript + Vite |
+| 狀態 | Zustand |
+| 校驗 | Zod |
+| 存檔 | IndexedDB（localStorage 備援） |
+| 隨機 | 種子 PCG32（禁止 `Math.random()`） |
+| 測試 | Vitest |
 
-請任選一種方式：
+## Codex 模組順序
 
-### 方式 A：公開倉庫（最簡單，推薦）
+1. `interfaces/lifeEngine.ts` — GameState、GameEvent、Zod
+2. `core/random.ts` — Seeded RNG
+3. `core/life/eventEngine.ts` — 事件抽取與選擇結算
+4. `core/life/requirements.ts` / `effects.ts` — 條件與效果
+5. `core/life/saveIndexedDb.ts` — 存檔
+6. `src/components/LifeDebugPanel.tsx` — 除錯面板
+7. `data/events/catalog.ts` — **50** 個事件
+8. `src/components/LifeGameScreen.tsx` — 直版 UI
 
-1. 打開 https://github.com/wyc3809/App/settings  
-2. 最下方 **Danger Zone → Change repository visibility → Public**  
-3. 再打開 https://github.com/wyc3809/App/settings/pages  
-4. **Source**：Deploy from a branch → 分支 **`gh-pages`** → **`/ (root)`** → Save  
-5. 等 2 分鐘，手機開：**https://wyc3809.github.io/App/**
+## 事件資料格式
 
-### 方式 B：Vercel（倉庫可維持私人）
+```ts
+GameEvent {
+  id,
+  title,
+  requirements?,
+  choices: [{ id, text, outcomes: [{ effects }] }]
+}
+```
 
-1. 註冊 https://vercel.com ，用 GitHub 登入  
-2. **Add New Project** → 選 `wyc3809/App`  
-3. Build Command：`npm run build`（或 `npm run build:mobile`）  
-4. Output Directory：`dist`  
-5. Environment：`VITE_BASE` = `/`  
-6. Deploy 後用手機開 Vercel 給的網址（例如 `https://app-xxx.vercel.app`）
-
-專案已含 `vercel.json`、`netlify.toml`，也可一鍵部署 Netlify。
-
-### 方式 C：Cloudflare Pages
-
-在 GitHub 倉庫 **Settings → Secrets** 新增：
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-然後在 Actions 手動執行 **Deploy to Cloudflare Pages**。
-
----
-
-## 手機遊玩（公開 Pages 成功後）
-
-**https://wyc3809.github.io/App/**
-
-- iPhone：Safari → 分享 → **加入主畫面**
-- 進度存在本機瀏覽器
-
-若連結暫時無法開啟，請先完成上方 **方式 A** 的公開倉庫與 Pages 設定。
+效果類型包含：`narrate`、`attr`、`money`、`health`、`martial`、`joinSect`、`learnSkill`、`lover`、`die` 等。
 
 ## 本地開發
 
 ```bash
 npm install
 npm run dev
+npm test
+npm run build
 ```
+
+## 遺留引擎（2.x）
+
+`core/world.ts`、`core/gameplay.ts` 等 tick 模擬引擎仍保留於倉庫，供後續與人生引擎合併或對照；目前 **預設入口為 V1 人生模式**（`src/App.tsx`）。
+
+## Claude Code Game Studios
+
+本專案已安裝 [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios)
+（49 agents · 73 skills · hooks · rules）。
 
 ```bash
-npm run build
-npm test
+# 需安裝 Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+claude
+# 然後執行 /start 或 /adopt
 ```
 
-## 目錄（對應規格）
+主設定見根目錄 `CLAUDE.md`，代理與技能在 `.claude/`。
 
-| 路徑 | 說明 |
-|------|------|
-| `core/` | Attribute、Personality、Memory、Simulation、Gameplay |
-| `interfaces/` | GameState 與元件介面 |
-| `src/` | 直版 UI（420px 手機視窗） |
-| `tests/` | 種子確定性與屬性測試 |
+## 部署
 
-- **門派**：拜入、功勳晉升、門派差事、捐獻、脫離；門派世界模擬（掌門繼承、庫藏、對立）
-- **自然存檔**：每次行動自動 delta 存檔至 `localStorage`，關閉頁面時再寫入；首頁「延續江湖」
-
-1. 點「踏入江湖」建立世界與角色  
-2. 使用練武、修內、遊歷、決鬥等行動推進人生  
-3. 「過一年」快轉模擬（Fast：1 tick = 5 分鐘）  
-4. 死亡後可「轉世再入江湖」；其餘 NPC 與傳聞仍會更新  
-
-## 後續 Volume
-
-可擴充：ECS 排程、Delta Save、Combat / Quest / Faction 完整模組、Health Engine 等。
+與先前相同：GitHub Pages（`npm run build:pages`）、Vercel、Netlify、Cloudflare — 見 `vercel.json` / `netlify.toml`。

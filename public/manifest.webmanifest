@@ -1,13 +1,13 @@
 {
-  "name": "江湖引擎",
-  "short_name": "江湖",
-  "description": "武俠世界人生模擬 — Jianghu Engine",
+  "name": "江湖一生",
+  "short_name": "江湖一生",
+  "description": "水墨風武俠人生模擬 — Jianghu Life",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#120c08",
-  "theme_color": "#1a0f0a",
+  "background_color": "#e8e0d2",
+  "theme_color": "#e8e0d2",
   "lang": "zh-Hant",
   "icons": [
     {
