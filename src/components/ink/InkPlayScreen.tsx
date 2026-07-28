@@ -7,17 +7,7 @@ import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef } from '@data/equipment/catalog';
-import {
-  attrLabel,
-  fatigueLabel,
-  moneyLabel,
-  overallMartialLabel,
-  reputationLabel,
-  skillDisplay,
-  vitalHealthLabel,
-  vitalQiLabel,
-  worldTone,
-} from '@core/life/flavor';
+import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -91,7 +81,7 @@ export function InkPlayScreen({ state }: Props) {
         <div>
           <h2 className="ink-name">{c.name}</h2>
           <p className="ink-meta">
-            {stage} · {state.year}年{month}月（{seasonLabel(month)}）
+            {c.age} 歲 · {stage} · {state.year}年{month}月（{seasonLabel(month)}）
             {sect ? ` · ${sect.name}` : ''}
           </p>
         </div>
@@ -105,7 +95,7 @@ export function InkPlayScreen({ state }: Props) {
         </button>
       </header>
 
-      {saveLabel && <p className="ink-save">已落筆</p>}
+      {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
 
       <nav className="ink-tabs" aria-label="分卷">
         {(
@@ -130,13 +120,13 @@ export function InkPlayScreen({ state }: Props) {
       {(tab === 'home' || tab === 'jianghu') && (
         <section className="ink-world" aria-label="天下風聲">
           <p>
-            {worldTone(world?.order ?? 50, 'order')} · {worldTone(world?.danger ?? 50, 'danger')} ·{' '}
-            {worldTone(world?.economy ?? 50, 'economy')} · {worldTone(world?.rumors ?? 50, 'rumors')}
+            秩序 {world?.order ?? '—'} · 險惡 {world?.danger ?? '—'} · 市面 {world?.economy ?? '—'} · 傳聞{' '}
+            {world?.rumors ?? '—'}
           </p>
           <p className="ink-note">{world?.seasonMood} · {world?.lastWorldShift}</p>
           {story && (
             <p className="ink-note">
-              「{story.title}」· {story.goal}
+              第{story.chapter}章「{story.title}」· {story.goal}（{story.progress}/{story.nextMilestone}）
             </p>
           )}
         </section>
@@ -145,29 +135,33 @@ export function InkPlayScreen({ state }: Props) {
       <section className="ink-vitals" aria-label="氣血內力">
         <div className="ink-vitals-label">
           <span>氣血</span>
-          <span>{vitalHealthLabel(c)}</span>
+          <span>
+            {Math.round(c.health)}/{c.maxHealth}
+          </span>
         </div>
-        <div className="ink-bar" title="氣血盛衰">
+        <div className="ink-bar">
           <div className="ink-bar-fill" style={{ width: `${hpPct}%` }} />
         </div>
         <div className="ink-vitals-label">
           <span>內力</span>
-          <span>{vitalQiLabel(c)}</span>
+          <span>
+            {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
+          </span>
         </div>
-        <div className="ink-bar ink-bar--qi" title="內息深淺">
+        <div className="ink-bar ink-bar--qi">
           <div className="ink-bar-fill ink-bar-fill--qi" style={{ width: `${qiPct}%` }} />
         </div>
         <div className="ink-stat-row">
-          <span>{moneyLabel(c.money)}</span>
-          <span>{reputationLabel(c.reputation)}</span>
-          <span>武學·{overallMartialLabel(c)}</span>
-          <span>{fatigueLabel(c.fatigue ?? 0)}</span>
+          <span>銀兩 {c.money}</span>
+          <span>名望 {c.reputation}</span>
+          <span>武學 {c.martial}·{overallMartialLabel(c)}</span>
+          <span>疲勞 {c.fatigue ?? 0}</span>
         </div>
         {(c.conditions?.length ?? 0) > 0 && (
           <div className="ink-chips">
             {c.conditions.map((cond) => (
               <span key={cond.id} className="ink-chip">
-                {cond.name}·未癒
+                {cond.name}·{cond.monthsLeft}月
               </span>
             ))}
           </div>
@@ -181,10 +175,13 @@ export function InkPlayScreen({ state }: Props) {
             {wuxiaAttributeKeys.map((k) => (
               <div key={k} className="ink-attr">
                 <span className="ink-attr-label">{wuxiaAttributeLabels[k]}</span>
-                <strong>{attrLabel(c.attributes[k])}</strong>
+                <strong>{c.attributes[k]}</strong>
               </div>
             ))}
           </div>
+          <p className="ink-note">
+            體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0}
+          </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
           {c.skills.length > 0 && (
@@ -202,7 +199,7 @@ export function InkPlayScreen({ state }: Props) {
           {practiceView === 'main' && (
             <>
               <h3>修煉</h3>
-              <p className="ink-note">苦練、鑄兵、尋訪——進境難測，全看機緣。</p>
+              <p className="ink-note">苦練、鑄兵、尋訪——武學階位靠修煉與實戰機率進階。</p>
               <div className="ink-practice-grid">
                 <button
                   type="button"
@@ -375,7 +372,7 @@ export function InkPlayScreen({ state }: Props) {
       {state.phase === 'playing' && pendingEvent && !showResult && (
         <section className="ink-panel ink-event">
           <p className="ink-event-year">
-            {state.year}年{month}月
+            {state.year}年{month}月 · {c.age}歲
             {state.pending?.kind === 'special' ? ' · 奇遇' : ''}
           </p>
           <h3>{displayTitle}</h3>

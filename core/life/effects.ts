@@ -4,7 +4,7 @@ import { getRng } from '@core/random';
 import { randomChineseName } from '@core/ids';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, ensureGear } from './equipment';
 import { addCondition } from './monthly';
-import { learnMartialArt, deltaMoney, deltaHealth, deltaRep } from './flavor';
+import { learnMartialArt } from './flavor';
 
 export interface EffectResult {
   logs: string[];
@@ -39,56 +39,51 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
         c.money += eff.amount;
         c.stats.wealthPeak = Math.max(c.stats.wealthPeak, c.money);
         if (eff.amount !== 0) {
-          const line = deltaMoney(eff.amount);
-          if (line) {
-            logs.push(line);
-            deltas.push(line);
-          }
+          const line = eff.amount > 0 ? `銀兩＋${eff.amount}` : `銀兩${eff.amount}`;
+          logs.push(line);
+          deltas.push(line);
         }
         break;
       case 'health':
         c.health = clamp(c.health + eff.amount, 0, c.maxHealth);
         if (eff.amount !== 0) {
-          const line = deltaHealth(eff.amount);
-          if (line) {
-            logs.push(line);
-            deltas.push(line);
-          }
+          const line = `氣血${eff.amount > 0 ? '＋' : ''}${eff.amount}`;
+          logs.push(line);
+          deltas.push(line);
         }
         break;
       case 'qi':
         c.qi = clamp(c.qi + eff.amount, 0, c.maxQi);
         if (eff.amount !== 0) {
-          const line = eff.amount > 0 ? '內息略有回復' : '內息有損';
+          const line = `內息${eff.amount > 0 ? '＋' : ''}${eff.amount}`;
           logs.push(line);
           deltas.push(line);
         }
         break;
       case 'maxHealth':
         raiseBaseMaxHp(c, eff.amount);
-        logs.push('體魄似有進境');
-        deltas.push('體魄有進');
+        logs.push(`氣血上限＋${eff.amount}（現 ${c.maxHealth}）`);
+        deltas.push(`氣血上限＋${eff.amount}`);
         break;
       case 'maxQi':
         raiseBaseMaxQi(c, eff.amount);
-        logs.push('內力根基更深了');
-        deltas.push('內力有進');
+        logs.push(`內力上限＋${eff.amount}（現 ${c.maxQi}）`);
+        deltas.push(`內力上限＋${eff.amount}`);
         break;
       case 'reputation':
         c.reputation += eff.amount;
         if (eff.amount !== 0) {
-          const line = deltaRep(eff.amount);
-          if (line) {
-            logs.push(line);
-            deltas.push(line);
-          }
+          const line = `名望${eff.amount > 0 ? '＋' : ''}${eff.amount}`;
+          logs.push(line);
+          deltas.push(line);
         }
         break;
       case 'martial':
         c.martial += eff.amount;
         if (eff.amount !== 0) {
-          logs.push(eff.amount > 0 ? '武學似有所感' : '武學心境受挫');
-          deltas.push(eff.amount > 0 ? '武學有感' : '武學受挫');
+          const line = `武學${eff.amount > 0 ? '＋' : ''}${eff.amount}`;
+          logs.push(line);
+          deltas.push(line);
         }
         break;
       case 'flag':
@@ -100,14 +95,14 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
       case 'learnSkill': {
         const line = learnMartialArt(state, eff.skillId, eff.name);
         logs.push(line);
-        deltas.push('新習武學');
+        deltas.push(`武功＋${eff.name ?? eff.skillId}`);
         break;
       }
       case 'grantGear': {
         const name = grantGear(state, eff.gearId);
         if (name) {
-          logs.push(`行囊多了「${name}」`);
-          deltas.push('新獲器物');
+          logs.push(`獲得裝備：「${name}」`);
+          deltas.push(`裝備＋${name}`);
         }
         break;
       }

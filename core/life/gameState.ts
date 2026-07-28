@@ -129,8 +129,8 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     pending: null,
     lifeLog: [
       `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
-      '五維尚隱於骨血之中，日後自見分曉。',
-      '氣血與內息皆有根基，尚待淬煉。',
+      `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
+      `氣血上限 ${maxHealth} · 內力上限 ${maxQi}`,
     ],
     phase: 'playing',
     tab: 'home',

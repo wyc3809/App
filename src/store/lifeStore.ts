@@ -5,7 +5,6 @@ import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/e
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
-import { mystifyLines } from '@core/life/flavor';
 
 const CATALOG = fullCatalog();
 
@@ -120,12 +119,12 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state: result.state,
       sealText: result.died || result.state.phase === 'summary' ? '終' : '定',
-      flashLines: mystifyLines(result.logs.slice(0, 4)),
+      flashLines: result.logs.slice(0, 4),
       lastResult: {
         title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
         choiceText: choice?.text ?? choiceId,
-        feedback: mystifyLines([result.feedback])[0] ?? result.feedback,
-        deltas: mystifyLines(result.deltas),
+        feedback: result.feedback,
+        deltas: result.deltas,
       },
     });
   },
@@ -155,12 +154,12 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state: next,
       sealText: next.phase === 'summary' ? '終' : '煉',
-      flashLines: mystifyLines(logs.slice(0, 4)),
+      flashLines: logs.slice(0, 4),
       lastResult: {
         title: '修煉',
         choiceText: label,
-        feedback: mystifyLines([logs[0] ?? '事畢。'])[0] ?? '事畢。',
-        deltas: mystifyLines(logs.slice(1)),
+        feedback: logs[0] ?? '事畢。',
+        deltas: logs.slice(1),
       },
     });
   },

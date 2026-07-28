@@ -35,13 +35,13 @@ export interface PracticeAction {
 
 /** 主修煉選單（門派另開子頁） */
 export const PRACTICE_ACTIONS: PracticeAction[] = [
-  { id: 'train_martial', label: '苦練外功', hint: '拆招練式，或有進境' },
-  { id: 'train_internal', label: '打坐運功', hint: '調息養氣，穩固根基' },
-  { id: 'temper_body', label: '淬體強身', hint: '藥浴樁功，體魄漸堅' },
-  { id: 'forge', label: '鑄造兵器', hint: '爐火中求器，成敗難料' },
-  { id: 'seek_master', label: '尋訪高人', hint: '雲水之間，或逢奇緣' },
-  { id: 'heal', label: '醫館調養', hint: '傷勢與疲態，慢慢調理' },
-  { id: 'equip_best', label: '整裝披掛', hint: '擇良器隨身' },
+  { id: 'train_martial', label: '苦練外功', hint: '武學↑，或有階位進境' },
+  { id: 'train_internal', label: '打坐運功', hint: '內息與內力上限↑' },
+  { id: 'temper_body', label: '淬體強身', hint: '氣血上限↑，疲勞↑' },
+  { id: 'forge', label: '鑄造兵器', hint: '花費 40 兩，或得良器乃至神兵' },
+  { id: 'seek_master', label: '尋訪高人', hint: '或可習得／進階武學' },
+  { id: 'heal', label: '醫館調養', hint: '花費 15 兩，恢復並減傷勢' },
+  { id: 'equip_best', label: '整裝披掛', hint: '自動裝備庫中最佳器物' },
 ];
 
 /** 已入門派後的門內事務 */
@@ -84,13 +84,14 @@ export function performPracticeAction(
 
   switch (actionId) {
     case 'train_martial': {
+      const gain = rng.nextInt(1, 3);
       c.health = clamp(c.health - rng.nextInt(0, 6), 1, c.maxHealth);
       c.fatigue = clamp(c.fatigue + rng.nextInt(4, 10), 0, 100);
-      c.martial += rng.nextInt(1, 3);
-      logs.push('你苦練外功，汗水浸透衣衫。');
+      c.martial += gain;
+      logs.push(`你苦練外功，武學 +${gain}。`);
       const adv = tryAdvanceRandomSkill(state, 'practice');
       if (adv) logs.push(adv);
-      else logs.push('招式仍有滯澀，尚未突破。');
+      else logs.push('招式仍有滯澀，尚未突破階位。');
       if (rng.chance(0.12)) {
         logs.push('走岔半招，皮肉受苦。');
         addCondition(state, 'bleeding');
@@ -98,9 +99,11 @@ export function performPracticeAction(
       break;
     }
     case 'train_internal': {
-      raiseBaseMaxQi(c, rng.nextInt(3, 8));
-      c.qi = clamp(c.qi + rng.nextInt(8, 18), 0, c.maxQi);
-      logs.push('你打坐運功，內息漸漸歸攏。');
+      const qiGain = rng.nextInt(8, 18);
+      const cap = rng.nextInt(3, 8);
+      raiseBaseMaxQi(c, cap);
+      c.qi = clamp(c.qi + qiGain, 0, c.maxQi);
+      logs.push(`你打坐運功，內息 +${qiGain}，內力上限 +${cap}（現 ${c.maxQi}）。`);
       const breath = c.skills.find((s) => /breath|吐納|internal/i.test(s)) ?? c.skills[0];
       if (breath) {
         const adv = tryAdvanceSkill(state, breath, 'practice');
@@ -113,9 +116,10 @@ export function performPracticeAction(
       break;
     }
     case 'temper_body': {
-      raiseBaseMaxHp(c, rng.nextInt(8, 20));
+      const up = rng.nextInt(8, 20);
+      raiseBaseMaxHp(c, up);
       c.fatigue = clamp(c.fatigue + rng.nextInt(6, 14), 0, 100);
-      logs.push('藥浴與樁功之後，你覺得筋骨更沉實了。');
+      logs.push(`你以藥浴與樁功淬體，氣血上限 +${up}（現 ${c.maxHealth}）。`);
       break;
     }
     case 'join_sect': {
@@ -150,10 +154,11 @@ export function performPracticeAction(
         logs.push('你尚未拜入門派。');
         break;
       }
-      c.money += rng.nextInt(8, 20);
+      const meritPay = rng.nextInt(8, 20);
+      c.money += meritPay;
       c.reputation += 1;
       c.martial += 1;
-      logs.push(`你辦完${state.sects[c.sectId].name}差事，師兄師姐多看你一眼。`);
+      logs.push(`你完成${state.sects[c.sectId].name}差事，得銀 ${meritPay} 兩。`);
       break;
     }
     case 'sect_ask_elder': {
