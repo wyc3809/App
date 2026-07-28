@@ -18,7 +18,13 @@
 - iPhone：Safari → 分享 → **加入主畫面**，可像 App 全螢幕開啟
 - 進度會自動存於本機瀏覽器（換手機需重新開始）
 
-若連結暫時 404，請在 GitHub 倉庫 **Settings → Pages** 確認來源為 **GitHub Actions**，並等 `Deploy to GitHub Pages` 工作流程跑完。
+若連結暫時無法開啟，請到 GitHub 倉庫 **Settings → Pages**：
+
+1. **Build and deployment → Source** 選 **Deploy from a branch**
+2. **Branch** 選 `gh-pages` / `/(root)`，儲存
+3. 等 1～2 分鐘後再用手機開啟上方連結
+
+（首次需等 Actions 的 `Deploy to GitHub Pages` 跑完並產生 `gh-pages` 分支。）
 
 ## 本地開發
 
