@@ -8,23 +8,50 @@
 - NPC 與玩家共用同一套角色、屬性、人格與模擬邏輯
 - 行動寫入歷史；死亡後世界與 NPC 仍持續運轉
 
-## 手機遊玩（網頁版）
+## 手機打不開？（重要）
 
-部署後用手機瀏覽器開啟：
+目前 GitHub 倉庫 **App 是私人（Private）**。在免費方案下，**私人倉庫的 GitHub Pages 不會對外公開**，手機用瀏覽器開 `https://wyc3809.github.io/App/` 會一直 **404**（與你有沒有設定 Pages 無關）。
+
+請任選一種方式：
+
+### 方式 A：公開倉庫（最簡單，推薦）
+
+1. 打開 https://github.com/wyc3809/App/settings  
+2. 最下方 **Danger Zone → Change repository visibility → Public**  
+3. 再打開 https://github.com/wyc3809/App/settings/pages  
+4. **Source**：Deploy from a branch → 分支 **`gh-pages`** → **`/ (root)`** → Save  
+5. 等 2 分鐘，手機開：**https://wyc3809.github.io/App/**
+
+### 方式 B：Vercel（倉庫可維持私人）
+
+1. 註冊 https://vercel.com ，用 GitHub 登入  
+2. **Add New Project** → 選 `wyc3809/App`  
+3. Build Command：`npm run build`（或 `npm run build:mobile`）  
+4. Output Directory：`dist`  
+5. Environment：`VITE_BASE` = `/`  
+6. Deploy 後用手機開 Vercel 給的網址（例如 `https://app-xxx.vercel.app`）
+
+專案已含 `vercel.json`、`netlify.toml`，也可一鍵部署 Netlify。
+
+### 方式 C：Cloudflare Pages
+
+在 GitHub 倉庫 **Settings → Secrets** 新增：
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+然後在 Actions 手動執行 **Deploy to Cloudflare Pages**。
+
+---
+
+## 手機遊玩（公開 Pages 成功後）
 
 **https://wyc3809.github.io/App/**
 
-- 建議用 Chrome（Android）或 Safari（iPhone）
-- iPhone：Safari → 分享 → **加入主畫面**，可像 App 全螢幕開啟
-- 進度會自動存於本機瀏覽器（換手機需重新開始）
+- iPhone：Safari → 分享 → **加入主畫面**
+- 進度存在本機瀏覽器
 
-若連結暫時無法開啟，請到 GitHub 倉庫 **Settings → Pages**：
-
-1. **Build and deployment → Source** 選 **Deploy from a branch**
-2. **Branch** 選 `gh-pages` / `/(root)`，儲存
-3. 等 1～2 分鐘後再用手機開啟上方連結
-
-（首次需等 Actions 的 `Deploy to GitHub Pages` 跑完並產生 `gh-pages` 分支。）
+若連結暫時無法開啟，請先完成上方 **方式 A** 的公開倉庫與 Pages 設定。
 
 ## 本地開發
 

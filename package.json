@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "VITE_BASE=/App/ npm run build",
+    "build:mobile": "VITE_BASE=/ npm run build",
     "preview": "vite preview",
     "test": "vitest run"
   },
