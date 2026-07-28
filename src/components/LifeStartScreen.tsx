@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { InkWashDecor } from './InkWashDecor';
 
 type Props = {
   onStart: (seed?: number) => void;
@@ -8,11 +9,16 @@ type Props = {
 
 export function LifeStartScreen({ onStart, onContinue, resumeHint }: Props) {
   return (
-    <div className="phone">
+    <div className="phone ink-ui">
+      <InkWashDecor />
       <header className="title-hero">
+        <span className="ink-seal" aria-hidden>
+          生
+        </span>
         <p className="eyebrow">Jianghu Life Engine V1.0</p>
         <h1>江湖一生</h1>
-        <p className="tagline">BitLife × 武俠人生模擬 · 事件驅動</p>
+        <p className="ink-divider" aria-hidden />
+        <p className="tagline">武俠人生 · 墨筆記年</p>
       </header>
       <section className="panel intro-panel">
         <p>每年一事，選擇塑造命運</p>

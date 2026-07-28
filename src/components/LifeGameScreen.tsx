@@ -4,6 +4,7 @@ import { EVENT_CATALOG } from '@data/events/catalog';
 import { getEventById } from '@core/life/eventEngine';
 import { useLifeStore } from '../store/lifeStore';
 import { LifeDebugPanel } from './LifeDebugPanel';
+import { InkWashDecor } from './InkWashDecor';
 
 type Props = {
   state: LifeGameState;
@@ -23,7 +24,8 @@ export function LifeGameScreen({ state }: Props) {
   const lover = c.loverId ? state.npcs[c.loverId] : null;
 
   return (
-    <div className="phone game">
+    <div className="phone game ink-ui">
+      <InkWashDecor />
       <header className="status-bar">
         <div>
           <h2>{c.name}</h2>
@@ -32,8 +34,8 @@ export function LifeGameScreen({ state }: Props) {
             {sect ? ` · ${sect.name}` : ''}
           </p>
         </div>
-        <button type="button" className="btn-icon" onClick={() => setDebugOpen(!debugOpen)} title="除錯">
-          ⚙
+        <button type="button" className="btn-icon ink-settings" onClick={() => setDebugOpen(!debugOpen)} title="除錯">
+          墨
         </button>
       </header>
 
@@ -94,7 +96,7 @@ export function LifeGameScreen({ state }: Props) {
 
       {state.phase === 'playing' && !pendingEvent && c.alive && (
         <button type="button" className="btn-primary btn-year" onClick={advanceYear}>
-          下一年 ⏳
+          翻過一頁 · 下一年
         </button>
       )}
 
