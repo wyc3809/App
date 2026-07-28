@@ -54,6 +54,20 @@ npm run build
 
 `core/world.ts`、`core/gameplay.ts` 等 tick 模擬引擎仍保留於倉庫，供後續與人生引擎合併或對照；目前 **預設入口為 V1 人生模式**（`src/App.tsx`）。
 
+## Claude Code Game Studios
+
+本專案已安裝 [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios)
+（49 agents · 73 skills · hooks · rules）。
+
+```bash
+# 需安裝 Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+claude
+# 然後執行 /start 或 /adopt
+```
+
+主設定見根目錄 `CLAUDE.md`，代理與技能在 `.claude/`。
+
 ## 部署
 
 與先前相同：GitHub Pages（`npm run build:pages`）、Vercel、Netlify、Cloudflare — 見 `vercel.json` / `netlify.toml`。
