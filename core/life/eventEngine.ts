@@ -16,7 +16,7 @@ import { grantGear } from './equipment';
 import { withRiskAndThree } from './choiceEnrich';
 import { pickPackEvent, getPackChoice } from './jianghuEventRepository';
 import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
-import { tryAdvanceRandomSkill } from './flavor';
+import { isFleeChoice, startCombat } from './combat';
 
 function enrichLegacyEvent(event: GameEvent): GameEvent {
   if (event.choices.length >= 3 && event.choices.every((c) => c.outcomes.length >= 2)) {
@@ -121,6 +121,36 @@ export function applyChoice(
   }
 
   const tags = event.tags ?? [];
+
+  // 戰鬥事件：非逃避選項 → 進入回合制交手（外功可出招，內功僅被動）
+  if (
+    (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) &&
+    !isFleeChoice(choice.id, choice.text)
+  ) {
+    const foeName =
+      /assassin|殺手/.test(event.id + event.title)
+        ? '蒙面殺手'
+        : /bandit|賊|山/.test(event.id + event.title)
+          ? '山賊'
+          : /rival|宿敵/.test(event.id + event.title)
+            ? '宿敵'
+            : event.title.slice(0, 6) || '來敵';
+    const logs = startCombat(state, {
+      source: 'event',
+      title: (tags.includes('pack') ? '江湖偶遇·交手' : event.title),
+      foeName,
+      foePower: state.character.martial > 40 ? 'strong' : 'normal',
+      rewardOnWin: { money: 8, reputation: 2, martial: 2 },
+      rewardOnLose: { money: -5, reputation: -1 },
+      eventId: event.id,
+    });
+    markEventComplete(state, event.id);
+    const feedback = logs[0] ?? '戰端已開。';
+    pushChronicle(state, [`「${tags.includes('pack') ? '江湖偶遇' : event.title}」——${choice.text}`, feedback]);
+    snapshotRng(state);
+    return { state, logs, deltas: [], feedback, died: false };
+  }
+
   let logs: string[] = [];
   let deltas: string[] = [];
   let feedback = '事已了結。';
@@ -177,13 +207,7 @@ export function applyChoice(
   }
 
   if (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) {
-    state.character.stats.combats += 1;
-    if (logs.some((l) => /勝|擊敗|反殺|僅勝|險勝/.test(l))) state.character.stats.combatsWon += 1;
-    const adv = tryAdvanceRandomSkill(state, 'combat');
-    if (adv) {
-      logs.push(adv);
-      deltas.push('武學進境');
-    }
+    // 真交手已改走回合制；逃避選項維持敘事結算
   }
 
   markEventComplete(state, event.id);
@@ -212,6 +236,7 @@ function shouldTriggerSpecial(state: LifeGameState): boolean {
 export function startMonth(state: LifeGameState): LifeGameState {
   if (!state.character.alive || state.phase !== 'playing') return state;
   if (state.pending) return state;
+  if (state.pendingCombat) return state;
 
   syncRngFromState(state);
   const rng = getRng();

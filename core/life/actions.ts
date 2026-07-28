@@ -10,6 +10,8 @@ import {
   tryAdvanceRandomSkill,
   tryAdvanceSkill,
 } from './flavor';
+import { startCombat } from './combat';
+import { getSkillDef } from '@data/skills/catalog';
 
 export type PracticeActionId =
   | 'train_martial'
@@ -74,6 +76,7 @@ export function performPracticeAction(
 ): string[] {
   if (!state.character.alive || state.phase !== 'playing') return ['你已無法行動。'];
   if (state.pending) return ['眼前尚有未決之事，先作抉擇。'];
+  if (state.pendingCombat) return ['交手未了，豈能分心。'];
 
   syncRngFromState(state);
   const rng = getRng();
@@ -89,9 +92,13 @@ export function performPracticeAction(
       c.fatigue = clamp(c.fatigue + rng.nextInt(4, 10), 0, 100);
       c.martial += gain;
       logs.push(`你苦練外功，武學 +${gain}。`);
-      const adv = tryAdvanceRandomSkill(state, 'practice');
-      if (adv) logs.push(adv);
-      else logs.push('招式仍有滯澀，尚未突破階位。');
+      const externals = c.skills.filter((id) => getSkillDef(id)?.kind === 'external');
+      const pool = externals.length ? externals : c.skills;
+      if (pool.length) {
+        const adv = tryAdvanceSkill(state, rng.pick(pool), 'practice');
+        if (adv) logs.push(adv);
+        else logs.push('外功招式仍有滯澀，尚未突破階位。');
+      }
       if (rng.chance(0.12)) {
         logs.push('走岔半招，皮肉受苦。');
         addCondition(state, 'bleeding');
@@ -104,7 +111,8 @@ export function performPracticeAction(
       raiseBaseMaxQi(c, cap);
       c.qi = clamp(c.qi + qiGain, 0, c.maxQi);
       logs.push(`你打坐運功，內息 +${qiGain}，內力上限 +${cap}（現 ${c.maxQi}）。`);
-      const breath = c.skills.find((s) => /breath|吐納|internal/i.test(s)) ?? c.skills[0];
+      const internals = c.skills.filter((id) => getSkillDef(id)?.kind === 'internal');
+      const breath = internals[0] ?? c.skills.find((s) => /breath|吐納/i.test(s));
       if (breath) {
         const adv = tryAdvanceSkill(state, breath, 'practice');
         if (adv) logs.push(adv);
@@ -178,17 +186,15 @@ export function performPracticeAction(
         logs.push('你尚未拜入門派。');
         break;
       }
-      c.health = clamp(c.health - rng.nextInt(2, 12), 1, c.maxHealth);
-      c.fatigue = clamp(c.fatigue + rng.nextInt(5, 12), 0, 100);
-      state.character.stats.combats += 1;
-      if (rng.chance(0.55)) {
-        state.character.stats.combatsWon += 1;
-        logs.push('師門比武，你險勝半招。');
-      } else {
-        logs.push('師門比武，你落了下風，卻看清了自己的弱處。');
-      }
-      const adv = tryAdvanceRandomSkill(state, 'combat');
-      if (adv) logs.push(adv);
+      const foeName = `${state.sects[c.sectId].name}師兄`;
+      logs.push(...startCombat(state, {
+        source: 'spar',
+        title: '師門比武',
+        foeName,
+        foePower: 'normal',
+        rewardOnWin: { reputation: 2, martial: 2 },
+        rewardOnLose: { reputation: -1 },
+      }));
       break;
     }
     case 'sect_guard': {
@@ -271,14 +277,17 @@ export function performPracticeAction(
           logs.push(adv ?? '高人只點破你舊招中的滯澀。');
         }
       } else if (rng.chance(0.25)) {
-        logs.push('尋訪無果，反而遇上剪徑之徒。');
-        c.health = clamp(c.health - rng.nextInt(10, 25), 0, c.maxHealth);
-        const adv = tryAdvanceRandomSkill(state, 'combat');
-        if (adv) logs.push(adv);
-        if (c.health <= 0) {
-          c.alive = false;
-          logs.push('你力竭倒於山道。');
-        }
+        logs.push('尋訪無果，山道上卻撞見剪徑之徒——只好交手。');
+        logs.push(
+          ...startCombat(state, {
+            source: 'bandit',
+            title: '山道劫匪',
+            foeName: '剪徑之徒',
+            foePower: 'weak',
+            rewardOnWin: { money: 12, martial: 1 },
+            rewardOnLose: { money: -10 },
+          }),
+        );
       } else {
         logs.push('雲深不知處，你空手而歸，只多了幾分眼界。');
         c.attributes.wuXing = clamp(c.attributes.wuXing + 1, 1, 100);

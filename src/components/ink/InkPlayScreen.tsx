@@ -8,6 +8,8 @@ import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
+import { getPlayerMoves } from '@core/life/combat';
+import { getSkillDef } from '@data/skills/catalog';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -30,6 +32,7 @@ export function InkPlayScreen({ state }: Props) {
   const advanceMonth = useLifeStore((s) => s.advanceMonth);
   const newLife = useLifeStore((s) => s.newLife);
   const practice = useLifeStore((s) => s.practice);
+  const combatMove = useLifeStore((s) => s.combatMove);
   const clearResult = useLifeStore((s) => s.clearResult);
   const lastResult = useLifeStore((s) => s.lastResult);
   const saveLabel = useLifeStore((s) => s.saveLabel);
@@ -66,8 +69,10 @@ export function InkPlayScreen({ state }: Props) {
   const story = state.story;
   const gearIds = c.gear ?? [];
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
-  const showResult = Boolean(lastResult) && state.phase === 'playing';
-  const busy = Boolean(state.pending) || showResult || !c.alive;
+  const showResult = Boolean(lastResult) && state.phase === 'playing' && !state.pendingCombat;
+  const combat = state.pendingCombat ?? null;
+  const busy = Boolean(state.pending) || Boolean(combat) || showResult || !c.alive;
+  const moves = combat ? getPlayerMoves(state) : [];
 
   return (
     <div
@@ -186,9 +191,20 @@ export function InkPlayScreen({ state }: Props) {
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
           {c.skills.length > 0 && (
             <ul className="ink-skill-list">
-              {c.skills.map((id) => (
-                <li key={id}>{skillDisplay(c, id)}</li>
-              ))}
+              {c.skills.map((id) => {
+                const def = getSkillDef(id);
+                return (
+                  <li key={id}>
+                    {skillDisplay(c, id)}
+                    {def?.kind === 'internal' && def.passive ? (
+                      <span className="ink-skill-passive"> · 被動加持</span>
+                    ) : null}
+                    {def?.kind === 'external' && def.move ? (
+                      <span className="ink-skill-passive"> · 戰招「{def.move.name}」</span>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -329,6 +345,81 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
+      {combat && state.phase === 'playing' && (
+        <section className="ink-panel ink-combat" aria-live="polite">
+          <p className="ink-event-year">
+            第 {combat.turn} 回合 · {combat.title}
+          </p>
+          <h3>交手 · {combat.foe.name}</h3>
+          <div className="ink-combat-bars">
+            <div>
+              <div className="ink-vitals-label">
+                <span>{combat.player.name}</span>
+                <span>
+                  氣血 {Math.round(combat.player.hp)}/{combat.player.maxHp} · 內息{' '}
+                  {Math.round(combat.player.qi)}/{combat.player.maxQi}
+                </span>
+              </div>
+              <div className="ink-bar">
+                <div
+                  className="ink-bar-fill"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, (combat.player.hp / combat.player.maxHp) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="ink-vitals-label">
+                <span>{combat.foe.name}</span>
+                <span>
+                  氣血 {Math.round(combat.foe.hp)}/{combat.foe.maxHp}
+                </span>
+              </div>
+              <div className="ink-bar">
+                <div
+                  className="ink-bar-fill"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, (combat.foe.hp / combat.foe.maxHp) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          <p className="ink-note">外功可出招；內功只加攻防／內息等被動，不佔招式欄。</p>
+          <div className="ink-choice-list">
+            {moves.map((mv, i) => {
+              const short = combat.player.qi < mv.qiCost;
+              return (
+                <button
+                  key={mv.id}
+                  type="button"
+                  className="ink-choice"
+                  disabled={combat.phase !== 'player' || short}
+                  style={{ animationDelay: `${0.04 * i}s` }}
+                  onClick={() => combatMove(mv.id)}
+                >
+                  <span className="ink-choice-mark">{i === 0 ? '普' : '功'}</span>
+                  <span className="ink-combat-move">
+                    <strong>{mv.name}</strong>
+                    <em>
+                      {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威力×{mv.power}
+                      {short ? ' · 內息不足' : ''}
+                    </em>
+                    <small>{mv.description}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <ul className="ink-combat-log">
+            {combat.log.slice(-6).map((line, i) => (
+              <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {showResult && lastResult && (
         <section className="ink-panel ink-result" aria-live="polite">
           <p className="ink-event-year">抉擇已定</p>
@@ -394,7 +485,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {state.phase === 'playing' && !pendingEvent && c.alive && !showResult && (
+      {state.phase === 'playing' && !pendingEvent && !combat && c.alive && !showResult && (
         <button type="button" className="ink-btn ink-btn--primary ink-btn--year" onClick={advanceMonth}>
           翻過一頁 · 過一月
         </button>

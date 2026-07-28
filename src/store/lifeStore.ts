@@ -5,6 +5,7 @@ import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/e
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
+import { playerCombatTurn, getPlayerMoves } from '@core/life/combat';
 
 const CATALOG = fullCatalog();
 
@@ -33,6 +34,7 @@ export interface LifeStore {
   advanceYear: () => void;
   choose: (choiceId: string) => void;
   practice: (actionId: PracticeActionId, opts?: { sectId?: string }) => void;
+  combatMove: (moveId: string) => void;
   clearResult: () => void;
   setTab: (tab: NonNullable<LifeGameState['tab']>) => void;
   setDebugOpen: (open: boolean) => void;
@@ -93,7 +95,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
 
   advanceMonth: () => {
     const { state } = get();
-    if (!state || state.pending || state.phase !== 'playing' || !state.character.alive) return;
+    if (!state || state.pending || state.pendingCombat || state.phase !== 'playing' || !state.character.alive)
+      return;
     if (get().lastResult) set({ lastResult: null });
     const next = structuredClone(state);
     startMonth(next);
@@ -109,23 +112,26 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
 
   choose: (choiceId: string) => {
     const { state } = get();
-    if (!state?.pending) return;
+    if (!state?.pending || state.pendingCombat) return;
     const event = getEventById(CATALOG, state.pending.eventId);
     if (!event) return;
     const choice = event.choices.find((c) => c.id === choiceId);
     const next = structuredClone(state);
     const result = applyChoice(next, event, choiceId);
+    const startedCombat = Boolean(result.state.pendingCombat);
     void save(result.state);
     set({
       state: result.state,
-      sealText: result.died || result.state.phase === 'summary' ? '終' : '定',
+      sealText: result.died || result.state.phase === 'summary' ? '終' : startedCombat ? '戰' : '定',
       flashLines: result.logs.slice(0, 4),
-      lastResult: {
-        title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
-        choiceText: choice?.text ?? choiceId,
-        feedback: result.feedback,
-        deltas: result.deltas,
-      },
+      lastResult: startedCombat
+        ? null
+        : {
+            title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
+            choiceText: choice?.text ?? choiceId,
+            feedback: result.feedback,
+            deltas: result.deltas,
+          },
     });
   },
 
@@ -151,20 +157,45 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         sect_leave: '離開門派',
       } as Record<string, string>)[actionId] ??
       actionId;
+    const startedCombat = Boolean(next.pendingCombat);
     set({
       state: next,
-      sealText: next.phase === 'summary' ? '終' : '煉',
+      sealText: next.phase === 'summary' ? '終' : startedCombat ? '戰' : '煉',
       flashLines: logs.slice(0, 4),
-      lastResult: {
-        title: '修煉',
-        choiceText: label,
-        feedback: logs[0] ?? '事畢。',
-        deltas: logs.slice(1),
-      },
+      lastResult: startedCombat
+        ? null
+        : {
+            title: '修煉',
+            choiceText: label,
+            feedback: logs[0] ?? '事畢。',
+            deltas: logs.slice(1),
+          },
     });
   },
 
   clearResult: () => set({ lastResult: null }),
+
+  combatMove: (moveId: string) => {
+    const { state } = get();
+    if (!state?.pendingCombat || state.pendingCombat.phase !== 'player') return;
+    const next = structuredClone(state);
+    const logs = playerCombatTurn(next, moveId);
+    void save(next);
+    const ended = !next.pendingCombat;
+    set({
+      state: next,
+      sealText: next.phase === 'summary' ? '終' : ended ? '勝' : '戰',
+      flashLines: logs.slice(0, 5),
+      lastResult: ended
+        ? {
+            title: state.pendingCombat.title,
+            choiceText: getPlayerMoves(state).find((m) => m.id === moveId)?.name ?? moveId,
+            feedback: logs.find((l) => /戰勝|敗於|力竭/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
+            deltas: logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境/.test(l)),
+          }
+        : get().lastResult,
+    });
+  },
 
   setTab: (tab) => {
     const { state } = get();

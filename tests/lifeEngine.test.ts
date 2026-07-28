@@ -104,6 +104,8 @@ describe('life event engine', () => {
     const state = createNewLife(21);
     expect(state.character.skillRanks['基礎吐納']).toBe(0);
     expect(skillDisplay(state.character, '基礎吐納')).toContain(MARTIAL_RANKS[0]);
+    expect(skillDisplay(state.character, '基礎吐納')).toContain('內功');
+    expect(skillDisplay(state.character, 'art_river_fist')).toContain('外功');
     for (let i = 0; i < 40; i++) performPracticeAction(state, 'train_martial');
     const ranks = Object.values(state.character.skillRanks);
     expect(ranks.every((r) => r >= 0 && r <= 3)).toBe(true);
@@ -117,6 +119,27 @@ describe('life event engine', () => {
     state.character.skillRanks['基礎吐納'] = 2;
     const logs = performPracticeAction(state, 'join_sect', { sectId: 'sect_wudang' });
     expect(logs.some((l) => /武當|機緣未到|根基尚淺/.test(l))).toBe(true);
+  });
+
+  it('turn-based combat uses external moves and internal passives', async () => {
+    const { startCombat, playerCombatTurn, getPlayerMoves } = await import('../core/life/combat');
+    initRng(5);
+    const state = createNewLife(5);
+    startCombat(state, {
+      source: 'spar',
+      title: '試招',
+      foeName: '木人',
+      foePower: 'weak',
+      rewardOnWin: { martial: 1 },
+    });
+    expect(state.pendingCombat?.phase).toBe('player');
+    const moves = getPlayerMoves(state);
+    expect(moves.some((m) => m.id === 'basic_strike')).toBe(true);
+    expect(moves.some((m) => m.name === '長河崩拳')).toBe(true);
+    expect(moves.every((m) => m.id !== '基礎吐納')).toBe(true);
+    expect(state.pendingCombat!.player.attack).toBeGreaterThan(0);
+    playerCombatTurn(state, 'basic_strike');
+    expect(!state.pendingCombat || state.pendingCombat.phase === 'player').toBe(true);
   });
 
   it('advances month and may assign pending event', () => {

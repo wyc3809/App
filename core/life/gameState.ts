@@ -63,8 +63,8 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     location: birthplace,
     conditions: [],
     attributes: attrs,
-    skills: ['基礎吐納'],
-    skillRanks: { 基礎吐納: 0 },
+    skills: ['基礎吐納', 'art_river_fist'],
+    skillRanks: { 基礎吐納: 0, art_river_fist: 0 },
     gear: ['old-sword', 'plain-robe'],
     equipment: { weapon: 'old-sword', armor: 'plain-robe', accessory: null },
     sectId: null,
@@ -127,6 +127,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     worldFlags: {},
     completedEvents: [],
     pending: null,
+    pendingCombat: null,
     lifeLog: [
       `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
       `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
@@ -210,5 +211,6 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (!raw.story) raw.story = makeStoryState();
   if (raw.specialEventCountdown === undefined) raw.specialEventCountdown = 12;
   if (!raw.tab) raw.tab = 'home';
+  if (raw.pendingCombat === undefined) raw.pendingCombat = null;
   return raw;
 }

@@ -805,6 +805,61 @@ body::before {
   color: var(--ink-mid);
 }
 
+.ink-combat-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.ink-combat-move {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.ink-combat-move strong {
+  letter-spacing: 0.12em;
+}
+
+.ink-combat-move em {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--ink-wash);
+}
+
+.ink-combat-move small {
+  font-size: 0.74rem;
+  color: var(--ink-mid);
+}
+
+.ink-combat-log {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  color: var(--ink-mid);
+}
+
+.ink-combat-log li {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--ink-faint);
+}
+
+.ink-skill-passive {
+  color: var(--ink-wash);
+  font-size: 0.78rem;
+}
+
+.ink-choice:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .ink-subhead {
   margin: 12px 0 6px !important;
   font-size: 0.78rem !important;

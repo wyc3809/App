@@ -6,7 +6,7 @@ import {
   grantSkillRank,
   rankName,
 } from './martialRanks';
-import { skillLabel } from '@data/skills/catalog';
+import { formatSkillLine, skillLabel } from '@data/skills/catalog';
 
 /** 定性描述：氣血／內力／財帛／名望／疲勞／五維／天下 */
 export function vitalHealthLabel(c: LifeCharacter): string {
@@ -93,7 +93,7 @@ export function overallMartialLabel(c: LifeCharacter): string {
 export function skillDisplay(c: LifeCharacter, skillId: string): string {
   const ranks = ensureSkillRanks(c.skillRanks);
   const r = ranks[skillId] ?? 0;
-  return `${skillLabel(skillId)} · ${rankName(r)}`;
+  return formatSkillLine(skillId, r);
 }
 
 /** 結果／日誌去數值化 */

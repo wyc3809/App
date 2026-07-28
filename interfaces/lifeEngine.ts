@@ -202,10 +202,40 @@ export interface LifeGameState {
   worldFlags: Record<string, boolean | number | string>;
   completedEvents: string[];
   pending: PendingEvent | null;
+  pendingCombat?: PendingCombat | null;
   lifeLog: string[];
   phase: 'create' | 'playing' | 'summary';
   summaryText?: string;
   tab?: 'home' | 'person' | 'jianghu' | 'practice';
+}
+
+export interface CombatFighterState {
+  name: string;
+  hp: number;
+  maxHp: number;
+  qi: number;
+  maxQi: number;
+  attack: number;
+  defense: number;
+  hitBonus: number;
+  qiRegen: number;
+  blind: number;
+  isPlayer: boolean;
+}
+
+export interface PendingCombat {
+  id: string;
+  source: 'spar' | 'event' | 'bandit' | 'road';
+  title: string;
+  turn: number;
+  phase: 'player' | 'enemy' | 'ended';
+  player: CombatFighterState;
+  foe: CombatFighterState;
+  log: string[];
+  usedExternalSkillIds: string[];
+  rewardOnWin?: { money?: number; reputation?: number; martial?: number };
+  rewardOnLose?: { money?: number; reputation?: number };
+  eventId?: string;
 }
 
 export const lifeCharacterSchema = z.object({
@@ -327,6 +357,7 @@ export const lifeGameStateSchema = z.object({
       kind: z.enum(['ordinary', 'special', 'story']).optional(),
     })
     .nullable(),
+  pendingCombat: z.any().nullable().optional(),
   lifeLog: z.array(z.string()),
   phase: z.enum(['create', 'playing', 'summary']),
   summaryText: z.string().optional(),
