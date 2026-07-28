@@ -648,6 +648,77 @@ body::before {
   margin-top: 8px;
 }
 
+.ink-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-mid);
+}
+
+.ink-field input,
+.ink-field select {
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-faint);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--ink);
+}
+
+.ink-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.ink-tab {
+  font-family: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  padding: 8px 4px;
+  border: 1px solid var(--ink-faint);
+  background: transparent;
+  color: var(--ink-wash);
+  cursor: pointer;
+}
+
+.ink-tab--active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.ink-world {
+  padding: 8px 2px;
+  font-size: 0.8rem;
+  color: var(--ink-mid);
+  border-bottom: 1px dashed var(--ink-faint);
+}
+
+.ink-world p {
+  margin: 0 0 4px;
+}
+
+.ink-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ink-chip {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border: 1px solid var(--cinnabar);
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ink-enter,
   .ink-event,

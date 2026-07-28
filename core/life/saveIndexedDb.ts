@@ -1,8 +1,10 @@
 import { lifeGameStateSchema, type LifeGameState } from '@interfaces/lifeEngine';
+import { migrateLifeState } from './gameState';
 
 const DB_NAME = 'jianghu_life_v1';
 const STORE = 'saves';
 const KEY = 'current';
+const LS_KEY = 'jianghu_life_v1_ls';
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -24,13 +26,16 @@ export interface LifePersistedSave {
   state: LifeGameState;
 }
 
+function normalize(state: LifeGameState): LifeGameState {
+  return migrateLifeState(lifeGameStateSchema.parse(state) as LifeGameState);
+}
+
 export async function saveLifeToIndexedDb(state: LifeGameState): Promise<void> {
   if (typeof indexedDB === 'undefined') return;
-  const parsed = lifeGameStateSchema.parse(state);
   const payload: LifePersistedSave = {
     version: 1,
     savedAt: Date.now(),
-    state: parsed,
+    state: normalize(state),
   };
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -54,8 +59,7 @@ export async function loadLifeFromIndexedDb(): Promise<LifePersistedSave | null>
         return;
       }
       try {
-        lifeGameStateSchema.parse(raw.state);
-        resolve(raw);
+        resolve({ ...raw, state: normalize(raw.state) });
       } catch {
         resolve(null);
       }
@@ -75,15 +79,12 @@ export async function clearLifeIndexedDb(): Promise<void> {
   });
 }
 
-/** localStorage fallback for environments without IndexedDB */
-const LS_KEY = 'jianghu_life_v1_ls';
-
 export function saveLifeToLocalStorage(state: LifeGameState): void {
   if (typeof localStorage === 'undefined') return;
   const payload: LifePersistedSave = {
     version: 1,
     savedAt: Date.now(),
-    state: lifeGameStateSchema.parse(state),
+    state: normalize(state),
   };
   localStorage.setItem(LS_KEY, JSON.stringify(payload));
 }
@@ -94,8 +95,7 @@ export function loadLifeFromLocalStorage(): LifePersistedSave | null {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as LifePersistedSave;
-    lifeGameStateSchema.parse(parsed.state);
-    return parsed;
+    return { ...parsed, state: normalize(parsed.state) };
   } catch {
     return null;
   }

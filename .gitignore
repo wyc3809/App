@@ -24,3 +24,7 @@ secrets.json
 *.swo
 Thumbs.db
 Desktop.ini
+
+# Import archives (keep content/, not raw zips)
+imports/*.zip
+imports/*.tar.gz

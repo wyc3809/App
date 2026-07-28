@@ -1,23 +1,29 @@
 import { create } from 'zustand';
 import type { LifeGameState } from '@interfaces/lifeEngine';
-import { EVENT_CATALOG } from '@data/events/catalog';
-import { createNewLife, syncRngFromState } from '@core/life/gameState';
-import { applyChoice, getEventById, startYear } from '@core/life/eventEngine';
+import { createNewLife, migrateLifeState, syncRngFromState, type CreateLifeOptions } from '@core/life/gameState';
+import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/eventEngine';
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
+
+const CATALOG = fullCatalog();
 
 export interface LifeStore {
   state: LifeGameState | null;
   saveLabel: string | null;
   debugOpen: boolean;
   bootstrapped: boolean;
-  /** 短暫朱砂印文案 */
   sealText: string | null;
   flashLines: string[];
+  creating: boolean;
   bootstrap: () => Promise<void>;
-  newLife: (seed?: number) => void;
+  beginCreate: () => void;
+  cancelCreate: () => void;
+  newLife: (opts?: CreateLifeOptions | number) => void;
   continueLife: () => Promise<boolean>;
+  advanceMonth: () => void;
+  /** @deprecated */
   advanceYear: () => void;
   choose: (choiceId: string) => void;
+  setTab: (tab: NonNullable<LifeGameState['tab']>) => void;
   setDebugOpen: (open: boolean) => void;
   importState: (state: LifeGameState) => void;
   clearSeal: () => void;
@@ -34,17 +40,22 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   bootstrapped: false,
   sealText: null,
   flashLines: [],
+  creating: false,
 
   bootstrap: async () => {
     if (get().bootstrapped) return;
     set({ bootstrapped: true });
   },
 
-  newLife: (seed?: number) => {
-    const state = createNewLife(seed);
+  beginCreate: () => set({ creating: true }),
+  cancelCreate: () => set({ creating: false }),
+
+  newLife: (opts?: CreateLifeOptions | number) => {
+    const state = createNewLife(opts);
     void save(state);
     set({
       state,
+      creating: false,
       saveLabel: new Date().toLocaleString('zh-TW'),
       sealText: '生',
       flashLines: [],
@@ -54,9 +65,11 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   continueLife: async () => {
     const loaded = await loadLifeSave();
     if (!loaded) return false;
-    syncRngFromState(loaded.state);
+    const state = migrateLifeState(loaded.state);
+    syncRngFromState(state);
     set({
-      state: loaded.state,
+      state,
+      creating: false,
       saveLabel: new Date(loaded.savedAt).toLocaleString('zh-TW'),
       sealText: null,
       flashLines: [],
@@ -64,23 +77,25 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     return true;
   },
 
-  advanceYear: () => {
+  advanceMonth: () => {
     const { state } = get();
     if (!state || state.pending || state.phase !== 'playing' || !state.character.alive) return;
     const next = structuredClone(state);
-    startYear(next, EVENT_CATALOG);
+    startMonth(next);
     void save(next);
     set({
       state: next,
-      sealText: next.phase === 'summary' ? '終' : '年',
+      sealText: next.phase === 'summary' ? '終' : '月',
       flashLines: [],
     });
   },
 
+  advanceYear: () => get().advanceMonth(),
+
   choose: (choiceId: string) => {
     const { state } = get();
     if (!state?.pending) return;
-    const event = getEventById(EVENT_CATALOG, state.pending.eventId);
+    const event = getEventById(CATALOG, state.pending.eventId);
     if (!event) return;
     const next = structuredClone(state);
     const result = applyChoice(next, event, choiceId);
@@ -92,11 +107,19 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     });
   },
 
+  setTab: (tab) => {
+    const { state } = get();
+    if (!state) return;
+    const next = { ...state, tab };
+    set({ state: next });
+  },
+
   setDebugOpen: (open: boolean) => set({ debugOpen: open }),
 
   importState: (state: LifeGameState) => {
-    void save(state);
-    set({ state });
+    const migrated = migrateLifeState(state);
+    void save(migrated);
+    set({ state: migrated });
   },
 
   clearSeal: () => set({ sealText: null }),
@@ -105,3 +128,5 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
 export async function resetLifeSave() {
   await clearLifeSave();
 }
+
+export { CATALOG as LIFE_CATALOG };

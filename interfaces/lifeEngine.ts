@@ -105,6 +105,30 @@ export interface LifeSect {
   merit: number;
 }
 
+export interface LifeCondition {
+  id: string;
+  name: string;
+  monthsLeft: number;
+  severity: number;
+}
+
+export interface WorldState {
+  order: number;
+  danger: number;
+  economy: number;
+  rumors: number;
+  seasonMood: string;
+  lastWorldShift: string;
+}
+
+export interface StoryState {
+  chapter: number;
+  title: string;
+  goal: string;
+  progress: number;
+  nextMilestone: number;
+}
+
 export interface LifeCharacter {
   name: string;
   gender: 'male' | 'female';
@@ -115,6 +139,14 @@ export interface LifeCharacter {
   money: number;
   reputation: number;
   martial: number;
+  qi: number;
+  maxQi: number;
+  stamina: number;
+  maxStamina: number;
+  fatigue: number;
+  birthplace: string;
+  location: string;
+  conditions: LifeCondition[];
   attributes: Record<WuxiaAttribute, number>;
   skills: string[];
   sectId: string | null;
@@ -131,12 +163,15 @@ export interface LifeCharacter {
     combatsWon: number;
     lovers: number;
     wealthPeak: number;
+    monthsLived: number;
   };
 }
 
 export interface PendingEvent {
   eventId: string;
   year: number;
+  month?: number;
+  kind?: 'ordinary' | 'special' | 'story';
 }
 
 export interface LifeGameState {
@@ -144,15 +179,20 @@ export interface LifeGameState {
   seed: number;
   rngState: string;
   year: number;
+  month: number;
   character: LifeCharacter;
   npcs: Record<string, LifeNpc>;
   sects: Record<string, { id: string; name: string }>;
+  world: WorldState;
+  story: StoryState;
+  specialEventCountdown: number;
   worldFlags: Record<string, boolean | number | string>;
   completedEvents: string[];
   pending: PendingEvent | null;
   lifeLog: string[];
   phase: 'create' | 'playing' | 'summary';
   summaryText?: string;
+  tab?: 'home' | 'person' | 'jianghu' | 'practice';
 }
 
 export const lifeCharacterSchema = z.object({
@@ -165,6 +205,23 @@ export const lifeCharacterSchema = z.object({
   money: z.number(),
   reputation: z.number(),
   martial: z.number(),
+  qi: z.number().default(80),
+  maxQi: z.number().default(120),
+  stamina: z.number().default(100),
+  maxStamina: z.number().default(120),
+  fatigue: z.number().default(0),
+  birthplace: z.string().default('千燈鎮'),
+  location: z.string().default('千燈鎮'),
+  conditions: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        monthsLeft: z.number(),
+        severity: z.number(),
+      }),
+    )
+    .default([]),
   attributes: z.record(z.enum(wuxiaAttributeKeys), z.number()),
   skills: z.array(z.string()),
   sectId: z.string().nullable(),
@@ -181,6 +238,7 @@ export const lifeCharacterSchema = z.object({
     combatsWon: z.number(),
     lovers: z.number(),
     wealthPeak: z.number(),
+    monthsLived: z.number().default(0),
   }),
 });
 
@@ -189,6 +247,7 @@ export const lifeGameStateSchema = z.object({
   seed: z.number(),
   rngState: z.string(),
   year: z.number(),
+  month: z.number().default(1),
   character: lifeCharacterSchema,
   npcs: z.record(
     z.string(),
@@ -203,15 +262,51 @@ export const lifeGameStateSchema = z.object({
     }),
   ),
   sects: z.record(z.string(), z.object({ id: z.string(), name: z.string() })),
+  world: z
+    .object({
+      order: z.number(),
+      danger: z.number(),
+      economy: z.number(),
+      rumors: z.number(),
+      seasonMood: z.string(),
+      lastWorldShift: z.string(),
+    })
+    .default({
+      order: 55,
+      danger: 30,
+      economy: 50,
+      rumors: 35,
+      seasonMood: '平穩',
+      lastWorldShift: '千燈鎮外風聲尚穩。',
+    }),
+  story: z
+    .object({
+      chapter: z.number(),
+      title: z.string(),
+      goal: z.string(),
+      progress: z.number(),
+      nextMilestone: z.number(),
+    })
+    .default({
+      chapter: 1,
+      title: '千燈初醒',
+      goal: '在千燈鎮立足，認識江湖的第一批人。',
+      progress: 0,
+      nextMilestone: 6,
+    }),
+  specialEventCountdown: z.number().default(12),
   worldFlags: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])),
   completedEvents: z.array(z.string()),
   pending: z
     .object({
       eventId: z.string(),
       year: z.number(),
+      month: z.number().optional(),
+      kind: z.enum(['ordinary', 'special', 'story']).optional(),
     })
     .nullable(),
   lifeLog: z.array(z.string()),
   phase: z.enum(['create', 'playing', 'summary']),
   summaryText: z.string().optional(),
+  tab: z.enum(['home', 'person', 'jianghu', 'practice']).optional(),
 });

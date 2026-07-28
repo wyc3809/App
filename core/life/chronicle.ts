@@ -53,7 +53,10 @@ export function formatEffectLine(eff: GameEffect, state: LifeGameState): string 
 export function pushChronicle(state: LifeGameState, lines: string[]): void {
   const stamped = lines
     .filter(Boolean)
-    .map((t) => `【${state.year}·${state.character.age}歲·${getLifeStageLabel(state)}】${t}`);
+    .map((t) => {
+      const month = state.month ?? 1;
+      return `【${state.year}年${month}月·${state.character.age}歲·${getLifeStageLabel(state)}】${t}`;
+    });
   state.lifeLog = [...stamped, ...state.lifeLog].slice(0, 140);
 }
 

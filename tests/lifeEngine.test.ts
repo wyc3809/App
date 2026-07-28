@@ -4,19 +4,26 @@ import {
   validateEvents,
   applyChoice,
   pickYearEvent,
-  startYear,
+  startMonth,
   getEventById,
+  fullCatalog,
 } from '../core/life/eventEngine';
 import { createNewLife } from '../core/life/gameState';
 import { meetsRequirements } from '../core/life/requirements';
 import { getLifeStage } from '../core/life/stages';
+import { RANDOM_PACK_EVENTS } from '../core/life/packAdapter';
 import { initRng } from '../core/random';
 
 describe('life event catalog', () => {
-  it('has 50 validated events', () => {
+  it('has 50 validated built-in events', () => {
     expect(EVENT_COUNT).toBeGreaterThanOrEqual(50);
     const events = validateEvents(EVENT_CATALOG);
     expect(events.length).toBe(EVENT_COUNT);
+  });
+
+  it('loads 100 pack events', () => {
+    expect(RANDOM_PACK_EVENTS.length).toBe(100);
+    expect(fullCatalog().length).toBeGreaterThan(150);
   });
 });
 
@@ -29,25 +36,30 @@ describe('life stages', () => {
 });
 
 describe('life event engine', () => {
-  it('resolves birth choice deterministically', () => {
-    initRng(42);
-    const state = createNewLife(42);
-    const birth = getEventById(EVENT_CATALOG, 'life_birth')!;
-    const next = structuredClone(state);
-    const result = applyChoice(next, birth, 'cry');
-    expect(result.state.completedEvents).toContain('life_birth');
-    expect(result.state.character.attributes.genGu).toBeGreaterThan(30);
-    expect(result.state.lifeLog[0]).toContain('降生');
+  it('creates life in 千燈鎮 at age 16', () => {
+    const state = createNewLife({ seed: 42, name: '沈雲舟', birthplace: '千燈鎮' });
+    expect(state.character.name).toBe('沈雲舟');
+    expect(state.character.age).toBe(16);
+    expect(state.character.birthplace).toBe('千燈鎮');
+    expect(state.month).toBe(1);
+    expect(state.specialEventCountdown).toBeGreaterThanOrEqual(10);
   });
 
-  it('advances year and assigns pending event', () => {
+  it('advances month and may assign pending event', () => {
     initRng(99);
     let state = createNewLife(99);
-    const birth = getEventById(EVENT_CATALOG, 'life_birth')!;
-    state = applyChoice(structuredClone(state), birth, 'quiet').state;
-    state = startYear(structuredClone(state), EVENT_CATALOG);
-    expect(state.character.age).toBe(1);
-    expect(state.pending).not.toBeNull();
+    state = startMonth(structuredClone(state));
+    expect(state.character.stats.monthsLived).toBe(1);
+    expect(state.month).toBe(2);
+  });
+
+  it('resolves ordinary choice', () => {
+    initRng(42);
+    const state = createNewLife(42);
+    const market = getEventById(fullCatalog(), 'ord_market')!;
+    state.pending = { eventId: market.id, year: state.year, month: state.month, kind: 'ordinary' };
+    const result = applyChoice(structuredClone(state), market, 'watch');
+    expect(result.state.completedEvents).toContain('ord_market');
   });
 
   it('pickYearEvent is deterministic', () => {
