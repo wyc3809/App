@@ -40,9 +40,9 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
   const fatherName = randomChineseName();
   const motherName = randomChineseName();
   const attrs = createAttributes(rng);
-  const maxHealth = 120 + Math.floor(attrs.genGu * 1.2);
-  const maxQi = 80 + Math.floor(attrs.wuXing * 1.1);
-  const maxStamina = 100 + Math.floor(attrs.genGu * 0.8);
+  const maxHealth = 180 + Math.floor(attrs.genGu * 2.2);
+  const maxQi = 140 + Math.floor(attrs.wuXing * 2);
+  const maxStamina = 120 + Math.floor(attrs.genGu * 1.2);
 
   const character: LifeCharacter = {
     name,
@@ -64,9 +64,11 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     conditions: [],
     attributes: attrs,
     skills: ['基礎吐納'],
+    gear: ['old-sword', 'plain-robe'],
+    equipment: { weapon: 'old-sword', armor: 'plain-robe', accessory: null },
     sectId: null,
     loverId: null,
-    flags: {},
+    flags: { baseMaxHp: maxHealth, baseMaxQi: maxQi },
     family: { fatherName, motherName },
     stats: {
       yearsLived: 0,
@@ -120,13 +122,14 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     sects,
     world: makeWorldState(),
     story: makeStoryState(),
-    specialEventCountdown: rng.nextInt(10, 18),
+    specialEventCountdown: rng.nextInt(5, 30),
     worldFlags: {},
     completedEvents: [],
     pending: null,
     lifeLog: [
       `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
       `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
+      `氣血上限 ${maxHealth} · 內力上限 ${maxQi}`,
     ],
     phase: 'playing',
     tab: 'home',
@@ -144,7 +147,6 @@ export function snapshotRng(state: LifeGameState): void {
 }
 
 export function advanceYear(state: LifeGameState): void {
-  // legacy helper: advance 12 months worth of age only
   if (!state.character.alive || state.phase !== 'playing') return;
   state.character.age += 1;
   state.character.stats.yearsLived += 1;
@@ -189,6 +191,10 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (!c.birthplace) c.birthplace = '千燈鎮';
   if (!c.location) c.location = c.birthplace;
   if (!c.conditions) c.conditions = [];
+  if (!c.gear) c.gear = ['old-sword', 'plain-robe'];
+  if (!c.equipment) c.equipment = { weapon: 'old-sword', armor: 'plain-robe', accessory: null };
+  if (c.flags.baseMaxHp === undefined) c.flags.baseMaxHp = c.maxHealth;
+  if (c.flags.baseMaxQi === undefined) c.flags.baseMaxQi = c.maxQi;
   if (c.stats.monthsLived === undefined) c.stats.monthsLived = 0;
   if (raw.month === undefined) raw.month = 1;
   if (!raw.world) raw.world = makeWorldState();

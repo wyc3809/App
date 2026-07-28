@@ -5,6 +5,9 @@ import { LIFE_CATALOG, useLifeStore } from '../../store/lifeStore';
 import { getEventById } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
+import { PRACTICE_ACTIONS } from '@core/life/actions';
+import { getGearDef } from '@data/equipment/catalog';
+import { skillLabel } from '@data/skills/catalog';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -12,10 +15,21 @@ type Props = {
   state: LifeGameState;
 };
 
+const RARITY_ZH: Record<string, string> = {
+  common: '凡',
+  fine: '良',
+  rare: '珍',
+  epic: '奇',
+  divine: '神',
+};
+
 export function InkPlayScreen({ state }: Props) {
   const choose = useLifeStore((s) => s.choose);
   const advanceMonth = useLifeStore((s) => s.advanceMonth);
   const newLife = useLifeStore((s) => s.newLife);
+  const practice = useLifeStore((s) => s.practice);
+  const clearResult = useLifeStore((s) => s.clearResult);
+  const lastResult = useLifeStore((s) => s.lastResult);
   const saveLabel = useLifeStore((s) => s.saveLabel);
   const debugOpen = useLifeStore((s) => s.debugOpen);
   const setDebugOpen = useLifeStore((s) => s.setDebugOpen);
@@ -36,17 +50,21 @@ export function InkPlayScreen({ state }: Props) {
   const sect = c.sectId ? state.sects[c.sectId] : null;
   const lover = c.loverId ? state.npcs[c.loverId] : null;
   const stage = getLifeStageLabel(state);
-  const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
+  const hpPct = Math.max(0, Math.min(100, (c.health / Math.max(1, c.maxHealth)) * 100));
+  const qiPct = Math.max(0, Math.min(100, ((c.qi ?? 0) / Math.max(1, c.maxQi ?? 1)) * 100));
   const tab = state.tab ?? 'home';
   const isPack = (pendingEvent?.tags ?? []).includes('pack');
   const displayTitle = isPack ? '江湖偶遇' : pendingEvent?.title;
   const world = state.world;
   const story = state.story;
+  const gearIds = c.gear ?? [];
+  const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
+  const showResult = Boolean(lastResult) && state.phase === 'playing';
 
   return (
     <div
       className="scroll-shell scroll-shell--play ink-enter"
-      key={`${state.year}-${month}-${state.pending?.eventId ?? 'idle'}`}
+      key={`${state.year}-${month}-${state.pending?.eventId ?? 'idle'}-${lastResult?.feedback ?? ''}`}
     >
       <InkScrollBackdrop variant="play" />
       {sealText && <InkSealStamp text={sealText} onDone={clearSeal} />}
@@ -106,7 +124,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      <section className="ink-vitals" aria-label="氣血">
+      <section className="ink-vitals" aria-label="氣血內力">
         <div className="ink-vitals-label">
           <span>氣血</span>
           <span>
@@ -116,11 +134,20 @@ export function InkPlayScreen({ state }: Props) {
         <div className="ink-bar">
           <div className="ink-bar-fill" style={{ width: `${hpPct}%` }} />
         </div>
+        <div className="ink-vitals-label">
+          <span>內力</span>
+          <span>
+            {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
+          </span>
+        </div>
+        <div className="ink-bar ink-bar--qi">
+          <div className="ink-bar-fill ink-bar-fill--qi" style={{ width: `${qiPct}%` }} />
+        </div>
         <div className="ink-stat-row">
           <span>銀兩 {c.money}</span>
           <span>名望 {c.reputation}</span>
           <span>武學 {c.martial}</span>
-          <span>內息 {Math.round(c.qi ?? 0)}</span>
+          <span>疲勞 {c.fatigue ?? 0}</span>
         </div>
         {(c.conditions?.length ?? 0) > 0 && (
           <div className="ink-chips">
@@ -133,9 +160,9 @@ export function InkPlayScreen({ state }: Props) {
         )}
       </section>
 
-      {(tab === 'person' || tab === 'practice') && (
+      {tab === 'person' && (
         <section className="ink-panel ink-attrs">
-          <h3>{tab === 'practice' ? '修煉' : '五維'}</h3>
+          <h3>五維</h3>
           <div className="ink-attr-grid">
             {wuxiaAttributeKeys.map((k) => (
               <div key={k} className="ink-attr">
@@ -145,15 +172,91 @@ export function InkPlayScreen({ state }: Props) {
             ))}
           </div>
           <p className="ink-note">
-            疲勞 {c.fatigue ?? 0} · 體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0}
+            體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0}
           </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
-          {c.skills.length > 0 && <p className="ink-note">武功 · {c.skills.join('、')}</p>}
+          {c.skills.length > 0 && (
+            <p className="ink-note">武功 · {c.skills.map(skillLabel).join('、')}</p>
+          )}
         </section>
       )}
 
-      {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && (
+      {tab === 'practice' && (
+        <section className="ink-panel ink-practice">
+          <h3>修煉</h3>
+          <p className="ink-note">仿人生模擬之行動——拜師、苦練、鑄兵、尋訪奇遇。</p>
+          <div className="ink-practice-grid">
+            {PRACTICE_ACTIONS.map((act) => (
+              <button
+                key={act.id}
+                type="button"
+                className="ink-practice-btn"
+                disabled={Boolean(state.pending) || showResult || !c.alive}
+                onClick={() => practice(act.id)}
+              >
+                <strong>{act.label}</strong>
+                <span>{act.hint}</span>
+              </button>
+            ))}
+          </div>
+
+          <h3 className="ink-subhead">行囊裝備</h3>
+          <div className="ink-gear-equipped">
+            {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
+              const id = equipment[slot];
+              const def = id ? getGearDef(id) : null;
+              return (
+                <p key={slot} className="ink-note">
+                  {slot === 'weapon' ? '兵刃' : slot === 'armor' ? '護體' : '佩飾'} ·{' '}
+                  {def ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}）` : '空'}
+                </p>
+              );
+            })}
+          </div>
+          {gearIds.length > 0 && (
+            <ul className="ink-gear-list">
+              {gearIds.map((id) => {
+                const def = getGearDef(id);
+                if (!def) return null;
+                return (
+                  <li key={id}>
+                    <span>
+                      {def.name}
+                      <em>{RARITY_ZH[def.rarity]}</em>
+                    </span>
+                    <span className="ink-gear-desc">{def.description}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {c.skills.length > 0 && (
+            <p className="ink-note">已習武功 · {c.skills.map(skillLabel).join('、')}</p>
+          )}
+        </section>
+      )}
+
+      {showResult && lastResult && (
+        <section className="ink-panel ink-result" aria-live="polite">
+          <p className="ink-event-year">抉擇已定</p>
+          <h3>{lastResult.title}</h3>
+          <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
+          <p className="ink-event-body">{lastResult.feedback}</p>
+          {lastResult.deltas.length > 0 && (
+            <ul className="ink-delta-list">
+              {lastResult.deltas.map((d) => (
+                <li key={d}>{d}</li>
+              ))}
+            </ul>
+          )}
+          <button type="button" className="ink-btn ink-btn--primary" onClick={() => clearResult()}>
+            已知曉 · 掩卷
+          </button>
+        </section>
+      )}
+
+      {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && (
         <section className="ink-flash" aria-live="polite">
           {flashLines.map((line) => (
             <p key={line}>{line}</p>
@@ -174,7 +277,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {state.phase === 'playing' && pendingEvent && (
+      {state.phase === 'playing' && pendingEvent && !showResult && (
         <section className="ink-panel ink-event">
           <p className="ink-event-year">
             {state.year}年{month}月 · {c.age}歲
@@ -183,7 +286,7 @@ export function InkPlayScreen({ state }: Props) {
           <h3>{displayTitle}</h3>
           {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
           <div className="ink-choice-list">
-            {pendingEvent.choices.map((ch, i) => (
+            {pendingEvent.choices.slice(0, 3).map((ch, i) => (
               <button
                 key={ch.id}
                 type="button"
@@ -191,7 +294,7 @@ export function InkPlayScreen({ state }: Props) {
                 style={{ animationDelay: `${0.05 * i}s` }}
                 onClick={() => choose(ch.id)}
               >
-                <span className="ink-choice-mark">註</span>
+                <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
                 {ch.text}
               </button>
             ))}
@@ -199,7 +302,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {state.phase === 'playing' && !pendingEvent && c.alive && (
+      {state.phase === 'playing' && !pendingEvent && c.alive && !showResult && (
         <button type="button" className="ink-btn ink-btn--primary ink-btn--year" onClick={advanceMonth}>
           翻過一頁 · 過一月
         </button>

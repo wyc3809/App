@@ -1,6 +1,7 @@
 import type { GameEvent, EventChoice } from '@interfaces/lifeEngine';
 import packJson from '@data/events/jianghu_random_events_100.json';
 import choiceBanks from '@data/events/packChoiceBanks.json';
+import { withRiskAndThree } from './choiceEnrich';
 
 type PackOutcome = {
   op?: string;
@@ -95,7 +96,7 @@ function mapOutcomesToEffects(outcomes: PackOutcome[], feedback?: string) {
 }
 
 export function convertPackEvent(source: PackEvent): GameEvent {
-  const choices: EventChoice[] = (source.choices ?? []).slice(0, 4).map((item, index) => {
+  const choices: EventChoice[] = (source.choices ?? []).slice(0, 3).map((item, index) => {
     const rewritten = rewriteChoiceText(source, index);
     const feedback =
       rewritten.feedback ||
@@ -114,16 +115,16 @@ export function convertPackEvent(source: PackEvent): GameEvent {
     };
   });
 
-  if (!choices.length) {
+  while (choices.length < 3) {
     choices.push({
-      id: 'observe',
-      text: '靜觀其變',
-      outcomes: [{ effects: [{ type: 'narrate', text: '你沒有插手，只把經過記在心裡。' }] }],
+      id: `extra_${choices.length}`,
+      text: choices.length === 1 ? '另尋出路' : '抽身離開',
+      outcomes: [{ effects: [{ type: 'narrate', text: '你沒有深陷其中。' }] }],
     });
   }
 
   const cond = source.conditions ?? {};
-  return {
+  const base: GameEvent = {
     id: source.id,
     title: source.title,
     body: source.description || source.summary || source.title,
@@ -135,8 +136,18 @@ export function convertPackEvent(source: PackEvent): GameEvent {
       once: true,
       notFlags: (cond.forbidden_flags ?? []).map((f) => f.replace(/^completed_/, 'done_')),
     },
-    choices,
+    choices: choices.slice(0, 3),
   };
+
+  return withRiskAndThree(
+    base,
+    () => [
+      { type: 'narrate', text: '此局兇險，你付出了代價。' },
+      { type: 'health', amount: -20 },
+      { type: 'condition', id: 'bleeding' },
+    ],
+    0.15,
+  );
 }
 
 export function loadRandomEventPack(): GameEvent[] {

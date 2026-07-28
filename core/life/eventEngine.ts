@@ -9,7 +9,28 @@ import { simulateMonthBody, seasonLabel } from './monthly';
 import { RANDOM_PACK_EVENTS } from './packAdapter';
 import { ORDINARY_EVENTS } from '@data/events/ordinary';
 import { EVENT_CATALOG } from '@data/events/catalog';
+import { SECRET_ART_EVENTS } from '@data/events/secretArts';
 import { getRng } from '@core/random';
+import { rollAdventureGear } from '@data/equipment/catalog';
+import { grantGear } from './equipment';
+import { withRiskAndThree } from './choiceEnrich';
+
+function enrichLegacyEvent(event: GameEvent): GameEvent {
+  if (event.choices.length >= 3 && event.choices.every((c) => c.outcomes.length >= 2)) {
+    return event;
+  }
+  return withRiskAndThree(
+    event,
+    () => [
+      { type: 'narrate', text: '事與願違，你吃了暗虧。' },
+      { type: 'health', amount: -12 },
+      { type: 'money', amount: -5 },
+    ],
+    0.16,
+  );
+}
+
+const ENRICHED_CATALOG = EVENT_CATALOG.map(enrichLegacyEvent);
 
 export function validateEvent(raw: unknown): GameEvent {
   return gameEventSchema.parse(raw);
@@ -23,9 +44,9 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
   return catalog.find((e) => e.id === id);
 }
 
-/** 合併：日常 + 舊 50 + 百人包 */
+/** 合併：日常 + 秘傳奇遇 + 舊 50 + 百人包 */
 export function fullCatalog(): GameEvent[] {
-  return [...ORDINARY_EVENTS, ...EVENT_CATALOG, ...RANDOM_PACK_EVENTS];
+  return [...ORDINARY_EVENTS, ...SECRET_ART_EVENTS, ...ENRICHED_CATALOG, ...RANDOM_PACK_EVENTS];
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
@@ -77,6 +98,8 @@ export function pickOutcomeForChoice(
 export interface ResolveResult {
   state: LifeGameState;
   logs: string[];
+  deltas: string[];
+  feedback: string;
   died: boolean;
 }
 
@@ -87,15 +110,32 @@ export function applyChoice(
 ): ResolveResult {
   syncRngFromState(state);
   const choice = event.choices.find((c) => c.id === choiceId);
-  if (!choice) return { state, logs: ['無此選擇。'], died: false };
+  if (!choice) {
+    return { state, logs: ['無此選擇。'], deltas: [], feedback: '無此選擇。', died: false };
+  }
   if (!meetsRequirements(state, choice.requirements)) {
-    return { state, logs: ['條件不足。'], died: false };
+    return { state, logs: ['條件不足。'], deltas: [], feedback: '條件不足。', died: false };
   }
 
   const outcome = pickOutcomeForChoice(state, choice.outcomes);
-  const { logs, died } = applyEffects(state, outcome.effects);
+  const { logs, died, deltas } = applyEffects(state, outcome.effects);
 
   const tags = event.tags ?? [];
+  const isBad = outcome.id?.endsWith('_bad') || outcome.label === '事與願違';
+  if (!isBad && (tags.includes('pack') || tags.includes('secret') || tags.includes('special'))) {
+    const rng = getRng();
+    if (rng.chance(0.28)) {
+      const gearId = rollAdventureGear(rng);
+      if (gearId) {
+        const name = grantGear(state, gearId);
+        if (name) {
+          logs.push(`行囊多了一件：「${name}」。`);
+          deltas.push(`裝備＋${name}`);
+        }
+      }
+    }
+  }
+
   if (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) {
     state.character.stats.combats += 1;
     if (logs.some((l) => /勝|擊敗|反殺|僅勝/.test(l))) state.character.stats.combatsWon += 1;
@@ -103,9 +143,10 @@ export function applyChoice(
 
   markEventComplete(state, event.id);
   state.pending = null;
-  // Hide pack library titles in chronicle — use body snippet
   const titleForLog = tags.includes('pack') ? '江湖偶遇' : event.title;
-  pushChronicle(state, [`「${titleForLog}」——${choice.text}`, ...logs]);
+  const feedback =
+    logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|內力|裝備)/.test(l)) || logs[0] || '事已了結。';
+  pushChronicle(state, [`「${titleForLog}」——${choice.text}`, feedback, ...deltas]);
 
   if (died || !state.character.alive) {
     state.character.alive = false;
@@ -114,12 +155,12 @@ export function applyChoice(
   }
 
   snapshotRng(state);
-  return { state, logs, died };
+  return { state, logs, deltas, feedback, died };
 }
 
 function shouldTriggerSpecial(state: LifeGameState): boolean {
   if (!Number.isFinite(state.specialEventCountdown)) {
-    state.specialEventCountdown = getRng().nextInt(10, 18);
+    state.specialEventCountdown = getRng().nextInt(5, 30);
   }
   state.specialEventCountdown -= 1;
   return state.specialEventCountdown <= 0;
@@ -156,16 +197,16 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
   if (shouldTriggerSpecial(state)) {
-    const packEligible = listEligibleEvents(RANDOM_PACK_EVENTS, state);
-    event = weightedPick(state, packEligible);
+    const specialPool = listEligibleEvents([...RANDOM_PACK_EVENTS, ...SECRET_ART_EVENTS], state);
+    event = weightedPick(state, specialPool);
     kind = 'special';
-    state.specialEventCountdown = rng.nextInt(10, 18);
+    state.specialEventCountdown = rng.nextInt(5, 30);
   }
 
   if (!event) {
     // mix ordinary + non-birth catalog events (exclude pack)
     const pool = listEligibleEvents(
-      [...ORDINARY_EVENTS, ...EVENT_CATALOG.filter((e) => e.id !== 'life_birth')],
+      [...ORDINARY_EVENTS, ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth')],
       state,
     ).filter((e) => !(e.tags ?? []).includes('pack'));
     event = weightedPick(state, pool);
@@ -204,14 +245,15 @@ export function pickYearEvent(catalog: GameEvent[], state: LifeGameState): GameE
 export function resolvePendingAuto(state: LifeGameState, event: GameEvent): ResolveResult {
   const choice = event.choices[0];
   const outcome = choice.outcomes[0];
-  const { logs, died } = applyEffects(state, outcome.effects);
+  const { logs, died, deltas } = applyEffects(state, outcome.effects);
   markEventComplete(state, event.id);
   state.pending = null;
-  pushChronicle(state, [`「${event.title}」`, ...logs]);
+  const feedback = logs[0] ?? '事畢。';
+  pushChronicle(state, [`「${event.title}」`, feedback, ...deltas]);
   if (died) {
     state.phase = 'summary';
     state.summaryText = buildLifeSummary(state);
   }
   snapshotRng(state);
-  return { state, logs, died };
+  return { state, logs, deltas, feedback, died };
 }

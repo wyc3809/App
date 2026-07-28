@@ -719,12 +719,133 @@ body::before {
   background: var(--cinnabar-soft);
 }
 
+.ink-bar--qi {
+  margin-top: 2px;
+}
+
+.ink-bar-fill--qi {
+  background: linear-gradient(90deg, #3a4652, #6a7886);
+  opacity: 0.85;
+}
+
+.ink-practice-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+
+.ink-practice-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-faint);
+  border-left: 3px solid var(--ink-mid);
+  background: rgba(255, 255, 255, 0.28);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.ink-practice-btn strong {
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  font-size: 0.92rem;
+}
+
+.ink-practice-btn span {
+  font-size: 0.75rem;
+  color: var(--ink-wash);
+  letter-spacing: 0.06em;
+}
+
+.ink-practice-btn:hover:not(:disabled) {
+  background: var(--mist);
+  border-left-color: var(--cinnabar);
+}
+
+.ink-practice-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ink-subhead {
+  margin: 12px 0 6px !important;
+  font-size: 0.78rem !important;
+}
+
+.ink-gear-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.ink-gear-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--ink-faint);
+  font-size: 0.82rem;
+}
+
+.ink-gear-list em {
+  margin-left: 6px;
+  font-style: normal;
+  color: var(--cinnabar);
+  font-size: 0.72rem;
+}
+
+.ink-gear-desc {
+  color: var(--ink-wash);
+  font-size: 0.74rem;
+}
+
+.ink-result {
+  animation: inkFadeUp 0.45s ease both;
+  border-color: rgba(163, 58, 50, 0.28);
+  background:
+    linear-gradient(180deg, rgba(163, 58, 50, 0.05), transparent 40%),
+    var(--bg-panel);
+}
+
+.ink-result-choice {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--ink-mid);
+  letter-spacing: 0.08em;
+}
+
+.ink-delta-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ink-delta-list li {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border: 1px solid var(--ink-faint);
+  color: var(--ink-mid);
+  background: rgba(255, 255, 255, 0.35);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ink-enter,
   .ink-event,
   .ink-choice,
   .ink-seal-stamp,
-  .ink-flash {
+  .ink-flash,
+  .ink-result {
     animation: none !important;
   }
 }

@@ -3,8 +3,17 @@ import type { LifeGameState } from '@interfaces/lifeEngine';
 import { createNewLife, migrateLifeState, syncRngFromState, type CreateLifeOptions } from '@core/life/gameState';
 import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/eventEngine';
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
+import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
+import { buildLifeSummary } from '@core/life/summary';
 
 const CATALOG = fullCatalog();
+
+export interface LastResult {
+  title: string;
+  feedback: string;
+  deltas: string[];
+  choiceText: string;
+}
 
 export interface LifeStore {
   state: LifeGameState | null;
@@ -13,6 +22,7 @@ export interface LifeStore {
   bootstrapped: boolean;
   sealText: string | null;
   flashLines: string[];
+  lastResult: LastResult | null;
   creating: boolean;
   bootstrap: () => Promise<void>;
   beginCreate: () => void;
@@ -20,9 +30,10 @@ export interface LifeStore {
   newLife: (opts?: CreateLifeOptions | number) => void;
   continueLife: () => Promise<boolean>;
   advanceMonth: () => void;
-  /** @deprecated */
   advanceYear: () => void;
   choose: (choiceId: string) => void;
+  practice: (actionId: PracticeActionId) => void;
+  clearResult: () => void;
   setTab: (tab: NonNullable<LifeGameState['tab']>) => void;
   setDebugOpen: (open: boolean) => void;
   importState: (state: LifeGameState) => void;
@@ -40,6 +51,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   bootstrapped: false,
   sealText: null,
   flashLines: [],
+  lastResult: null,
   creating: false,
 
   bootstrap: async () => {
@@ -59,6 +71,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       saveLabel: new Date().toLocaleString('zh-TW'),
       sealText: '生',
       flashLines: [],
+      lastResult: null,
     });
   },
 
@@ -73,6 +86,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       saveLabel: new Date(loaded.savedAt).toLocaleString('zh-TW'),
       sealText: null,
       flashLines: [],
+      lastResult: null,
     });
     return true;
   },
@@ -80,6 +94,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   advanceMonth: () => {
     const { state } = get();
     if (!state || state.pending || state.phase !== 'playing' || !state.character.alive) return;
+    if (get().lastResult) set({ lastResult: null });
     const next = structuredClone(state);
     startMonth(next);
     void save(next);
@@ -97,6 +112,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     if (!state?.pending) return;
     const event = getEventById(CATALOG, state.pending.eventId);
     if (!event) return;
+    const choice = event.choices.find((c) => c.id === choiceId);
     const next = structuredClone(state);
     const result = applyChoice(next, event, choiceId);
     void save(result.state);
@@ -104,14 +120,45 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       state: result.state,
       sealText: result.died || result.state.phase === 'summary' ? '終' : '定',
       flashLines: result.logs.slice(0, 4),
+      lastResult: {
+        title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
+        choiceText: choice?.text ?? choiceId,
+        feedback: result.feedback,
+        deltas: result.deltas,
+      },
     });
   },
+
+  practice: (actionId: PracticeActionId) => {
+    const { state } = get();
+    if (!state || state.phase !== 'playing' || !state.character.alive) return;
+    const next = structuredClone(state);
+    const logs = performPracticeAction(next, actionId);
+    if (!next.character.alive) {
+      next.phase = 'summary';
+      next.summaryText = buildLifeSummary(next);
+    }
+    void save(next);
+    const label = PRACTICE_ACTIONS.find((a) => a.id === actionId)?.label ?? actionId;
+    set({
+      state: next,
+      sealText: next.phase === 'summary' ? '終' : '煉',
+      flashLines: logs.slice(0, 4),
+      lastResult: {
+        title: '修煉',
+        choiceText: label,
+        feedback: logs[0] ?? '事畢。',
+        deltas: logs.slice(1),
+      },
+    });
+  },
+
+  clearResult: () => set({ lastResult: null }),
 
   setTab: (tab) => {
     const { state } = get();
     if (!state) return;
-    const next = { ...state, tab };
-    set({ state: next });
+    set({ state: { ...state, tab } });
   },
 
   setDebugOpen: (open: boolean) => set({ debugOpen: open }),

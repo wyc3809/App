@@ -42,7 +42,28 @@ describe('life event engine', () => {
     expect(state.character.age).toBe(16);
     expect(state.character.birthplace).toBe('千燈鎮');
     expect(state.month).toBe(1);
-    expect(state.specialEventCountdown).toBeGreaterThanOrEqual(10);
+    expect(state.specialEventCountdown).toBeGreaterThanOrEqual(5);
+    expect(state.specialEventCountdown).toBeLessThanOrEqual(30);
+    expect(state.character.maxHealth).toBeGreaterThan(100);
+    expect(state.character.maxQi).toBeGreaterThan(100);
+  });
+
+  it('ordinary events offer three choices with risk branches', () => {
+    const market = getEventById(fullCatalog(), 'ord_market')!;
+    expect(market.choices.length).toBe(3);
+    expect(market.choices.every((c) => c.outcomes.length >= 2)).toBe(true);
+  });
+
+  it('practice can raise max hp and qi', async () => {
+    const { performPracticeAction } = await import('../core/life/actions');
+    initRng(3);
+    const state = createNewLife(3);
+    const beforeHp = state.character.maxHealth;
+    const beforeQi = state.character.maxQi;
+    performPracticeAction(state, 'temper_body');
+    performPracticeAction(state, 'train_internal');
+    expect(state.character.maxHealth).toBeGreaterThan(beforeHp);
+    expect(state.character.maxQi).toBeGreaterThan(beforeQi);
   });
 
   it('advances month and may assign pending event', () => {

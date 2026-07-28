@@ -53,6 +53,11 @@ export const effectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('worldFlag'), key: z.string(), value: z.union([z.boolean(), z.number(), z.string()]) }),
   z.object({ type: z.literal('die'), reason: z.string().optional() }),
   z.object({ type: z.literal('memory'), npcId: z.string(), text: z.string(), affinity: z.number().optional() }),
+  z.object({ type: z.literal('grantGear'), gearId: z.string() }),
+  z.object({ type: z.literal('maxHealth'), amount: z.number() }),
+  z.object({ type: z.literal('maxQi'), amount: z.number() }),
+  z.object({ type: z.literal('qi'), amount: z.number() }),
+  z.object({ type: z.literal('condition'), id: z.string() }),
 ]);
 
 export type GameEffect = z.infer<typeof effectSchema>;
@@ -149,6 +154,12 @@ export interface LifeCharacter {
   conditions: LifeCondition[];
   attributes: Record<WuxiaAttribute, number>;
   skills: string[];
+  gear: string[];
+  equipment: {
+    weapon: string | null;
+    armor: string | null;
+    accessory: string | null;
+  };
   sectId: string | null;
   loverId: string | null;
   flags: Record<string, boolean | number | string>;
@@ -224,6 +235,14 @@ export const lifeCharacterSchema = z.object({
     .default([]),
   attributes: z.record(z.enum(wuxiaAttributeKeys), z.number()),
   skills: z.array(z.string()),
+  gear: z.array(z.string()).default(['old-sword', 'plain-robe']),
+  equipment: z
+    .object({
+      weapon: z.string().nullable(),
+      armor: z.string().nullable(),
+      accessory: z.string().nullable(),
+    })
+    .default({ weapon: 'old-sword', armor: 'plain-robe', accessory: null }),
   sectId: z.string().nullable(),
   loverId: z.string().nullable(),
   flags: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])),
