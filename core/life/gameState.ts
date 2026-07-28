@@ -4,13 +4,13 @@ import { initRng, getRng, getRngState } from '@core/random';
 import { randomChineseName, resetIdCounter } from '@core/ids';
 import { makeStoryState, makeWorldState } from './monthly';
 
-const SECT_DEFS = [
-  { id: 'sect_qingyun', name: '青雲劍派' },
-  { id: 'sect_tiandao', name: '天刀門' },
-  { id: 'sect_emei', name: '峨嵋派' },
-  { id: 'sect_shaolin', name: '少林派' },
-  { id: 'sect_wudang', name: '武當派' },
-];
+export const SECT_DEFS = [
+  { id: 'sect_qingyun', name: '青雲劍派', hint: '以劍入道，講求身法清正' },
+  { id: 'sect_tiandao', name: '天刀門', hint: '刀勢開闔，門風剛烈' },
+  { id: 'sect_emei', name: '峨嵋派', hint: '柔中帶剛，內外兼修' },
+  { id: 'sect_shaolin', name: '少林派', hint: '禪武一體，根基深厚' },
+  { id: 'sect_wudang', name: '武當派', hint: '以靜制動，氣機悠長' },
+] as const;
 
 function createAttributes(rng: ReturnType<typeof getRng>): Record<WuxiaAttribute, number> {
   const attrs = {} as Record<WuxiaAttribute, number>;
@@ -64,6 +64,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     conditions: [],
     attributes: attrs,
     skills: ['基礎吐納'],
+    skillRanks: { 基礎吐納: 0 },
     gear: ['old-sword', 'plain-robe'],
     equipment: { weapon: 'old-sword', armor: 'plain-robe', accessory: null },
     sectId: null,
@@ -128,8 +129,8 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     pending: null,
     lifeLog: [
       `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
-      `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
-      `氣血上限 ${maxHealth} · 內力上限 ${maxQi}`,
+      '五維尚隱於骨血之中，日後自見分曉。',
+      '氣血與內息皆有根基，尚待淬煉。',
     ],
     phase: 'playing',
     tab: 'home',
@@ -197,6 +198,10 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (!c.conditions) c.conditions = [];
   if (!c.gear) c.gear = ['old-sword', 'plain-robe'];
   if (!c.equipment) c.equipment = { weapon: 'old-sword', armor: 'plain-robe', accessory: null };
+  if (!c.skillRanks) c.skillRanks = {};
+  for (const id of c.skills ?? []) {
+    if (c.skillRanks[id] === undefined) c.skillRanks[id] = 0;
+  }
   if (c.flags.baseMaxHp === undefined) c.flags.baseMaxHp = c.maxHealth;
   if (c.flags.baseMaxQi === undefined) c.flags.baseMaxQi = c.maxQi;
   if (c.stats.monthsLived === undefined) c.stats.monthsLived = 0;

@@ -96,6 +96,29 @@ describe('life event engine', () => {
     expect(state.character.maxQi).toBeGreaterThan(beforeQi);
   });
 
+  it('martial arts use ranks and may advance without XP numbers', async () => {
+    const { performPracticeAction } = await import('../core/life/actions');
+    const { MARTIAL_RANKS } = await import('../core/life/martialRanks');
+    const { skillDisplay } = await import('../core/life/flavor');
+    initRng(21);
+    const state = createNewLife(21);
+    expect(state.character.skillRanks['基礎吐納']).toBe(0);
+    expect(skillDisplay(state.character, '基礎吐納')).toContain(MARTIAL_RANKS[0]);
+    for (let i = 0; i < 40; i++) performPracticeAction(state, 'train_martial');
+    const ranks = Object.values(state.character.skillRanks);
+    expect(ranks.every((r) => r >= 0 && r <= 3)).toBe(true);
+  });
+
+  it('sect submenu can attempt joining a chosen sect', async () => {
+    const { performPracticeAction } = await import('../core/life/actions');
+    initRng(8);
+    const state = createNewLife(8);
+    state.character.martial = 40;
+    state.character.skillRanks['基礎吐納'] = 2;
+    const logs = performPracticeAction(state, 'join_sect', { sectId: 'sect_wudang' });
+    expect(logs.some((l) => /武當|機緣未到|根基尚淺/.test(l))).toBe(true);
+  });
+
   it('advances month and may assign pending event', () => {
     initRng(99);
     let state = createNewLife(99);

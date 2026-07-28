@@ -154,6 +154,8 @@ export interface LifeCharacter {
   conditions: LifeCondition[];
   attributes: Record<WuxiaAttribute, number>;
   skills: string[];
+  /** 武學階位 0–3：略有小成→神乎其技（後台百分比進階） */
+  skillRanks: Record<string, number>;
   gear: string[];
   equipment: {
     weapon: string | null;
@@ -235,6 +237,7 @@ export const lifeCharacterSchema = z.object({
     .default([]),
   attributes: z.record(z.enum(wuxiaAttributeKeys), z.number()),
   skills: z.array(z.string()),
+  skillRanks: z.record(z.string(), z.number()).default({}),
   gear: z.array(z.string()).default(['old-sword', 'plain-robe']),
   equipment: z
     .object({

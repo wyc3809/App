@@ -774,6 +774,37 @@ body::before {
   cursor: not-allowed;
 }
 
+.ink-practice-btn--sect {
+  border-left-color: var(--cinnabar);
+  background: linear-gradient(90deg, var(--cinnabar-soft), rgba(255, 255, 255, 0.28));
+}
+
+.ink-sect-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ink-sect-head h3 {
+  margin: 0 !important;
+}
+
+.ink-skill-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.ink-skill-list li {
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--ink-faint);
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-mid);
+}
+
 .ink-subhead {
   margin: 12px 0 6px !important;
   font-size: 0.78rem !important;

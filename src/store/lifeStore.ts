@@ -5,6 +5,7 @@ import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/e
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
+import { mystifyLines } from '@core/life/flavor';
 
 const CATALOG = fullCatalog();
 
@@ -32,7 +33,7 @@ export interface LifeStore {
   advanceMonth: () => void;
   advanceYear: () => void;
   choose: (choiceId: string) => void;
-  practice: (actionId: PracticeActionId) => void;
+  practice: (actionId: PracticeActionId, opts?: { sectId?: string }) => void;
   clearResult: () => void;
   setTab: (tab: NonNullable<LifeGameState['tab']>) => void;
   setDebugOpen: (open: boolean) => void;
@@ -119,36 +120,47 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state: result.state,
       sealText: result.died || result.state.phase === 'summary' ? '終' : '定',
-      flashLines: result.logs.slice(0, 4),
+      flashLines: mystifyLines(result.logs.slice(0, 4)),
       lastResult: {
         title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
         choiceText: choice?.text ?? choiceId,
-        feedback: result.feedback,
-        deltas: result.deltas,
+        feedback: mystifyLines([result.feedback])[0] ?? result.feedback,
+        deltas: mystifyLines(result.deltas),
       },
     });
   },
 
-  practice: (actionId: PracticeActionId) => {
+  practice: (actionId: PracticeActionId, opts?: { sectId?: string }) => {
     const { state } = get();
     if (!state || state.phase !== 'playing' || !state.character.alive) return;
     const next = structuredClone(state);
-    const logs = performPracticeAction(next, actionId);
+    const logs = performPracticeAction(next, actionId, opts);
     if (!next.character.alive) {
       next.phase = 'summary';
       next.summaryText = buildLifeSummary(next);
     }
     void save(next);
-    const label = PRACTICE_ACTIONS.find((a) => a.id === actionId)?.label ?? actionId;
+    const label =
+      PRACTICE_ACTIONS.find((a) => a.id === actionId)?.label ??
+      ({
+        join_sect: '拜入門派',
+        sect_duty: '門派差事',
+        sect_ask_elder: '請教長老',
+        sect_spar: '師門比武',
+        sect_guard: '守護山門',
+        sect_meditate: '靜室修煉',
+        sect_leave: '離開門派',
+      } as Record<string, string>)[actionId] ??
+      actionId;
     set({
       state: next,
       sealText: next.phase === 'summary' ? '終' : '煉',
-      flashLines: logs.slice(0, 4),
+      flashLines: mystifyLines(logs.slice(0, 4)),
       lastResult: {
         title: '修煉',
         choiceText: label,
-        feedback: logs[0] ?? '事畢。',
-        deltas: logs.slice(1),
+        feedback: mystifyLines([logs[0] ?? '事畢。'])[0] ?? '事畢。',
+        deltas: mystifyLines(logs.slice(1)),
       },
     });
   },

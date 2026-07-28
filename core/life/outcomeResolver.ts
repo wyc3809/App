@@ -4,6 +4,7 @@ import { syncRngFromState, snapshotRng } from './gameState';
 import { addCondition } from './monthly';
 import { raiseBaseMaxQi } from './equipment';
 import type { PackChoiceRaw, PackOutcomeOp } from './jianghuEventRepository';
+import { deltaMoney, deltaHealth, deltaRep } from './flavor';
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -55,7 +56,7 @@ export function resolvePackOutcomes(
   const rt = choice.result_text;
   const feedback =
     (typeof rt === 'string' ? rt : success ? rt?.success : rt?.failure) ||
-    logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|疲勞)/.test(l)) ||
+    logs.find((l) => !/^(財帛|氣血|名望|武學|內息|疲|銀兩)/.test(l)) ||
     logs[0] ||
     (success ? '你的選擇改變了事情的走向。' : '事情沒有完全按你的預期發展。');
 
@@ -86,60 +87,54 @@ function applyPackOutcome(
       if (path.includes('wealth.coins')) {
         c.money += amount;
         c.stats.wealthPeak = Math.max(c.stats.wealthPeak, c.money);
-        const line = amount > 0 ? `銀兩＋${amount}` : `銀兩${amount}`;
-        return { log: line, delta: line };
+        const line = deltaMoney(amount);
+        return line ? { log: line, delta: line } : {};
       }
       if (path.includes('health.hp')) {
         c.health = clamp(c.health + amount, 0, c.maxHealth);
-        const line = `氣血${amount > 0 ? '＋' : ''}${amount}`;
-        return { log: line, delta: line };
+        const line = deltaHealth(amount);
+        return line ? { log: line, delta: line } : {};
       }
       if (path.includes('health.fatigue') || path.includes('resources.time')) {
         c.fatigue = clamp(c.fatigue + Math.abs(amount), 0, 100);
-        const line = `疲勞＋${Math.abs(amount)}`;
-        return { log: line, delta: line };
+        return { log: '身心更累了些', delta: '略增疲態' };
       }
       if (path.includes('health.stress') || path.includes('emotions.stress')) {
         c.fatigue = clamp(c.fatigue + Math.ceil(Math.abs(amount) / 2), 0, 100);
         c.health = clamp(c.health - Math.max(1, Math.floor(Math.abs(amount) / 3)), 0, c.maxHealth);
-        const line = `心神受擾（氣血${-Math.max(1, Math.floor(Math.abs(amount) / 3))}）`;
-        return { log: line, delta: line };
+        return { log: '心神受擾', delta: '吃了些虧' };
       }
       if (path.includes('emotions.calm') || path.includes('emotions.curiosity')) {
         c.qi = clamp(c.qi + Math.abs(amount), 0, c.maxQi);
-        const line = `內息＋${Math.abs(amount)}`;
-        return { log: line, delta: line };
+        return { log: '心緒稍定，內息回籠', delta: '內息略復' };
       }
       if (path.includes('reputation')) {
         const rep = Math.sign(amount) * Math.max(1, Math.ceil(Math.abs(amount) / 2));
         c.reputation += rep;
-        const line = `名望${rep > 0 ? '＋' : ''}${rep}`;
-        return { log: line, delta: line };
+        const line = deltaRep(rep);
+        return line ? { log: line, delta: line } : {};
       }
       if (path.includes('relationships')) {
         c.reputation += Math.sign(amount) || 1;
-        const line = '人情有變';
-        return { log: line, delta: `名望${Math.sign(amount) > 0 ? '＋' : '−'}1` };
+        return { log: '人情有變', delta: '人情有變' };
       }
       if (path.includes('attributes')) {
         const gain = Math.sign(amount) * Math.max(1, Math.ceil(Math.abs(amount) / 8));
         if (path.includes('perception') || path.includes('intelligence')) {
           c.attributes.wuXing = clamp(c.attributes.wuXing + gain, 1, 100);
         } else if (path.includes('charisma')) {
-          c.attributes.fuYuan = clamp(c.attributes.fuYuan + gain, 1, 100);
+          c.attributes.meiLi = clamp(c.attributes.meiLi + gain, 1, 100);
         } else if (path.includes('courage')) {
-          c.attributes.genGu = clamp(c.attributes.genGu + gain, 1, 100);
+          c.attributes.danShi = clamp(c.attributes.danShi + gain, 1, 100);
         } else {
           c.martial += Math.abs(gain);
         }
-        const line = `閱歷加深（${path.split('.').pop()}）`;
-        return { log: line, delta: line };
+        return { log: '閱歷更深了一分', delta: '閱歷有進' };
       }
       if (path.includes('internal') || path.includes('qi')) {
         raiseBaseMaxQi(c, Math.max(1, Math.ceil(Math.abs(amount) / 2)));
         c.qi = clamp(c.qi + Math.abs(amount), 0, c.maxQi);
-        const line = `內力有進（上限 ${c.maxQi}）`;
-        return { log: line, delta: line };
+        return { log: '內力根基似有鬆動進境', delta: '內力有進' };
       }
       return { log: `事態推移（${path}）` };
     }

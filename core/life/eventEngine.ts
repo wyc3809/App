@@ -16,6 +16,7 @@ import { grantGear } from './equipment';
 import { withRiskAndThree } from './choiceEnrich';
 import { pickPackEvent, getPackChoice } from './jianghuEventRepository';
 import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
+import { tryAdvanceRandomSkill } from './flavor';
 
 function enrichLegacyEvent(event: GameEvent): GameEvent {
   if (event.choices.length >= 3 && event.choices.every((c) => c.outcomes.length >= 2)) {
@@ -177,7 +178,12 @@ export function applyChoice(
 
   if (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) {
     state.character.stats.combats += 1;
-    if (logs.some((l) => /勝|擊敗|反殺|僅勝/.test(l))) state.character.stats.combatsWon += 1;
+    if (logs.some((l) => /勝|擊敗|反殺|僅勝|險勝/.test(l))) state.character.stats.combatsWon += 1;
+    const adv = tryAdvanceRandomSkill(state, 'combat');
+    if (adv) {
+      logs.push(adv);
+      deltas.push('武學進境');
+    }
   }
 
   markEventComplete(state, event.id);

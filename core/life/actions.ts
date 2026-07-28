@@ -3,38 +3,57 @@ import { getRng } from '@core/random';
 import { getGearDef, rollForgeResult, type GearRarity } from '@data/equipment/catalog';
 import { addCondition } from './monthly';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, equipGear, ensureGear } from './equipment';
-import { snapshotRng, syncRngFromState } from './gameState';
+import { snapshotRng, syncRngFromState, SECT_DEFS } from './gameState';
 import { pushChronicle } from './chronicle';
+import {
+  learnMartialArt,
+  tryAdvanceRandomSkill,
+  tryAdvanceSkill,
+} from './flavor';
 
 export type PracticeActionId =
   | 'train_martial'
   | 'train_internal'
   | 'temper_body'
-  | 'join_sect'
-  | 'sect_duty'
   | 'forge'
   | 'seek_master'
   | 'heal'
-  | 'equip_best';
+  | 'equip_best'
+  | 'join_sect'
+  | 'sect_duty'
+  | 'sect_ask_elder'
+  | 'sect_spar'
+  | 'sect_guard'
+  | 'sect_meditate'
+  | 'sect_leave';
 
 export interface PracticeAction {
   id: PracticeActionId;
   label: string;
   hint: string;
-  cost?: number;
 }
 
+/** 主修煉選單（門派另開子頁） */
 export const PRACTICE_ACTIONS: PracticeAction[] = [
-  { id: 'train_martial', label: '苦練外功', hint: '武學↑，略耗氣血' },
-  { id: 'train_internal', label: '打坐運功', hint: '內息與內力上限↑' },
-  { id: 'temper_body', label: '淬體強身', hint: '氣血上限↑，疲勞↑' },
-  { id: 'join_sect', label: '拜入門派', hint: '未入派時可試拜師' },
-  { id: 'sect_duty', label: '門派差事', hint: '需已入派 · 功勳與銀兩' },
-  { id: 'forge', label: '鑄造兵器', hint: '花費 40 兩，或得良器乃至神兵', cost: 40 },
-  { id: 'seek_master', label: '尋訪高人', hint: '低機率習得秘傳武學' },
-  { id: 'heal', label: '醫館調養', hint: '花費 15 兩，恢復並減傷勢', cost: 15 },
-  { id: 'equip_best', label: '整裝披掛', hint: '自動裝備庫中最佳器物' },
+  { id: 'train_martial', label: '苦練外功', hint: '拆招練式，或有進境' },
+  { id: 'train_internal', label: '打坐運功', hint: '調息養氣，穩固根基' },
+  { id: 'temper_body', label: '淬體強身', hint: '藥浴樁功，體魄漸堅' },
+  { id: 'forge', label: '鑄造兵器', hint: '爐火中求器，成敗難料' },
+  { id: 'seek_master', label: '尋訪高人', hint: '雲水之間，或逢奇緣' },
+  { id: 'heal', label: '醫館調養', hint: '傷勢與疲態，慢慢調理' },
+  { id: 'equip_best', label: '整裝披掛', hint: '擇良器隨身' },
 ];
+
+/** 已入門派後的門內事務 */
+export const SECT_INNER_ACTIONS: PracticeAction[] = [
+  { id: 'sect_duty', label: '門派差事', hint: '跑腿護院，積些人情' },
+  { id: 'sect_ask_elder', label: '請教長老', hint: '點撥一二，或悟舊招' },
+  { id: 'sect_spar', label: '師門比武', hint: '實戰淬鍊，進階可期' },
+  { id: 'sect_guard', label: '守護山門', hint: '夜巡風雨，磨礪心膽' },
+  { id: 'sect_meditate', label: '靜室修煉', hint: '門中心法，閉目調息' },
+];
+
+export { SECT_DEFS };
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -48,7 +67,11 @@ const RARITY_RANK: Record<GearRarity, number> = {
   divine: 5,
 };
 
-export function performPracticeAction(state: LifeGameState, actionId: PracticeActionId): string[] {
+export function performPracticeAction(
+  state: LifeGameState,
+  actionId: PracticeActionId,
+  opts?: { sectId?: string },
+): string[] {
   if (!state.character.alive || state.phase !== 'playing') return ['你已無法行動。'];
   if (state.pending) return ['眼前尚有未決之事，先作抉擇。'];
 
@@ -56,15 +79,18 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
   const rng = getRng();
   const c = state.character;
   ensureGear(c);
+  if (!c.skillRanks) c.skillRanks = {};
   const logs: string[] = [];
 
   switch (actionId) {
     case 'train_martial': {
-      const gain = rng.nextInt(2, 5);
-      c.martial += gain;
       c.health = clamp(c.health - rng.nextInt(0, 6), 1, c.maxHealth);
       c.fatigue = clamp(c.fatigue + rng.nextInt(4, 10), 0, 100);
-      logs.push(`你苦練外功，武學 +${gain}。`);
+      c.martial += rng.nextInt(1, 3);
+      logs.push('你苦練外功，汗水浸透衣衫。');
+      const adv = tryAdvanceRandomSkill(state, 'practice');
+      if (adv) logs.push(adv);
+      else logs.push('招式仍有滯澀，尚未突破。');
       if (rng.chance(0.12)) {
         logs.push('走岔半招，皮肉受苦。');
         addCondition(state, 'bleeding');
@@ -72,11 +98,14 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
       break;
     }
     case 'train_internal': {
-      const gain = rng.nextInt(8, 18);
       raiseBaseMaxQi(c, rng.nextInt(3, 8));
-      c.qi = clamp(c.qi + gain, 0, c.maxQi);
-      c.martial += 1;
-      logs.push(`你打坐運功，內息回復，內力上限提升（現 ${c.maxQi}）。`);
+      c.qi = clamp(c.qi + rng.nextInt(8, 18), 0, c.maxQi);
+      logs.push('你打坐運功，內息漸漸歸攏。');
+      const breath = c.skills.find((s) => /breath|吐納|internal/i.test(s)) ?? c.skills[0];
+      if (breath) {
+        const adv = tryAdvanceSkill(state, breath, 'practice');
+        if (adv) logs.push(adv);
+      }
       if (rng.chance(0.08)) {
         logs.push('氣息逆行，險些走火。');
         addCondition(state, 'internal');
@@ -84,10 +113,9 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
       break;
     }
     case 'temper_body': {
-      const up = rng.nextInt(8, 20);
-      raiseBaseMaxHp(c, up);
+      raiseBaseMaxHp(c, rng.nextInt(8, 20));
       c.fatigue = clamp(c.fatigue + rng.nextInt(6, 14), 0, 100);
-      logs.push(`你以藥浴與樁功淬體，氣血上限 +${up}（現 ${c.maxHealth}）。`);
+      logs.push('藥浴與樁功之後，你覺得筋骨更沉實了。');
       break;
     }
     case 'join_sect': {
@@ -95,14 +123,26 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
         logs.push(`你已是${state.sects[c.sectId]?.name ?? '門派'}中人。`);
         break;
       }
-      if (c.martial < 12) {
-        logs.push('武學尚淺，各派拒之門外。');
+      const target = opts?.sectId;
+      if (!target || !state.sects[target]) {
+        logs.push('你尚未選定要拜的門派。');
         break;
       }
-      const id = rng.pick(Object.keys(state.sects));
-      c.sectId = id;
+      // 後台門檻，不對玩家顯示數字
+      if (c.martial < 12 && overallWeak(c)) {
+        logs.push(`${state.sects[target].name}看你根基尚淺，暫未收錄。`);
+        break;
+      }
+      if (rng.chance(0.22)) {
+        logs.push(`${state.sects[target].name}此番未允，只道「機緣未到」。`);
+        break;
+      }
+      c.sectId = target;
       c.flags.joined_sect = true;
-      logs.push(`你拜入${state.sects[id].name}，成為外門弟子。`);
+      logs.push(`你拜入${state.sects[target].name}，成為外門弟子。`);
+      // 門派入門武學
+      const artId = `sect_art_${target}`;
+      logs.push(learnMartialArt(state, artId, `${state.sects[target].name}入門心法`));
       break;
     }
     case 'sect_duty': {
@@ -110,16 +150,89 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
         logs.push('你尚未拜入門派。');
         break;
       }
-      const meritPay = rng.nextInt(8, 20);
-      c.money += meritPay;
-      c.martial += 1;
+      c.money += rng.nextInt(8, 20);
       c.reputation += 1;
-      logs.push(`你完成${state.sects[c.sectId].name}差事，得銀 ${meritPay} 兩。`);
+      c.martial += 1;
+      logs.push(`你辦完${state.sects[c.sectId].name}差事，師兄師姐多看你一眼。`);
+      break;
+    }
+    case 'sect_ask_elder': {
+      if (!c.sectId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      c.fatigue = clamp(c.fatigue + 3, 0, 100);
+      logs.push('長老只點了三處破綻，餘下要你自己悟。');
+      const adv = tryAdvanceRandomSkill(state, 'practice');
+      if (adv) logs.push(adv);
+      else logs.push('你似懂非懂，回去還得再練。');
+      break;
+    }
+    case 'sect_spar': {
+      if (!c.sectId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      c.health = clamp(c.health - rng.nextInt(2, 12), 1, c.maxHealth);
+      c.fatigue = clamp(c.fatigue + rng.nextInt(5, 12), 0, 100);
+      state.character.stats.combats += 1;
+      if (rng.chance(0.55)) {
+        state.character.stats.combatsWon += 1;
+        logs.push('師門比武，你險勝半招。');
+      } else {
+        logs.push('師門比武，你落了下風，卻看清了自己的弱處。');
+      }
+      const adv = tryAdvanceRandomSkill(state, 'combat');
+      if (adv) logs.push(adv);
+      break;
+    }
+    case 'sect_guard': {
+      if (!c.sectId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      c.fatigue = clamp(c.fatigue + rng.nextInt(4, 10), 0, 100);
+      c.attributes.danShi = clamp(c.attributes.danShi + (rng.chance(0.4) ? 1 : 0), 1, 100);
+      logs.push('你守了一夜山門，風聲鶴唳中心膽更定。');
+      if (rng.chance(0.15)) {
+        logs.push('遇著探子，你與師兄合力驅離。');
+        const adv = tryAdvanceRandomSkill(state, 'combat');
+        if (adv) logs.push(adv);
+      }
+      break;
+    }
+    case 'sect_meditate': {
+      if (!c.sectId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      raiseBaseMaxQi(c, rng.nextInt(2, 6));
+      c.qi = clamp(c.qi + rng.nextInt(10, 22), 0, c.maxQi);
+      logs.push('靜室之中，你按門中心法緩緩吐納。');
+      const sectArt = c.skills.find((s) => s.startsWith('sect_art_'));
+      if (sectArt) {
+        const adv = tryAdvanceSkill(state, sectArt, 'practice');
+        if (adv) logs.push(adv);
+      } else {
+        const adv = tryAdvanceRandomSkill(state, 'practice');
+        if (adv) logs.push(adv);
+      }
+      break;
+    }
+    case 'sect_leave': {
+      if (!c.sectId) {
+        logs.push('你本就不屬任何門派。');
+        break;
+      }
+      const name = state.sects[c.sectId]?.name ?? '門派';
+      c.sectId = null;
+      c.reputation = Math.max(0, c.reputation - 3);
+      logs.push(`你辭別${name}，从此山門內外，兩不相干。`);
       break;
     }
     case 'forge': {
       if (c.money < 40) {
-        logs.push('銀兩不足四十，鐵匠不肯開工。');
+        logs.push('鐵匠看了看你的錢袋，搖頭不肯開工。');
         break;
       }
       c.money -= 40;
@@ -140,23 +253,23 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
         const arts = [
           { id: 'art_nine_shadow', name: '九影迷踪步' },
           { id: 'art_cold_palm', name: '寒霜掌' },
-          { id: 'art_iron_body', name: '鐵布衫（入門）' },
+          { id: 'art_iron_body', name: '鐵布衫' },
           { id: 'art_moon_sword', name: '弄月劍法' },
           { id: 'art_void_breath', name: '空冥吐納' },
         ];
         const art = rng.pick(arts);
         if (!c.skills.includes(art.id)) {
-          c.skills.push(art.id);
+          logs.push(learnMartialArt(state, art.id, art.name));
           raiseBaseMaxQi(c, rng.nextInt(10, 25));
-          c.martial += rng.nextInt(5, 12);
-          logs.push(`奇遇高人指點，你習得「${art.name}」。`);
         } else {
-          c.martial += 3;
-          logs.push('高人只點破你舊招中的滯澀。');
+          const adv = tryAdvanceSkill(state, art.id, 'practice');
+          logs.push(adv ?? '高人只點破你舊招中的滯澀。');
         }
       } else if (rng.chance(0.25)) {
         logs.push('尋訪無果，反而遇上剪徑之徒。');
         c.health = clamp(c.health - rng.nextInt(10, 25), 0, c.maxHealth);
+        const adv = tryAdvanceRandomSkill(state, 'combat');
+        if (adv) logs.push(adv);
         if (c.health <= 0) {
           c.alive = false;
           logs.push('你力竭倒於山道。');
@@ -169,7 +282,7 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
     }
     case 'heal': {
       if (c.money < 15) {
-        logs.push('藥金不足。');
+        logs.push('藥金不足，醫者只給你一碗清茶。');
         break;
       }
       c.money -= 15;
@@ -200,4 +313,10 @@ export function performPracticeAction(state: LifeGameState, actionId: PracticeAc
   pushChronicle(state, logs);
   snapshotRng(state);
   return logs;
+}
+
+function overallWeak(c: LifeGameState['character']): boolean {
+  const ranks = Object.values(c.skillRanks ?? {});
+  const best = ranks.length ? Math.max(...ranks) : 0;
+  return best < 1 && c.martial < 12;
 }

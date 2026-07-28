@@ -1,19 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { wuxiaAttributeKeys, wuxiaAttributeLabels } from '@interfaces/lifeEngine';
 import { LIFE_CATALOG, useLifeStore } from '../../store/lifeStore';
 import { getEventById } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
-import { PRACTICE_ACTIONS } from '@core/life/actions';
+import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef } from '@data/equipment/catalog';
-import { skillLabel } from '@data/skills/catalog';
+import {
+  attrLabel,
+  fatigueLabel,
+  moneyLabel,
+  overallMartialLabel,
+  reputationLabel,
+  skillDisplay,
+  vitalHealthLabel,
+  vitalQiLabel,
+  worldTone,
+} from '@core/life/flavor';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
 type Props = {
   state: LifeGameState;
 };
+
+type PracticeView = 'main' | 'sect';
 
 const RARITY_ZH: Record<string, string> = {
   common: '凡',
@@ -37,12 +49,17 @@ export function InkPlayScreen({ state }: Props) {
   const sealText = useLifeStore((s) => s.sealText);
   const flashLines = useLifeStore((s) => s.flashLines);
   const clearSeal = useLifeStore((s) => s.clearSeal);
+  const [practiceView, setPracticeView] = useState<PracticeView>('main');
 
   useEffect(() => {
     if (!sealText) return;
     const t = window.setTimeout(() => clearSeal(), 900);
     return () => window.clearTimeout(t);
   }, [sealText, clearSeal]);
+
+  useEffect(() => {
+    if ((state.tab ?? 'home') !== 'practice') setPracticeView('main');
+  }, [state.tab]);
 
   const c = state.character;
   const month = state.month ?? 1;
@@ -60,6 +77,7 @@ export function InkPlayScreen({ state }: Props) {
   const gearIds = c.gear ?? [];
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
   const showResult = Boolean(lastResult) && state.phase === 'playing';
+  const busy = Boolean(state.pending) || showResult || !c.alive;
 
   return (
     <div
@@ -73,7 +91,7 @@ export function InkPlayScreen({ state }: Props) {
         <div>
           <h2 className="ink-name">{c.name}</h2>
           <p className="ink-meta">
-            {c.age} 歲 · {stage} · {state.year}年{month}月（{seasonLabel(month)}）
+            {stage} · {state.year}年{month}月（{seasonLabel(month)}）
             {sect ? ` · ${sect.name}` : ''}
           </p>
         </div>
@@ -87,7 +105,7 @@ export function InkPlayScreen({ state }: Props) {
         </button>
       </header>
 
-      {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
+      {saveLabel && <p className="ink-save">已落筆</p>}
 
       <nav className="ink-tabs" aria-label="分卷">
         {(
@@ -112,13 +130,13 @@ export function InkPlayScreen({ state }: Props) {
       {(tab === 'home' || tab === 'jianghu') && (
         <section className="ink-world" aria-label="天下風聲">
           <p>
-            秩序 {world?.order ?? '—'} · 險惡 {world?.danger ?? '—'} · 市面 {world?.economy ?? '—'} · 傳聞{' '}
-            {world?.rumors ?? '—'}
+            {worldTone(world?.order ?? 50, 'order')} · {worldTone(world?.danger ?? 50, 'danger')} ·{' '}
+            {worldTone(world?.economy ?? 50, 'economy')} · {worldTone(world?.rumors ?? 50, 'rumors')}
           </p>
           <p className="ink-note">{world?.seasonMood} · {world?.lastWorldShift}</p>
           {story && (
             <p className="ink-note">
-              第{story.chapter}章「{story.title}」· {story.goal}（{story.progress}/{story.nextMilestone}）
+              「{story.title}」· {story.goal}
             </p>
           )}
         </section>
@@ -127,33 +145,29 @@ export function InkPlayScreen({ state }: Props) {
       <section className="ink-vitals" aria-label="氣血內力">
         <div className="ink-vitals-label">
           <span>氣血</span>
-          <span>
-            {Math.round(c.health)}/{c.maxHealth}
-          </span>
+          <span>{vitalHealthLabel(c)}</span>
         </div>
-        <div className="ink-bar">
+        <div className="ink-bar" title="氣血盛衰">
           <div className="ink-bar-fill" style={{ width: `${hpPct}%` }} />
         </div>
         <div className="ink-vitals-label">
           <span>內力</span>
-          <span>
-            {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
-          </span>
+          <span>{vitalQiLabel(c)}</span>
         </div>
-        <div className="ink-bar ink-bar--qi">
+        <div className="ink-bar ink-bar--qi" title="內息深淺">
           <div className="ink-bar-fill ink-bar-fill--qi" style={{ width: `${qiPct}%` }} />
         </div>
         <div className="ink-stat-row">
-          <span>銀兩 {c.money}</span>
-          <span>名望 {c.reputation}</span>
-          <span>武學 {c.martial}</span>
-          <span>疲勞 {c.fatigue ?? 0}</span>
+          <span>{moneyLabel(c.money)}</span>
+          <span>{reputationLabel(c.reputation)}</span>
+          <span>武學·{overallMartialLabel(c)}</span>
+          <span>{fatigueLabel(c.fatigue ?? 0)}</span>
         </div>
         {(c.conditions?.length ?? 0) > 0 && (
           <div className="ink-chips">
             {c.conditions.map((cond) => (
               <span key={cond.id} className="ink-chip">
-                {cond.name}·{cond.monthsLeft}月
+                {cond.name}·未癒
               </span>
             ))}
           </div>
@@ -167,39 +181,116 @@ export function InkPlayScreen({ state }: Props) {
             {wuxiaAttributeKeys.map((k) => (
               <div key={k} className="ink-attr">
                 <span className="ink-attr-label">{wuxiaAttributeLabels[k]}</span>
-                <strong>{c.attributes[k]}</strong>
+                <strong>{attrLabel(c.attributes[k])}</strong>
               </div>
             ))}
           </div>
-          <p className="ink-note">
-            體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0}
-          </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
           {c.skills.length > 0 && (
-            <p className="ink-note">武功 · {c.skills.map(skillLabel).join('、')}</p>
+            <ul className="ink-skill-list">
+              {c.skills.map((id) => (
+                <li key={id}>{skillDisplay(c, id)}</li>
+              ))}
+            </ul>
           )}
         </section>
       )}
 
       {tab === 'practice' && (
         <section className="ink-panel ink-practice">
-          <h3>修煉</h3>
-          <p className="ink-note">仿人生模擬之行動——拜師、苦練、鑄兵、尋訪奇遇。</p>
-          <div className="ink-practice-grid">
-            {PRACTICE_ACTIONS.map((act) => (
-              <button
-                key={act.id}
-                type="button"
-                className="ink-practice-btn"
-                disabled={Boolean(state.pending) || showResult || !c.alive}
-                onClick={() => practice(act.id)}
-              >
-                <strong>{act.label}</strong>
-                <span>{act.hint}</span>
-              </button>
-            ))}
-          </div>
+          {practiceView === 'main' && (
+            <>
+              <h3>修煉</h3>
+              <p className="ink-note">苦練、鑄兵、尋訪——進境難測，全看機緣。</p>
+              <div className="ink-practice-grid">
+                <button
+                  type="button"
+                  className="ink-practice-btn ink-practice-btn--sect"
+                  disabled={busy}
+                  onClick={() => setPracticeView('sect')}
+                >
+                  <strong>門派</strong>
+                  <span>{sect ? `${sect.name} · 進入門中` : '尚未入派 · 擇門拜師'}</span>
+                </button>
+                {PRACTICE_ACTIONS.map((act) => (
+                  <button
+                    key={act.id}
+                    type="button"
+                    className="ink-practice-btn"
+                    disabled={busy}
+                    onClick={() => practice(act.id)}
+                  >
+                    <strong>{act.label}</strong>
+                    <span>{act.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {practiceView === 'sect' && (
+            <>
+              <div className="ink-sect-head">
+                <h3>{sect ? sect.name : '擇門拜師'}</h3>
+                <button type="button" className="ink-btn ink-btn--quiet" onClick={() => setPracticeView('main')}>
+                  返回
+                </button>
+              </div>
+              {!sect ? (
+                <>
+                  <p className="ink-note">各派門風不同，拜入與否，全看當下機緣。</p>
+                  <div className="ink-practice-grid">
+                    {SECT_DEFS.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="ink-practice-btn"
+                        disabled={busy}
+                        onClick={() => {
+                          practice('join_sect', { sectId: s.id });
+                          setPracticeView('main');
+                        }}
+                      >
+                        <strong>{s.name}</strong>
+                        <span>{s.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="ink-note">既入師門，差事、比武、靜修皆可磨礪身心。</p>
+                  <div className="ink-practice-grid">
+                    {SECT_INNER_ACTIONS.map((act) => (
+                      <button
+                        key={act.id}
+                        type="button"
+                        className="ink-practice-btn"
+                        disabled={busy}
+                        onClick={() => practice(act.id)}
+                      >
+                        <strong>{act.label}</strong>
+                        <span>{act.hint}</span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="ink-practice-btn"
+                      disabled={busy}
+                      onClick={() => {
+                        practice('sect_leave');
+                        setPracticeView('main');
+                      }}
+                    >
+                      <strong>離開門派</strong>
+                      <span>割席而去，山門內外兩不相干</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           <h3 className="ink-subhead">行囊裝備</h3>
           <div className="ink-gear-equipped">
@@ -232,7 +323,11 @@ export function InkPlayScreen({ state }: Props) {
             </ul>
           )}
           {c.skills.length > 0 && (
-            <p className="ink-note">已習武功 · {c.skills.map(skillLabel).join('、')}</p>
+            <ul className="ink-skill-list">
+              {c.skills.map((id) => (
+                <li key={id}>{skillDisplay(c, id)}</li>
+              ))}
+            </ul>
           )}
         </section>
       )}
@@ -280,7 +375,7 @@ export function InkPlayScreen({ state }: Props) {
       {state.phase === 'playing' && pendingEvent && !showResult && (
         <section className="ink-panel ink-event">
           <p className="ink-event-year">
-            {state.year}年{month}月 · {c.age}歲
+            {state.year}年{month}月
             {state.pending?.kind === 'special' ? ' · 奇遇' : ''}
           </p>
           <h3>{displayTitle}</h3>
