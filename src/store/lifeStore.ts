@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { EVENT_CATALOG } from '@data/events/catalog';
 import { createNewLife, syncRngFromState } from '@core/life/gameState';
-import { applyChoice, getEventById, resolvePendingAuto, startYear } from '@core/life/eventEngine';
+import { applyChoice, getEventById, startYear } from '@core/life/eventEngine';
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
 
 export interface LifeStore {
@@ -10,14 +10,17 @@ export interface LifeStore {
   saveLabel: string | null;
   debugOpen: boolean;
   bootstrapped: boolean;
+  /** 短暫朱砂印文案 */
+  sealText: string | null;
+  flashLines: string[];
   bootstrap: () => Promise<void>;
   newLife: (seed?: number) => void;
   continueLife: () => Promise<boolean>;
   advanceYear: () => void;
   choose: (choiceId: string) => void;
-  resolveBirthIfNeeded: () => void;
   setDebugOpen: (open: boolean) => void;
   importState: (state: LifeGameState) => void;
+  clearSeal: () => void;
 }
 
 async function save(state: LifeGameState) {
@@ -29,6 +32,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   saveLabel: null,
   debugOpen: false,
   bootstrapped: false,
+  sealText: null,
+  flashLines: [],
 
   bootstrap: async () => {
     if (get().bootstrapped) return;
@@ -41,6 +46,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state,
       saveLabel: new Date().toLocaleString('zh-TW'),
+      sealText: '生',
+      flashLines: [],
     });
   },
 
@@ -51,18 +58,10 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state: loaded.state,
       saveLabel: new Date(loaded.savedAt).toLocaleString('zh-TW'),
+      sealText: null,
+      flashLines: [],
     });
     return true;
-  },
-
-  resolveBirthIfNeeded: () => {
-    const { state } = get();
-    if (!state?.pending || state.pending.eventId !== 'life_birth') return;
-    const event = getEventById(EVENT_CATALOG, 'life_birth');
-    if (!event) return;
-    const result = resolvePendingAuto(structuredClone(state), event);
-    void save(result.state);
-    set({ state: result.state });
   },
 
   advanceYear: () => {
@@ -71,7 +70,11 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const next = structuredClone(state);
     startYear(next, EVENT_CATALOG);
     void save(next);
-    set({ state: next });
+    set({
+      state: next,
+      sealText: next.phase === 'summary' ? '終' : '年',
+      flashLines: [],
+    });
   },
 
   choose: (choiceId: string) => {
@@ -82,7 +85,11 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const next = structuredClone(state);
     const result = applyChoice(next, event, choiceId);
     void save(result.state);
-    set({ state: result.state });
+    set({
+      state: result.state,
+      sealText: result.died || result.state.phase === 'summary' ? '終' : '定',
+      flashLines: result.logs.slice(0, 4),
+    });
   },
 
   setDebugOpen: (open: boolean) => set({ debugOpen: open }),
@@ -91,6 +98,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     void save(state);
     set({ state });
   },
+
+  clearSeal: () => set({ sealText: null }),
 }));
 
 export async function resetLifeSave() {

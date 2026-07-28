@@ -964,3 +964,17 @@ export const EVENT_CATALOG: GameEvent[] = [
 ];
 
 export const EVENT_COUNT = EVENT_CATALOG.length;
+
+/** 依標題／id 補 tags，供人生階段權重使用 */
+for (const ev of EVENT_CATALOG) {
+  if (ev.tags?.length) continue;
+  const tags: string[] = [];
+  if (/child|birth|family|parent|童年|父母|襁褓|降生|嬉戲/.test(ev.id + ev.title)) tags.push('childhood', 'family');
+  if (/love|romance|表白|燈會|情敵|眷屬/.test(ev.id + ev.title)) tags.push('romance');
+  if (/duel|assassin|bandit|rival|combat|決鬥|殺手|山賊|宿敵|比武/.test(ev.id + ev.title))
+    tags.push('combat', 'martial');
+  if (/sect|master|門派|拜|劍譜|內力|藏經|晉升/.test(ev.id + ev.title)) tags.push('martial');
+  if (/old|fatal|花甲|惡疾|遲暮|生涯/.test(ev.id + ev.title)) tags.push('old_age');
+  if (/die|墜崖|身亡/.test(ev.id + ev.title)) tags.push('death');
+  if (tags.length) ev.tags = tags;
+}

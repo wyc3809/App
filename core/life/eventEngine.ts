@@ -4,6 +4,8 @@ import { applyEffects } from './effects';
 import { meetsRequirements } from './requirements';
 import { advanceYear, markEventComplete, snapshotRng, syncRngFromState } from './gameState';
 import { buildLifeSummary } from './summary';
+import { pushChronicle, yearQuietLine } from './chronicle';
+import { stageWeightBias } from './stages';
 import { getRng } from '@core/random';
 
 export function validateEvent(raw: unknown): GameEvent {
@@ -19,21 +21,28 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
-  return catalog.filter((e) => meetsRequirements(state, e.requirements, e.id));
+  return catalog.filter((e) => {
+    if (e.id === 'life_birth' && state.character.age > 0) return false;
+    if (e.id === 'life_birth' && state.completedEvents.includes('life_birth')) return false;
+    return meetsRequirements(state, e.requirements, e.id);
+  });
+}
+
+function eventWeight(state: LifeGameState, e: GameEvent): number {
+  const base = e.weight ?? 10;
+  return base * stageWeightBias(state.character.age, e.tags);
 }
 
 export function pickYearEvent(catalog: GameEvent[], state: LifeGameState): GameEvent | null {
   syncRngFromState(state);
   const rng = getRng();
-  const eligible = listEligibleEvents(catalog, state).filter(
-    (e) => e.id !== 'life_birth' || state.character.age === 0,
-  );
+  const eligible = listEligibleEvents(catalog, state);
   if (!eligible.length) return null;
 
-  const totalWeight = eligible.reduce((s, e) => s + (e.weight ?? 10), 0);
+  const totalWeight = eligible.reduce((s, e) => s + eventWeight(state, e), 0);
   let roll = rng.nextFloat() * totalWeight;
   for (const e of eligible) {
-    roll -= e.weight ?? 10;
+    roll -= eventWeight(state, e);
     if (roll <= 0) {
       snapshotRng(state);
       return e;
@@ -79,6 +88,20 @@ export interface ResolveResult {
   died: boolean;
 }
 
+function maybeTrackCombat(state: LifeGameState, event: GameEvent, logs: string[]): void {
+  const tags = event.tags ?? [];
+  const combatLike =
+    tags.includes('combat') ||
+    event.id.includes('duel') ||
+    event.id.includes('assassin') ||
+    event.id.includes('bandit') ||
+    event.id.includes('rival');
+  if (!combatLike) return;
+  state.character.stats.combats += 1;
+  const won = logs.some((l) => /勝|擊敗|反殺|僅勝/.test(l));
+  if (won) state.character.stats.combatsWon += 1;
+}
+
 export function applyChoice(
   state: LifeGameState,
   event: GameEvent,
@@ -95,10 +118,11 @@ export function applyChoice(
 
   const outcome = pickOutcomeForChoice(state, choice.outcomes);
   const { logs, died } = applyEffects(state, outcome.effects);
+  maybeTrackCombat(state, event, logs);
 
   markEventComplete(state, event.id);
   state.pending = null;
-  state.lifeLog = [...logs, ...state.lifeLog].slice(0, 120);
+  pushChronicle(state, [`「${event.title}」——${choice.text}`, ...logs]);
 
   if (died || !state.character.alive) {
     state.character.alive = false;
@@ -119,6 +143,7 @@ export function startYear(state: LifeGameState, catalog: GameEvent[]): LifeGameS
   if (!state.character.alive) {
     state.phase = 'summary';
     state.summaryText = buildLifeSummary(state);
+    pushChronicle(state, ['氣血耗盡，墨盡人散。']);
     return state;
   }
 
@@ -126,7 +151,7 @@ export function startYear(state: LifeGameState, catalog: GameEvent[]): LifeGameS
   if (event) {
     state.pending = { eventId: event.id, year: state.year };
   } else {
-    state.lifeLog = [`${state.year}年風平浪靜。`, ...state.lifeLog].slice(0, 120);
+    pushChronicle(state, [yearQuietLine(state)]);
   }
   snapshotRng(state);
   return state;
@@ -138,7 +163,7 @@ export function resolvePendingAuto(state: LifeGameState, event: GameEvent): Reso
   const { logs, died } = applyEffects(state, outcome.effects);
   markEventComplete(state, event.id);
   state.pending = null;
-  state.lifeLog = [...logs, ...state.lifeLog].slice(0, 120);
+  pushChronicle(state, [`「${event.title}」`, ...logs]);
   if (died) {
     state.phase = 'summary';
     state.summaryText = buildLifeSummary(state);

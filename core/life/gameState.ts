@@ -103,8 +103,8 @@ export function createNewLife(seed?: number): LifeGameState {
     completedEvents: [],
     pending: { eventId: 'life_birth', year },
     lifeLog: [
-      `你降生於${year}年，父${fatherName}、母${motherName}為你取名「${name}」。`,
-      `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan}`,
+      `【${year}·襁褓】父${fatherName}、母${motherName}為你取名「${name}」，一筆落紙，一生起筆。`,
+      `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
     ],
     phase: 'playing',
   };

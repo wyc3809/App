@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT_CATALOG, EVENT_COUNT } from '../data/events/catalog';
-import { validateEvents } from '../core/life/eventEngine';
+import {
+  validateEvents,
+  applyChoice,
+  pickYearEvent,
+  startYear,
+  getEventById,
+} from '../core/life/eventEngine';
 import { createNewLife } from '../core/life/gameState';
-import { applyChoice, pickYearEvent, startYear } from '../core/life/eventEngine';
-import { getEventById } from '../core/life/eventEngine';
 import { meetsRequirements } from '../core/life/requirements';
+import { getLifeStage } from '../core/life/stages';
 import { initRng } from '../core/random';
 
 describe('life event catalog', () => {
@@ -12,6 +17,14 @@ describe('life event catalog', () => {
     expect(EVENT_COUNT).toBeGreaterThanOrEqual(50);
     const events = validateEvents(EVENT_CATALOG);
     expect(events.length).toBe(EVENT_COUNT);
+  });
+});
+
+describe('life stages', () => {
+  it('maps ages to stages', () => {
+    expect(getLifeStage(0)).toBe('infant');
+    expect(getLifeStage(16)).toBe('youth');
+    expect(getLifeStage(72)).toBe('twilight');
   });
 });
 
@@ -24,6 +37,7 @@ describe('life event engine', () => {
     const result = applyChoice(next, birth, 'cry');
     expect(result.state.completedEvents).toContain('life_birth');
     expect(result.state.character.attributes.genGu).toBeGreaterThan(30);
+    expect(result.state.lifeLog[0]).toContain('降生');
   });
 
   it('advances year and assigns pending event', () => {

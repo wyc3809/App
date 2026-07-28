@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLifeStore } from './store/lifeStore';
-import { LifeGameScreen } from './components/LifeGameScreen';
-import { LifeStartGate, LifeStartScreen } from './components/LifeStartScreen';
-import { resetLifeSave } from './store/lifeStore';
+import { useLifeStore, resetLifeSave } from './store/lifeStore';
+import { InkPlayScreen } from './components/ink/InkPlayScreen';
+import { InkStartGate, InkStartScreen } from './components/ink/InkStartScreen';
 
 export default function App() {
   const state = useLifeStore((s) => s.state);
@@ -35,13 +34,13 @@ export default function App() {
   }, [continueLife]);
 
   if (state) {
-    return <LifeGameScreen state={state} />;
+    return <InkPlayScreen state={state} />;
   }
 
   return (
     <>
-      <LifeStartGate onReady={onReady} />
-      <LifeStartScreen
+      <InkStartGate onReady={onReady} />
+      <InkStartScreen
         onStart={(seed) => void handleStart(seed)}
         onContinue={() => void handleContinue()}
         resumeHint={canResume ? resumeHint : undefined}
