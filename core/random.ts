@@ -34,6 +34,16 @@ export class SeededRng {
   chance(probability: number): boolean {
     return this.nextFloat() < probability;
   }
+
+  getState(): string {
+    return this.state.toString();
+  }
+
+  static fromState(stateStr: string): SeededRng {
+    const rng = new SeededRng(0);
+    (rng as unknown as { state: bigint }).state = BigInt(stateStr);
+    return rng;
+  }
 }
 
 let globalRng: SeededRng | null = null;
@@ -48,4 +58,12 @@ export function getRng(): SeededRng {
     globalRng = new SeededRng(Date.now() >>> 0);
   }
   return globalRng;
+}
+
+export function getRngState(): string {
+  return getRng().getState();
+}
+
+export function restoreRng(stateStr: string): void {
+  globalRng = SeededRng.fromState(stateStr);
 }

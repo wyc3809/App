@@ -112,7 +112,9 @@ export interface CharacterEntity {
   alive: boolean;
   level: number;
   cityId: string;
+  /** 與 factionMembership 同步 */
   factionId?: string;
+  factionMembership?: FactionMembership;
   parentIds: [string?, string?];
   baseAttributes: AttributeComponent;
   modifiers: AttributeModifier[];
@@ -133,12 +135,30 @@ export interface City {
   region: string;
 }
 
+export type FactionRank = 'outer' | 'inner' | 'elite' | 'elder' | 'leader';
+
 export interface Faction {
   id: string;
   name: string;
   type: 'sect' | 'court' | 'guild' | 'bandit' | 'family';
   leaderId?: string;
   reputation: number;
+  /** 門派駐地城市 */
+  homeCityId: string;
+  /** 門規 / 理念 */
+  doctrine: string;
+  treasury: number;
+  /** 對立門派 */
+  rivalFactionIds: string[];
+  memberIds: string[];
+}
+
+export interface FactionMembership {
+  factionId: string;
+  rank: FactionRank;
+  /** 門派貢獻 / 功勳 */
+  merit: number;
+  joinedAt: GameTimestamp;
 }
 
 export interface Rumor {
@@ -163,6 +183,8 @@ export interface GameState {
   history: HistoryEntry[];
   rumors: Rumor[];
   tickCount: number;
+  /** 存檔用：上次寫入存檔的 tick */
+  lastSaveTick?: number;
 }
 
 export type PlayerAction =
@@ -175,4 +197,8 @@ export type PlayerAction =
   | { type: 'duel' }
   | { type: 'donate' }
   | { type: 'travel'; cityId: string }
-  | { type: 'age_year' };
+  | { type: 'age_year' }
+  | { type: 'join_faction'; factionId: string }
+  | { type: 'leave_faction' }
+  | { type: 'faction_duty' }
+  | { type: 'faction_donate'; amount: number };

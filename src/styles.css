@@ -103,6 +103,15 @@ body {
   background: linear-gradient(180deg, #d4af37, #9a7b1a);
   color: #1a1008;
   font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.btn-sub {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 .btn-ghost {
@@ -303,6 +312,50 @@ body {
   font-size: 0.65rem;
   color: #5a4a3a;
   margin-top: auto;
+}
+
+.save-tag {
+  color: #7a9a6a;
+}
+
+.faction-name {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.faction-meta {
+  margin: 4px 0;
+  font-size: 0.8rem;
+}
+
+.faction-actions,
+.faction-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.faction-join-btn {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #1a120e;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.faction-join-btn strong {
+  color: var(--accent);
+  font-size: 0.85rem;
 }
 
 .game {

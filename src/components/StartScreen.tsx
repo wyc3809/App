@@ -1,8 +1,10 @@
 type Props = {
   onStart: (seed?: number) => void;
+  onContinue?: () => void;
+  resumeHint?: string;
 };
 
-export function StartScreen({ onStart }: Props) {
+export function StartScreen({ onStart, onContinue, resumeHint }: Props) {
   return (
     <div className="phone">
       <header className="title-hero">
@@ -16,10 +18,17 @@ export function StartScreen({ onStart }: Props) {
           <li>萬物皆由引擎推演</li>
           <li>NPC 與你共用同一套規則</li>
           <li>一切行動都會寫入歷史</li>
+          <li>進度自動存檔，關閉後可延續江湖</li>
         </ul>
       </section>
-      <button type="button" className="btn-primary" onClick={() => onStart()}>
-        踏入江湖
+      {onContinue && (
+        <button type="button" className="btn-primary" onClick={onContinue}>
+          延續江湖
+          {resumeHint && <span className="btn-sub">{resumeHint}</span>}
+        </button>
+      )}
+      <button type="button" className={onContinue ? 'btn-ghost' : 'btn-primary'} onClick={() => onStart()}>
+        {onContinue ? '新開一局' : '踏入江湖'}
       </button>
       <button type="button" className="btn-ghost" onClick={() => onStart(42)}>
         固定種子（除錯）

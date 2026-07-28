@@ -1,5 +1,13 @@
 import type { CharacterEntity, GameState, PlayerAction, WorldEvent } from '@interfaces/game';
 import { applyModifier, getFinalAttributes } from './attribute';
+import {
+  addMerit,
+  factionTrainingBonus,
+  factionWorldTick,
+  joinFaction,
+  leaveFaction,
+  rankLabel,
+} from './faction';
 import { addHistory } from './history';
 import { ids } from './ids';
 import { compressOldMemories, createMemory, forgetTick } from './memory';
@@ -95,6 +103,8 @@ export function simulationTick(state: GameState): void {
     npcThink(state, rng.pick(sample));
   }
 
+  factionWorldTick(state);
+
   if (rng.chance(0.01)) {
     const alive = Object.values(state.characters).filter((c) => c.alive);
     const a = rng.pick(alive);
@@ -148,7 +158,9 @@ export function applyPlayerAction(state: GameState, action: PlayerAction): strin
 
   switch (action.type) {
     case 'train_martial': {
-      const gain = Math.max(1, Math.round(player.personality.traits.discipline / 30));
+      const faction = player.factionId ? state.factions[player.factionId] : undefined;
+      const bonus = faction ? factionTrainingBonus(player, faction) : 0;
+      const gain = Math.max(1, Math.round(player.personality.traits.discipline / 30) + bonus);
       player.martialSkill += gain;
       trainGrowth(player, state.tickCount, { strength: 0.08 * gain, agility: 0.05 * gain });
       player.health -= rng.nextInt(0, 5);
@@ -266,6 +278,67 @@ export function applyPlayerAction(state: GameState, action: PlayerAction): strin
       const ticks = state.fastSimulation ? 288 * 30 * 12 : 86400;
       for (let i = 0; i < ticks; i++) simulationTick(state);
       logs.push(`時光流逝，如今是${state.timestamp.year}年。`);
+      break;
+    }
+    case 'join_faction': {
+      const result = joinFaction(state, player, action.factionId);
+      if (!result.ok) {
+        logs.push(result.reason ?? '無法入派。');
+      } else {
+        const f = state.factions[action.factionId];
+        player.memories.push(
+          createMemory(`拜入${f.name}`, {
+            category: 'identity',
+            importance: 85,
+            createdAt: state.timestamp,
+          }),
+        );
+        logs.push(`你成為${f.name}外門弟子。`);
+        addHistory(state, `${player.name}加入${f.name}。`, 70, [player.id]);
+      }
+      break;
+    }
+    case 'leave_faction': {
+      const msg = leaveFaction(state, player);
+      logs.push(msg ?? '已脫離門派。');
+      break;
+    }
+    case 'faction_duty': {
+      if (!player.factionId || !player.factionMembership) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      const faction = state.factions[player.factionId];
+      const rngDuty = getRng();
+      const merit = rngDuty.nextInt(4, 12);
+      addMerit(player, merit);
+      faction.treasury += rngDuty.nextInt(2, 10);
+      faction.reputation = Math.min(100, faction.reputation + 1);
+      if (faction.type === 'sect') {
+        player.martialSkill += 1;
+      } else if (faction.type === 'guild') {
+        player.money += rngDuty.nextInt(5, 15);
+      } else if (faction.type === 'court') {
+        player.reputation += 2;
+      }
+      logs.push(`你完成${faction.name}差事，功勳 +${merit}（${rankLabel(player.factionMembership.rank)}）。`);
+      break;
+    }
+    case 'faction_donate': {
+      if (!player.factionId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      const amount = Math.max(1, action.amount);
+      if (player.money < amount) {
+        logs.push('銀兩不足。');
+        break;
+      }
+      player.money -= amount;
+      const faction = state.factions[player.factionId];
+      faction.treasury += amount;
+      addMerit(player, Math.round(amount / 5));
+      logs.push(`你捐獻 ${amount} 兩予${faction.name}庫藏。`);
       break;
     }
     default:

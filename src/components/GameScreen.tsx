@@ -1,7 +1,8 @@
-import type { GameState, PlayerAction } from '@interfaces/game';
+import type { GameState, Faction, PlayerAction } from '@interfaces/game';
 import type { AttributeComponent, CharacterEntity, City, DerivedStats } from '@interfaces/game';
 import { formatTimestamp } from '@core/history';
 import { TRAIT_KEYS } from '@core/attribute';
+import { checkJoinFaction, rankLabel } from '@core/faction';
 
 type Meta = {
   player: CharacterEntity;
@@ -11,6 +12,7 @@ type Meta = {
   archetype: string;
   dominant: string;
   city: City;
+  faction?: Faction;
 };
 
 const ACTIONS: { action: PlayerAction; label: string; icon: string }[] = [
@@ -22,6 +24,7 @@ const ACTIONS: { action: PlayerAction; label: string; icon: string }[] = [
   { action: { type: 'rest' }, label: '歇息', icon: '🛏' },
   { action: { type: 'duel' }, label: '決鬥', icon: '🔥' },
   { action: { type: 'donate' }, label: '行善', icon: '🙏' },
+  { action: { type: 'faction_duty' }, label: '門派', icon: '🏯' },
   { action: { type: 'age_year' }, label: '過一年', icon: '⏳' },
 ];
 
@@ -40,15 +43,19 @@ type Props = {
   state: GameState;
   meta: Meta;
   feed: string[];
+  saveLabel: string | null;
   onAction: (a: PlayerAction) => void;
   onNewLife: () => void;
 };
 
-export function GameScreen({ state, meta, feed, onAction, onNewLife }: Props) {
-  const { player, age, attrs, derived, archetype, city } = meta;
+export function GameScreen({ state, meta, feed, saveLabel, onAction, onNewLife }: Props) {
+  const { player, age, attrs, derived, archetype, city, faction } = meta;
   const alive = player.alive;
 
   const cities = Object.values(state.cities).filter((c) => c.id !== city.id);
+  const joinable = Object.values(state.factions).filter(
+    (f) => checkJoinFaction(state, player, f.id).ok,
+  );
 
   return (
     <div className="phone game">
@@ -90,6 +97,49 @@ export function GameScreen({ state, meta, feed, onAction, onNewLife }: Props) {
         <p className="derived">
           攻 {derived.attack} · 防 {derived.defense} · 閃 {derived.dodge} · 暴 {derived.critChance.toFixed(1)}%
         </p>
+      </section>
+
+      <section className="panel faction-panel">
+        <h3>門派</h3>
+        {faction && player.factionMembership ? (
+          <>
+            <p className="faction-name">
+              {faction.name} · {rankLabel(player.factionMembership.rank)}
+            </p>
+            <p className="faction-meta">
+              {faction.doctrine} · 功勳 {player.factionMembership.merit} · 庫藏 {faction.treasury}
+            </p>
+            <p className="faction-meta muted">
+              聲望 {faction.reputation} · 同門 {faction.memberIds.length} 人
+            </p>
+            <div className="faction-actions">
+              <button type="button" className="travel-btn" onClick={() => onAction({ type: 'faction_donate', amount: 10 })}>
+                捐獻10兩
+              </button>
+              <button type="button" className="travel-btn" onClick={() => onAction({ type: 'leave_faction' })}>
+                脫離門派
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="muted">尚未入門，可拜入下列勢力：</p>
+            <div className="faction-list">
+              {joinable.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  className="faction-join-btn"
+                  onClick={() => onAction({ type: 'join_faction', factionId: f.id })}
+                >
+                  <strong>{f.name}</strong>
+                  <span>{f.type === 'sect' ? '武林' : f.type === 'court' ? '朝廷' : f.type === 'guild' ? '商會' : '綠林'}</span>
+                </button>
+              ))}
+              {!joinable.length && <p className="muted">暫無可入門派。</p>}
+            </div>
+          </>
+        )}
       </section>
 
       <section className="panel feed-panel">
@@ -160,7 +210,10 @@ export function GameScreen({ state, meta, feed, onAction, onNewLife }: Props) {
         </div>
       </section>
 
-      <footer className="seed">Seed {state.seed}</footer>
+      <footer className="seed">
+        Seed {state.seed}
+        {saveLabel && <span className="save-tag"> · 已存檔 {saveLabel}</span>}
+      </footer>
     </div>
   );
 }

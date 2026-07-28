@@ -1,7 +1,53 @@
 import { describe, expect, it } from 'vitest';
 import { getFinalAttributes } from '../core/attribute';
 import { initRng, SeededRng } from '../core/random';
-import { createDefaultWorld } from '../core/world';
+import { checkJoinFaction, joinFaction } from '../core/faction';
+import {
+  persistSave,
+  rebuildStateFromSave,
+  type PersistedSave,
+} from '../core/save';
+import { createDefaultWorld, getPlayer } from '../core/world';
+
+describe('faction', () => {
+  it('allows player to join sect', () => {
+    initRng(99);
+    const state = createDefaultWorld(99);
+    const player = getPlayer(state);
+    player.martialSkill = 12;
+    player.martialSkill = 12;
+    const sect = Object.values(state.factions).find((f) => f.type === 'sect');
+    expect(sect).toBeTruthy();
+    const check = checkJoinFaction(state, player, sect!.id);
+    expect(check.ok).toBe(true);
+    const joined = joinFaction(state, player, sect!.id);
+    expect(joined.ok).toBe(true);
+    expect(player.factionId).toBe(sect!.id);
+    expect(player.factionMembership?.rank).toBe('outer');
+  });
+});
+
+describe('save', () => {
+  it('roundtrips delta save', () => {
+    initRng(7);
+    const world = createDefaultWorld(7);
+    const player = getPlayer(world);
+    player.money = 999;
+    const baseline: PersistedSave = {
+      version: 1,
+      savedAt: Date.now(),
+      baseline: structuredClone(world),
+      deltas: [],
+    };
+    const next = structuredClone(world);
+    next.characters[player.id].money = 1000;
+    next.tickCount = 5;
+    const persisted = persistSave(baseline, world, next);
+    const rebuilt = rebuildStateFromSave(persisted);
+    expect(rebuilt.characters[player.id].money).toBe(1000);
+    expect(rebuilt.tickCount).toBe(5);
+  });
+});
 
 describe('SeededRng', () => {
   it('is deterministic for same seed', () => {

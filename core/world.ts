@@ -4,6 +4,7 @@ import { ids, randomChineseName, resetIdCounter } from './ids';
 import { createMemory } from './memory';
 import { createRandomPersonality } from './personality';
 import { getRng, initRng } from './random';
+import { syncFactionMemberList } from './faction';
 import { characterAge } from './simulation';
 
 function randomAttributes(): AttributeComponent {
@@ -81,16 +82,38 @@ export function createDefaultWorld(seed: number): GameState {
   const startCity = rng.pick(cityIds);
 
   const factions: Record<string, Faction> = {};
-  const factionDefs: [string, Faction['type']][] = [
-    ['青雲劍派', 'sect'],
-    ['天刀門', 'sect'],
-    ['朝廷錦衣衛', 'court'],
-    ['四海商會', 'guild'],
-    ['黑虎寨', 'bandit'],
+  const factionDefs: {
+    name: string;
+    type: Faction['type'];
+    doctrine: string;
+    rivals: number[];
+  }[] = [
+    { name: '青雲劍派', type: 'sect', doctrine: '劍道正心', rivals: [1, 4] },
+    { name: '天刀門', type: 'sect', doctrine: '刀鎮山河', rivals: [0, 4] },
+    { name: '朝廷錦衣衛', type: 'court', doctrine: '忠君護國', rivals: [4] },
+    { name: '四海商會', type: 'guild', doctrine: '利市倍出', rivals: [] },
+    { name: '黑虎寨', type: 'bandit', doctrine: '弱肉強食', rivals: [0, 1, 2] },
   ];
-  for (const [name, type] of factionDefs) {
+  const factionIds: string[] = [];
+  for (const def of factionDefs) {
     const id = ids.faction();
-    factions[id] = { id, name, type, reputation: rng.nextInt(20, 80) };
+    factionIds.push(id);
+    factions[id] = {
+      id,
+      name: def.name,
+      type: def.type,
+      reputation: rng.nextInt(20, 80),
+      homeCityId: rng.pick(cityIds),
+      doctrine: def.doctrine,
+      treasury: rng.nextInt(100, 800),
+      rivalFactionIds: [],
+      memberIds: [],
+    };
+  }
+  for (let i = 0; i < factionDefs.length; i++) {
+    factions[factionIds[i]].rivalFactionIds = factionDefs[i].rivals
+      .map((idx) => factionIds[idx])
+      .filter(Boolean);
   }
 
   const characters: Record<string, CharacterEntity> = {};
@@ -111,9 +134,15 @@ export function createDefaultWorld(seed: number): GameState {
       rng.pick(cityIds),
       rng.chance(0.5) ? 'male' : 'female',
     );
-    const factionList = Object.values(factions);
     if (rng.chance(0.45)) {
-      c.factionId = rng.pick(factionList).id;
+      const fid = rng.pick(factionIds);
+      c.factionId = fid;
+      c.factionMembership = {
+        factionId: fid,
+        rank: rng.chance(0.15) ? 'elder' : 'inner',
+        merit: rng.nextInt(5, 60),
+        joinedAt: { ...timestamp, year: timestamp.year - rng.nextInt(1, 10) },
+      };
     }
     c.martialSkill = rng.nextInt(5, 60);
     c.internalSkill = rng.nextInt(5, 50);
@@ -121,15 +150,7 @@ export function createDefaultWorld(seed: number): GameState {
     characters[c.id] = c;
   }
 
-  const factionValues = Object.values(factions);
-  for (const f of factionValues) {
-    const members = Object.values(characters).filter((c) => c.factionId === f.id);
-    if (members.length) {
-      f.leaderId = rng.pick(members).id;
-    }
-  }
-
-  return {
+  const state: GameState = {
     seed,
     worldSeed: seed ^ 0x9e3779b9,
     playerId: player.id,
@@ -143,6 +164,25 @@ export function createDefaultWorld(seed: number): GameState {
     rumors: [],
     tickCount: 0,
   };
+
+  for (const fid of factionIds) {
+    syncFactionMemberList(state, fid);
+  }
+
+  for (const f of Object.values(factions)) {
+    const members = getFactionMembersFromState(state, f.id);
+    if (members.length) {
+      const leader = rng.pick(members);
+      f.leaderId = leader.id;
+      if (leader.factionMembership) leader.factionMembership.rank = 'leader';
+    }
+  }
+
+  return state;
+}
+
+function getFactionMembersFromState(state: GameState, factionId: string): CharacterEntity[] {
+  return Object.values(state.characters).filter((c) => c.alive && c.factionId === factionId);
 }
 
 export function syncCharacterDerived(c: CharacterEntity, state: GameState): void {
