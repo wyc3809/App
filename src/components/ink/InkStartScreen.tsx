@@ -16,7 +16,7 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <span className="ink-seal-static" aria-hidden>
           生
         </span>
-        <p className="ink-eyebrow">Jianghu Life · 整合版</p>
+        <p className="ink-eyebrow">水墨江湖 · 一生一卷</p>
         <h1 className="ink-brand">江湖一生</h1>
         <p className="ink-rule" aria-hidden />
         <p className="ink-tagline">一筆成江湖，留白即命運</p>

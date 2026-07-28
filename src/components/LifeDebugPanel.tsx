@@ -30,7 +30,7 @@ export function LifeDebugPanel({ state }: Props) {
         <code className="debug-ids">{eligible.map((e) => e.id).join(', ')}</code>
       </details>
       <details>
-        <summary>匯出狀態 JSON</summary>
+        <summary>匯出狀態文稿</summary>
         <textarea
           readOnly
           className="debug-json"

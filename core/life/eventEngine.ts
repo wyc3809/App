@@ -250,6 +250,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
     state.character.stats.yearsLived += 1;
   }
   state.character.stats.monthsLived += 1;
+  state.practiceActionsLeft = 3;
 
   simulateMonthBody(state);
 

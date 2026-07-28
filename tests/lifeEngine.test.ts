@@ -94,6 +94,7 @@ describe('life event engine', () => {
     performPracticeAction(state, 'train_internal');
     expect(state.character.maxHealth).toBeGreaterThan(beforeHp);
     expect(state.character.maxQi).toBeGreaterThan(beforeQi);
+    expect(state.practiceActionsLeft).toBe(1);
   });
 
   it('martial arts use ranks and may advance without XP numbers', async () => {
@@ -106,9 +107,25 @@ describe('life event engine', () => {
     expect(skillDisplay(state.character, '基礎吐納')).toContain(MARTIAL_RANKS[0]);
     expect(skillDisplay(state.character, '基礎吐納')).toContain('內功');
     expect(skillDisplay(state.character, 'art_river_fist')).toContain('外功');
-    for (let i = 0; i < 40; i++) performPracticeAction(state, 'train_martial');
+    for (let i = 0; i < 40; i++) {
+      state.practiceActionsLeft = 3;
+      performPracticeAction(state, 'train_martial');
+    }
     const ranks = Object.values(state.character.skillRanks);
     expect(ranks.every((r) => r >= 0 && r <= 3)).toBe(true);
+  });
+
+  it('limits practice to three actions per month', async () => {
+    const { performPracticeAction } = await import('../core/life/actions');
+    initRng(2);
+    const state = createNewLife(2);
+    expect(state.practiceActionsLeft).toBe(3);
+    performPracticeAction(state, 'train_martial');
+    performPracticeAction(state, 'train_martial');
+    performPracticeAction(state, 'train_martial');
+    expect(state.practiceActionsLeft).toBe(0);
+    const blocked = performPracticeAction(state, 'train_martial');
+    expect(blocked[0]).toMatch(/本月修煉/);
   });
 
   it('sect submenu can attempt joining a chosen sect', async () => {

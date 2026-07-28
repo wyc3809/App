@@ -77,6 +77,9 @@ export function performPracticeAction(
   if (!state.character.alive || state.phase !== 'playing') return ['你已無法行動。'];
   if (state.pending) return ['眼前尚有未決之事，先作抉擇。'];
   if (state.pendingCombat) return ['交手未了，豈能分心。'];
+  if ((state.practiceActionsLeft ?? 0) <= 0) {
+    return ['本月修煉次數已盡，且回鎮居翻過一頁再來。'];
+  }
 
   syncRngFromState(state);
   const rng = getRng();
@@ -84,6 +87,7 @@ export function performPracticeAction(
   ensureGear(c);
   if (!c.skillRanks) c.skillRanks = {};
   const logs: string[] = [];
+  state.practiceActionsLeft = Math.max(0, (state.practiceActionsLeft ?? 3) - 1);
 
   switch (actionId) {
     case 'train_martial': {
@@ -324,6 +328,7 @@ export function performPracticeAction(
       logs.push('無事可做。');
   }
 
+  logs.push(`本月尚餘修煉 ${state.practiceActionsLeft} 次。`);
   pushChronicle(state, logs);
   snapshotRng(state);
   return logs;

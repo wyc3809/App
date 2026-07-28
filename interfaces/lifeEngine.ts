@@ -203,6 +203,8 @@ export interface LifeGameState {
   completedEvents: string[];
   pending: PendingEvent | null;
   pendingCombat?: PendingCombat | null;
+  /** 本月剩餘修煉行動次數（每月三次） */
+  practiceActionsLeft?: number;
   lifeLog: string[];
   phase: 'create' | 'playing' | 'summary';
   summaryText?: string;
@@ -358,6 +360,7 @@ export const lifeGameStateSchema = z.object({
     })
     .nullable(),
   pendingCombat: z.any().nullable().optional(),
+  practiceActionsLeft: z.number().default(3),
   lifeLog: z.array(z.string()),
   phase: z.enum(['create', 'playing', 'summary']),
   summaryText: z.string().optional(),

@@ -71,8 +71,18 @@ export function InkPlayScreen({ state }: Props) {
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
   const showResult = Boolean(lastResult) && state.phase === 'playing' && !state.pendingCombat;
   const combat = state.pendingCombat ?? null;
+  const practiceLeft = state.practiceActionsLeft ?? 3;
   const busy = Boolean(state.pending) || Boolean(combat) || showResult || !c.alive;
+  const practiceBusy = busy || practiceLeft <= 0;
   const moves = combat ? getPlayerMoves(state) : [];
+  const onPracticeTab = tab === 'practice';
+  const canAdvanceMonth =
+    state.phase === 'playing' &&
+    !pendingEvent &&
+    !combat &&
+    c.alive &&
+    !showResult &&
+    !onPracticeTab;
 
   return (
     <div
@@ -215,12 +225,14 @@ export function InkPlayScreen({ state }: Props) {
           {practiceView === 'main' && (
             <>
               <h3>修煉</h3>
-              <p className="ink-note">苦練、鑄兵、尋訪——武學階位靠修煉與實戰機率進階。</p>
+              <p className="ink-note">
+                本月可修煉 {practiceLeft}/3 次。苦練、鑄兵、尋訪——階位靠實戰與修煉進境。
+              </p>
               <div className="ink-practice-grid">
                 <button
                   type="button"
                   className="ink-practice-btn ink-practice-btn--sect"
-                  disabled={busy}
+                  disabled={practiceBusy}
                   onClick={() => setPracticeView('sect')}
                 >
                   <strong>門派</strong>
@@ -231,7 +243,7 @@ export function InkPlayScreen({ state }: Props) {
                     key={act.id}
                     type="button"
                     className="ink-practice-btn"
-                    disabled={busy}
+                    disabled={practiceBusy}
                     onClick={() => practice(act.id)}
                   >
                     <strong>{act.label}</strong>
@@ -239,6 +251,9 @@ export function InkPlayScreen({ state }: Props) {
                   </button>
                 ))}
               </div>
+              {practiceLeft <= 0 && (
+                <p className="ink-note ink-note--warn">本月修煉已盡，請回「鎮居」翻過一頁。</p>
+              )}
             </>
           )}
 
@@ -259,7 +274,7 @@ export function InkPlayScreen({ state }: Props) {
                         key={s.id}
                         type="button"
                         className="ink-practice-btn"
-                        disabled={busy}
+                        disabled={practiceBusy}
                         onClick={() => {
                           practice('join_sect', { sectId: s.id });
                           setPracticeView('main');
@@ -280,7 +295,7 @@ export function InkPlayScreen({ state }: Props) {
                         key={act.id}
                         type="button"
                         className="ink-practice-btn"
-                        disabled={busy}
+                        disabled={practiceBusy}
                         onClick={() => practice(act.id)}
                       >
                         <strong>{act.label}</strong>
@@ -290,7 +305,7 @@ export function InkPlayScreen({ state }: Props) {
                     <button
                       type="button"
                       className="ink-practice-btn"
-                      disabled={busy}
+                      disabled={practiceBusy}
                       onClick={() => {
                         practice('sect_leave');
                         setPracticeView('main');
@@ -403,7 +418,7 @@ export function InkPlayScreen({ state }: Props) {
                   <span className="ink-combat-move">
                     <strong>{mv.name}</strong>
                     <em>
-                      {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威力×{mv.power}
+                      {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威能 {mv.power.toFixed(1)} 倍
                       {short ? ' · 內息不足' : ''}
                     </em>
                     <small>{mv.description}</small>
@@ -421,25 +436,31 @@ export function InkPlayScreen({ state }: Props) {
       )}
 
       {showResult && lastResult && (
-        <section className="ink-panel ink-result" aria-live="polite">
-          <p className="ink-event-year">抉擇已定</p>
-          <h3>{lastResult.title}</h3>
-          <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
-          <p className="ink-event-body">{lastResult.feedback}</p>
-          {lastResult.deltas.length > 0 && (
-            <ul className="ink-delta-list">
-              {lastResult.deltas.map((d) => (
-                <li key={d}>{d}</li>
-              ))}
-            </ul>
-          )}
-          <button type="button" className="ink-btn ink-btn--primary" onClick={() => clearResult()}>
-            已知曉 · 掩卷
-          </button>
-        </section>
+        <div className="ink-modal" role="dialog" aria-modal="true" aria-label="結果">
+          <div className="ink-modal-card ink-result">
+            <p className="ink-event-year">抉擇已定</p>
+            <h3>{lastResult.title}</h3>
+            <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
+            <p className="ink-event-body">{lastResult.feedback}</p>
+            {lastResult.deltas.length > 0 && (
+              <ul className="ink-delta-list">
+                {lastResult.deltas.map((d) => (
+                  <li key={d}>{d}</li>
+                ))}
+              </ul>
+            )}
+            <button
+              type="button"
+              className="ink-btn ink-btn--primary ink-btn--ack"
+              onClick={() => clearResult()}
+            >
+              已知曉 · 掩卷
+            </button>
+          </div>
+        </div>
       )}
 
-      {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && (
+      {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && !combat && (
         <section className="ink-flash" aria-live="polite">
           {flashLines.map((line) => (
             <p key={line}>{line}</p>
@@ -460,7 +481,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {state.phase === 'playing' && pendingEvent && !showResult && (
+      {state.phase === 'playing' && pendingEvent && !showResult && !combat && (
         <section className="ink-panel ink-event">
           <p className="ink-event-year">
             {state.year}年{month}月 · {c.age}歲
@@ -485,12 +506,19 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {state.phase === 'playing' && !pendingEvent && !combat && c.alive && !showResult && (
-        <button type="button" className="ink-btn ink-btn--primary ink-btn--year" onClick={advanceMonth}>
+      {canAdvanceMonth && (
+        <button
+          type="button"
+          className="ink-btn ink-btn--primary ink-btn--year ink-btn--pulse"
+          onClick={advanceMonth}
+        >
           翻過一頁 · 過一月
         </button>
       )}
 
+      {onPracticeTab && !combat && !showResult && (
+        <p className="ink-note ink-note--center">修煉頁不推月曆——請回「鎮居」翻過一頁。</p>
+      )}
       <section className="ink-panel ink-chronicle">
         <h3>年譜</h3>
         <ul className="ink-log">

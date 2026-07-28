@@ -128,6 +128,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     completedEvents: [],
     pending: null,
     pendingCombat: null,
+    practiceActionsLeft: 3,
     lifeLog: [
       `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
       `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
@@ -212,5 +213,6 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (raw.specialEventCountdown === undefined) raw.specialEventCountdown = 12;
   if (!raw.tab) raw.tab = 'home';
   if (raw.pendingCombat === undefined) raw.pendingCombat = null;
+  if (raw.practiceActionsLeft === undefined) raw.practiceActionsLeft = 3;
   return raw;
 }

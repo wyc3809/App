@@ -169,6 +169,243 @@ const RAW: GameEvent[] = [
       },
     ],
   },
+  {
+    id: 'secret_beggar_scroll',
+    title: '丐者殘卷',
+    body: '城門口一老丐把一卷油污帛書塞進你懷裡，口中只道「有緣人」，隨即消失於人潮。',
+    tags: ['special', 'martial', 'secret', 'qiuyu'],
+    weight: 9,
+    requirements: { minAge: 16, once: true },
+    choices: [
+      {
+        id: 'study',
+        text: '展卷細讀',
+        outcomes: [
+          {
+            effects: [
+              { type: 'learnSkill', skillId: 'art_silk_hand', name: '柔絲手' },
+              { type: 'martial', amount: 8 },
+              { type: 'narrate', text: '帛書所載竟是化力手法，你越讀越入迷。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'sell',
+        text: '拿到市集問價',
+        outcomes: [
+          {
+            effects: [
+              { type: 'money', amount: 25 },
+              { type: 'narrate', text: '書商只當它是舊物，給了你一筆小錢。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'burn',
+        text: '恐是禍端，付之一炬',
+        outcomes: [{ effects: [{ type: 'narrate', text: '火光一閃，紙灰隨風散盡。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'secret_cliff_shadow',
+    title: '斷崖影拳',
+    body: '暮色中斷崖上有人影獨自打拳，拳影映在岩壁，竟像是三重身法疊加。',
+    tags: ['special', 'martial', 'secret', 'qiuyu'],
+    weight: 8,
+    requirements: { minAge: 16, minAttrs: { wuXing: 35 } },
+    choices: [
+      {
+        id: 'imitate',
+        text: '在暗處摹拳',
+        outcomes: [
+          {
+            effects: [
+              { type: 'learnSkill', skillId: 'art_nine_shadow', name: '九影迷踪步' },
+              { type: 'martial', amount: 11 },
+              { type: 'narrate', text: '你記下步位，身法忽然輕了半寸。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'greet',
+        text: '上前請教',
+        outcomes: [
+          {
+            effects: [
+              { type: 'reputation', amount: 2 },
+              { type: 'martial', amount: 4 },
+              { type: 'narrate', text: '影中人只點你一處肩線，不肯多言。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '不便打擾，悄然退去',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你留下餘影在心，轉身下山。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'secret_temple_bell',
+    title: '古寺鐘鳴',
+    body: '荒寺鐘聲無故自鳴，梁上落下半頁拳譜，字跡被香火熏得發黃。',
+    tags: ['special', 'martial', 'secret', 'qiuyu'],
+    weight: 7,
+    requirements: { minAge: 17, once: true },
+    choices: [
+      {
+        id: 'take',
+        text: '收下拳譜苦練',
+        outcomes: [
+          {
+            effects: [
+              { type: 'learnSkill', skillId: 'art_thunder_blade', name: '驚雷刀' },
+              { type: 'martial', amount: 10 },
+              { type: 'grantGear', gearId: 'iron-blade' },
+              { type: 'narrate', text: '譜中刀意如雷，你越練越覺腕底生風。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'pray',
+        text: '重新供上，只求心安',
+        outcomes: [
+          {
+            effects: [
+              { type: 'maxQi', amount: 15 },
+              { type: 'attr', delta: { fuYuan: 2 } },
+              { type: 'narrate', text: '鐘聲再響一記，你內息竟平穩許多。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '不敢久留，離寺',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你退出山門，回望時寺中已無聲。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'secret_snow_hermit',
+    title: '雪夜隱士',
+    body: '大雪封路，茅屋中一白髮隱士正在煮雪，見你凍僵，邀你入內取暖，順便點破你吐納之滯。',
+    tags: ['special', 'martial', 'secret', 'qiuyu'],
+    weight: 8,
+    requirements: { minAge: 16 },
+    choices: [
+      {
+        id: 'learn',
+        text: '恭敬求教吐納',
+        outcomes: [
+          {
+            effects: [
+              { type: 'learnSkill', skillId: 'art_void_breath', name: '空冥吐納' },
+              { type: 'maxQi', amount: 30 },
+              { type: 'qi', amount: 35 },
+              { type: 'narrate', text: '隱士只教半炷香，你已覺丹田溫熱。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'chat',
+        text: '只敘家常，不談武學',
+        outcomes: [
+          {
+            effects: [
+              { type: 'health', amount: 20 },
+              { type: 'attr', delta: { meiLi: 2 } },
+              { type: 'narrate', text: '一碗熱湯入腹，你氣色回了許多。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '道謝後繼續趕路',
+        outcomes: [{ effects: [{ type: 'narrate', text: '雪更大了，茅屋很快被白茫茫吞沒。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'secret_market_duel',
+    title: '市井約戰',
+    body: '茶棚裡有人出言譏諷你武學花俏，當眾約你比試三招，圍觀者越來越多。',
+    tags: ['special', 'combat', 'secret', 'qiuyu'],
+    weight: 10,
+    requirements: { minAge: 16, minMartial: 10 },
+    choices: [
+      {
+        id: 'accept',
+        text: '應戰比試',
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '茶棚外讓出空地，戰端將起。' },
+              { type: 'martial', amount: 2 },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'humble',
+        text: '以禮化解',
+        outcomes: [
+          {
+            effects: [
+              { type: 'reputation', amount: 3 },
+              { type: 'narrate', text: '你拱手認弱，對方反倒不好意思，雙方罷手。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '不與爭鋒，離席',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你放下茶錢離席，背後有人嗤笑。' }, { type: 'reputation', amount: -1 }] }],
+      },
+    ],
+  },
+  {
+    id: 'secret_night_thief',
+    title: '夜半盜譜',
+    body: '客棧窗外黑影一閃，似有人欲偷你枕下的殘譜。',
+    tags: ['special', 'combat', 'secret', 'qiuyu'],
+    weight: 7,
+    requirements: { minAge: 16 },
+    choices: [
+      {
+        id: 'chase',
+        text: '追出夜巷',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你提氣追出，夜巷中刀光一閃。' }] }],
+      },
+      {
+        id: 'trap',
+        text: '假裝入睡，伺機反制',
+        outcomes: [
+          {
+            effects: [
+              { type: 'money', amount: 15 },
+              { type: 'martial', amount: 3 },
+              { type: 'narrate', text: '你抓住盜者手腕，對方丟下一袋碎銀逃走。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'yell',
+        text: '大喊有賊',
+        outcomes: [{ effects: [{ type: 'narrate', text: '客棧喧鬧起來，黑影早已無踪。' }] }],
+      },
+    ],
+  },
 ];
 
 export const SECRET_ART_EVENTS: GameEvent[] = RAW.map((ev) =>
