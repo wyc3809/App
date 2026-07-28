@@ -45,7 +45,7 @@ export function LifeDebugPanel({ state }: Props) {
           value={json}
           onChange={(e) => setJson(e.target.value)}
           rows={4}
-          placeholder="貼上 LifeGameState JSON"
+          placeholder="貼上存檔文稿"
         />
         <button
           type="button"
@@ -55,7 +55,7 @@ export function LifeDebugPanel({ state }: Props) {
               const parsed = lifeGameStateSchema.parse(JSON.parse(json));
               importState(parsed as LifeGameState);
             } catch {
-              alert('JSON 無效');
+              alert('文稿無效');
             }
           }}
         >
