@@ -158,6 +158,10 @@ export function markEventComplete(state: LifeGameState, eventId: string): void {
     state.completedEvents.push(eventId);
   }
   state.character.flags[`done_${eventId}`] = true;
+  // Pack v1 completion flag（forbidden_flags: completed_event_XXX）
+  if (eventId.startsWith('event_')) {
+    state.character.flags[`completed_${eventId}`] = true;
+  }
   state.character.stats.eventsSeen += 1;
 }
 

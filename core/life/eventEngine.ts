@@ -14,6 +14,8 @@ import { getRng } from '@core/random';
 import { rollAdventureGear } from '@data/equipment/catalog';
 import { grantGear } from './equipment';
 import { withRiskAndThree } from './choiceEnrich';
+import { pickPackEvent, getPackChoice } from './jianghuEventRepository';
+import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
 
 function enrichLegacyEvent(event: GameEvent): GameEvent {
   if (event.choices.length >= 3 && event.choices.every((c) => c.outcomes.length >= 2)) {
@@ -117,23 +119,60 @@ export function applyChoice(
     return { state, logs: ['條件不足。'], deltas: [], feedback: '條件不足。', died: false };
   }
 
-  const outcome = pickOutcomeForChoice(state, choice.outcomes);
-  const { logs, died, deltas } = applyEffects(state, outcome.effects);
-
   const tags = event.tags ?? [];
-  const isBad = outcome.id?.endsWith('_bad') || outcome.label === '事與願違';
-  if (!isBad && (tags.includes('pack') || tags.includes('secret') || tags.includes('special'))) {
-    const rng = getRng();
-    if (rng.chance(0.28)) {
-      const gearId = rollAdventureGear(rng);
-      if (gearId) {
-        const name = grantGear(state, gearId);
-        if (name) {
-          logs.push(`行囊多了一件：「${name}」。`);
-          deltas.push(`裝備＋${name}`);
+  let logs: string[] = [];
+  let deltas: string[] = [];
+  let feedback = '事已了結。';
+  let died = false;
+
+  // Pack v1：OutcomeResolver 依 op/path/value/chance 執行
+  const packChoice = tags.includes('pack') ? getPackChoice(event.id, choiceId) : undefined;
+  if (packChoice) {
+    const resolved = resolvePackOutcomes(state, packChoice);
+    logs = [...resolved.logs];
+    deltas = [...resolved.deltas];
+    feedback = resolved.feedback;
+    died = resolved.died;
+    if (resolved.success) {
+      const riskLogs = applyPackRiskTail(state, 0.12);
+      if (riskLogs.length) {
+        logs.push(...riskLogs);
+        deltas.push('餘波');
+      }
+      const rng = getRng();
+      if (rng.chance(0.28)) {
+        const gearId = rollAdventureGear(rng);
+        if (gearId) {
+          const name = grantGear(state, gearId);
+          if (name) {
+            logs.push(`行囊多了一件：「${name}」。`);
+            deltas.push(`裝備＋${name}`);
+          }
         }
       }
     }
+  } else {
+    const outcome = pickOutcomeForChoice(state, choice.outcomes);
+    const applied = applyEffects(state, outcome.effects);
+    logs = applied.logs;
+    deltas = applied.deltas;
+    died = applied.died;
+    const isBad = outcome.id?.endsWith('_bad') || outcome.label === '事與願違';
+    if (!isBad && (tags.includes('secret') || tags.includes('special'))) {
+      const rng = getRng();
+      if (rng.chance(0.28)) {
+        const gearId = rollAdventureGear(rng);
+        if (gearId) {
+          const name = grantGear(state, gearId);
+          if (name) {
+            logs.push(`行囊多了一件：「${name}」。`);
+            deltas.push(`裝備＋${name}`);
+          }
+        }
+      }
+    }
+    feedback =
+      logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|內力|裝備)/.test(l)) || logs[0] || '事已了結。';
   }
 
   if (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) {
@@ -144,8 +183,6 @@ export function applyChoice(
   markEventComplete(state, event.id);
   state.pending = null;
   const titleForLog = tags.includes('pack') ? '江湖偶遇' : event.title;
-  const feedback =
-    logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|內力|裝備)/.test(l)) || logs[0] || '事已了結。';
   pushChronicle(state, [`「${titleForLog}」——${choice.text}`, feedback, ...deltas]);
 
   if (died || !state.character.alive) {
@@ -197,8 +234,15 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
   if (shouldTriggerSpecial(state)) {
-    const specialPool = listEligibleEvents([...RANDOM_PACK_EVENTS, ...SECRET_ART_EVENTS], state);
-    event = weightedPick(state, specialPool);
+    // Pack v1 流程：conditions 過濾 → weight 加權；再混入秘傳奇遇
+    const packPick = pickPackEvent(state);
+    if (packPick) {
+      event = RANDOM_PACK_EVENTS.find((e) => e.id === packPick.id) ?? null;
+    }
+    if (!event) {
+      const secretPool = listEligibleEvents(SECRET_ART_EVENTS, state);
+      event = weightedPick(state, secretPool);
+    }
     kind = 'special';
     state.specialEventCountdown = rng.nextInt(5, 30);
   }

@@ -25,6 +25,36 @@ describe('life event catalog', () => {
     expect(RANDOM_PACK_EVENTS.length).toBe(100);
     expect(fullCatalog().length).toBeGreaterThan(150);
   });
+
+  it('preserves original pack choice texts (3 each)', () => {
+    const first = RANDOM_PACK_EVENTS.find((e) => e.id === 'event_001')!;
+    expect(first.choices.map((c) => c.text)).toEqual(['暗中相助', '公開交涉', '向有權勢者報信']);
+    expect(RANDOM_PACK_EVENTS.every((e) => e.choices.length === 3)).toBe(true);
+  });
+});
+
+describe('jianghu pack repository + outcome resolver', () => {
+  it('filters by conditions and marks completion flags', async () => {
+    const { filterPackByConditions, pickWeightedPackEvent, packCompletionFlag } = await import(
+      '../core/life/jianghuEventRepository'
+    );
+    initRng(11);
+    const state = createNewLife(11);
+    const eligible = filterPackByConditions(state);
+    expect(eligible.length).toBe(100);
+    const picked = pickWeightedPackEvent(state, eligible)!;
+    expect(picked.id).toMatch(/^event_\d{3}$/);
+
+    const event = getEventById(fullCatalog(), picked.id)!;
+    const choiceId = event.choices[0].id;
+    const result = applyChoice(structuredClone(state), event, choiceId);
+    expect(result.state.completedEvents).toContain(picked.id);
+    expect(result.state.character.flags[packCompletionFlag(picked.id)]).toBe(true);
+    expect(result.feedback.length).toBeGreaterThan(0);
+
+    const after = filterPackByConditions(result.state);
+    expect(after.some((e) => e.id === picked.id)).toBe(false);
+  });
 });
 
 describe('life stages', () => {
