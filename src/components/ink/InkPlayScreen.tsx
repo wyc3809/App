@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { LifeGameState } from '@interfaces/lifeEngine';
-import { wuxiaAttributeKeys, wuxiaAttributeLabels } from '@interfaces/lifeEngine';
+import {
+  natureKeys,
+  natureLabels,
+  worldAttrKeys,
+  worldAttrLabels,
+  wuxiaAttributeKeys,
+  wuxiaAttributeLabels,
+} from '@interfaces/lifeEngine';
 import { LIFE_CATALOG, useLifeStore } from '../../store/lifeStore';
 import { getEventById } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef } from '@data/equipment/catalog';
-import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
+import { overallMartialLabel, skillDisplay, worldTone } from '@core/life/flavor';
 import { describeSectProgress } from '@core/life/sectStanding';
+import { ensureNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
 import { formatSkillEffects, getSkillDef } from '@data/skills/catalog';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
@@ -78,13 +86,15 @@ export function InkPlayScreen({ state }: Props) {
   const practiceBusy = busy || practiceLeft <= 0;
   const moves = combat ? getPlayerMoves(state) : [];
   const onPracticeTab = tab === 'practice';
+  const onHomeTab = tab === 'home';
   const canAdvanceMonth =
     state.phase === 'playing' &&
     !pendingEvent &&
     !combat &&
     c.alive &&
     !showResult &&
-    !onPracticeTab;
+    onHomeTab;
+  const nature = ensureNature(c);
   const resultKind = lastResult?.title === '修煉' ? 'practice' : 'month';
 
   useEffect(() => {
@@ -144,11 +154,15 @@ export function InkPlayScreen({ state }: Props) {
         ))}
       </nav>
 
-      {(tab === 'home' || tab === 'jianghu') && (
+      {tab === 'home' && (
         <section className="ink-world" aria-label="天下風聲">
-          <p>
-            秩序 {world?.order ?? '—'} · 險惡 {world?.danger ?? '—'} · 市面 {world?.economy ?? '—'} · 傳聞{' '}
-            {world?.rumors ?? '—'}
+          <p className="ink-world-compact">
+            {worldAttrKeys.map((k, i) => (
+              <span key={k}>
+                {i > 0 ? ' · ' : ''}
+                {worldAttrLabels[k]} {world?.[k] ?? '—'}
+              </span>
+            ))}
           </p>
           <p className="ink-note">{world?.seasonMood} · {world?.lastWorldShift}</p>
           {story && (
@@ -156,6 +170,28 @@ export function InkPlayScreen({ state }: Props) {
               第{story.chapter}章「{story.title}」· {story.goal}（{story.progress}/{story.nextMilestone}）
             </p>
           )}
+        </section>
+      )}
+
+      {tab === 'jianghu' && (
+        <section className="ink-panel ink-world-panel" aria-label="天下四維">
+          <h3>天下四維</h3>
+          <div className="ink-attr-grid ink-world-grid">
+            {worldAttrKeys.map((k) => (
+              <div key={k} className="ink-attr">
+                <span className="ink-attr-label">{worldAttrLabels[k]}</span>
+                <strong>{world?.[k] ?? '—'}</strong>
+                <em className="ink-attr-tone">{world ? worldTone(world[k], k) : '—'}</em>
+              </div>
+            ))}
+          </div>
+          <p className="ink-note">{world?.seasonMood} · {world?.lastWorldShift}</p>
+          {story && (
+            <p className="ink-note">
+              第{story.chapter}章「{story.title}」· {story.goal}
+            </p>
+          )}
+          <p className="ink-note">心性 · {natureSummary(c)}</p>
         </section>
       )}
 
@@ -206,6 +242,16 @@ export function InkPlayScreen({ state }: Props) {
               </div>
             ))}
           </div>
+          <h3 className="ink-subhead">心性</h3>
+          <div className="ink-attr-grid">
+            {natureKeys.map((k) => (
+              <div key={k} className="ink-attr">
+                <span className="ink-attr-label">{natureLabels[k]}</span>
+                <strong>{nature[k]}</strong>
+              </div>
+            ))}
+          </div>
+          <p className="ink-note">{natureSummary(c)}</p>
           <p className="ink-note">
             體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0}
           </p>
@@ -300,7 +346,10 @@ export function InkPlayScreen({ state }: Props) {
                         }}
                       >
                         <strong>{s.name}</strong>
-                        <span>{s.hint}</span>
+                        <span>
+                          {s.hint}
+                          {natureGateHint(s.natureGate) ? ` · ${natureGateHint(s.natureGate)}` : ''}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -556,8 +605,11 @@ export function InkPlayScreen({ state }: Props) {
       {onPracticeTab && !combat && !showResult && (
         <p className="ink-note ink-note--center">修煉頁不推月曆——請回「鎮居」翻過一頁。</p>
       )}
+      {(tab === 'person' || tab === 'jianghu') && !combat && !showResult && !pendingEvent && (
+        <p className="ink-note ink-note--center">請回「鎮居」翻過一頁、查看年譜。</p>
+      )}
 
-      {!onPracticeTab && (
+      {onHomeTab && (
         <section className="ink-panel ink-chronicle">
           <h3>年譜</h3>
           <ul className="ink-log">

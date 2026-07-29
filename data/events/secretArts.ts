@@ -9,7 +9,7 @@ const RAW: GameEvent[] = [
     body: '山腹石壁刻著模糊掌譜，旁有枯骨與半截火折子。',
     tags: ['special', 'martial', 'secret'],
     weight: 8,
-    requirements: { minAge: 16, once: true },
+    requirements: { minAge: 16, once: true, maxNature: { e: 55 } },
     choices: [
       {
         id: 'study',
@@ -50,7 +50,7 @@ const RAW: GameEvent[] = [
     body: '一名青衣老者在橋上避雨，見你根骨尚可，願點撥三招。',
     tags: ['special', 'martial', 'secret'],
     weight: 7,
-    requirements: { minAge: 16, minAttrs: { wuXing: 40 } },
+    requirements: { minAge: 16, minAttrs: { wuXing: 40 }, minNature: { xia: 10 }, maxNature: { e: 50 } },
     choices: [
       {
         id: 'accept',
@@ -91,7 +91,7 @@ const RAW: GameEvent[] = [
     body: '塌陷的墓道中，一柄無銘長劍插於石台，隱有龍吟。',
     tags: ['special', 'martial', 'secret', 'gear'],
     weight: 5,
-    requirements: { minAge: 18, minAttrs: { danShi: 45 }, once: true },
+    requirements: { minAge: 18, minAttrs: { danShi: 45 }, once: true, minNature: { kuang: 12 } },
     choices: [
       {
         id: 'draw',
@@ -133,7 +133,7 @@ const RAW: GameEvent[] = [
     body: '冬湖結薄冰，湖心氣機異動，似有人在冰下運功。',
     tags: ['special', 'martial', 'secret'],
     weight: 6,
-    requirements: { minAge: 17 },
+    requirements: { minAge: 17, maxNature: { e: 48 } },
     choices: [
       {
         id: 'meditate',
@@ -175,7 +175,7 @@ const RAW: GameEvent[] = [
     body: '城門口一老丐把一卷油污帛書塞進你懷裡，口中只道「有緣人」，隨即消失於人潮。',
     tags: ['special', 'martial', 'secret', 'qiuyu'],
     weight: 9,
-    requirements: { minAge: 16, once: true },
+    requirements: { minAge: 16, once: true, minNature: { xie: 8 }, maxNature: { xia: 70 } },
     choices: [
       {
         id: 'study',
@@ -215,7 +215,7 @@ const RAW: GameEvent[] = [
     body: '暮色中斷崖上有人影獨自打拳，拳影映在岩壁，竟像是三重身法疊加。',
     tags: ['special', 'martial', 'secret', 'qiuyu'],
     weight: 8,
-    requirements: { minAge: 16, minAttrs: { wuXing: 35 } },
+    requirements: { minAge: 16, minAttrs: { wuXing: 35 }, minNature: { kuang: 10 } },
     choices: [
       {
         id: 'imitate',
@@ -256,7 +256,7 @@ const RAW: GameEvent[] = [
     body: '荒寺鐘聲無故自鳴，梁上落下半頁拳譜，字跡被香火熏得發黃。',
     tags: ['special', 'martial', 'secret', 'qiuyu'],
     weight: 7,
-    requirements: { minAge: 17, once: true },
+    requirements: { minAge: 17, once: true, minNature: { xia: 14 }, maxNature: { e: 40 } },
     choices: [
       {
         id: 'take',
@@ -298,7 +298,7 @@ const RAW: GameEvent[] = [
     body: '大雪封路，茅屋中一白髮隱士正在煮雪，見你凍僵，邀你入內取暖，順便點破你吐納之滯。',
     tags: ['special', 'martial', 'secret', 'qiuyu'],
     weight: 8,
-    requirements: { minAge: 16 },
+    requirements: { minAge: 16, maxNature: { e: 45 } },
     choices: [
       {
         id: 'learn',
@@ -340,7 +340,7 @@ const RAW: GameEvent[] = [
     body: '茶棚裡有人出言譏諷你武學花俏，當眾約你比試三招，圍觀者越來越多。',
     tags: ['special', 'combat', 'secret', 'qiuyu'],
     weight: 10,
-    requirements: { minAge: 16, minMartial: 10 },
+    requirements: { minAge: 16, minMartial: 10, minNature: { kuang: 12 } },
     choices: [
       {
         id: 'accept',
@@ -379,7 +379,7 @@ const RAW: GameEvent[] = [
     body: '客棧窗外黑影一閃，似有人欲偷你枕下的殘譜。',
     tags: ['special', 'combat', 'secret', 'qiuyu'],
     weight: 7,
-    requirements: { minAge: 16 },
+    requirements: { minAge: 16, minNature: { xie: 10 }, maxNature: { xia: 65 } },
     choices: [
       {
         id: 'chase',

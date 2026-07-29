@@ -12,16 +12,50 @@ export const wuxiaAttributeLabels: Record<WuxiaAttribute, string> = {
   danShi: '膽識',
 };
 
+/** 心性：俠、邪、狂、惡 */
+export const natureKeys = ['xia', 'xie', 'kuang', 'e'] as const;
+export type NatureAttr = (typeof natureKeys)[number];
+
+export const natureLabels: Record<NatureAttr, string> = {
+  xia: '俠',
+  xie: '邪',
+  kuang: '狂',
+  e: '惡',
+};
+
+export type NatureState = Record<NatureAttr, number>;
+
+export interface NatureGate {
+  min?: Partial<Record<NatureAttr, number>>;
+  max?: Partial<Record<NatureAttr, number>>;
+}
+
+/** 天下四維 */
+export const worldAttrKeys = ['order', 'danger', 'economy', 'rumors'] as const;
+export type WorldAttr = (typeof worldAttrKeys)[number];
+
+export const worldAttrLabels: Record<WorldAttr, string> = {
+  order: '秩序',
+  danger: '險惡',
+  economy: '市面',
+  rumors: '傳聞',
+};
+
 const partialAttrsSchema = z.partialRecord(
   z.enum(wuxiaAttributeKeys),
   z.number(),
 );
+
+const partialNatureSchema = z.partialRecord(z.enum(natureKeys), z.number());
+const partialWorldSchema = z.partialRecord(z.enum(worldAttrKeys), z.number());
 
 export const requirementSchema = z.object({
   minAge: z.number().optional(),
   maxAge: z.number().optional(),
   minAttrs: partialAttrsSchema.optional(),
   maxAttrs: partialAttrsSchema.optional(),
+  minNature: partialNatureSchema.optional(),
+  maxNature: partialNatureSchema.optional(),
   flags: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])).optional(),
   notFlags: z.array(z.string()).optional(),
   sectRequired: z.boolean().optional(),
@@ -40,6 +74,8 @@ export type EventRequirement = z.infer<typeof requirementSchema>;
 export const effectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('narrate'), text: z.string() }),
   z.object({ type: z.literal('attr'), delta: partialAttrsSchema }),
+  z.object({ type: z.literal('nature'), delta: partialNatureSchema }),
+  z.object({ type: z.literal('world'), delta: partialWorldSchema }),
   z.object({ type: z.literal('money'), amount: z.number() }),
   z.object({ type: z.literal('health'), amount: z.number() }),
   z.object({ type: z.literal('reputation'), amount: z.number() }),
@@ -153,6 +189,8 @@ export interface LifeCharacter {
   location: string;
   conditions: LifeCondition[];
   attributes: Record<WuxiaAttribute, number>;
+  /** 心性：俠、邪、狂、惡 */
+  nature: NatureState;
   skills: string[];
   /** 武學階位 0–3：略有小成→神乎其技（後台百分比進階） */
   skillRanks: Record<string, number>;
@@ -281,6 +319,14 @@ export const lifeCharacterSchema = z.object({
     )
     .default([]),
   attributes: z.record(z.enum(wuxiaAttributeKeys), z.number()),
+  nature: z
+    .object({
+      xia: z.number(),
+      xie: z.number(),
+      kuang: z.number(),
+      e: z.number(),
+    })
+    .default({ xia: 12, xie: 8, kuang: 10, e: 6 }),
   skills: z.array(z.string()),
   skillRanks: z.record(z.string(), z.number()).default({}),
   gear: z.array(z.string()).default(['old-sword', 'plain-robe']),

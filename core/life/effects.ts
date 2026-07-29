@@ -1,11 +1,12 @@
-import type { GameEffect, LifeGameState, WuxiaAttribute } from '@interfaces/lifeEngine';
-import { wuxiaAttributeKeys } from '@interfaces/lifeEngine';
+import type { GameEffect, LifeGameState, WuxiaAttribute, WorldAttr } from '@interfaces/lifeEngine';
+import { wuxiaAttributeKeys, worldAttrLabels } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
 import { randomChineseName } from '@core/ids';
 import { artForStanding } from '@data/content/packs';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, ensureGear } from './equipment';
 import { addCondition } from './monthly';
 import { learnMartialArt } from './flavor';
+import { applyNatureDelta, ensureNature } from './nature';
 
 export interface EffectResult {
   logs: string[];
@@ -23,6 +24,7 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
   let died = false;
   const c = state.character;
   ensureGear(c);
+  ensureNature(c);
 
   for (const eff of effects) {
     switch (eff.type) {
@@ -36,6 +38,30 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
           c.attributes[key] = clamp(c.attributes[key] + v, 1, 100);
         }
         break;
+      case 'nature': {
+        const lines = applyNatureDelta(c, eff.delta);
+        if (lines.length) {
+          logs.push(`心性有變：${lines.join('、')}`);
+          deltas.push(...lines.map((l) => `心性${l}`));
+        }
+        break;
+      }
+      case 'world': {
+        if (state.world) {
+          const bits: string[] = [];
+          for (const [k, v] of Object.entries(eff.delta)) {
+            if (v === undefined) continue;
+            const key = k as WorldAttr;
+            state.world[key] = clamp((state.world[key] ?? 50) + v, 5, 95);
+            bits.push(`${worldAttrLabels[key]}${v > 0 ? '＋' : '－'}${Math.abs(v)}`);
+          }
+          if (bits.length) {
+            logs.push(`天下風聲：${bits.join('、')}`);
+            deltas.push(...bits);
+          }
+        }
+        break;
+      }
       case 'money':
         c.money += eff.amount;
         c.stats.wealthPeak = Math.max(c.stats.wealthPeak, c.money);

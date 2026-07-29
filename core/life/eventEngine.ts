@@ -17,6 +17,7 @@ import { withRiskAndThree } from './choiceEnrich';
 import { pickPackEvent, getPackChoice } from './jianghuEventRepository';
 import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
 import { isFleeChoice, startCombat } from './combat';
+import { applyChoiceNature } from './nature';
 
 function enrichLegacyEvent(event: GameEvent): GameEvent {
   if (event.choices.length >= 3 && event.choices.every((c) => c.outcomes.length >= 2)) {
@@ -145,10 +146,16 @@ export function applyChoice(
       eventId: event.id,
     });
     markEventComplete(state, event.id);
+    const deltas: string[] = [];
+    const natureLines = applyChoiceNature(state, choice.text);
+    if (natureLines.length) {
+      logs.push(`心性有變：${natureLines.join('、')}`);
+      deltas.push(...natureLines.map((l) => `心性${l}`));
+    }
     const feedback = logs[0] ?? '戰端已開。';
-    pushChronicle(state, [`「${tags.includes('pack') ? '江湖偶遇' : event.title}」——${choice.text}`, feedback]);
+    pushChronicle(state, [`「${tags.includes('pack') ? '江湖偶遇' : event.title}」——${choice.text}`, feedback, ...deltas]);
     snapshotRng(state);
-    return { state, logs, deltas: [], feedback, died: false };
+    return { state, logs, deltas, feedback, died: false };
   }
 
   let logs: string[] = [];
@@ -203,7 +210,13 @@ export function applyChoice(
       }
     }
     feedback =
-      logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|內力|裝備)/.test(l)) || logs[0] || '事已了結。';
+      logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|內力|裝備|心性)/.test(l)) || logs[0] || '事已了結。';
+  }
+
+  const natureLines = applyChoiceNature(state, choice.text);
+  if (natureLines.length) {
+    logs.push(`心性有變：${natureLines.join('、')}`);
+    deltas.push(...natureLines.map((l) => `心性${l}`));
   }
 
   if (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) {

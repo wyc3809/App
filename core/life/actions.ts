@@ -1,7 +1,7 @@
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
 import { getGearDef, rollForgeResult, type GearRarity } from '@data/equipment/catalog';
-import { artForStanding } from '@data/content/packs';
+import { artForStanding, getSectContent } from '@data/content/packs';
 import { addCondition } from './monthly';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, equipGear, ensureGear } from './equipment';
 import { snapshotRng, syncRngFromState, SECT_DEFS } from './gameState';
@@ -14,6 +14,7 @@ import {
 import { startCombat } from './combat';
 import { getSkillDef } from '@data/skills/catalog';
 import { teachSectArtForStanding, tryGainSectStanding } from './sectStanding';
+import { meetsNatureGate, natureGateHint } from './nature';
 
 export type PracticeActionId =
   | 'train_martial'
@@ -149,6 +150,14 @@ export function performPracticeAction(
       // 後台門檻，不對玩家顯示數字
       if (c.martial < 12 && overallWeak(c)) {
         logs.push(`${state.sects[target].name}看你根基尚淺，暫未收錄。`);
+        break;
+      }
+      const sectDef = getSectContent(target);
+      if (sectDef?.natureGate && !meetsNatureGate(c, sectDef.natureGate)) {
+        const hint = natureGateHint(sectDef.natureGate);
+        logs.push(
+          `${state.sects[target].name}看你心性不合門規，婉拒收錄。${hint ? `（${hint}）` : ''}`,
+        );
         break;
       }
       if (rng.chance(0.22)) {

@@ -22,6 +22,7 @@ export function buildLifeSummary(state: LifeGameState): string {
     `　　閱事 ${c.stats.eventsSeen}　·　決鬥 ${c.stats.combats}（勝 ${c.stats.combatsWon}）`,
     `　　姻緣 ${c.stats.lovers}`,
     `　　子女 ${c.childrenCount ?? 0}/${c.childrenMax ?? 0}`,
+    `　　心性 俠${c.nature?.xia ?? 0} · 邪${c.nature?.xie ?? 0} · 狂${c.nature?.kuang ?? 0} · 惡${c.nature?.e ?? 0}`,
   ];
 
   if (c.skills.length) {

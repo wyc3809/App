@@ -9,9 +9,9 @@ const RAW: GameEvent[] = [
     tags: ['ordinary', 'economy'],
     weight: 20,
     choices: [
-      { id: 'buy', text: '低買些乾糧', outcomes: [{ effects: [{ type: 'money', amount: -8 }, { type: 'health', amount: 4 }, { type: 'narrate', text: '你買下足夠一月的乾糧。' }] }] },
-      { id: 'help', text: '替小販搬貨', outcomes: [{ effects: [{ type: 'money', amount: 12 }, { type: 'reputation', amount: 1 }, { type: 'narrate', text: '你賺到辛苦錢，也聽到街坊消息。' }] }] },
-      { id: 'watch', text: '只看行情', outcomes: [{ effects: [{ type: 'martial', amount: 1 }, { type: 'narrate', text: '你學會觀察市面風向。' }] }] },
+      { id: 'buy', text: '低買些乾糧', outcomes: [{ effects: [{ type: 'money', amount: -8 }, { type: 'health', amount: 4 }, { type: 'world', delta: { economy: 1 } }, { type: 'narrate', text: '你買下足夠一月的乾糧。' }] }] },
+      { id: 'help', text: '替小販搬貨', outcomes: [{ effects: [{ type: 'money', amount: 12 }, { type: 'reputation', amount: 1 }, { type: 'nature', delta: { xia: 1 } }, { type: 'world', delta: { rumors: 1 } }, { type: 'narrate', text: '你賺到辛苦錢，也聽到街坊消息。' }] }] },
+      { id: 'watch', text: '只看行情', outcomes: [{ effects: [{ type: 'martial', amount: 1 }, { type: 'world', delta: { economy: 1 } }, { type: 'narrate', text: '你學會觀察市面風向。' }] }] },
     ],
   },
   {
@@ -21,8 +21,8 @@ const RAW: GameEvent[] = [
     tags: ['ordinary'],
     weight: 16,
     choices: [
-      { id: 'mediate', text: '上前調停', outcomes: [{ effects: [{ type: 'reputation', amount: 2 }, { type: 'narrate', text: '你把話說開，眾人總算散去。' }] }] },
-      { id: 'elder', text: '找長者作證', outcomes: [{ effects: [{ type: 'reputation', amount: 1 }, { type: 'narrate', text: '長者出面後，事情平穩落幕。' }] }] },
+      { id: 'mediate', text: '上前調停', outcomes: [{ effects: [{ type: 'reputation', amount: 2 }, { type: 'nature', delta: { xia: 2 } }, { type: 'world', delta: { order: 2 } }, { type: 'narrate', text: '你把話說開，眾人總算散去。' }] }] },
+      { id: 'elder', text: '找長者作證', outcomes: [{ effects: [{ type: 'reputation', amount: 1 }, { type: 'world', delta: { order: 1 } }, { type: 'narrate', text: '長者出面後，事情平穩落幕。' }] }] },
       { id: 'avoid', text: '避開人群', outcomes: [{ effects: [{ type: 'narrate', text: '你沒有捲入，只記下爭執中的幾個名字。' }] }] },
     ],
   },
@@ -57,9 +57,9 @@ const RAW: GameEvent[] = [
     tags: ['ordinary', 'combat'],
     weight: 12,
     choices: [
-      { id: 'escort', text: '護送一段', outcomes: [{ effects: [{ type: 'money', amount: 8 }, { type: 'reputation', amount: 1 }, { type: 'narrate', text: '你護送腳夫走過山道。' }] }] },
-      { id: 'scout', text: '探看岔路', outcomes: [{ effects: [{ type: 'health', amount: -2 }, { type: 'martial', amount: 2 }, { type: 'narrate', text: '你在岔路看見新腳印。' }] }] },
-      { id: 'delay', text: '勸人改日再行', outcomes: [{ effects: [{ type: 'reputation', amount: 1 }, { type: 'narrate', text: '你勸人避開一段山路。' }] }] },
+      { id: 'escort', text: '護送一段', outcomes: [{ effects: [{ type: 'money', amount: 8 }, { type: 'reputation', amount: 1 }, { type: 'nature', delta: { xia: 1 } }, { type: 'world', delta: { danger: -1, order: 1 } }, { type: 'narrate', text: '你護送腳夫走過山道。' }] }] },
+      { id: 'scout', text: '探看岔路', outcomes: [{ effects: [{ type: 'health', amount: -2 }, { type: 'martial', amount: 2 }, { type: 'nature', delta: { kuang: 1 } }, { type: 'world', delta: { danger: 1 } }, { type: 'narrate', text: '你在岔路看見新腳印。' }] }] },
+      { id: 'delay', text: '勸人改日再行', outcomes: [{ effects: [{ type: 'reputation', amount: 1 }, { type: 'world', delta: { danger: -1 } }, { type: 'narrate', text: '你勸人避開一段山路。' }] }] },
     ],
   },
   {

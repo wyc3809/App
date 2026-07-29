@@ -703,6 +703,27 @@ body::before {
   margin: 0 0 4px;
 }
 
+.ink-world-compact {
+  letter-spacing: 0.02em;
+}
+
+.ink-world-panel h3 {
+  margin-bottom: 10px;
+}
+
+.ink-world-grid .ink-attr {
+  min-height: 4.2rem;
+}
+
+.ink-attr-tone {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 0.68rem;
+  color: var(--ink-mid);
+  letter-spacing: 0.04em;
+}
+
 .ink-chips {
   display: flex;
   flex-wrap: wrap;

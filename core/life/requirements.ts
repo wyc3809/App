@@ -1,4 +1,5 @@
-import type { EventRequirement, LifeGameState } from '@interfaces/lifeEngine';
+import type { EventRequirement, LifeGameState, NatureAttr } from '@interfaces/lifeEngine';
+import { ensureNature } from './nature';
 
 function flagMatch(
   flags: Record<string, boolean | number | string>,
@@ -35,6 +36,18 @@ export function meetsRequirements(
     for (const [k, v] of Object.entries(req.maxAttrs)) {
       const key = k as keyof typeof c.attributes;
       if ((c.attributes[key] ?? 0) > (v ?? 0)) return false;
+    }
+  }
+
+  const nature = ensureNature(c);
+  if (req.minNature) {
+    for (const [k, v] of Object.entries(req.minNature)) {
+      if ((nature[k as NatureAttr] ?? 0) < (v ?? 0)) return false;
+    }
+  }
+  if (req.maxNature) {
+    for (const [k, v] of Object.entries(req.maxNature)) {
+      if ((nature[k as NatureAttr] ?? 0) > (v ?? 0)) return false;
     }
   }
 

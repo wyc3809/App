@@ -4,6 +4,7 @@ import { initRng, getRng, getRngState } from '@core/random';
 import { randomChineseName, resetIdCounter } from '@core/ids';
 import { SECT_CONTENT } from '@data/content/packs';
 import { rollLifetimeChildrenMax } from './family';
+import { defaultNature } from './nature';
 import { makeStoryState, makeWorldState } from './monthly';
 
 export const SECT_DEFS = SECT_CONTENT.map((s) => ({
@@ -11,6 +12,7 @@ export const SECT_DEFS = SECT_CONTENT.map((s) => ({
   name: s.name,
   hint: s.hint,
   trait: s.trait,
+  natureGate: s.natureGate,
 }));
 
 function createAttributes(rng: ReturnType<typeof getRng>): Record<WuxiaAttribute, number> {
@@ -64,6 +66,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     location: birthplace,
     conditions: [],
     attributes: attrs,
+    nature: defaultNature(),
     skills: ['基礎吐納', 'art_river_fist'],
     skillRanks: { 基礎吐納: 0, art_river_fist: 0 },
     gear: ['old-sword', 'plain-robe'],
@@ -137,6 +140,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     lifeLog: [
       `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
       `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
+      `心性 俠${character.nature.xia} · 邪${character.nature.xie} · 狂${character.nature.kuang} · 惡${character.nature.e}`,
       `氣血上限 ${maxHealth} · 內力上限 ${maxQi}`,
     ],
     phase: 'playing',
@@ -215,6 +219,10 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (c.monthsSinceLastBirth === undefined) c.monthsSinceLastBirth = 99;
   if (!c.family) c.family = {};
   if (!c.family.childrenNames) c.family.childrenNames = [];
+  if (!c.nature) c.nature = defaultNature();
+  for (const k of ['xia', 'xie', 'kuang', 'e'] as const) {
+    if (typeof c.nature[k] !== 'number') c.nature[k] = defaultNature()[k];
+  }
   if (c.flags.baseMaxHp === undefined) c.flags.baseMaxHp = c.maxHealth;
   if (c.flags.baseMaxQi === undefined) c.flags.baseMaxQi = c.maxQi;
   if (c.stats.monthsLived === undefined) c.stats.monthsLived = 0;

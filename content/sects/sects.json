@@ -11,6 +11,7 @@
       "name": "青雲劍派",
       "hint": "以劍入道，講求身法清正",
       "trait": "劍快身輕，專取破綻；高階招式帶穿透與連刺。",
+      "natureGate": { "min": { "xia": 16 }, "max": { "e": 42 } },
       "arts": [
         { "skillId": "qy_cloud_sword", "standing": 0 },
         { "skillId": "qy_mist_step", "standing": 1 },
@@ -23,6 +24,7 @@
       "name": "天刀門",
       "hint": "刀勢開闔，門風剛烈",
       "trait": "刀勢雄闊，重創與流血；越往上越講求一刀定生死。",
+      "natureGate": { "min": { "kuang": 14 }, "max": { "xia": 70 } },
       "arts": [
         { "skillId": "td_open_blade", "standing": 0 },
         { "skillId": "td_wind_slash", "standing": 1 },
@@ -35,6 +37,7 @@
       "name": "峨嵋派",
       "hint": "柔中帶剛，內外兼修",
       "trait": "柔勁卸力、鎖脈回春；內門以後偏重牽制與回復。",
+      "natureGate": { "min": { "xia": 14 }, "max": { "e": 38, "xie": 48 } },
       "arts": [
         { "skillId": "em_soft_palm", "standing": 0 },
         { "skillId": "em_silk_wrap", "standing": 1 },
@@ -47,6 +50,7 @@
       "name": "少林派",
       "hint": "禪武一體，根基深厚",
       "trait": "拳棍沉穩，抗打與定身；高階偏硬功與內壯。",
+      "natureGate": { "min": { "xia": 18 }, "max": { "e": 35, "xie": 40 } },
       "arts": [
         { "skillId": "sl_luohan_fist", "standing": 0 },
         { "skillId": "sl_weituo", "standing": 1 },
@@ -59,6 +63,7 @@
       "name": "武當派",
       "hint": "以靜制動，氣機悠長",
       "trait": "以柔克剛、氣長劍圓；高階擅耗敵內息與連綿劍意。",
+      "natureGate": { "min": { "xia": 12 }, "max": { "kuang": 55, "e": 40 } },
       "arts": [
         { "skillId": "wd_sword_form", "standing": 0 },
         { "skillId": "wd_tai_push", "standing": 1 },
@@ -67,5 +72,5 @@
       ]
     }
   ],
-  "standingGainHints": "差事、守山、請教、靜修、比武勝利可提升地位；每次升階傳授對應武學。"
+  "standingGainHints": "差事、守山、請教、靜修、比武勝利可提升地位；每次升階傳授對應武學。心性不合門規則難以拜入。"
 }

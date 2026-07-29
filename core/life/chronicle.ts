@@ -1,5 +1,5 @@
-import type { GameEffect, LifeGameState, WuxiaAttribute } from '@interfaces/lifeEngine';
-import { wuxiaAttributeLabels } from '@interfaces/lifeEngine';
+import type { GameEffect, LifeGameState, NatureAttr, WuxiaAttribute, WorldAttr } from '@interfaces/lifeEngine';
+import { natureLabels, wuxiaAttributeLabels, worldAttrLabels } from '@interfaces/lifeEngine';
 import { getLifeStageLabel } from './stages';
 
 export function formatEffectLine(eff: GameEffect, state: LifeGameState): string | null {
@@ -14,6 +14,18 @@ export function formatEffectLine(eff: GameEffect, state: LifeGameState): string 
           return `${label}${v! > 0 ? '＋' : '－'}${Math.abs(v!)}`;
         });
       return parts.length ? parts.join(' · ') : null;
+    }
+    case 'nature': {
+      const parts = Object.entries(eff.delta)
+        .filter(([, v]) => v !== undefined && v !== 0)
+        .map(([k, v]) => `${natureLabels[k as NatureAttr]}${v! > 0 ? '＋' : '－'}${Math.abs(v!)}`);
+      return parts.length ? `心性 ${parts.join(' · ')}` : null;
+    }
+    case 'world': {
+      const parts = Object.entries(eff.delta)
+        .filter(([, v]) => v !== undefined && v !== 0)
+        .map(([k, v]) => `${worldAttrLabels[k as WorldAttr]}${v! > 0 ? '＋' : '－'}${Math.abs(v!)}`);
+      return parts.length ? `天下 ${parts.join(' · ')}` : null;
     }
     case 'money':
       return eff.amount >= 0 ? `銀兩＋${eff.amount}` : `銀兩－${Math.abs(eff.amount)}`;

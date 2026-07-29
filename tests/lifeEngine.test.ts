@@ -242,6 +242,7 @@ describe('life event engine', () => {
     const state = createNewLife(8);
     state.character.martial = 50;
     state.character.skillRanks['基礎吐納'] = 2;
+    state.character.nature = { xia: 30, xie: 5, kuang: 10, e: 5 };
     // force join success by retrying
     let joined = false;
     for (let i = 0; i < 30 && !joined; i++) {
@@ -290,7 +291,46 @@ describe('life event engine', () => {
     }
     expect(state.character.childrenCount).toBeLessThanOrEqual(2);
     expect(births).toBeLessThanOrEqual(2);
-    // with 1.2% chance over 500 months uncapped would be ~6; capped at 2
     expect(births).toBeGreaterThanOrEqual(0);
+  });
+
+  it('nature 俠邪狂惡 shifts with choices and gates sects/encounters', async () => {
+    const { applyChoice } = await import('../core/life/eventEngine');
+    const { inferNatureFromChoice, meetsNatureGate } = await import('../core/life/nature');
+    const { getSectContent } = await import('../data/content/packs');
+    expect(inferNatureFromChoice('上前調停').xia).toBeGreaterThan(0);
+    expect(inferNatureFromChoice('拔刀硬闖').kuang).toBeGreaterThan(0);
+
+    initRng(42);
+    const state = createNewLife(42);
+    expect(state.character.nature.xia).toBeGreaterThan(0);
+    const market = getEventById(fullCatalog(), 'ord_alley')!;
+    const before = state.character.nature.xia;
+    const result = applyChoice(structuredClone(state), market, 'mediate');
+    expect(result.state.character.nature.xia).toBeGreaterThan(before);
+
+    const shaolin = getSectContent('sect_shaolin')!;
+    const evil = createNewLife(7);
+    evil.character.nature = { xia: 5, xie: 20, kuang: 10, e: 80 };
+    expect(meetsNatureGate(evil.character, shaolin.natureGate)).toBe(false);
+
+    const temple = getEventById(fullCatalog(), 'secret_temple_bell')!;
+    expect(meetsRequirements(evil, temple.requirements, temple.id)).toBe(false);
+    evil.character.age = 18;
+    evil.character.nature = { xia: 30, xie: 5, kuang: 8, e: 5 };
+    expect(meetsRequirements(evil, temple.requirements, temple.id)).toBe(true);
+  });
+
+  it('world four attrs exist and can change via effects', async () => {
+    const { applyEffects } = await import('../core/life/effects');
+    initRng(3);
+    const state = createNewLife(3);
+    expect(state.world.order).toBeGreaterThan(0);
+    expect(state.world.danger).toBeGreaterThan(0);
+    expect(state.world.economy).toBeGreaterThan(0);
+    expect(state.world.rumors).toBeGreaterThan(0);
+    const before = state.world.order;
+    applyEffects(state, [{ type: 'world', delta: { order: 5, danger: -2 } }]);
+    expect(state.world.order).toBe(before + 5);
   });
 });

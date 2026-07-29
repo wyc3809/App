@@ -2,6 +2,7 @@ import sectsJson from '@content/sects/sects.json';
 import martialJson from '@content/martial/catalog.json';
 import familyJson from '@content/family/rules.json';
 import storyJson from '@content/story/chapters.json';
+import type { NatureGate } from '@interfaces/lifeEngine';
 
 export interface SectRankDef {
   standing: number;
@@ -19,6 +20,7 @@ export interface SectContentDef {
   name: string;
   hint: string;
   trait: string;
+  natureGate?: NatureGate;
   arts: SectArtSlot[];
 }
 
