@@ -1,7 +1,7 @@
 import { MARTIAL_CATALOG_RAW } from '@data/content/packs';
 import { rankName } from '@core/life/martialRanks';
 
-export type SkillKind = 'external' | 'internal';
+export type SkillKind = 'external' | 'internal' | 'qinggong';
 
 export type CombatMoveId = string;
 
@@ -41,6 +41,8 @@ export interface InternalPassive {
   qiRegen?: number;
   /** 反彈所受傷害比例 0–1 */
   reflect?: number;
+  /** 閃避：降低被命中機率 0–1 */
+  evasionBonus?: number;
 }
 
 export interface SkillDef {
@@ -68,9 +70,15 @@ interface RawSkill {
   passive?: InternalPassive;
 }
 
+const LEGACY_SKILL_ALIASES: Record<string, { target: string; name?: string }> = {};
+
 function buildCatalog(): Record<string, SkillDef> {
   const out: Record<string, SkillDef> = {};
   for (const raw of MARTIAL_CATALOG_RAW.skills as RawSkill[]) {
+    if (raw.legacyAliasOf) {
+      LEGACY_SKILL_ALIASES[raw.id] = { target: raw.legacyAliasOf, name: raw.name };
+      continue;
+    }
     const def: SkillDef = {
       id: raw.id,
       name: raw.name,
@@ -106,11 +114,19 @@ export function skillLabel(id: string): string {
 }
 
 export function getSkillDef(id: string): SkillDef | undefined {
-  return SKILL_DEFS[id];
+  const alias = LEGACY_SKILL_ALIASES[id];
+  const resolved = alias?.target ?? id;
+  const def = SKILL_DEFS[resolved];
+  if (!def) return undefined;
+  if (alias?.name) return { ...def, id, name: alias.name };
+  if (resolved !== id) return { ...def, id };
+  return def;
 }
 
 export function skillKindLabel(kind: SkillKind): string {
-  return kind === 'external' ? '外功' : '內功';
+  if (kind === 'external') return '外功';
+  if (kind === 'qinggong') return '輕功';
+  return '內功';
 }
 
 export function formatSkillLine(id: string, rank: number): string {
@@ -148,6 +164,7 @@ export function formatSkillEffects(id: string): string {
     if (p.maxQi) fx.push(`內力上限+${p.maxQi}`);
     if (p.qiRegen) fx.push(`回息+${p.qiRegen}`);
     if (p.reflect) fx.push(`反震${Math.round(p.reflect * 100)}%`);
+    if (p.evasionBonus) fx.push(`閃避+${Math.round(p.evasionBonus * 100)}%`);
     if (fx.length) bits.push(`被動：${fx.join('、')}`);
   }
   return bits.join(' — ');
@@ -185,4 +202,33 @@ export function sumInternalPassives(skillIds: string[], ranks: Record<string, nu
     out.reflect = (out.reflect ?? 0) + (p.reflect ?? 0) * scale;
   }
   return out;
+}
+
+/** 輕功被動：閃避等（與內功分開累加） */
+export function sumQinggongPassives(skillIds: string[], ranks: Record<string, number>): InternalPassive {
+  const out: InternalPassive = {};
+  for (const id of skillIds) {
+    const def = getSkillDef(id);
+    if (!def || def.kind !== 'qinggong' || !def.passive) continue;
+    const rank = ranks[id] ?? 0;
+    const scale = 1 + rank * 0.25;
+    const p = def.passive;
+    out.evasionBonus = (out.evasionBonus ?? 0) + (p.evasionBonus ?? 0) * scale;
+    out.qiRegen = (out.qiRegen ?? 0) + Math.round((p.qiRegen ?? 0) * scale);
+    out.hitBonus = (out.hitBonus ?? 0) + (p.hitBonus ?? 0) * scale;
+  }
+  return out;
+}
+
+export function sumEvasionBonus(skillIds: string[], ranks: Record<string, number>): number {
+  const q = sumQinggongPassives(skillIds, ranks);
+  let ev = q.evasionBonus ?? 0;
+  for (const id of skillIds) {
+    const def = getSkillDef(id);
+    if (!def || def.kind !== 'internal' || !def.passive?.evasionBonus) continue;
+    const rank = ranks[id] ?? 0;
+    const scale = 1 + rank * 0.25;
+    ev += def.passive.evasionBonus * scale;
+  }
+  return Math.min(0.42, ev);
 }

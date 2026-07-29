@@ -58,7 +58,7 @@ const RAW: GameEvent[] = [
         outcomes: [
           {
             effects: [
-              { type: 'learnSkill', skillId: 'art_bridge_step', name: '斷橋步' },
+              { type: 'learnSkill', skillId: 'qg_broken_bridge', name: '斷橋步' },
               { type: 'martial', amount: 10 },
               { type: 'maxHealth', amount: 15 },
               { type: 'narrate', text: '雨打石橋，老者只點你三處破綻，又教你三步身法。你依言演過，衣袖已濕透。抬頭再找時，青衣人影已沒入雨幕，只餘橋下水聲——斷橋之步，卻留在了你腿上。' },

@@ -14,7 +14,7 @@ import { getEventById } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
-import { getGearDef } from '@data/equipment/catalog';
+import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay, worldTone } from '@core/life/flavor';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
@@ -426,7 +426,7 @@ export function InkPlayScreen({ state }: Props) {
               return (
                 <p key={slot} className="ink-note">
                   {slot === 'weapon' ? '兵刃' : slot === 'armor' ? '護體' : '佩飾'} ·{' '}
-                  {def ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}）` : '空'}
+                  {def ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}${def.weaponKind ? `·${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}）` : '空'}
                 </p>
               );
             })}
@@ -440,7 +440,10 @@ export function InkPlayScreen({ state }: Props) {
                   <li key={id}>
                     <span>
                       {def.name}
-                      <em>{RARITY_ZH[def.rarity]}</em>
+                      <em>
+                        {RARITY_ZH[def.rarity]}
+                        {def.weaponKind ? ` · ${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}
+                      </em>
                     </span>
                     <span className="ink-gear-desc">{def.description}</span>
                   </li>

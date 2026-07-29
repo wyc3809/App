@@ -1,11 +1,14 @@
 export type GearSlot = 'weapon' | 'armor' | 'accessory';
 export type GearRarity = 'common' | 'fine' | 'rare' | 'epic' | 'divine';
+export type WeaponKind = 'sword' | 'blade' | 'spear' | 'staff' | 'whip' | 'bow' | 'hidden';
 
 export interface GearDef {
   id: string;
   name: string;
   slot: GearSlot;
   rarity: GearRarity;
+  /** 兵器種類（僅武器槽） */
+  weaponKind?: WeaponKind;
   attack?: number;
   defense?: number;
   maxHpBonus?: number;
@@ -14,12 +17,23 @@ export interface GearDef {
   description: string;
 }
 
+export const WEAPON_KIND_LABEL: Record<WeaponKind, string> = {
+  sword: '劍',
+  blade: '刀',
+  spear: '槍',
+  staff: '杖',
+  whip: '鞭',
+  bow: '弓',
+  hidden: '暗器',
+};
+
 export const GEAR_CATALOG: GearDef[] = [
   {
     id: 'old-sword',
     name: '舊鐵劍',
     slot: 'weapon',
     rarity: 'common',
+    weaponKind: 'sword',
     attack: 4,
     description: '市井鐵匠的粗胚，勉強能防身。',
   },
@@ -36,6 +50,7 @@ export const GEAR_CATALOG: GearDef[] = [
     name: '精鋼刀',
     slot: 'weapon',
     rarity: 'fine',
+    weaponKind: 'blade',
     attack: 10,
     martialBonus: 2,
     description: '刃口寒光隱現，適合行路。',
@@ -72,6 +87,7 @@ export const GEAR_CATALOG: GearDef[] = [
     name: '墨雨劍',
     slot: 'weapon',
     rarity: 'epic',
+    weaponKind: 'sword',
     attack: 22,
     martialBonus: 8,
     maxQiBonus: 20,
@@ -82,6 +98,7 @@ export const GEAR_CATALOG: GearDef[] = [
     name: '百煉百折刀',
     slot: 'weapon',
     rarity: 'epic',
+    weaponKind: 'blade',
     attack: 28,
     martialBonus: 10,
     maxHpBonus: 30,
@@ -92,11 +109,84 @@ export const GEAR_CATALOG: GearDef[] = [
     name: '玄鐵重劍',
     slot: 'weapon',
     rarity: 'divine',
+    weaponKind: 'sword',
     attack: 48,
     martialBonus: 18,
     maxHpBonus: 60,
     maxQiBonus: 40,
     description: '神兵遺響，重若千鈞，唯有根骨深厚者可御。',
+  },
+  {
+    id: 'bronze-spear',
+    name: '青銅槍',
+    slot: 'weapon',
+    rarity: 'fine',
+    weaponKind: 'spear',
+    attack: 11,
+    martialBonus: 1,
+    description: '槍尖沉穩，進退有度，江湖行腳常見。',
+  },
+  {
+    id: 'crescent-blade',
+    name: '月牙彎刀',
+    slot: 'weapon',
+    rarity: 'rare',
+    weaponKind: 'blade',
+    attack: 16,
+    martialBonus: 4,
+    description: '刀弧如月，擅取側翼。',
+  },
+  {
+    id: 'pine-staff',
+    name: '鐵頭竹杖',
+    slot: 'weapon',
+    rarity: 'fine',
+    weaponKind: 'staff',
+    attack: 8,
+    defense: 3,
+    martialBonus: 2,
+    description: '杖法入門，攻守兼備。',
+  },
+  {
+    id: 'meteor-whip',
+    name: '流星軟鞭',
+    slot: 'weapon',
+    rarity: 'rare',
+    weaponKind: 'whip',
+    attack: 14,
+    martialBonus: 5,
+    maxQiBonus: 10,
+    description: '鞭影連綿，遠近皆宜。',
+  },
+  {
+    id: 'hunter-bow',
+    name: '獵弓',
+    slot: 'weapon',
+    rarity: 'fine',
+    weaponKind: 'bow',
+    attack: 9,
+    martialBonus: 3,
+    description: '弓弦緊繃，百步穿楊需日課。',
+  },
+  {
+    id: 'sleeve-darts',
+    name: '袖裡飛針',
+    slot: 'weapon',
+    rarity: 'rare',
+    weaponKind: 'hidden',
+    attack: 12,
+    martialBonus: 6,
+    description: '暗器無形，出手須留三分。',
+  },
+  {
+    id: 'twin-hooks',
+    name: '鴛鴦雙鉤',
+    slot: 'weapon',
+    rarity: 'epic',
+    weaponKind: 'blade',
+    attack: 24,
+    martialBonus: 9,
+    description: '雙鉤相扣，專破兵刃格擋。',
   },
   {
     id: 'divine-silk-armor',
@@ -139,9 +229,13 @@ export function rollForgeResult(rng: { nextFloat: () => number; chance: (p: numb
   if (roll < 0.09) return 'divine-moon-pendant';
   if (roll < 0.22) return 'hundredfold-blade';
   if (roll < 0.35) return 'inkrain-sword';
+  if (roll < 0.48) return 'twin-hooks';
   if (roll < 0.55) return 'jade-token';
-  if (roll < 0.7) return 'cloud-boots';
-  if (roll < 0.85) return 'iron-blade';
+  if (roll < 0.65) return 'meteor-whip';
+  if (roll < 0.72) return 'crescent-blade';
+  if (roll < 0.78) return 'cloud-boots';
+  if (roll < 0.88) return 'iron-blade';
+  if (roll < 0.94) return 'bronze-spear';
   return 'pine-armor';
 }
 
@@ -150,10 +244,16 @@ export function rollAdventureGear(rng: { nextFloat: () => number }): string | nu
   if (roll < 0.02) return 'divine-xuan-sword';
   if (roll < 0.035) return 'divine-silk-armor';
   if (roll < 0.05) return 'divine-moon-pendant';
-  if (roll < 0.12) return 'inkrain-sword';
+  if (roll < 0.1) return 'twin-hooks';
+  if (roll < 0.14) return 'inkrain-sword';
   if (roll < 0.2) return 'hundredfold-blade';
+  if (roll < 0.28) return 'sleeve-darts';
   if (roll < 0.35) return 'jade-token';
+  if (roll < 0.42) return 'meteor-whip';
   if (roll < 0.5) return 'cloud-boots';
-  if (roll < 0.7) return 'iron-blade';
+  if (roll < 0.62) return 'crescent-blade';
+  if (roll < 0.72) return 'iron-blade';
+  if (roll < 0.82) return 'bronze-spear';
+  if (roll < 0.9) return 'hunter-bow';
   return null;
 }

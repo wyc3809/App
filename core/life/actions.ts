@@ -297,6 +297,12 @@ export function performPracticeAction(
           { id: 'art_iron_body', name: '鐵布衫' },
           { id: 'art_moon_sword', name: '弄月劍法' },
           { id: 'art_void_breath', name: '空冥吐納' },
+          { id: 'art_wind_chase', name: '追風腿' },
+          { id: 'art_tiger_breath', name: '虎嘯內勁' },
+          { id: 'art_spring_well', name: '涌泉訣' },
+          { id: 'qg_snow_track', name: '踏雪無痕' },
+          { id: 'qg_swallow_turn', name: '燕子三轉' },
+          { id: 'qg_feiyan', name: '飛燕功' },
         ];
         const art = rng.pick(arts);
         if (!c.skills.includes(art.id)) {

@@ -170,6 +170,44 @@ describe('life event engine', () => {
     expect(logs.some((l) => /武當|機緣未到|根基尚淺/.test(l))).toBe(true);
   });
 
+  it('qinggong passives increase combat evasion', async () => {
+    const { startCombat } = await import('../core/life/combat');
+    const { learnMartialArt } = await import('../core/life/flavor');
+    initRng(11);
+    const state = createNewLife(11);
+    learnMartialArt(state, 'qg_snow_track', '踏雪無痕');
+    startCombat(state, { source: 'spar', title: '試', foeName: '木人', foePower: 'weak' });
+    expect(state.pendingCombat!.player.evasion).toBeGreaterThan(0.05);
+  });
+
+  it('boss win grants configured skill and gear', async () => {
+    const { startCombat, playerCombatTurn } = await import('../core/life/combat');
+    const { getBossFightConfig } = await import('../data/events/bossEncounters');
+    initRng(3);
+    const state = createNewLife(3);
+    state.character.martial = 80;
+    state.character.maxHealth = 500;
+    state.character.health = 500;
+    const cfg = getBossFightConfig('boss_scarlet_viper')!;
+    startCombat(state, {
+      source: 'event',
+      title: '首領·赤練娘',
+      foeName: cfg.foeName,
+      foePower: cfg.foePower,
+      rewardOnWin: cfg.rewardOnWin,
+      eventId: 'boss_scarlet_viper',
+    });
+    const combat = state.pendingCombat!;
+    combat.foe.hp = 1;
+    combat.player.qi = 200;
+    while (state.pendingCombat && state.pendingCombat.phase !== 'ended') {
+      playerCombatTurn(state, 'basic_strike');
+      if (state.pendingCombat && state.pendingCombat.turn > 40) break;
+    }
+    expect(state.character.skills).toContain('art_shadow_needle');
+    expect(state.character.gear).toContain('sleeve-darts');
+  });
+
   it('turn-based combat uses external moves and internal passives', async () => {
     const { startCombat, playerCombatTurn, getPlayerMoves } = await import('../core/life/combat');
     initRng(5);

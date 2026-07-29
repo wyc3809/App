@@ -8,7 +8,7 @@
 | 檔案 | 用途 |
 |------|------|
 | `sects/sects.json` | 五大門派、地位名稱、每派四套武學解鎖條件 |
-| `martial/catalog.json` | 全部武學名稱、特色文案、戰鬥特效／內功被動 |
+| `martial/catalog.json` | 全部武學名稱、特色文案、戰鬥特效／內功被動／**輕功閃避**（`kind: qinggong` + `evasionBonus`） |
 | `family/rules.json` | 生育機率、一生孩子上限、年齡與冷卻 |
 | `story/chapters.json` | 主線章節標題與目標（劇本大綱） |
 | `sects/sects.json` 的 `natureGate` | 門派心性門檻（俠邪狂惡） |

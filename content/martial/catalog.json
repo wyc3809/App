@@ -183,6 +183,132 @@
     },
 
     {
+      "id": "art_wind_chase",
+      "name": "追風腿",
+      "kind": "external",
+      "flavor": "江湖散修腿法，快如追風，專打下盤破綻。",
+      "move": {
+        "id": "mv_wind_chase",
+        "name": "追風三連",
+        "qiCost": 16,
+        "power": 1.35,
+        "hitBonus": 0.1,
+        "multiHit": 2,
+        "description": "腿影連環，逼敵退守。"
+      }
+    },
+    {
+      "id": "art_hook_silk",
+      "name": "鐵線鉤法",
+      "kind": "external",
+      "flavor": "鉤走偏鋒，專鎖兵刃，非門派嫡傳亦可自修。",
+      "move": {
+        "id": "mv_hook_silk",
+        "name": "鐵線鎖刃",
+        "qiCost": 18,
+        "power": 1.42,
+        "pierce": 0.15,
+        "defenseBreak": 4,
+        "description": "鉤尖一繞，敵刃難發。"
+      }
+    },
+    {
+      "id": "art_meteor_palm",
+      "name": "流星掌",
+      "kind": "external",
+      "flavor": "掌勢連綿如流星墜地，江湖賭坊常見此路數。",
+      "move": {
+        "id": "mv_meteor_palm",
+        "name": "流星墜",
+        "qiCost": 19,
+        "power": 1.5,
+        "stunChance": 0.22,
+        "description": "掌風壓頂，令人氣短。"
+      }
+    },
+    {
+      "id": "art_tiger_breath",
+      "name": "虎嘯內勁",
+      "kind": "internal",
+      "flavor": "以聲催氣，內勁沉雄，非名門亦可自悟殘篇。",
+      "passive": { "attack": 5, "maxHp": 30, "qiRegen": 6 }
+    },
+    {
+      "id": "art_spring_well",
+      "name": "涌泉訣",
+      "kind": "internal",
+      "flavor": "氣海如泉，內息不竭，行走江湖的保命底氣。",
+      "passive": { "maxQi": 40, "qiRegen": 12, "defense": 3 }
+    },
+    {
+      "id": "art_shadow_needle",
+      "name": "無影針訣",
+      "kind": "external",
+      "flavor": "暗器與指勁合一，非奇遇難得全本。",
+      "encounterOnly": true,
+      "move": {
+        "id": "mv_shadow_needle",
+        "name": "無影一針",
+        "qiCost": 14,
+        "power": 1.25,
+        "hitBonus": 0.14,
+        "pierce": 0.25,
+        "bleedChance": 0.3,
+        "bleedDamage": 5,
+        "bleedTurns": 2,
+        "description": "針出無聲，血線難察。"
+      }
+    },
+    {
+      "id": "qg_snow_track",
+      "name": "踏雪無痕",
+      "kind": "qinggong",
+      "flavor": "足尖點地，不留痕跡，身法輕靈。",
+      "passive": { "evasionBonus": 0.06 }
+    },
+    {
+      "id": "qg_swallow_turn",
+      "name": "燕子三轉",
+      "kind": "qinggong",
+      "flavor": "身如燕返，危機中往往能錯開半寸致命一擊。",
+      "passive": { "evasionBonus": 0.08, "qiRegen": 2 }
+    },
+    {
+      "id": "qg_feiyan",
+      "name": "飛燕功",
+      "kind": "qinggong",
+      "flavor": "縱躍如飛，江湖逃命第一等身法。",
+      "passive": { "evasionBonus": 0.07 }
+    },
+    {
+      "id": "qg_canopy_void",
+      "name": "凌虛步",
+      "kind": "qinggong",
+      "flavor": "步法近乎凌虛，傳聞只授有德之人。",
+      "encounterOnly": true,
+      "passive": { "evasionBonus": 0.12, "hitBonus": 0.03 }
+    },
+    {
+      "id": "qg_broken_bridge",
+      "name": "斷橋步",
+      "kind": "qinggong",
+      "flavor": "雨夜橋上所得身法，專長閃避欺近。",
+      "passive": { "evasionBonus": 0.05, "hitBonus": 0.04 }
+    },
+    {
+      "id": "skill_sword_basic",
+      "name": "青雲劍法（殘篇）",
+      "kind": "external",
+      "legacyAliasOf": "art_moon_sword"
+    },
+    {
+      "id": "skill_internal",
+      "name": "混元心法",
+      "kind": "internal",
+      "legacyAliasOf": "art_void_breath"
+    },
+
+    {
       "id": "qy_cloud_sword",
       "name": "青雲初劍",
       "kind": "external",

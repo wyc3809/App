@@ -11,9 +11,12 @@ import {
   getSkillDef,
   listExternalMovesForSkills,
   sumInternalPassives,
+  sumEvasionBonus,
   type CombatMoveDef,
 } from '@data/skills/catalog';
 import { rankPowerMult } from './martialRanks';
+import { grantGear } from './equipment';
+import { learnMartialArt } from './flavor';
 
 export type CombatFighter = CombatFighterState;
 export type PendingCombat = PendingCombatState;
@@ -27,6 +30,7 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
   ensureGear(c);
   const gear = gearTotals(c);
   const passive = sumInternalPassives(c.skills, c.skillRanks ?? {});
+  const evasion = sumEvasionBonus(c.skills, c.skillRanks ?? {}) + c.attributes.danShi / 500;
   const maxHp = c.health;
   const maxQi = c.qi;
   return {
@@ -38,6 +42,7 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
     attack: 12 + Math.floor(c.martial / 4) + gear.attack + gear.martialBonus + (passive.attack ?? 0),
     defense: 6 + Math.floor(c.attributes.genGu / 12) + gear.defense + (passive.defense ?? 0),
     hitBonus: 0.05 + c.attributes.danShi / 400 + (passive.hitBonus ?? 0),
+    evasion: Math.min(0.45, evasion),
     qiRegen: 6 + (passive.qiRegen ?? 0),
     blind: 0,
     isPlayer: true,
@@ -51,21 +56,23 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
 
 export function buildFoe(
   name: string,
-  power: 'weak' | 'normal' | 'strong' = 'normal',
+  power: 'weak' | 'normal' | 'strong' | 'boss' = 'normal',
 ): CombatFighter {
-  const mult = power === 'weak' ? 0.75 : power === 'strong' ? 1.35 : 1;
-  const maxHp = Math.round(90 * mult);
-  const maxQi = Math.round(70 * mult);
+  const mult =
+    power === 'weak' ? 0.75 : power === 'strong' ? 1.35 : power === 'boss' ? 1.75 : 1;
+  const maxHp = Math.round((power === 'boss' ? 130 : 90) * mult);
+  const maxQi = Math.round((power === 'boss' ? 95 : 70) * mult);
   return {
     name,
     hp: maxHp,
     maxHp,
     qi: maxQi,
     maxQi,
-    attack: Math.round(14 * mult),
-    defense: Math.round(7 * mult),
-    hitBonus: 0.04 * mult,
-    qiRegen: 5,
+    attack: Math.round((power === 'boss' ? 18 : 14) * mult),
+    defense: Math.round((power === 'boss' ? 9 : 7) * mult),
+    hitBonus: (power === 'boss' ? 0.08 : 0.04) * mult,
+    evasion: power === 'boss' ? 0.06 : 0,
+    qiRegen: power === 'boss' ? 7 : 5,
     blind: 0,
     isPlayer: false,
     stun: 0,
@@ -82,7 +89,7 @@ export function startCombat(
     source: PendingCombat['source'];
     title: string;
     foeName: string;
-    foePower?: 'weak' | 'normal' | 'strong';
+    foePower?: 'weak' | 'normal' | 'strong' | 'boss';
     rewardOnWin?: PendingCombat['rewardOnWin'];
     rewardOnLose?: PendingCombat['rewardOnLose'];
     eventId?: string;
@@ -163,14 +170,19 @@ function resolveOneHit(
 ): string[] {
   const lines: string[] = [];
   const hitChance = clamp(
-    0.62 + attacker.hitBonus + (move.hitBonus ?? 0) - defender.blind - hitIndex * 0.04,
-    0.18,
+    0.62 +
+      attacker.hitBonus +
+      (move.hitBonus ?? 0) -
+      (defender.evasion ?? 0) -
+      defender.blind -
+      hitIndex * 0.04,
+    0.12,
     0.95,
   );
   if (!rng.chance(hitChance)) {
     lines.push(
       totalHits > 1
-        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被閃過。`
+        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被${defender.name}閃過。`
         : `${attacker.name}使出「${move.name}」，被${defender.name}閃過！`,
     );
     return lines;
@@ -328,6 +340,13 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
     if (r.martial) {
       c.martial += r.martial;
       lines.push(`武學＋${r.martial}`);
+    }
+    if (r.skillId && !c.skills.includes(r.skillId)) {
+      lines.push(learnMartialArt(state, r.skillId, r.skillName));
+    }
+    if (r.gearId) {
+      const gearName = grantGear(state, r.gearId);
+      if (gearName) lines.push(`戰利品：「${gearName}」`);
     }
     if (combat.source === 'spar' && c.sectId) {
       const stand = tryGainSectStanding(state, 0.55);

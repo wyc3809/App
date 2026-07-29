@@ -10,6 +10,7 @@ import { RANDOM_PACK_EVENTS } from './packAdapter';
 import { ORDINARY_EVENTS } from '@data/events/ordinary';
 import { EVENT_CATALOG } from '@data/events/catalog';
 import { SECRET_ART_EVENTS } from '@data/events/secretArts';
+import { BOSS_ENCOUNTER_EVENTS, getBossFightConfig } from '@data/events/bossEncounters';
 import { getRng } from '@core/random';
 import { rollAdventureGear } from '@data/equipment/catalog';
 import { grantGear } from './equipment';
@@ -70,7 +71,7 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
 
 /** 合併：日常 + 秘傳奇遇 + 舊 50 + 百人包 */
 export function fullCatalog(): GameEvent[] {
-  return [...ORDINARY_EVENTS, ...SECRET_ART_EVENTS, ...ENRICHED_CATALOG, ...RANDOM_PACK_EVENTS];
+  return [...ORDINARY_EVENTS, ...SECRET_ART_EVENTS, ...BOSS_ENCOUNTER_EVENTS, ...ENRICHED_CATALOG, ...RANDOM_PACK_EVENTS];
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
@@ -148,20 +149,24 @@ export function applyChoice(
     (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) &&
     !isFleeChoice(choice.id, choice.text)
   ) {
+    const bossCfg = tags.includes('boss') ? getBossFightConfig(event.id) : undefined;
     const foeName =
-      /assassin|殺手/.test(event.id + event.title)
+      bossCfg?.foeName ??
+      (/assassin|殺手/.test(event.id + event.title)
         ? '蒙面殺手'
         : /bandit|賊|山/.test(event.id + event.title)
           ? '山賊'
           : /rival|宿敵/.test(event.id + event.title)
             ? '宿敵'
-            : event.title.slice(0, 6) || '來敵';
+            : event.title.slice(0, 6) || '來敵');
     const logs = startCombat(state, {
       source: 'event',
-      title: (tags.includes('pack') ? '江湖偶遇·交手' : event.title),
+      title: tags.includes('boss') ? `首領·${event.title}` : tags.includes('pack') ? '江湖偶遇·交手' : event.title,
       foeName,
-      foePower: state.character.martial > 40 ? 'strong' : 'normal',
-      rewardOnWin: { money: 8, reputation: 2, martial: 2 },
+      foePower: bossCfg?.foePower ?? (state.character.martial > 40 ? 'strong' : 'normal'),
+      rewardOnWin:
+        bossCfg?.rewardOnWin ??
+        { money: 8, reputation: 2, martial: 2 },
       rewardOnLose: { money: -5, reputation: -1 },
       eventId: event.id,
     });
@@ -309,7 +314,11 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let event: GameEvent | null = null;
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
-  if (shouldTriggerSpecial(state)) {
+  const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
+  if (bossPool.length && rng.chance(0.048)) {
+    event = weightedPick(state, bossPool);
+    kind = 'special';
+  } else if (shouldTriggerSpecial(state)) {
     // Pack v1 流程：conditions 過濾 → weight 加權；再混入秘傳奇遇
     const packPick = pickPackEvent(state);
     if (packPick) {

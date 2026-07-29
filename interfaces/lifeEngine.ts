@@ -270,6 +270,8 @@ export interface CombatFighterState {
   attack: number;
   defense: number;
   hitBonus: number;
+  /** 閃避加成：降低敵方命中機率（0–0.45 建議上限） */
+  evasion: number;
   qiRegen: number;
   blind: number;
   isPlayer: boolean;
@@ -290,7 +292,14 @@ export interface PendingCombat {
   foe: CombatFighterState;
   log: string[];
   usedExternalSkillIds: string[];
-  rewardOnWin?: { money?: number; reputation?: number; martial?: number };
+  rewardOnWin?: {
+    money?: number;
+    reputation?: number;
+    martial?: number;
+    gearId?: string;
+    skillId?: string;
+    skillName?: string;
+  };
   rewardOnLose?: { money?: number; reputation?: number };
   eventId?: string;
 }
