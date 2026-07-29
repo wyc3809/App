@@ -1,0 +1,35 @@
+{
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "千燈初醒",
+      "goal": "在千燈鎮立足，認識江湖的第一批人。",
+      "nextMilestone": 6
+    },
+    {
+      "chapter": 2,
+      "title": "初入江湖",
+      "goal": "拜師或自立，闖出第一段名望。",
+      "nextMilestone": 8
+    },
+    {
+      "chapter": 3,
+      "title": "刀光人情",
+      "goal": "在恩怨與情義之間，守住自己的路。",
+      "nextMilestone": 10
+    },
+    {
+      "chapter": 4,
+      "title": "江湖遠志",
+      "goal": "讓這一生留下可被傳頌的痕跡。",
+      "nextMilestone": 12
+    },
+    {
+      "chapter": 5,
+      "title": "青史留名",
+      "goal": "門派、情義與武學，終成你這一生的註腳。",
+      "nextMilestone": 14
+    }
+  ],
+  "notes": "章節進度由每月推進；可改 title／goal 來寫主線劇本大綱。"
+}

@@ -21,6 +21,7 @@ export function buildLifeSummary(state: LifeGameState): string {
     `　　財富峰值 ${c.stats.wealthPeak} 兩`,
     `　　閱事 ${c.stats.eventsSeen}　·　決鬥 ${c.stats.combats}（勝 ${c.stats.combatsWon}）`,
     `　　姻緣 ${c.stats.lovers}`,
+    `　　子女 ${c.childrenCount ?? 0}/${c.childrenMax ?? 0}`,
   ];
 
   if (c.skills.length) {
@@ -31,6 +32,9 @@ export function buildLifeSummary(state: LifeGameState): string {
   }
   if (c.loverId && state.npcs[c.loverId]) {
     lines.push(`　　【眷屬】${state.npcs[c.loverId].name}`);
+  }
+  if (c.family?.childrenNames?.length) {
+    lines.push(`　　【子女】${c.family.childrenNames.join('、')}`);
   }
 
   const epitaph =

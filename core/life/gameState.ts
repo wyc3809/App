@@ -2,15 +2,16 @@ import type { LifeCharacter, LifeGameState, WuxiaAttribute } from '@interfaces/l
 import { wuxiaAttributeKeys } from '@interfaces/lifeEngine';
 import { initRng, getRng, getRngState } from '@core/random';
 import { randomChineseName, resetIdCounter } from '@core/ids';
+import { SECT_CONTENT } from '@data/content/packs';
+import { rollLifetimeChildrenMax } from './family';
 import { makeStoryState, makeWorldState } from './monthly';
 
-export const SECT_DEFS = [
-  { id: 'sect_qingyun', name: '青雲劍派', hint: '以劍入道，講求身法清正' },
-  { id: 'sect_tiandao', name: '天刀門', hint: '刀勢開闔，門風剛烈' },
-  { id: 'sect_emei', name: '峨嵋派', hint: '柔中帶剛，內外兼修' },
-  { id: 'sect_shaolin', name: '少林派', hint: '禪武一體，根基深厚' },
-  { id: 'sect_wudang', name: '武當派', hint: '以靜制動，氣機悠長' },
-] as const;
+export const SECT_DEFS = SECT_CONTENT.map((s) => ({
+  id: s.id,
+  name: s.name,
+  hint: s.hint,
+  trait: s.trait,
+}));
 
 function createAttributes(rng: ReturnType<typeof getRng>): Record<WuxiaAttribute, number> {
   const attrs = {} as Record<WuxiaAttribute, number>;
@@ -68,9 +69,13 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     gear: ['old-sword', 'plain-robe'],
     equipment: { weapon: 'old-sword', armor: 'plain-robe', accessory: null },
     sectId: null,
+    sectStanding: 0,
     loverId: null,
+    childrenCount: 0,
+    childrenMax: rollLifetimeChildrenMax(rng),
+    monthsSinceLastBirth: 99,
     flags: { baseMaxHp: maxHealth, baseMaxQi: maxQi },
-    family: { fatherName, motherName },
+    family: { fatherName, motherName, childrenNames: [] },
     stats: {
       yearsLived: 0,
       monthsLived: 0,
@@ -204,6 +209,12 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   for (const id of c.skills ?? []) {
     if (c.skillRanks[id] === undefined) c.skillRanks[id] = 0;
   }
+  if (c.sectStanding === undefined) c.sectStanding = c.sectId ? 0 : 0;
+  if (c.childrenCount === undefined) c.childrenCount = c.family?.childrenNames?.length ?? 0;
+  if (c.childrenMax === undefined) c.childrenMax = Math.max(1, Math.min(5, c.childrenCount || 3));
+  if (c.monthsSinceLastBirth === undefined) c.monthsSinceLastBirth = 99;
+  if (!c.family) c.family = {};
+  if (!c.family.childrenNames) c.family.childrenNames = [];
   if (c.flags.baseMaxHp === undefined) c.flags.baseMaxHp = c.maxHealth;
   if (c.flags.baseMaxQi === undefined) c.flags.baseMaxQi = c.maxQi;
   if (c.stats.monthsLived === undefined) c.stats.monthsLived = 0;

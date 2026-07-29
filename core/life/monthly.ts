@@ -1,5 +1,7 @@
 import type { LifeGameState, WorldState, StoryState, LifeCondition } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
+import { STORY_CHAPTERS } from '@data/content/packs';
+import { tryMonthlyBirth } from './family';
 
 export function makeWorldState(): WorldState {
   const rng = getRng();
@@ -14,12 +16,13 @@ export function makeWorldState(): WorldState {
 }
 
 export function makeStoryState(): StoryState {
+  const first = STORY_CHAPTERS[0];
   return {
-    chapter: 1,
-    title: '千燈初醒',
-    goal: '在千燈鎮立足，認識江湖的第一批人。',
+    chapter: first?.chapter ?? 1,
+    title: first?.title ?? '千燈初醒',
+    goal: first?.goal ?? '在千燈鎮立足，認識江湖的第一批人。',
     progress: 0,
-    nextMilestone: 6,
+    nextMilestone: first?.nextMilestone ?? 6,
   };
 }
 
@@ -99,14 +102,13 @@ export function advanceStoryMonth(state: LifeGameState): void {
   if (s.progress >= s.nextMilestone) {
     s.chapter += 1;
     s.progress = 0;
-    s.nextMilestone = Math.min(18, s.nextMilestone + 2);
-    if (s.chapter === 2) {
-      s.title = '初入江湖';
-      s.goal = '拜師或自立，闖出第一段名望。';
-    } else if (s.chapter === 3) {
-      s.title = '刀光人情';
-      s.goal = '在恩怨與情義之間，守住自己的路。';
-    } else if (s.chapter >= 4) {
+    const def = STORY_CHAPTERS.find((ch) => ch.chapter === s.chapter);
+    if (def) {
+      s.title = def.title;
+      s.goal = def.goal;
+      s.nextMilestone = def.nextMilestone;
+    } else {
+      s.nextMilestone = Math.min(18, s.nextMilestone + 2);
       s.title = '江湖遠志';
       s.goal = '讓這一生留下可被傳頌的痕跡。';
     }
@@ -123,6 +125,7 @@ export function simulateMonthBody(state: LifeGameState): void {
   tickConditions(state);
   simulateWorldMonth(state);
   advanceStoryMonth(state);
+  tryMonthlyBirth(state);
 
   if (c.health <= 0) {
     c.alive = false;

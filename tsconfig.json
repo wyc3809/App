@@ -21,8 +21,9 @@
     "paths": {
       "@core/*": ["core/*"],
       "@interfaces/*": ["interfaces/*"],
-      "@data/*": ["data/*"]
+      "@data/*": ["data/*"],
+      "@content/*": ["content/*"]
     }
   },
-  "include": ["src", "core", "interfaces", "tests", "data"]
+  "include": ["src", "core", "interfaces", "tests", "data", "content"]
 }

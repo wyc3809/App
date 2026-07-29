@@ -195,4 +195,102 @@ describe('life event engine', () => {
     state.character.age = 18;
     expect(meetsRequirements(state, sectEv.requirements, sectEv.id)).toBe(true);
   });
+
+  it('content packs: each sect has four arts with combat-useful effects', async () => {
+    const { SECT_CONTENT, FAMILY_RULES, STORY_CHAPTERS } = await import('../data/content/packs');
+    const { getSkillDef } = await import('../data/skills/catalog');
+    expect(SECT_CONTENT).toHaveLength(5);
+    expect(STORY_CHAPTERS.length).toBeGreaterThanOrEqual(4);
+    expect(FAMILY_RULES.lifetimeChildrenMax).toBe(5);
+    expect(FAMILY_RULES.lifetimeChildrenMin).toBe(1);
+    expect(FAMILY_RULES.monthlyBirthChance).toBeLessThan(0.05);
+    for (const sect of SECT_CONTENT) {
+      expect(sect.arts).toHaveLength(4);
+      const standings = sect.arts.map((a) => a.standing).sort();
+      expect(standings).toEqual([0, 1, 2, 3]);
+      for (const art of sect.arts) {
+        const def = getSkillDef(art.skillId);
+        expect(def, art.skillId).toBeTruthy();
+        expect(def!.flavor).toBeTruthy();
+        if (def!.kind === 'external') {
+          const m = def!.move!;
+          const hasFx =
+            (m.pierce ?? 0) > 0 ||
+            (m.multiHit ?? 1) > 1 ||
+            (m.qiDrain ?? 0) > 0 ||
+            (m.bleedChance ?? 0) > 0 ||
+            (m.stunChance ?? 0) > 0 ||
+            (m.lifesteal ?? 0) > 0 ||
+            (m.healSelf ?? 0) > 0 ||
+            (m.applyBlind ?? 0) > 0 ||
+            (m.defenseBreak ?? 0) > 0 ||
+            (m.hitBonus ?? 0) > 0 ||
+            m.power >= 1.3;
+          expect(hasFx, art.skillId).toBe(true);
+        } else {
+          expect(def!.passive).toBeTruthy();
+        }
+      }
+    }
+  });
+
+  it('joining sect teaches standing-0 art and standing can unlock more', async () => {
+    const { performPracticeAction } = await import('../core/life/actions');
+    const { tryGainSectStanding } = await import('../core/life/sectStanding');
+    const { artForStanding } = await import('../data/content/packs');
+    initRng(8);
+    const state = createNewLife(8);
+    state.character.martial = 50;
+    state.character.skillRanks['基礎吐納'] = 2;
+    // force join success by retrying
+    let joined = false;
+    for (let i = 0; i < 30 && !joined; i++) {
+      state.practiceActionsLeft = 3;
+      state.character.sectId = null;
+      performPracticeAction(state, 'join_sect', { sectId: 'sect_qingyun' });
+      joined = !!state.character.sectId;
+    }
+    expect(joined).toBe(true);
+    const art0 = artForStanding('sect_qingyun', 0)!;
+    expect(state.character.skills).toContain(art0);
+    expect(state.character.sectStanding).toBe(0);
+    // force standing ups
+    for (let i = 0; i < 20 && (state.character.sectStanding ?? 0) < 3; i++) {
+      tryGainSectStanding(state, 1);
+    }
+    expect(state.character.sectStanding).toBe(3);
+    expect(state.character.skills).toContain(artForStanding('sect_qingyun', 3)!);
+  });
+
+  it('birth chance is low and capped by childrenMax 1–5', async () => {
+    const { tryMonthlyBirth, ensureFamilyFields } = await import('../core/life/family');
+    initRng(100);
+    const state = createNewLife(100);
+    ensureFamilyFields(state.character);
+    expect(state.character.childrenMax).toBeGreaterThanOrEqual(1);
+    expect(state.character.childrenMax).toBeLessThanOrEqual(5);
+    state.character.age = 25;
+    state.character.loverId = 'lover_candidate';
+    state.npcs.lover_candidate = {
+      id: 'lover_candidate',
+      name: '紅袖',
+      gender: 'female',
+      role: 'lover',
+      affinity: 80,
+      memories: [],
+      alive: true,
+    };
+    state.character.childrenMax = 2;
+    state.character.monthsSinceLastBirth = 99;
+    let births = 0;
+    for (let i = 0; i < 500; i++) {
+      state.character.monthsSinceLastBirth = 99;
+      const lines = tryMonthlyBirth(state);
+      if (lines.length) births += 1;
+    }
+    expect(state.character.childrenCount).toBeLessThanOrEqual(2);
+    expect(births).toBeLessThanOrEqual(2);
+    // with 1.2% chance over 500 months uncapped would be ~6; capped at 2
+    expect(births).toBeGreaterThanOrEqual(0);
+  });
 });

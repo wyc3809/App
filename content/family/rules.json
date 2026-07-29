@@ -1,0 +1,10 @@
+{
+  "lifetimeChildrenMin": 1,
+  "lifetimeChildrenMax": 5,
+  "monthlyBirthChance": 0.012,
+  "minAge": 18,
+  "maxAge": 42,
+  "cooldownMonths": 20,
+  "requireLover": true,
+  "notes": "有眷屬時每月低機率得子；每人一生最多 1–5 個孩子（開局隨機上限）。可改 monthlyBirthChance 調整稀有度。"
+}

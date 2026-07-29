@@ -2,6 +2,7 @@ import type { GameEffect, LifeGameState, WuxiaAttribute } from '@interfaces/life
 import { wuxiaAttributeKeys } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
 import { randomChineseName } from '@core/ids';
+import { artForStanding } from '@data/content/packs';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, ensureGear } from './equipment';
 import { addCondition } from './monthly';
 import { learnMartialArt } from './flavor';
@@ -124,9 +125,16 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
         }
         if (sectId && state.sects[sectId]) {
           c.sectId = sectId;
+          c.sectStanding = 0;
           c.flags.joined_sect = true;
-          logs.push(`拜入${state.sects[sectId].name}。`);
+          logs.push(`拜入${state.sects[sectId].name}，成為外門弟子。`);
           deltas.push(`門派＝${state.sects[sectId].name}`);
+          const artId = artForStanding(sectId, 0);
+          if (artId && !c.skills.includes(artId)) {
+            const line = learnMartialArt(state, artId);
+            logs.push(line);
+            deltas.push(`武功＋${artId}`);
+          }
         }
         break;
       }
@@ -134,6 +142,7 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
         if (c.sectId) {
           const name = state.sects[c.sectId]?.name ?? '門派';
           c.sectId = null;
+          c.sectStanding = 0;
           logs.push(`你脫離了${name}。`);
         }
         break;

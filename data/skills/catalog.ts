@@ -1,22 +1,34 @@
+import { MARTIAL_CATALOG_RAW } from '@data/content/packs';
 import { rankName } from '@core/life/martialRanks';
 
 export type SkillKind = 'external' | 'internal';
 
 export type CombatMoveId = string;
 
+/** 外功招式：欄位皆可在 content/martial/catalog.json 以文字修改 */
 export interface CombatMoveDef {
   id: CombatMoveId;
   name: string;
-  /** 內息消耗 */
   qiCost: number;
-  /** 基礎傷害倍率（乘攻擊） */
   power: number;
-  /** 命中修正 0–1 加成於基礎命中 */
   hitBonus?: number;
-  /** 自身回復氣血 */
   healSelf?: number;
-  /** 降低敵方下回合命中 */
   applyBlind?: number;
+  /** 無視防禦比例 0–1 */
+  pierce?: number;
+  /** 連擊次數（含第一擊） */
+  multiHit?: number;
+  /** 耗敵內息 */
+  qiDrain?: number;
+  bleedChance?: number;
+  bleedDamage?: number;
+  bleedTurns?: number;
+  /** 暈眩機率：敵跳過下一行動 */
+  stunChance?: number;
+  /** 暫時削敵防 */
+  defenseBreak?: number;
+  /** 傷害吸血 0–1 */
+  lifesteal?: number;
   description: string;
 }
 
@@ -26,21 +38,55 @@ export interface InternalPassive {
   maxHp?: number;
   maxQi?: number;
   hitBonus?: number;
-  /** 每回合開始回復內息 */
   qiRegen?: number;
+  /** 反彈所受傷害比例 0–1 */
+  reflect?: number;
 }
 
 export interface SkillDef {
   id: string;
   name: string;
   kind: SkillKind;
-  /** 外功：戰鬥中可選招式 */
+  flavor?: string;
+  sectId?: string;
+  unlockStanding?: number;
+  encounterOnly?: boolean;
   move?: CombatMoveDef;
-  /** 內功：只提供被動數值／效果 */
   passive?: InternalPassive;
 }
 
-/** 基本拳腳（人人皆有） */
+interface RawSkill {
+  id: string;
+  name: string;
+  kind: SkillKind;
+  flavor?: string;
+  sectId?: string;
+  unlockStanding?: number;
+  encounterOnly?: boolean;
+  legacyAliasOf?: string;
+  move?: CombatMoveDef;
+  passive?: InternalPassive;
+}
+
+function buildCatalog(): Record<string, SkillDef> {
+  const out: Record<string, SkillDef> = {};
+  for (const raw of MARTIAL_CATALOG_RAW.skills as RawSkill[]) {
+    const def: SkillDef = {
+      id: raw.id,
+      name: raw.name,
+      kind: raw.kind,
+      flavor: raw.flavor,
+      sectId: raw.sectId,
+      unlockStanding: raw.unlockStanding,
+      encounterOnly: raw.encounterOnly,
+      move: raw.move,
+      passive: raw.passive,
+    };
+    out[raw.id] = def;
+  }
+  return out;
+}
+
 export const BASIC_STRIKE: CombatMoveDef = {
   id: 'basic_strike',
   name: '普通攻擊',
@@ -49,203 +95,7 @@ export const BASIC_STRIKE: CombatMoveDef = {
   description: '一記尋常拳腳／兵刃。',
 };
 
-export const SKILL_DEFS: Record<string, SkillDef> = {
-  基礎吐納: {
-    id: '基礎吐納',
-    name: '基礎吐納',
-    kind: 'internal',
-    passive: { maxQi: 10, qiRegen: 4 },
-  },
-  art_stone_palm: {
-    id: 'art_stone_palm',
-    name: '裂石殘掌',
-    kind: 'external',
-    move: {
-      id: 'mv_stone_palm',
-      name: '裂石掌',
-      qiCost: 18,
-      power: 1.55,
-      description: '掌力沉猛，專破硬架。',
-    },
-  },
-  art_bridge_step: {
-    id: 'art_bridge_step',
-    name: '斷橋步',
-    kind: 'external',
-    move: {
-      id: 'mv_bridge_step',
-      name: '斷橋踏',
-      qiCost: 12,
-      power: 1.15,
-      hitBonus: 0.12,
-      description: '步法欺近，一踏即中。',
-    },
-  },
-  art_tomb_sword: {
-    id: 'art_tomb_sword',
-    name: '無銘劍意',
-    kind: 'external',
-    move: {
-      id: 'mv_tomb_sword',
-      name: '無銘一刺',
-      qiCost: 22,
-      power: 1.7,
-      hitBonus: 0.05,
-      description: '劍意無形，專取破綻。',
-    },
-  },
-  art_lake_breath: {
-    id: 'art_lake_breath',
-    name: '寒湖吐納',
-    kind: 'internal',
-    passive: { maxQi: 25, qiRegen: 8, defense: 4 },
-  },
-  art_rain_sword: {
-    id: 'art_rain_sword',
-    name: '聽雨劍意',
-    kind: 'external',
-    move: {
-      id: 'mv_rain_sword',
-      name: '聽雨連刺',
-      qiCost: 16,
-      power: 1.35,
-      hitBonus: 0.08,
-      description: '劍如細雨，連點不絕。',
-    },
-  },
-  art_nine_shadow: {
-    id: 'art_nine_shadow',
-    name: '九影迷踪步',
-    kind: 'external',
-    move: {
-      id: 'mv_nine_shadow',
-      name: '九影閃擊',
-      qiCost: 14,
-      power: 1.2,
-      hitBonus: 0.18,
-      applyBlind: 0.15,
-      description: '身形一晃，敵眸難追。',
-    },
-  },
-  art_cold_palm: {
-    id: 'art_cold_palm',
-    name: '寒霜掌',
-    kind: 'external',
-    move: {
-      id: 'mv_cold_palm',
-      name: '寒霜掌',
-      qiCost: 20,
-      power: 1.45,
-      description: '掌風帶寒，傷人內息。',
-    },
-  },
-  art_iron_body: {
-    id: 'art_iron_body',
-    name: '鐵布衫',
-    kind: 'internal',
-    passive: { defense: 12, maxHp: 40 },
-  },
-  art_moon_sword: {
-    id: 'art_moon_sword',
-    name: '弄月劍法',
-    kind: 'external',
-    move: {
-      id: 'mv_moon_sword',
-      name: '弄月一劍',
-      qiCost: 15,
-      power: 1.4,
-      hitBonus: 0.06,
-      description: '劍光如月，弧線取敵。',
-    },
-  },
-  art_void_breath: {
-    id: 'art_void_breath',
-    name: '空冥吐納',
-    kind: 'internal',
-    passive: { maxQi: 35, qiRegen: 10, attack: 3 },
-  },
-  art_river_fist: {
-    id: 'art_river_fist',
-    name: '長河拳',
-    kind: 'external',
-    move: {
-      id: 'mv_river_fist',
-      name: '長河崩拳',
-      qiCost: 17,
-      power: 1.5,
-      description: '拳勢如河，一往無前。',
-    },
-  },
-  art_silk_hand: {
-    id: 'art_silk_hand',
-    name: '柔絲手',
-    kind: 'external',
-    move: {
-      id: 'mv_silk_hand',
-      name: '柔絲鎖脈',
-      qiCost: 13,
-      power: 1.1,
-      hitBonus: 0.1,
-      healSelf: 8,
-      description: '借力卸力，順勢回氣。',
-    },
-  },
-  art_thunder_blade: {
-    id: 'art_thunder_blade',
-    name: '驚雷刀',
-    kind: 'external',
-    move: {
-      id: 'mv_thunder_blade',
-      name: '驚雷一刀',
-      qiCost: 24,
-      power: 1.85,
-      description: '刀出如雷，勢不可擋。',
-    },
-  },
-  sect_art_sect_qingyun: {
-    id: 'sect_art_sect_qingyun',
-    name: '青雲入門劍訣',
-    kind: 'external',
-    move: {
-      id: 'mv_qingyun_sword',
-      name: '青雲初劍',
-      qiCost: 10,
-      power: 1.25,
-      hitBonus: 0.05,
-      description: '門中入門劍式。',
-    },
-  },
-  sect_art_sect_tiandao: {
-    id: 'sect_art_sect_tiandao',
-    name: '天刀門基礎刀式',
-    kind: 'external',
-    move: {
-      id: 'mv_tiandao_blade',
-      name: '天刀開山',
-      qiCost: 12,
-      power: 1.35,
-      description: '門中開山刀式。',
-    },
-  },
-  sect_art_sect_emei: {
-    id: 'sect_art_sect_emei',
-    name: '峨嵋柔勁入門',
-    kind: 'internal',
-    passive: { defense: 6, hitBonus: 0.04, qiRegen: 3 },
-  },
-  sect_art_sect_shaolin: {
-    id: 'sect_art_sect_shaolin',
-    name: '少林基本樁功',
-    kind: 'internal',
-    passive: { maxHp: 30, defense: 8 },
-  },
-  sect_art_sect_wudang: {
-    id: 'sect_art_sect_wudang',
-    name: '武當吐納入門',
-    kind: 'internal',
-    passive: { maxQi: 20, qiRegen: 6, attack: 2 },
-  },
-};
+export const SKILL_DEFS: Record<string, SkillDef> = buildCatalog();
 
 export const SKILL_NAMES: Record<string, string> = Object.fromEntries(
   Object.values(SKILL_DEFS).map((s) => [s.id, s.name]),
@@ -268,6 +118,45 @@ export function formatSkillLine(id: string, rank: number): string {
   const name = skillLabel(id);
   const kind = def ? skillKindLabel(def.kind) : '武學';
   return `${name}（${kind}）· ${rankName(rank)}`;
+}
+
+export function formatSkillEffects(id: string): string {
+  const def = getSkillDef(id);
+  if (!def) return '';
+  const bits: string[] = [];
+  if (def.flavor) bits.push(def.flavor);
+  if (def.move) {
+    const m = def.move;
+    const fx: string[] = [];
+    if (m.pierce) fx.push(`破防${Math.round(m.pierce * 100)}%`);
+    if (m.multiHit && m.multiHit > 1) fx.push(`連擊×${m.multiHit}`);
+    if (m.qiDrain) fx.push(`耗息${m.qiDrain}`);
+    if (m.bleedChance) fx.push('流血');
+    if (m.stunChance) fx.push('定身');
+    if (m.lifesteal) fx.push('吸血');
+    if (m.healSelf) fx.push(`回血${m.healSelf}`);
+    if (m.applyBlind) fx.push('迷目');
+    if (m.defenseBreak) fx.push(`破防−${m.defenseBreak}`);
+    if (fx.length) bits.push(`特效：${fx.join('、')}`);
+    else if (m.description) bits.push(m.description);
+  } else if (def.passive) {
+    const p = def.passive;
+    const fx: string[] = [];
+    if (p.attack) fx.push(`攻+${p.attack}`);
+    if (p.defense) fx.push(`防+${p.defense}`);
+    if (p.maxHp) fx.push(`氣血上限+${p.maxHp}`);
+    if (p.maxQi) fx.push(`內力上限+${p.maxQi}`);
+    if (p.qiRegen) fx.push(`回息+${p.qiRegen}`);
+    if (p.reflect) fx.push(`反震${Math.round(p.reflect * 100)}%`);
+    if (fx.length) bits.push(`被動：${fx.join('、')}`);
+  }
+  return bits.join(' — ');
+}
+
+export function formatSkillDetail(id: string, rank: number): string {
+  const effects = formatSkillEffects(id);
+  const base = formatSkillLine(id, rank);
+  return effects ? `${base} — ${effects}` : base;
 }
 
 export function listExternalMovesForSkills(skillIds: string[]): CombatMoveDef[] {
@@ -293,6 +182,7 @@ export function sumInternalPassives(skillIds: string[], ranks: Record<string, nu
     out.maxQi = (out.maxQi ?? 0) + Math.round((p.maxQi ?? 0) * scale);
     out.hitBonus = (out.hitBonus ?? 0) + (p.hitBonus ?? 0) * scale;
     out.qiRegen = (out.qiRegen ?? 0) + Math.round((p.qiRegen ?? 0) * scale);
+    out.reflect = (out.reflect ?? 0) + (p.reflect ?? 0) * scale;
   }
   return out;
 }

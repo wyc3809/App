@@ -1,6 +1,7 @@
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
 import { getGearDef, rollForgeResult, type GearRarity } from '@data/equipment/catalog';
+import { artForStanding } from '@data/content/packs';
 import { addCondition } from './monthly';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, equipGear, ensureGear } from './equipment';
 import { snapshotRng, syncRngFromState, SECT_DEFS } from './gameState';
@@ -12,6 +13,7 @@ import {
 } from './flavor';
 import { startCombat } from './combat';
 import { getSkillDef } from '@data/skills/catalog';
+import { teachSectArtForStanding, tryGainSectStanding } from './sectStanding';
 
 export type PracticeActionId =
   | 'train_martial'
@@ -154,11 +156,13 @@ export function performPracticeAction(
         break;
       }
       c.sectId = target;
+      c.sectStanding = 0;
       c.flags.joined_sect = true;
       logs.push(`你拜入${state.sects[target].name}，成為外門弟子。`);
-      // 門派入門武學
-      const artId = `sect_art_${target}`;
-      logs.push(learnMartialArt(state, artId, `${state.sects[target].name}入門心法`));
+      const artId = artForStanding(target, 0);
+      if (artId) {
+        logs.push(learnMartialArt(state, artId, `${state.sects[target].name}外門武學`));
+      }
       break;
     }
     case 'sect_duty': {
@@ -171,6 +175,8 @@ export function performPracticeAction(
       c.reputation += 1;
       c.martial += 1;
       logs.push(`你完成${state.sects[c.sectId].name}差事，得銀 ${meritPay} 兩。`);
+      const stand = tryGainSectStanding(state, 0.28);
+      if (stand) logs.push(stand);
       break;
     }
     case 'sect_ask_elder': {
@@ -180,9 +186,14 @@ export function performPracticeAction(
       }
       c.fatigue = clamp(c.fatigue + 3, 0, 100);
       logs.push('長老只點了三處破綻，餘下要你自己悟。');
+      const standing = c.sectStanding ?? 0;
+      const teach = teachSectArtForStanding(state, standing);
+      if (teach) logs.push(teach);
       const adv = tryAdvanceRandomSkill(state, 'practice');
       if (adv) logs.push(adv);
-      else logs.push('你似懂非懂，回去還得再練。');
+      else if (!teach) logs.push('你似懂非懂，回去還得再練。');
+      const stand = tryGainSectStanding(state, 0.22);
+      if (stand) logs.push(stand);
       break;
     }
     case 'sect_spar': {
@@ -214,6 +225,8 @@ export function performPracticeAction(
         const adv = tryAdvanceRandomSkill(state, 'combat');
         if (adv) logs.push(adv);
       }
+      const stand = tryGainSectStanding(state, 0.2);
+      if (stand) logs.push(stand);
       break;
     }
     case 'sect_meditate': {
@@ -224,14 +237,17 @@ export function performPracticeAction(
       raiseBaseMaxQi(c, rng.nextInt(2, 6));
       c.qi = clamp(c.qi + rng.nextInt(10, 22), 0, c.maxQi);
       logs.push('靜室之中，你按門中心法緩緩吐納。');
-      const sectArt = c.skills.find((s) => s.startsWith('sect_art_'));
-      if (sectArt) {
-        const adv = tryAdvanceSkill(state, sectArt, 'practice');
+      const sectArts = c.skills.filter((s) => getSkillDef(s)?.sectId === c.sectId);
+      const focus = sectArts[0] ?? c.skills.find((s) => s.startsWith('sect_art_') || s.startsWith('qy_') || s.startsWith('td_') || s.startsWith('em_') || s.startsWith('sl_') || s.startsWith('wd_'));
+      if (focus) {
+        const adv = tryAdvanceSkill(state, focus, 'practice');
         if (adv) logs.push(adv);
       } else {
         const adv = tryAdvanceRandomSkill(state, 'practice');
         if (adv) logs.push(adv);
       }
+      const stand = tryGainSectStanding(state, 0.18);
+      if (stand) logs.push(stand);
       break;
     }
     case 'sect_leave': {
@@ -241,6 +257,7 @@ export function performPracticeAction(
       }
       const name = state.sects[c.sectId]?.name ?? '門派';
       c.sectId = null;
+      c.sectStanding = 0;
       c.reputation = Math.max(0, c.reputation - 3);
       logs.push(`你辭別${name}，从此山門內外，兩不相干。`);
       break;

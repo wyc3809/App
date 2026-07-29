@@ -1,10 +1,11 @@
-import type { LifeGameState } from '@interfaces/lifeEngine';
+import type { LifeGameState, CombatFighterState, PendingCombat as PendingCombatState } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
 import { syncRngFromState, snapshotRng } from './gameState';
 import { gearTotals, ensureGear } from './equipment';
 import { tryAdvanceSkill } from './flavor';
 import { pushChronicle } from './chronicle';
 import { buildLifeSummary } from './summary';
+import { tryGainSectStanding } from './sectStanding';
 import {
   BASIC_STRIKE,
   getSkillDef,
@@ -13,36 +14,8 @@ import {
   type CombatMoveDef,
 } from '@data/skills/catalog';
 
-export interface CombatFighter {
-  name: string;
-  hp: number;
-  maxHp: number;
-  qi: number;
-  maxQi: number;
-  attack: number;
-  defense: number;
-  hitBonus: number;
-  qiRegen: number;
-  /** 下回合命中懲罰 */
-  blind: number;
-  isPlayer: boolean;
-}
-
-export interface PendingCombat {
-  id: string;
-  source: 'spar' | 'event' | 'bandit' | 'road';
-  title: string;
-  turn: number;
-  phase: 'player' | 'enemy' | 'ended';
-  player: CombatFighter;
-  foe: CombatFighter;
-  log: string[];
-  /** 本場用過的外功 skillId，結束時嘗試進階 */
-  usedExternalSkillIds: string[];
-  rewardOnWin?: { money?: number; reputation?: number; martial?: number };
-  rewardOnLose?: { money?: number; reputation?: number };
-  eventId?: string;
-}
+export type CombatFighter = CombatFighterState;
+export type PendingCombat = PendingCombatState;
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -53,7 +26,7 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
   ensureGear(c);
   const gear = gearTotals(c);
   const passive = sumInternalPassives(c.skills, c.skillRanks ?? {});
-  const maxHp = c.health; // 戰鬥用當前氣血為戰意池，結束回寫
+  const maxHp = c.health;
   const maxQi = c.qi;
   return {
     name: c.name,
@@ -67,6 +40,11 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
     qiRegen: 6 + (passive.qiRegen ?? 0),
     blind: 0,
     isPlayer: true,
+    stun: 0,
+    bleedDamage: 0,
+    bleedTurns: 0,
+    defenseMod: 0,
+    reflect: Math.min(0.35, passive.reflect ?? 0),
   };
 }
 
@@ -89,6 +67,11 @@ export function buildFoe(
     qiRegen: 5,
     blind: 0,
     isPlayer: false,
+    stun: 0,
+    bleedDamage: 0,
+    bleedTurns: 0,
+    defenseMod: 0,
+    reflect: 0,
   };
 }
 
@@ -119,7 +102,6 @@ export function startCombat(
     rewardOnLose: opts.rewardOnLose,
     eventId: opts.eventId,
   };
-  // 內功即時抬高戰中氣血上限表現
   combat.player.hp = clamp(combat.player.hp, 1, combat.player.maxHp);
   combat.player.qi = clamp(combat.player.qi, 0, combat.player.maxQi);
   state.pendingCombat = combat;
@@ -149,6 +131,115 @@ function skillIdForMove(state: LifeGameState, moveId: string): string | null {
   return null;
 }
 
+function effectiveDefense(f: CombatFighter): number {
+  return Math.max(0, f.defense + f.defenseMod);
+}
+
+function tickStatus(f: CombatFighter): string[] {
+  const lines: string[] = [];
+  if (f.bleedTurns > 0 && f.bleedDamage > 0) {
+    f.hp = clamp(f.hp - f.bleedDamage, 0, f.maxHp);
+    f.bleedTurns -= 1;
+    lines.push(`${f.name}血流不止，失去 ${f.bleedDamage} 點氣血。`);
+    if (f.bleedTurns <= 0) {
+      f.bleedDamage = 0;
+    }
+  }
+  if (f.defenseMod < 0) {
+    f.defenseMod = Math.min(0, f.defenseMod + 1);
+  }
+  return lines;
+}
+
+function resolveOneHit(
+  attacker: CombatFighter,
+  defender: CombatFighter,
+  move: CombatMoveDef,
+  rng: ReturnType<typeof getRng>,
+  hitIndex: number,
+  totalHits: number,
+): string[] {
+  const lines: string[] = [];
+  const hitChance = clamp(
+    0.62 + attacker.hitBonus + (move.hitBonus ?? 0) - defender.blind - hitIndex * 0.04,
+    0.18,
+    0.95,
+  );
+  if (!rng.chance(hitChance)) {
+    lines.push(
+      totalHits > 1
+        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被閃過。`
+        : `${attacker.name}使出「${move.name}」，被${defender.name}閃過！`,
+    );
+    return lines;
+  }
+
+  const pierce = clamp(move.pierce ?? 0, 0, 0.85);
+  const def = effectiveDefense(defender) * (1 - pierce);
+  const raw = attacker.attack * move.power;
+  const mitigated = Math.max(3, Math.round(raw - def * 0.55 + rng.nextInt(-3, 4)));
+  defender.hp = clamp(defender.hp - mitigated, 0, defender.maxHp);
+  lines.push(
+    totalHits > 1
+      ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊命中，造成 ${mitigated} 點傷害。`
+      : `${attacker.name}「${move.name}」命中，造成 ${mitigated} 點傷害。`,
+  );
+
+  if (move.lifesteal) {
+    const steal = Math.max(1, Math.round(mitigated * move.lifesteal));
+    attacker.hp = clamp(attacker.hp + steal, 0, attacker.maxHp);
+    lines.push(`${attacker.name}借力回氣，回復 ${steal} 點氣血。`);
+  }
+
+  if (defender.reflect > 0 && mitigated > 0) {
+    const back = Math.max(1, Math.round(mitigated * defender.reflect));
+    attacker.hp = clamp(attacker.hp - back, 0, attacker.maxHp);
+    lines.push(`${defender.name}硬功反震，${attacker.name}受到 ${back} 點反震。`);
+  }
+
+  return lines;
+}
+
+function applyOnHitEffects(
+  attacker: CombatFighter,
+  defender: CombatFighter,
+  move: CombatMoveDef,
+  rng: ReturnType<typeof getRng>,
+  anyHit: boolean,
+): string[] {
+  const lines: string[] = [];
+  if (!anyHit) return lines;
+
+  if (move.healSelf) {
+    attacker.hp = clamp(attacker.hp + move.healSelf, 0, attacker.maxHp);
+    lines.push(`${attacker.name}順勢調息，氣血回復 ${move.healSelf}。`);
+  }
+  if (move.applyBlind) {
+    defender.blind = Math.max(defender.blind, move.applyBlind);
+    lines.push(`${defender.name}眼前一花，招式顯得滯澀。`);
+  }
+  if (move.qiDrain) {
+    defender.qi = clamp(defender.qi - move.qiDrain, 0, defender.maxQi);
+    lines.push(`${defender.name}內息被擾，散去 ${move.qiDrain}。`);
+  }
+  if (move.defenseBreak) {
+    defender.defenseMod -= move.defenseBreak;
+    lines.push(`${defender.name}架勢散亂，防禦暫降。`);
+  }
+  if (move.bleedChance && rng.chance(move.bleedChance)) {
+    const dmg = move.bleedDamage ?? 5;
+    const turns = move.bleedTurns ?? 2;
+    defender.bleedDamage = Math.max(defender.bleedDamage, dmg);
+    defender.bleedTurns = Math.max(defender.bleedTurns, turns);
+    lines.push(`${defender.name}被劃出血線，一時難止。`);
+  }
+  if (move.stunChance && rng.chance(move.stunChance)) {
+    defender.stun = Math.max(defender.stun, 1);
+    lines.push(`${defender.name}穴道一滯，動作遲了半拍！`);
+  }
+  return lines;
+}
+
 function resolveStrike(
   attacker: CombatFighter,
   defender: CombatFighter,
@@ -161,33 +252,18 @@ function resolveStrike(
     return resolveStrike(attacker, defender, BASIC_STRIKE, rng);
   }
   attacker.qi -= move.qiCost;
+  defender.blind = Math.max(0, defender.blind * 0.35);
 
-  const hitChance = clamp(0.62 + attacker.hitBonus + (move.hitBonus ?? 0) - defender.blind, 0.2, 0.95);
-  defender.blind = 0;
-  if (!rng.chance(hitChance)) {
-    lines.push(`${attacker.name}使出「${move.name}」，被${defender.name}閃過！`);
-    return lines;
+  const hits = Math.max(1, move.multiHit ?? 1);
+  let anyHit = false;
+  for (let i = 0; i < hits; i++) {
+    const before = defender.hp;
+    const hitLines = resolveOneHit(attacker, defender, move, rng, i, hits);
+    lines.push(...hitLines);
+    if (defender.hp < before) anyHit = true;
+    if (defender.hp <= 0) break;
   }
-
-  const raw = attacker.attack * move.power;
-  const mitigated = Math.max(3, Math.round(raw - defender.defense * 0.55 + rng.nextInt(-3, 4)));
-  defender.hp = clamp(defender.hp - mitigated, 0, defender.maxHp);
-  lines.push(`${attacker.name}「${move.name}」命中，造成 ${mitigated} 點傷害。`);
-
-  if (move.healSelf) {
-    const heal = move.healSelf;
-    attacker.hp = clamp(attacker.hp + heal, 0, attacker.maxHp);
-    lines.push(`${attacker.name}順勢調息，氣血回復 ${heal}。`);
-  }
-  if (move.applyBlind) {
-    defender.blind = move.applyBlind;
-    lines.push(`${defender.name}眼前一花，招式顯得滯澀。`);
-  }
-  // 寒霜等：額外耗敵內息
-  if (move.id === 'mv_cold_palm') {
-    defender.qi = clamp(defender.qi - 10, 0, defender.maxQi);
-    lines.push(`${defender.name}內息被寒意侵擾。`);
-  }
+  lines.push(...applyOnHitEffects(attacker, defender, move, rng, anyHit));
   return lines;
 }
 
@@ -224,7 +300,6 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
   const c = state.character;
   const lines: string[] = [];
 
-  // 回寫氣血內息（戰損／回復）
   const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
   c.health = clamp(Math.round(c.maxHealth * Math.min(1, hpRatio)), 0, c.maxHealth);
   c.qi = clamp(combat.player.qi, 0, c.maxQi);
@@ -246,6 +321,10 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
     if (r.martial) {
       c.martial += r.martial;
       lines.push(`武學＋${r.martial}`);
+    }
+    if (combat.source === 'spar' && c.sectId) {
+      const stand = tryGainSectStanding(state, 0.55);
+      if (stand) lines.push(stand);
     }
     for (const sid of combat.usedExternalSkillIds) {
       const adv = tryAdvanceSkill(state, sid, 'combat');
@@ -291,15 +370,27 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
   const combat = state.pendingCombat;
   const lines: string[] = [];
 
-  tickRegen(combat.player);
-  const move = findMove(state, moveId) ?? BASIC_STRIKE;
-  const sid = skillIdForMove(state, move.id);
-  if (sid && !combat.usedExternalSkillIds.includes(sid)) {
-    combat.usedExternalSkillIds.push(sid);
+  lines.push(...tickStatus(combat.player));
+  if (combat.player.hp <= 0) {
+    const end = finishCombat(state, false);
+    snapshotRng(state);
+    return [...lines, ...end];
   }
 
-  lines.push(...resolveStrike(combat.player, combat.foe, move, rng));
-  combat.log.push(...lines);
+  if (combat.player.stun > 0) {
+    combat.player.stun -= 1;
+    lines.push('你穴道未暢，這一招使不出來。');
+    combat.log.push(...lines);
+  } else {
+    tickRegen(combat.player);
+    const move = findMove(state, moveId) ?? BASIC_STRIKE;
+    const sid = skillIdForMove(state, move.id);
+    if (sid && !combat.usedExternalSkillIds.includes(sid)) {
+      combat.usedExternalSkillIds.push(sid);
+    }
+    lines.push(...resolveStrike(combat.player, combat.foe, move, rng));
+    combat.log.push(...lines);
+  }
 
   if (combat.foe.hp <= 0) {
     const end = finishCombat(state, true);
@@ -307,13 +398,28 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
     return [...lines, ...end];
   }
 
-  // 敵方回合
   combat.phase = 'enemy';
-  tickRegen(combat.foe);
-  const enemyMove = enemyChooseMove(combat.foe, rng);
-  const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng);
-  combat.log.push(...enemyLines);
-  lines.push(...enemyLines);
+  const foeStatus = tickStatus(combat.foe);
+  lines.push(...foeStatus);
+  combat.log.push(...foeStatus);
+  if (combat.foe.hp <= 0) {
+    const end = finishCombat(state, true);
+    snapshotRng(state);
+    return [...lines, ...end];
+  }
+
+  if (combat.foe.stun > 0) {
+    combat.foe.stun -= 1;
+    const skip = `${combat.foe.name}動作遲滯，錯過機會。`;
+    lines.push(skip);
+    combat.log.push(skip);
+  } else {
+    tickRegen(combat.foe);
+    const enemyMove = enemyChooseMove(combat.foe, rng);
+    const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng);
+    combat.log.push(...enemyLines);
+    lines.push(...enemyLines);
+  }
 
   if (combat.player.hp <= 0) {
     const end = finishCombat(state, false);

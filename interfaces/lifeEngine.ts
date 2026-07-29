@@ -163,11 +163,19 @@ export interface LifeCharacter {
     accessory: string | null;
   };
   sectId: string | null;
+  /** 門中地位 0外門–3執事 */
+  sectStanding: number;
   loverId: string | null;
+  /** 已有子女數 */
+  childrenCount: number;
+  /** 此生子女上限（開局 1–5） */
+  childrenMax: number;
+  monthsSinceLastBirth: number;
   flags: Record<string, boolean | number | string>;
   family: {
     fatherName?: string;
     motherName?: string;
+    childrenNames?: string[];
   };
   stats: {
     yearsLived: number;
@@ -223,6 +231,11 @@ export interface CombatFighterState {
   qiRegen: number;
   blind: number;
   isPlayer: boolean;
+  stun: number;
+  bleedDamage: number;
+  bleedTurns: number;
+  defenseMod: number;
+  reflect: number;
 }
 
 export interface PendingCombat {
@@ -279,11 +292,16 @@ export const lifeCharacterSchema = z.object({
     })
     .default({ weapon: 'old-sword', armor: 'plain-robe', accessory: null }),
   sectId: z.string().nullable(),
+  sectStanding: z.number().default(0),
   loverId: z.string().nullable(),
+  childrenCount: z.number().default(0),
+  childrenMax: z.number().default(3),
+  monthsSinceLastBirth: z.number().default(99),
   flags: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])),
   family: z.object({
     fatherName: z.string().optional(),
     motherName: z.string().optional(),
+    childrenNames: z.array(z.string()).optional(),
   }),
   stats: z.object({
     yearsLived: z.number(),

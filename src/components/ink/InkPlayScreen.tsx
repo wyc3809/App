@@ -9,8 +9,9 @@ import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
+import { describeSectProgress } from '@core/life/sectStanding';
 import { getPlayerMoves } from '@core/life/combat';
-import { getSkillDef } from '@data/skills/catalog';
+import { formatSkillEffects, getSkillDef } from '@data/skills/catalog';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -210,19 +211,26 @@ export function InkPlayScreen({ state }: Props) {
           </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
+          <p className="ink-note">
+            子女 · {c.childrenCount ?? 0}/{c.childrenMax ?? 0}
+            {c.family?.childrenNames?.length
+              ? `（${c.family.childrenNames.join('、')}）`
+              : ''}
+          </p>
           {c.skills.length > 0 && (
             <ul className="ink-skill-list">
               {c.skills.map((id) => {
                 const def = getSkillDef(id);
                 return (
                   <li key={id}>
-                    {skillDisplay(c, id)}
+                    <strong>{skillDisplay(c, id)}</strong>
                     {def?.kind === 'internal' && def.passive ? (
-                      <span className="ink-skill-passive"> · 被動加持</span>
+                      <span className="ink-skill-passive"> · 內功被動</span>
                     ) : null}
                     {def?.kind === 'external' && def.move ? (
                       <span className="ink-skill-passive"> · 戰招「{def.move.name}」</span>
                     ) : null}
+                    <span className="ink-gear-desc">{formatSkillEffects(id)}</span>
                   </li>
                 );
               })}
@@ -299,7 +307,12 @@ export function InkPlayScreen({ state }: Props) {
                 </>
               ) : (
                 <>
-                  <p className="ink-note">既入師門，差事、比武、靜修皆可磨礪身心。</p>
+                  <p className="ink-note">既入師門，差事、比武、靜修皆可磨礪身心；地位提升可傳四套門中武學。</p>
+                  <ul className="ink-skill-list ink-sect-progress">
+                    {describeSectProgress(state).map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
                   <div className="ink-practice-grid">
                     {SECT_INNER_ACTIONS.map((act) => (
                       <button
@@ -364,7 +377,10 @@ export function InkPlayScreen({ state }: Props) {
           {c.skills.length > 0 && (
             <ul className="ink-skill-list">
               {c.skills.map((id) => (
-                <li key={id}>{skillDisplay(c, id)}</li>
+                <li key={id}>
+                  <strong>{skillDisplay(c, id)}</strong>
+                  <span className="ink-gear-desc">{formatSkillEffects(id)}</span>
+                </li>
               ))}
             </ul>
           )}

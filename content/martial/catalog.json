@@ -1,0 +1,559 @@
+{
+  "notes": "武學目錄：可改名稱、flavor、戰鬥數值。sects 門派武學 id 須與 sects/sects.json 對應。",
+  "skills": [
+    {
+      "id": "基礎吐納",
+      "name": "基礎吐納",
+      "kind": "internal",
+      "flavor": "凡人皆可習的吐納法門，穩固丹田，徐徐生息。",
+      "passive": { "maxQi": 10, "qiRegen": 4 }
+    },
+    {
+      "id": "art_river_fist",
+      "name": "長河拳",
+      "kind": "external",
+      "flavor": "拳勢如長河東去，一往無前，適合初入江湖者立身。",
+      "move": {
+        "id": "mv_river_fist",
+        "name": "長河崩拳",
+        "qiCost": 17,
+        "power": 1.5,
+        "description": "拳勢如河，一往無前。",
+        "pierce": 0.08
+      }
+    },
+    {
+      "id": "art_stone_palm",
+      "name": "裂石殘掌",
+      "kind": "external",
+      "flavor": "掌力沉猛，專破硬架，江湖散修常以此立威。",
+      "move": {
+        "id": "mv_stone_palm",
+        "name": "裂石掌",
+        "qiCost": 18,
+        "power": 1.55,
+        "description": "掌力沉猛，專破硬架。",
+        "pierce": 0.2,
+        "defenseBreak": 3
+      }
+    },
+    {
+      "id": "art_bridge_step",
+      "name": "斷橋步",
+      "kind": "external",
+      "flavor": "步法欺近、踏隙而入，擅打近身。",
+      "move": {
+        "id": "mv_bridge_step",
+        "name": "斷橋踏",
+        "qiCost": 12,
+        "power": 1.15,
+        "hitBonus": 0.12,
+        "description": "步法欺近，一踏即中。"
+      }
+    },
+    {
+      "id": "art_tomb_sword",
+      "name": "無銘劍意",
+      "kind": "external",
+      "flavor": "無名古塚所傳劍意，專取破綻，如影隨形。",
+      "encounterOnly": true,
+      "move": {
+        "id": "mv_tomb_sword",
+        "name": "無銘一刺",
+        "qiCost": 22,
+        "power": 1.7,
+        "hitBonus": 0.05,
+        "pierce": 0.35,
+        "description": "劍意無形，專取破綻。"
+      }
+    },
+    {
+      "id": "art_lake_breath",
+      "name": "寒湖吐納",
+      "kind": "internal",
+      "flavor": "湖心寒氣入體，內息清冷，護體愈堅。",
+      "encounterOnly": true,
+      "passive": { "maxQi": 25, "qiRegen": 8, "defense": 4 }
+    },
+    {
+      "id": "art_rain_sword",
+      "name": "聽雨劍意",
+      "kind": "external",
+      "flavor": "劍如細雨連點，令人難以招架。",
+      "encounterOnly": true,
+      "move": {
+        "id": "mv_rain_sword",
+        "name": "聽雨連刺",
+        "qiCost": 16,
+        "power": 0.75,
+        "hitBonus": 0.08,
+        "multiHit": 3,
+        "description": "劍如細雨，連點不絕。"
+      }
+    },
+    {
+      "id": "art_nine_shadow",
+      "name": "九影迷踪步",
+      "kind": "external",
+      "flavor": "身形化影，敵眸難追，擅亂敵視線。",
+      "move": {
+        "id": "mv_nine_shadow",
+        "name": "九影閃擊",
+        "qiCost": 14,
+        "power": 1.2,
+        "hitBonus": 0.18,
+        "applyBlind": 0.15,
+        "description": "身形一晃，敵眸難追。"
+      }
+    },
+    {
+      "id": "art_cold_palm",
+      "name": "寒霜掌",
+      "kind": "external",
+      "flavor": "掌風帶寒，傷人內息，逼敵難以連續發招。",
+      "move": {
+        "id": "mv_cold_palm",
+        "name": "寒霜掌",
+        "qiCost": 20,
+        "power": 1.45,
+        "qiDrain": 14,
+        "description": "掌風帶寒，傷人內息。"
+      }
+    },
+    {
+      "id": "art_iron_body",
+      "name": "鐵布衫",
+      "kind": "internal",
+      "flavor": "外壯皮肉，抗打耐磨，江湖硬功入門。",
+      "passive": { "defense": 12, "maxHp": 40, "reflect": 0.08 }
+    },
+    {
+      "id": "art_moon_sword",
+      "name": "弄月劍法",
+      "kind": "external",
+      "flavor": "劍光如月弧，取敵側脅。",
+      "move": {
+        "id": "mv_moon_sword",
+        "name": "弄月一劍",
+        "qiCost": 15,
+        "power": 1.4,
+        "hitBonus": 0.06,
+        "pierce": 0.12,
+        "description": "劍光如月，弧線取敵。"
+      }
+    },
+    {
+      "id": "art_void_breath",
+      "name": "空冥吐納",
+      "kind": "internal",
+      "flavor": "空冥之息，氣海悠長，攻守皆得增益。",
+      "passive": { "maxQi": 35, "qiRegen": 10, "attack": 3 }
+    },
+    {
+      "id": "art_silk_hand",
+      "name": "柔絲手",
+      "kind": "external",
+      "flavor": "借力卸力，順勢回氣，以柔化剛。",
+      "move": {
+        "id": "mv_silk_hand",
+        "name": "柔絲鎖脈",
+        "qiCost": 13,
+        "power": 1.1,
+        "hitBonus": 0.1,
+        "healSelf": 8,
+        "lifesteal": 0.15,
+        "description": "借力卸力，順勢回氣。"
+      }
+    },
+    {
+      "id": "art_thunder_blade",
+      "name": "驚雷刀",
+      "kind": "external",
+      "flavor": "刀出如雷，勢不可擋，代價是內息消耗偏高。",
+      "move": {
+        "id": "mv_thunder_blade",
+        "name": "驚雷一刀",
+        "qiCost": 24,
+        "power": 1.85,
+        "bleedChance": 0.35,
+        "bleedDamage": 6,
+        "bleedTurns": 2,
+        "description": "刀出如雷，勢不可擋。"
+      }
+    },
+
+    {
+      "id": "qy_cloud_sword",
+      "name": "青雲初劍",
+      "kind": "external",
+      "sectId": "sect_qingyun",
+      "unlockStanding": 0,
+      "flavor": "青雲外門劍式：劍勢清正，先求穩準，再求快。",
+      "move": {
+        "id": "mv_qy_cloud",
+        "name": "青雲初劍",
+        "qiCost": 10,
+        "power": 1.28,
+        "hitBonus": 0.06,
+        "pierce": 0.1,
+        "description": "劍勢清正，點破敵招破綻。"
+      }
+    },
+    {
+      "id": "qy_mist_step",
+      "name": "雲中步",
+      "kind": "external",
+      "sectId": "sect_qingyun",
+      "unlockStanding": 1,
+      "flavor": "內門身法：人在雲中，步影迷離，連點取穴。",
+      "move": {
+        "id": "mv_qy_mist",
+        "name": "雲中連點",
+        "qiCost": 14,
+        "power": 0.7,
+        "hitBonus": 0.14,
+        "multiHit": 2,
+        "applyBlind": 0.12,
+        "description": "步影迷離，連點敵身要害。"
+      }
+    },
+    {
+      "id": "qy_piercing_needle",
+      "name": "破雲刺",
+      "kind": "external",
+      "sectId": "sect_qingyun",
+      "unlockStanding": 2,
+      "flavor": "真傳劍刺：如針破雲，專透硬防，兼擾內息。",
+      "move": {
+        "id": "mv_qy_pierce",
+        "name": "破雲刺",
+        "qiCost": 18,
+        "power": 1.35,
+        "hitBonus": 0.08,
+        "pierce": 0.4,
+        "qiDrain": 12,
+        "description": "一刺透防，寒意侵脈。"
+      }
+    },
+    {
+      "id": "qy_sky_intent",
+      "name": "青冥劍意",
+      "kind": "external",
+      "sectId": "sect_qingyun",
+      "unlockStanding": 3,
+      "flavor": "執事絕學：劍意化作連綿青冥，又快又透。",
+      "move": {
+        "id": "mv_qy_sky",
+        "name": "青冥三刺",
+        "qiCost": 22,
+        "power": 0.85,
+        "hitBonus": 0.1,
+        "multiHit": 3,
+        "pierce": 0.25,
+        "description": "三刺連綿，如青冥覆頂。"
+      }
+    },
+
+    {
+      "id": "td_open_blade",
+      "name": "天刀開山",
+      "kind": "external",
+      "sectId": "sect_tiandao",
+      "unlockStanding": 0,
+      "flavor": "外門開山刀：大開大闔，以勢壓人。",
+      "move": {
+        "id": "mv_td_open",
+        "name": "開山一刀",
+        "qiCost": 12,
+        "power": 1.42,
+        "description": "刀勢開山，剛猛直取。"
+      }
+    },
+    {
+      "id": "td_wind_slash",
+      "name": "裂風斬",
+      "kind": "external",
+      "sectId": "sect_tiandao",
+      "unlockStanding": 1,
+      "flavor": "內門刀法：刀風割膚，傷口難收。",
+      "move": {
+        "id": "mv_td_wind",
+        "name": "裂風斬",
+        "qiCost": 16,
+        "power": 1.38,
+        "bleedChance": 0.55,
+        "bleedDamage": 7,
+        "bleedTurns": 3,
+        "description": "刀風過處，血線難止。"
+      }
+    },
+    {
+      "id": "td_thunder_combo",
+      "name": "雷鳴連刀",
+      "kind": "external",
+      "sectId": "sect_tiandao",
+      "unlockStanding": 2,
+      "flavor": "真傳連刀：如雷三響，勢不可擋。",
+      "move": {
+        "id": "mv_td_thunder",
+        "name": "雷鳴三斬",
+        "qiCost": 20,
+        "power": 0.8,
+        "multiHit": 3,
+        "bleedChance": 0.25,
+        "bleedDamage": 5,
+        "bleedTurns": 2,
+        "description": "三刀如雷，連綿不絕。"
+      }
+    },
+    {
+      "id": "td_no_return",
+      "name": "天刀無回",
+      "kind": "external",
+      "sectId": "sect_tiandao",
+      "unlockStanding": 3,
+      "flavor": "執事殺着：全力一刀，傷敵亦耗己力。",
+      "move": {
+        "id": "mv_td_noreturn",
+        "name": "無回一刀",
+        "qiCost": 28,
+        "power": 2.15,
+        "pierce": 0.15,
+        "bleedChance": 0.4,
+        "bleedDamage": 8,
+        "bleedTurns": 2,
+        "description": "全力一刀，勢無回頭。"
+      }
+    },
+
+    {
+      "id": "em_soft_palm",
+      "name": "峨嵋柔掌",
+      "kind": "external",
+      "sectId": "sect_emei",
+      "unlockStanding": 0,
+      "flavor": "外門柔掌：卸力回春，打中亦可調息。",
+      "move": {
+        "id": "mv_em_soft",
+        "name": "柔掌回春",
+        "qiCost": 11,
+        "power": 1.12,
+        "hitBonus": 0.08,
+        "healSelf": 10,
+        "description": "柔勁入體，順勢調息。"
+      }
+    },
+    {
+      "id": "em_silk_wrap",
+      "name": "繞指柔",
+      "kind": "external",
+      "sectId": "sect_emei",
+      "unlockStanding": 1,
+      "flavor": "內門鎖脈：纏絲之力，令敵招滯、防卸。",
+      "move": {
+        "id": "mv_em_silk",
+        "name": "繞指鎖脈",
+        "qiCost": 14,
+        "power": 1.05,
+        "hitBonus": 0.12,
+        "applyBlind": 0.18,
+        "defenseBreak": 5,
+        "description": "纏絲鎖脈，敵招滯澀。"
+      }
+    },
+    {
+      "id": "em_golden_palm",
+      "name": "金頂綿掌",
+      "kind": "external",
+      "sectId": "sect_emei",
+      "unlockStanding": 2,
+      "flavor": "真傳綿掌：打中吸血回氣，越戰越穩。",
+      "move": {
+        "id": "mv_em_golden",
+        "name": "金頂綿掌",
+        "qiCost": 17,
+        "power": 1.3,
+        "healSelf": 6,
+        "lifesteal": 0.28,
+        "description": "綿掌入骨，化傷為養。"
+      }
+    },
+    {
+      "id": "em_heart_breath",
+      "name": "峨嵋心法",
+      "kind": "internal",
+      "sectId": "sect_emei",
+      "unlockStanding": 3,
+      "flavor": "執事心法：柔中藏剛，護體命中兼得。",
+      "passive": { "defense": 8, "qiRegen": 7, "hitBonus": 0.06, "maxQi": 20 }
+    },
+
+    {
+      "id": "sl_luohan_fist",
+      "name": "羅漢拳",
+      "kind": "external",
+      "sectId": "sect_shaolin",
+      "unlockStanding": 0,
+      "flavor": "外門羅漢：架勢沉穩，拳拳到肉。",
+      "move": {
+        "id": "mv_sl_luohan",
+        "name": "羅漢崩拳",
+        "qiCost": 11,
+        "power": 1.36,
+        "description": "架勢沉穩，拳拳到肉。"
+      }
+    },
+    {
+      "id": "sl_weituo",
+      "name": "韋陀杖意",
+      "kind": "external",
+      "sectId": "sect_shaolin",
+      "unlockStanding": 1,
+      "flavor": "內門杖意：點穴定身，令敵一瞬失措。",
+      "move": {
+        "id": "mv_sl_weituo",
+        "name": "韋陀點穴",
+        "qiCost": 16,
+        "power": 1.25,
+        "stunChance": 0.28,
+        "description": "杖意點穴，敵身一滯。"
+      }
+    },
+    {
+      "id": "sl_iron_shirt",
+      "name": "鐵布衫功",
+      "kind": "internal",
+      "sectId": "sect_shaolin",
+      "unlockStanding": 2,
+      "flavor": "真傳硬功：皮肉如鐵，反震來招。",
+      "passive": { "defense": 14, "maxHp": 50, "reflect": 0.12 }
+    },
+    {
+      "id": "sl_yijin",
+      "name": "易筋吐納",
+      "kind": "internal",
+      "sectId": "sect_shaolin",
+      "unlockStanding": 3,
+      "flavor": "執事吐納：筋骨重塑，攻防氣海皆厚。",
+      "passive": { "attack": 5, "defense": 10, "maxQi": 30, "maxHp": 25, "qiRegen": 5 }
+    },
+
+    {
+      "id": "wd_sword_form",
+      "name": "武當劍式",
+      "kind": "external",
+      "sectId": "sect_wudang",
+      "unlockStanding": 0,
+      "flavor": "外門劍式：圓轉流暢，以靜制動。",
+      "move": {
+        "id": "mv_wd_sword",
+        "name": "武當圓劍",
+        "qiCost": 10,
+        "power": 1.22,
+        "hitBonus": 0.07,
+        "pierce": 0.1,
+        "description": "劍走圓弧，以靜制動。"
+      }
+    },
+    {
+      "id": "wd_tai_push",
+      "name": "太極推手",
+      "kind": "external",
+      "sectId": "sect_wudang",
+      "unlockStanding": 1,
+      "flavor": "內門推手：四兩撥千斤，卸力回春兼破防。",
+      "move": {
+        "id": "mv_wd_push",
+        "name": "太極推手",
+        "qiCost": 13,
+        "power": 1.08,
+        "healSelf": 12,
+        "defenseBreak": 4,
+        "applyBlind": 0.1,
+        "description": "卸力推手，敵勢自潰。"
+      }
+    },
+    {
+      "id": "wd_pure_yang",
+      "name": "純陽吐納",
+      "kind": "internal",
+      "sectId": "sect_wudang",
+      "unlockStanding": 2,
+      "flavor": "真傳吐納：氣機悠長，越打越有後勁。",
+      "passive": { "maxQi": 40, "qiRegen": 12, "attack": 2 }
+    },
+    {
+      "id": "wd_wuji_sword",
+      "name": "無極劍意",
+      "kind": "external",
+      "sectId": "sect_wudang",
+      "unlockStanding": 3,
+      "flavor": "執事劍意：連綿無極，透防耗氣。",
+      "move": {
+        "id": "mv_wd_wuji",
+        "name": "無極連刺",
+        "qiCost": 21,
+        "power": 0.78,
+        "multiHit": 3,
+        "pierce": 0.22,
+        "qiDrain": 10,
+        "description": "劍意無極，連刺耗脈。"
+      }
+    },
+
+    {
+      "id": "sect_art_sect_qingyun",
+      "name": "青雲入門劍訣",
+      "kind": "external",
+      "legacyAliasOf": "qy_cloud_sword",
+      "flavor": "（舊存檔相容）同青雲初劍。",
+      "move": {
+        "id": "mv_qingyun_sword",
+        "name": "青雲初劍",
+        "qiCost": 10,
+        "power": 1.25,
+        "hitBonus": 0.05,
+        "pierce": 0.1,
+        "description": "門中入門劍式。"
+      }
+    },
+    {
+      "id": "sect_art_sect_tiandao",
+      "name": "天刀門基礎刀式",
+      "kind": "external",
+      "legacyAliasOf": "td_open_blade",
+      "flavor": "（舊存檔相容）同天刀開山。",
+      "move": {
+        "id": "mv_tiandao_blade",
+        "name": "天刀開山",
+        "qiCost": 12,
+        "power": 1.35,
+        "description": "門中開山刀式。"
+      }
+    },
+    {
+      "id": "sect_art_sect_emei",
+      "name": "峨嵋柔勁入門",
+      "kind": "internal",
+      "legacyAliasOf": "em_soft_palm",
+      "flavor": "（舊存檔相容）柔勁護體。",
+      "passive": { "defense": 6, "hitBonus": 0.04, "qiRegen": 3 }
+    },
+    {
+      "id": "sect_art_sect_shaolin",
+      "name": "少林基本樁功",
+      "kind": "internal",
+      "legacyAliasOf": "sl_luohan_fist",
+      "flavor": "（舊存檔相容）樁功護體。",
+      "passive": { "maxHp": 30, "defense": 8 }
+    },
+    {
+      "id": "sect_art_sect_wudang",
+      "name": "武當吐納入門",
+      "kind": "internal",
+      "legacyAliasOf": "wd_sword_form",
+      "flavor": "（舊存檔相容）吐納入門。",
+      "passive": { "maxQi": 20, "qiRegen": 6, "attack": 2 }
+    }
+  ]
+}
