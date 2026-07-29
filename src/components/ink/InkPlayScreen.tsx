@@ -4,8 +4,6 @@ import type { LifeGameState } from '@interfaces/lifeEngine';
 import {
   natureKeys,
   natureLabels,
-  worldAttrKeys,
-  worldAttrLabels,
   wuxiaAttributeKeys,
   wuxiaAttributeLabels,
 } from '@interfaces/lifeEngine';
@@ -15,7 +13,7 @@ import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
-import { overallMartialLabel, skillDisplay, worldTone } from '@core/life/flavor';
+import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
@@ -76,8 +74,6 @@ export function InkPlayScreen({ state }: Props) {
   const tab = state.tab ?? 'home';
   const isPack = (pendingEvent?.tags ?? []).includes('pack');
   const displayTitle = isPack ? '江湖偶遇' : pendingEvent?.title;
-  const world = state.world;
-  const story = state.story;
   const gearIds = c.gear ?? [];
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
   const showResult = Boolean(lastResult) && state.phase === 'playing' && !state.pendingCombat;
@@ -156,45 +152,10 @@ export function InkPlayScreen({ state }: Props) {
 
       <div key={`${state.year}-${month}`} className="ink-scroll-flip ink-play-body">
 
-      {tab === 'home' && (
-        <section className="ink-world" aria-label="天下風聲">
-          <p className="ink-world-compact">
-            {worldAttrKeys.map((k, i) => (
-              <span key={k}>
-                {i > 0 ? ' · ' : ''}
-                {worldAttrLabels[k]} {world?.[k] ?? '—'}
-              </span>
-            ))}
-          </p>
-          <p className="ink-note">{world?.seasonMood} · {world?.lastWorldShift}</p>
-          {story && (
-            <p className="ink-note">
-              第{story.chapter}章「{story.title}」· {story.goal}（{story.progress}/{story.nextMilestone}）
-            </p>
-          )}
-        </section>
-      )}
-
       {tab === 'jianghu' && (
-        <section key="jianghu" className="ink-panel ink-world-panel ink-tab-pane" aria-label="天下四維">
-          <h3>天下四維</h3>
-          <div className="ink-attr-grid ink-world-grid">
-            {worldAttrKeys.map((k) => (
-              <div key={k} className="ink-attr">
-                <span className="ink-attr-label">{worldAttrLabels[k]}</span>
-                <strong>{world?.[k] ?? '—'}</strong>
-                <em className="ink-attr-tone">{world ? worldTone(world[k], k) : '—'}</em>
-              </div>
-            ))}
-          </div>
-          <p className="ink-note">{world?.seasonMood} · {world?.lastWorldShift}</p>
-          {story && (
-            <p className="ink-note">
-              第{story.chapter}章「{story.title}」· {story.goal}
-            </p>
-          )}
+        <section key="jianghu" className="ink-panel ink-world-panel ink-tab-pane" aria-label="心性">
+          <h3>心性</h3>
           <p className="ink-note ink-nature-line">
-            心性 ·{' '}
             {natureKeys.map((k, i) => (
               <span
                 key={k}
@@ -207,6 +168,7 @@ export function InkPlayScreen({ state }: Props) {
               </span>
             ))}
           </p>
+          <p className="ink-note">{natureSummary(c)}</p>
         </section>
       )}
 
