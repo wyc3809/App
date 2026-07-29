@@ -123,7 +123,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state: result.state,
       sealText: result.died || result.state.phase === 'summary' ? '終' : startedCombat ? '戰' : '定',
-      flashLines: result.logs.slice(0, 4),
+      flashLines: [],
       lastResult: startedCombat
         ? null
         : {
@@ -161,7 +161,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     set({
       state: next,
       sealText: next.phase === 'summary' ? '終' : startedCombat ? '戰' : '煉',
-      flashLines: logs.slice(0, 4),
+      flashLines: [],
       lastResult: startedCombat
         ? null
         : {
@@ -173,7 +173,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     });
   },
 
-  clearResult: () => set({ lastResult: null }),
+  clearResult: () => set({ lastResult: null, flashLines: [] }),
 
   combatMove: (moveId: string) => {
     const { state } = get();
@@ -184,8 +184,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const ended = !next.pendingCombat;
     set({
       state: next,
-      sealText: next.phase === 'summary' ? '終' : ended ? '勝' : '戰',
-      flashLines: logs.slice(0, 5),
+      sealText: next.phase === 'summary' ? '終' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : '戰',
+      flashLines: ended ? [] : logs.slice(0, 5),
       lastResult: ended
         ? {
             title: state.pendingCombat.title,

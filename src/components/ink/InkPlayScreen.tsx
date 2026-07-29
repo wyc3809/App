@@ -84,6 +84,7 @@ export function InkPlayScreen({ state }: Props) {
     c.alive &&
     !showResult &&
     !onPracticeTab;
+  const resultKind = lastResult?.title === '修煉' ? 'practice' : 'month';
 
   useEffect(() => {
     if (!showResult) return;
@@ -97,7 +98,7 @@ export function InkPlayScreen({ state }: Props) {
   return (
     <div
       className="scroll-shell scroll-shell--play ink-enter"
-      key={`${state.year}-${month}-${state.pending?.eventId ?? 'idle'}-${tab}`}
+      key={`${state.year}-${month}-${tab}`}
     >
       <InkScrollBackdrop variant="play" />
       {sealText && <InkSealStamp text={sealText} onDone={clearSeal} />}
@@ -450,7 +451,9 @@ export function InkPlayScreen({ state }: Props) {
         createPortal(
           <div className="ink-modal" role="dialog" aria-modal="true" aria-label="結果">
             <div className="ink-modal-card ink-result">
-              <p className="ink-event-year">抉擇已定</p>
+              <p className="ink-event-year">
+                {resultKind === 'practice' ? '修煉已定' : '本月際遇'}
+              </p>
               <h3>{lastResult.title}</h3>
               <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
               <p className="ink-event-body">{lastResult.feedback}</p>
@@ -473,7 +476,12 @@ export function InkPlayScreen({ state }: Props) {
           document.body,
         )}
 
-      {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && !combat && (
+      {flashLines.length > 0 &&
+        state.phase === 'playing' &&
+        !pendingEvent &&
+        !showResult &&
+        !combat &&
+        !onPracticeTab && (
         <section className="ink-flash" aria-live="polite">
           {flashLines.map((line) => (
             <p key={line}>{line}</p>
