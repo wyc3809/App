@@ -189,7 +189,6 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     if (!state?.pendingCombat || state.pendingCombat.phase !== 'player') return;
     const next = structuredClone(state);
     const logs = playerCombatTurn(next, moveId);
-    void save(next);
     const combat = next.pendingCombat;
     const resolving = combat?.phase === 'resolve';
     const fled = logs.some((l) => /逃離成功/.test(l));
@@ -199,7 +198,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       (moveId === BASIC_STRIKE.id ? BASIC_STRIKE.name : displayChoiceText(moveId));
     set({
       state: next,
-      sealText: next.phase === 'summary' ? '終' : resolving ? '勝' : fled ? '遁' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : '戰',
+      // 交手中段不蓋印，避免每回合動畫拖慢手感
+      sealText: next.phase === 'summary' ? '終' : resolving ? '勝' : fled ? '遁' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : null,
       flashLines: ended || resolving ? [] : logs.slice(0, 5),
       lastResult:
         ended && !resolving
@@ -213,6 +213,10 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
             }
           : get().lastResult,
     });
+    // 存檔延後，先讓 UI 立刻回饋按鍵
+    window.setTimeout(() => {
+      void save(next);
+    }, 0);
   },
 
   combatResolveFoe: (disposition: CombatFoeDisposition) => {

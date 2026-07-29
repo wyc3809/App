@@ -123,7 +123,7 @@ const RAW: GameEvent[] = [
     title: '鍛造兵器',
     body: '鐵匠鋪爐火正旺，掌櫃朝你招手：「可要趁火加一道？」',
     tags: ['ordinary', 'practice_wander'],
-    weight: 10,
+    weight: 5,
     requirements: { minAge: 16, minMoney: 40 },
     choices: [
       {

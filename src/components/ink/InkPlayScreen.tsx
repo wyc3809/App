@@ -68,7 +68,7 @@ export function InkPlayScreen({ state }: Props) {
   const clearSeal = useLifeStore((s) => s.clearSeal);
   const [practiceView, setPracticeView] = useState<PracticeView>('main');
   const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
-  const [combatLogOpen, setCombatLogOpen] = useState(false);
+  const [combatLogOpen, setCombatLogOpen] = useState(true);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
   const combatBeatRef = useRef<HTMLParagraphElement | null>(null);
 
@@ -87,16 +87,14 @@ export function InkPlayScreen({ state }: Props) {
 
   useEffect(() => {
     setCombatRoleFilter('all');
-    setCombatLogOpen(false);
+    setCombatLogOpen(true);
     setExpandedMoveId(null);
   }, [state.pendingCombat?.id]);
 
   useEffect(() => {
-    // 新戰報出現時預設看置頂一句，完整 log 保持摺疊；並捲到最新戰況
     if (!state.pendingCombat?.log?.length) return;
-    setCombatLogOpen(false);
     window.requestAnimationFrame(() => {
-      combatBeatRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      combatBeatRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
     });
   }, [state.pendingCombat?.log?.length]);
 

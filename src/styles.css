@@ -553,12 +553,14 @@ body::before {
   border: 1px solid var(--ink);
   background: transparent;
   color: var(--ink);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    background 0.22s ease,
-    color 0.22s ease,
-    transform 0.15s ease,
-    box-shadow 0.22s ease,
-    border-color 0.22s ease;
+    background 0.08s ease,
+    color 0.08s ease,
+    transform 0.06s ease,
+    box-shadow 0.08s ease,
+    border-color 0.08s ease;
 }
 
 .ink-btn--primary {
@@ -917,13 +919,15 @@ body::before {
   font-size: 0.95rem;
   letter-spacing: 0.04em;
   cursor: pointer;
-  animation: choiceIn 0.38s ease both;
-  animation-delay: calc(var(--i, 0) * 45ms);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  animation: choiceIn 0.22s ease both;
+  animation-delay: calc(var(--i, 0) * 18ms);
   transition:
-    background 0.22s ease,
-    border-color 0.22s ease,
-    transform 0.15s ease,
-    padding-left 0.22s ease;
+    background 0.08s ease,
+    border-color 0.08s ease,
+    transform 0.06s ease,
+    padding-left 0.08s ease;
 }
 
 .ink-choice:hover {
@@ -933,8 +937,8 @@ body::before {
 }
 
 .ink-choice:active {
-  transform: translateX(2px);
-  background: rgba(26, 26, 26, 0.08);
+  transform: scale(0.985) translateX(1px);
+  background: rgba(26, 26, 26, 0.1);
 }
 
 .ink-choice-mark {
@@ -948,7 +952,7 @@ body::before {
   color: var(--cinnabar);
   border: 1px solid var(--cinnabar);
   opacity: 0.85;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.08s ease, background 0.08s ease;
 }
 
 .ink-choice:hover .ink-choice-mark {
@@ -1261,10 +1265,12 @@ body::before {
   background: rgba(255, 255, 255, 0.28);
   color: var(--ink);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease;
+    background 0.08s ease,
+    border-color 0.08s ease,
+    transform 0.06s ease;
 }
 
 .ink-practice-btn strong {
@@ -1285,7 +1291,8 @@ body::before {
 }
 
 .ink-practice-btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.985);
+  background: rgba(26, 26, 26, 0.08);
 }
 
 .ink-practice-btn:disabled {
@@ -1395,7 +1402,13 @@ body::before {
   padding: 6px 10px;
   min-height: 36px;
   cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.08s ease,
+    border-color 0.08s ease,
+    color 0.08s ease,
+    transform 0.06s ease;
 }
 
 .ink-combat-filter--on {
@@ -1420,11 +1433,31 @@ body::before {
   min-height: 48px;
   padding: 10px 8px;
   align-items: center;
+  /* 交手中重渲時唔再逐個入場，避免感覺 lag */
+  animation: none;
 }
 
 .ink-choice--match {
   border-left-color: var(--cinnabar);
   background: rgba(163, 58, 50, 0.04);
+}
+
+.ink-combat-moves .ink-choice,
+.ink-combat-resolve .ink-choice,
+.ink-combat-action,
+.ink-combat-filter,
+.ink-combat-detail-btn,
+.ink-combat-log-toggle {
+  animation: none !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ink-combat-action:active:not(:disabled),
+.ink-combat-filter:active,
+.ink-combat-detail-btn:active {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
 }
 
 .ink-combat-detail-btn {
@@ -1480,6 +1513,10 @@ body::before {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  transition:
+    background 0.08s ease,
+    transform 0.06s ease,
+    border-color 0.08s ease;
 }
 
 .ink-combat-action strong {

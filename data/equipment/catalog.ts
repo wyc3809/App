@@ -228,12 +228,12 @@ export function rollForgeResult(
 ): string {
   const age = opts?.age ?? 20;
   const martial = opts?.martial ?? 10;
-  // 年輕／武淺：神兵幾乎無；年長武深：絕品／神兵機率上升
+  // 年輕／武淺：神兵幾乎無；年長武深：絕品／神兵機率上升（整體已調低）
   const tier = Math.min(1, Math.max(0, (age - 18) / 40 + martial / 120));
   const roll = rng.nextFloat();
-  const divineGate = 0.008 + tier * 0.045;
-  const epicGate = divineGate + 0.08 + tier * 0.12;
-  const rareGate = epicGate + 0.18 + tier * 0.1;
+  const divineGate = 0.002 + tier * 0.018;
+  const epicGate = divineGate + 0.03 + tier * 0.05;
+  const rareGate = epicGate + 0.08 + tier * 0.05;
   if (roll < divineGate * 0.34) return 'divine-xuan-sword';
   if (roll < divineGate * 0.67) return 'divine-silk-armor';
   if (roll < divineGate) return 'divine-moon-pendant';
@@ -244,12 +244,13 @@ export function rollForgeResult(
   if (roll < rareGate * 0.55) return 'meteor-whip';
   if (roll < rareGate * 0.75) return 'crescent-blade';
   if (roll < rareGate) return 'sleeve-darts';
-  if (roll < rareGate + 0.12) return 'cloud-boots';
+  if (roll < rareGate + 0.1) return 'cloud-boots';
   if (roll < rareGate + 0.22) return 'iron-blade';
-  if (roll < rareGate + 0.32) return 'bronze-spear';
-  if (roll < rareGate + 0.4) return 'hunter-bow';
-  if (roll < rareGate + 0.48) return 'pine-staff';
-  return 'pine-armor';
+  if (roll < rareGate + 0.34) return 'bronze-spear';
+  if (roll < rareGate + 0.44) return 'hunter-bow';
+  if (roll < rareGate + 0.54) return 'pine-staff';
+  if (roll < rareGate + 0.7) return 'pine-armor';
+  return 'old-sword';
 }
 
 export function rollAdventureGear(rng: { nextFloat: () => number }): string | null {

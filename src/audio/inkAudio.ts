@@ -38,7 +38,9 @@ function tone(freq: number, dur = 0.08, type: OscillatorType = 'sine', gain = 0.
 }
 
 export function playInkTap() {
-  tone(420, 0.05, 'triangle', 0.02);
+  // 短促「咔」感，避免拖長音拖慢手感
+  tone(760, 0.022, 'square', 0.016);
+  tone(420, 0.03, 'triangle', 0.012);
 }
 
 export function playInkSeal() {
