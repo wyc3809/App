@@ -23,6 +23,13 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
+/** 心性增量顯示：狂++、俠--（次數＝變化量） */
+export function formatNatureDeltaMark(attr: NatureAttr, delta: number): string {
+  if (!delta) return '';
+  const mark = (delta > 0 ? '+' : '-').repeat(Math.abs(delta));
+  return `${natureLabels[attr]}${mark}`;
+}
+
 export function applyNatureDelta(
   c: LifeCharacter,
   delta: Partial<Record<NatureAttr, number>>,
@@ -33,8 +40,7 @@ export function applyNatureDelta(
     const d = delta[k];
     if (!d) continue;
     n[k] = clamp(n[k] + d, 0, 100);
-    const sign = d > 0 ? '＋' : '－';
-    lines.push(`${natureLabels[k]}${sign}${Math.abs(d)}`);
+    lines.push(formatNatureDeltaMark(k, d));
   }
   return lines;
 }

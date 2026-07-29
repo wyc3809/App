@@ -484,6 +484,16 @@ describe('life event engine', () => {
     expect(births).toBeGreaterThanOrEqual(0);
   });
 
+  it('nature delta chips use 狂++ style', async () => {
+    const { formatNatureDeltaMark, applyNatureDelta } = await import('../core/life/nature');
+    expect(formatNatureDeltaMark('kuang', 2)).toBe('狂++');
+    expect(formatNatureDeltaMark('xia', -2)).toBe('俠--');
+    expect(formatNatureDeltaMark('e', 1)).toBe('惡+');
+    const state = createNewLife(3);
+    const lines = applyNatureDelta(state.character, { kuang: 2, xia: -1 });
+    expect(lines).toEqual(['俠-', '狂++']);
+  });
+
   it('nature 俠邪狂惡 shifts with choices and gates sects/encounters', async () => {
     const { applyChoice } = await import('../core/life/eventEngine');
     const { inferNatureFromChoice, meetsNatureGate } = await import('../core/life/nature');

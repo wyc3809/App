@@ -22,7 +22,7 @@ import { applyChoiceNature } from './nature';
 
 /** 把數值行與故事行分開，故事作主文 */
 function isStatLine(line: string): boolean {
-  return /^(銀兩|氣血|名望|武學|內息|內力|裝備|心性|天下|疲勞|閱事)/.test(line);
+  return /^(銀兩|氣血|名望|武學|內息|內力|裝備|心性|天下|疲勞|閱事|[俠邪狂惡][+\-]+)/.test(line);
 }
 
 function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
@@ -174,8 +174,7 @@ export function applyChoice(
     const deltas: string[] = [];
     const natureLines = applyChoiceNature(state, choice.text);
     if (natureLines.length) {
-      logs.push(`心性有變：${natureLines.join('、')}`);
-      deltas.push(...natureLines.map((l) => `心性${l}`));
+      deltas.push(...natureLines);
     }
     const prelude = `就「${tags.includes('pack') ? '江湖偶遇' : event.title}」一事，你選擇「${choice.text}」。刀光將起，對方已擋在眼前——這一局，要用真功夫說話。`;
     logs.unshift(prelude);
@@ -241,17 +240,12 @@ export function applyChoice(
 
   const natureLines = applyChoiceNature(state, choice.text);
   if (natureLines.length) {
-    logs.push(`心性有變：${natureLines.join('、')}`);
-    deltas.push(...natureLines.map((l) => `心性${l}`));
-    // 心性句留在 deltas；故事主文不重複塞數值感句子
-    if (!feedback.includes('心性')) {
-      // keep story as-is
-    }
+    deltas.push(...natureLines);
   }
 
-  // 若心性變化後仍要用完整故事，重新彙總一次（排除純數值）
+  // 故事主文不含純數值／心性記號
   feedback = buildStoryFeedback(
-    logs.filter((l) => !l.startsWith('心性有變')),
+    logs.filter((l) => !l.startsWith('心性有變') && !/^[俠邪狂惡][+\-]+$/.test(l)),
     feedback,
   );
 

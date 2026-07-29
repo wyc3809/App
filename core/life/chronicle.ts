@@ -19,8 +19,11 @@ export function formatEffectLine(eff: GameEffect, state: LifeGameState): string 
     case 'nature': {
       const parts = Object.entries(eff.delta)
         .filter(([, v]) => v !== undefined && v !== 0)
-        .map(([k, v]) => `${natureLabels[k as NatureAttr]}${v! > 0 ? '＋' : '－'}${Math.abs(v!)}`);
-      return parts.length ? `心性 ${parts.join(' · ')}` : null;
+        .map(([k, v]) => {
+          const mark = (v! > 0 ? '+' : '-').repeat(Math.abs(v!));
+          return `${natureLabels[k as NatureAttr]}${mark}`;
+        });
+      return parts.length ? parts.join(' · ') : null;
     }
     case 'world': {
       const parts = Object.entries(eff.delta)

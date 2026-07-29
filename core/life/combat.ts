@@ -429,18 +429,18 @@ export function resolveCombatDisposition(
 
   // 俠心過重仍選殺：額外損俠
   if (disposition === 'kill' && (c.nature?.xia ?? 0) >= 35) {
-    applyNatureDelta(c, { xia: -2 });
+    lines.push(...applyNatureDelta(c, { xia: -2 }));
     lines.push('你心裡清楚：這一刀，也斬在自己的俠名上。');
   }
   // 惡念過重仍放人：額外抑惡
   if (disposition === 'release' && (c.nature?.e ?? 0) >= 30) {
-    applyNatureDelta(c, { e: -2 });
+    lines.push(...applyNatureDelta(c, { e: -2 }));
     lines.push('你按捺殺意，強留三分餘地。');
   }
 
   const natureLines = applyNatureDelta(c, DISPOSITION_NATURE[disposition]);
   if (natureLines.length) {
-    lines.push(`心性有變：${natureLines.join('、')}`);
+    lines.push(...natureLines);
   }
   const rep = DISPOSITION_REP[disposition];
   if (rep !== 0) {

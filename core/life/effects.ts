@@ -42,8 +42,7 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
       case 'nature': {
         const lines = applyNatureDelta(c, eff.delta);
         if (lines.length) {
-          logs.push(`心性有變：${lines.join('、')}`);
-          deltas.push(...lines.map((l) => `心性${l}`));
+          deltas.push(...lines);
         }
         break;
       }

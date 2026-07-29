@@ -203,7 +203,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
               feedback: sanitizePlayerLine(
                 logs.find((l) => /戰勝|敗於|力竭|逃離/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
               ),
-              deltas: sanitizePlayerLines(logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境|心性/.test(l))),
+              deltas: sanitizePlayerLines(logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境|心性|^[俠邪狂惡][+\-]+$/.test(l))),
             }
           : get().lastResult,
     });
@@ -233,10 +233,12 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         choiceText: labels[disposition],
         feedback: sanitizePlayerLine(
           logs
-            .filter((l) => !/^銀兩|^名望＋|^名望－|^武學|^戰利品|^習得|^進境/.test(l))
+            .filter((l) => !/^銀兩|^名望＋|^名望－|^武學|^戰利品|^習得|^進境|^[俠邪狂惡][+\-]+$/.test(l))
             .join('\n\n'),
         ),
-        deltas: sanitizePlayerLines(logs.filter((l) => /^銀兩|^名望|^武學|^心性|^戰利品|^習得|^進境/.test(l))),
+        deltas: sanitizePlayerLines(
+          logs.filter((l) => /^銀兩|^名望|^武學|^心性|^戰利品|^習得|^進境|^[俠邪狂惡][+\-]+$/.test(l)),
+        ),
       },
     });
   },
