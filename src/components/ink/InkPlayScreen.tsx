@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import {
@@ -70,6 +70,7 @@ export function InkPlayScreen({ state }: Props) {
   const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
   const [combatLogOpen, setCombatLogOpen] = useState(false);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
+  const combatBeatRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => {
     if (!sealText) return;
@@ -91,8 +92,12 @@ export function InkPlayScreen({ state }: Props) {
   }, [state.pendingCombat?.id]);
 
   useEffect(() => {
-    // 新戰報出現時預設看置頂一句，完整 log 保持摺疊
-    if (state.pendingCombat?.log?.length) setCombatLogOpen(false);
+    // 新戰報出現時預設看置頂一句，完整 log 保持摺疊；並捲到最新戰況
+    if (!state.pendingCombat?.log?.length) return;
+    setCombatLogOpen(false);
+    window.requestAnimationFrame(() => {
+      combatBeatRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
   }, [state.pendingCombat?.log?.length]);
 
   const c = state.character;
@@ -558,7 +563,11 @@ export function InkPlayScreen({ state }: Props) {
           </div>
 
           {latestBeat && (
-            <p key={`${combat.turn}-${latestBeat.slice(0, 16)}`} className="ink-combat-beat">
+            <p
+              ref={combatBeatRef}
+              key={`${combat.turn}-${latestBeat.slice(0, 16)}`}
+              className="ink-combat-beat"
+            >
               {latestBeat}
             </p>
           )}
