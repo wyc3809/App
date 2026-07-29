@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { wuxiaAttributeKeys, wuxiaAttributeLabels } from '@interfaces/lifeEngine';
 import { LIFE_CATALOG, useLifeStore } from '../../store/lifeStore';
@@ -84,10 +85,19 @@ export function InkPlayScreen({ state }: Props) {
     !showResult &&
     !onPracticeTab;
 
+  useEffect(() => {
+    if (!showResult) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showResult]);
+
   return (
     <div
       className="scroll-shell scroll-shell--play ink-enter"
-      key={`${state.year}-${month}-${state.pending?.eventId ?? 'idle'}-${lastResult?.feedback ?? ''}`}
+      key={`${state.year}-${month}-${state.pending?.eventId ?? 'idle'}-${tab}`}
     >
       <InkScrollBackdrop variant="play" />
       {sealText && <InkSealStamp text={sealText} onDone={clearSeal} />}
@@ -435,30 +445,33 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {showResult && lastResult && (
-        <div className="ink-modal" role="dialog" aria-modal="true" aria-label="結果">
-          <div className="ink-modal-card ink-result">
-            <p className="ink-event-year">抉擇已定</p>
-            <h3>{lastResult.title}</h3>
-            <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
-            <p className="ink-event-body">{lastResult.feedback}</p>
-            {lastResult.deltas.length > 0 && (
-              <ul className="ink-delta-list">
-                {lastResult.deltas.map((d) => (
-                  <li key={d}>{d}</li>
-                ))}
-              </ul>
-            )}
-            <button
-              type="button"
-              className="ink-btn ink-btn--primary ink-btn--ack"
-              onClick={() => clearResult()}
-            >
-              已知曉 · 掩卷
-            </button>
-          </div>
-        </div>
-      )}
+      {showResult &&
+        lastResult &&
+        createPortal(
+          <div className="ink-modal" role="dialog" aria-modal="true" aria-label="結果">
+            <div className="ink-modal-card ink-result">
+              <p className="ink-event-year">抉擇已定</p>
+              <h3>{lastResult.title}</h3>
+              <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
+              <p className="ink-event-body">{lastResult.feedback}</p>
+              {lastResult.deltas.length > 0 && (
+                <ul className="ink-delta-list">
+                  {lastResult.deltas.map((d) => (
+                    <li key={d}>{d}</li>
+                  ))}
+                </ul>
+              )}
+              <button
+                type="button"
+                className="ink-btn ink-btn--primary ink-btn--ack"
+                onClick={() => clearResult()}
+              >
+                已知曉 · 掩卷
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && !combat && (
         <section className="ink-flash" aria-live="polite">
@@ -519,14 +532,17 @@ export function InkPlayScreen({ state }: Props) {
       {onPracticeTab && !combat && !showResult && (
         <p className="ink-note ink-note--center">修煉頁不推月曆——請回「鎮居」翻過一頁。</p>
       )}
-      <section className="ink-panel ink-chronicle">
-        <h3>年譜</h3>
-        <ul className="ink-log">
-          {state.lifeLog.slice(0, 14).map((line, i) => (
-            <li key={`${i}-${line.slice(0, 16)}`}>{line}</li>
-          ))}
-        </ul>
-      </section>
+
+      {!onPracticeTab && (
+        <section className="ink-panel ink-chronicle">
+          <h3>年譜</h3>
+          <ul className="ink-log">
+            {state.lifeLog.slice(0, 14).map((line, i) => (
+              <li key={`${i}-${line.slice(0, 16)}`}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {debugOpen && <LifeDebugPanel state={state} />}
     </div>
