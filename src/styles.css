@@ -1357,17 +1357,27 @@ body::before {
   top: 0;
   z-index: 3;
   margin: 0 0 8px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-left: 3px solid var(--cinnabar);
   background:
     linear-gradient(90deg, rgba(163, 58, 50, 0.1), rgba(243, 235, 220, 0.97) 55%),
     var(--paper);
   color: var(--ink);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.5;
   letter-spacing: 0.04em;
   animation: inkFadeUp 0.35s ease both;
   box-shadow: 0 6px 12px rgba(243, 235, 220, 0.9);
+}
+
+.ink-combat-beat-line {
+  margin: 0;
+}
+
+.ink-combat-beat-line + .ink-combat-beat-line {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(163, 58, 50, 0.18);
 }
 
 .ink-combat-log-toggle {

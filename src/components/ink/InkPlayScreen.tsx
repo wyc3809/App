@@ -39,6 +39,30 @@ type Props = {
   state: LifeGameState;
 };
 
+/** 血條下「最新戰況」：取自己／敵人各最近一條主動作（最多兩條） */
+function recentExchangeBeats(log: string[], playerName: string, foeName: string): string[] {
+  let playerIdx = -1;
+  let foeIdx = -1;
+  for (let i = log.length - 1; i >= 0; i -= 1) {
+    const line = log[i]!;
+    if (line.startsWith('【')) continue;
+    const isAction =
+      line.includes('「') ||
+      /收招守中|蓄勢待發|抽身|使不出來|截住去路|動作遲滯|氣息陡變/.test(line);
+    if (!isAction) continue;
+    if (playerIdx < 0 && (line.startsWith(playerName) || line.startsWith('你'))) {
+      playerIdx = i;
+    } else if (foeIdx < 0 && line.startsWith(foeName)) {
+      foeIdx = i;
+    }
+    if (playerIdx >= 0 && foeIdx >= 0) break;
+  }
+  const idxs = [playerIdx, foeIdx].filter((i) => i >= 0).sort((a, b) => a - b);
+  if (idxs.length) return idxs.map((i) => log[i]!);
+  return log.filter((l) => !l.startsWith('【')).slice(-2);
+}
+
+
 type PracticeView = 'main' | 'sect';
 type CombatRoleFilter = 'all' | CombatMoveRole;
 
@@ -68,9 +92,9 @@ export function InkPlayScreen({ state }: Props) {
   const clearSeal = useLifeStore((s) => s.clearSeal);
   const [practiceView, setPracticeView] = useState<PracticeView>('main');
   const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
-  const [combatLogOpen, setCombatLogOpen] = useState(true);
+  const [combatLogOpen, setCombatLogOpen] = useState(false);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
-  const combatBeatRef = useRef<HTMLParagraphElement | null>(null);
+  const combatBeatRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!sealText) return;
@@ -87,7 +111,7 @@ export function InkPlayScreen({ state }: Props) {
 
   useEffect(() => {
     setCombatRoleFilter('all');
-    setCombatLogOpen(true);
+    setCombatLogOpen(false);
     setExpandedMoveId(null);
   }, [state.pendingCombat?.id]);
 
@@ -147,7 +171,10 @@ export function InkPlayScreen({ state }: Props) {
     },
     {} as Record<CombatMoveRole, number>,
   );
-  const latestBeat = combat?.log?.length ? combat.log[combat.log.length - 1] : '';
+  const latestBeats =
+    combat?.log?.length
+      ? recentExchangeBeats(combat.log, combat.player.name, combat.foe.name)
+      : [];
   const onPracticeTab = tab === 'practice';
   const onHomeTab = tab === 'home';
   const canAdvanceMonth =
@@ -560,14 +587,18 @@ export function InkPlayScreen({ state }: Props) {
             </div>
           </div>
 
-          {latestBeat && (
-            <p
+          {latestBeats.length > 0 && (
+            <div
               ref={combatBeatRef}
-              key={`${combat.turn}-${latestBeat.slice(0, 16)}`}
+              key={`${combat.turn}-${latestBeats.map((b) => b.slice(0, 12)).join('|')}`}
               className="ink-combat-beat"
             >
-              {latestBeat}
-            </p>
+              {latestBeats.map((beat, i) => (
+                <p key={`${i}-${beat.slice(0, 16)}`} className="ink-combat-beat-line">
+                  {beat}
+                </p>
+              ))}
+            </div>
           )}
 
           <button
