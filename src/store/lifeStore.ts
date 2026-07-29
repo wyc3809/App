@@ -5,7 +5,7 @@ import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/e
 import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
-import { playerCombatTurn, getPlayerMoves } from '@core/life/combat';
+import { playerCombatTurn, getPlayerMoves, resolveCombatDisposition, type CombatFoeDisposition } from '@core/life/combat';
 import { displayChoiceText } from '@core/life/playerText';
 import { BASIC_STRIKE } from '@data/skills/catalog';
 
@@ -37,6 +37,7 @@ export interface LifeStore {
   choose: (choiceId: string) => void;
   practice: (actionId: PracticeActionId, opts?: { sectId?: string }) => void;
   combatMove: (moveId: string) => void;
+  combatResolveFoe: (disposition: CombatFoeDisposition) => void;
   clearResult: () => void;
   setTab: (tab: NonNullable<LifeGameState['tab']>) => void;
   setDebugOpen: (open: boolean) => void;
@@ -183,21 +184,54 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const next = structuredClone(state);
     const logs = playerCombatTurn(next, moveId);
     void save(next);
-    const ended = !next.pendingCombat;
+    const combat = next.pendingCombat;
+    const resolving = combat?.phase === 'resolve';
+    const ended = !combat;
     set({
       state: next,
-      sealText: next.phase === 'summary' ? '終' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : '戰',
-      flashLines: ended ? [] : logs.slice(0, 5),
-      lastResult: ended
-        ? {
-            title: state.pendingCombat.title,
-            choiceText:
-              getPlayerMoves(state).find((m) => m.id === moveId)?.name ??
-              (moveId === BASIC_STRIKE.id ? BASIC_STRIKE.name : displayChoiceText(moveId)),
-            feedback: logs.find((l) => /戰勝|敗於|力竭/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
-            deltas: logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境/.test(l)),
-          }
-        : get().lastResult,
+      sealText: next.phase === 'summary' ? '終' : resolving ? '勝' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : '戰',
+      flashLines: ended || resolving ? [] : logs.slice(0, 5),
+      lastResult:
+        ended && !resolving
+          ? {
+              title: state.pendingCombat!.title,
+              choiceText:
+                getPlayerMoves(state).find((m) => m.id === moveId)?.name ??
+                (moveId === BASIC_STRIKE.id ? BASIC_STRIKE.name : displayChoiceText(moveId)),
+              feedback: logs.find((l) => /戰勝|敗於|力竭/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
+              deltas: logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境|心性/.test(l)),
+            }
+          : get().lastResult,
+    });
+  },
+
+  combatResolveFoe: (disposition: CombatFoeDisposition) => {
+    const { state } = get();
+    if (!state?.pendingCombat || state.pendingCombat.phase !== 'resolve') return;
+    const next = structuredClone(state);
+    const logs = resolveCombatDisposition(next, disposition);
+    if (!next.character.alive && next.phase !== 'summary') {
+      next.phase = 'summary';
+      next.summaryText = buildLifeSummary(next);
+    }
+    void save(next);
+    const labels: Record<CombatFoeDisposition, string> = {
+      kill: '殺死',
+      release: '放走',
+      stun: '擊暈',
+    };
+    set({
+      state: next,
+      sealText: next.phase === 'summary' ? '終' : '定',
+      flashLines: [],
+      lastResult: {
+        title: state.pendingCombat.title,
+        choiceText: labels[disposition],
+        feedback: logs
+          .filter((l) => !/^銀兩|^名望＋|^名望－|^武學|^戰利品|^習得|^進境/.test(l))
+          .join('\n\n'),
+        deltas: logs.filter((l) => /^銀兩|^名望|^武學|^心性|^戰利品|^習得|^進境/.test(l)),
+      },
     });
   },
 

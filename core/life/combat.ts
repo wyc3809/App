@@ -17,6 +17,10 @@ import {
 import { rankPowerMult } from './martialRanks';
 import { grantGear } from './equipment';
 import { learnMartialArt } from './flavor';
+import { applyNatureDelta } from './nature';
+import type { NatureAttr } from '@interfaces/lifeEngine';
+
+export type CombatFoeDisposition = 'kill' | 'release' | 'stun';
 
 export type CombatFighter = CombatFighterState;
 export type PendingCombat = PendingCombatState;
@@ -313,7 +317,68 @@ function tickRegen(f: CombatFighter): void {
   f.qi = clamp(f.qi + f.qiRegen, 0, f.maxQi);
 }
 
-function finishCombat(state: LifeGameState, won: boolean): string[] {
+function needsFoeDisposition(combat: PendingCombat): boolean {
+  return combat.source !== 'spar';
+}
+
+function enterVictoryResolve(state: LifeGameState): string[] {
+  const combat = state.pendingCombat;
+  if (!combat) return [];
+  combat.phase = 'resolve';
+  const line = `你戰勝了${combat.foe.name}，對方已無還手之力。`;
+  combat.log.push(line);
+  return [line];
+}
+
+const DISPOSITION_NATURE: Record<
+  CombatFoeDisposition,
+  Partial<Record<NatureAttr, number>>
+> = {
+  kill: { e: 4, xia: -2 },
+  release: { xia: 4, e: -2, kuang: -1 },
+  stun: { xia: 2, e: -1, kuang: -1 },
+};
+
+const DISPOSITION_REP: Record<CombatFoeDisposition, number> = {
+  kill: -3,
+  release: 4,
+  stun: 1,
+};
+
+const DISPOSITION_NARRATE: Record<CombatFoeDisposition, string> = {
+  kill: '你補上最後一擊。血線落地的一瞬，你知這筆債已結，心性卻也添了幾分戾氣。',
+  release: '你收刃轉身，任對方踉蹣離去。江湖恩怨，未必都要以命相抵——這份寬恕，亦會留在身上。',
+  stun: '你點其穴道，待其甦醒時人已走遠。留一線生機，也留一線牽掛。',
+};
+
+/** 戰勝後處置落敗者（殺／放／暈），再結算戰利與獎勵 */
+export function resolveCombatDisposition(
+  state: LifeGameState,
+  disposition: CombatFoeDisposition,
+): string[] {
+  const combat = state.pendingCombat;
+  if (!combat || combat.phase !== 'resolve') return ['此刻無須定奪。'];
+
+  syncRngFromState(state);
+  const c = state.character;
+  const lines: string[] = [DISPOSITION_NARRATE[disposition]];
+
+  const natureLines = applyNatureDelta(c, DISPOSITION_NATURE[disposition]);
+  if (natureLines.length) {
+    lines.push(`心性有變：${natureLines.join('、')}`);
+  }
+  const rep = DISPOSITION_REP[disposition];
+  if (rep !== 0) {
+    c.reputation += rep;
+    lines.push(`名望${rep > 0 ? '＋' : ''}${rep}`);
+  }
+
+  lines.push(...finishCombatWin(state, disposition));
+  snapshotRng(state);
+  return lines;
+}
+
+function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDisposition): string[] {
   const combat = state.pendingCombat;
   if (!combat) return [];
   const c = state.character;
@@ -322,59 +387,94 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
   const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
   c.health = clamp(Math.round(c.maxHealth * Math.min(1, hpRatio)), 0, c.maxHealth);
   c.qi = clamp(combat.player.qi, 0, c.maxQi);
-  c.fatigue = clamp(c.fatigue + (won ? 8 : 14), 0, 100);
+  c.fatigue = clamp(c.fatigue + 8, 0, 100);
   c.stats.combats += 1;
+  c.stats.combatsWon += 1;
+
+  if (!dispositionLabel) {
+    lines.push(`你戰勝了${combat.foe.name}！`);
+  }
+
+  const r = combat.rewardOnWin ?? {};
+  if (r.money) {
+    c.money += r.money;
+    lines.push(`銀兩＋${r.money}`);
+  }
+  if (r.reputation) {
+    c.reputation += r.reputation;
+    lines.push(`名望＋${r.reputation}`);
+  }
+  if (r.martial) {
+    c.martial += r.martial;
+    lines.push(`武學＋${r.martial}`);
+  }
+  if (r.skillId && !c.skills.includes(r.skillId)) {
+    lines.push(learnMartialArt(state, r.skillId, r.skillName));
+  }
+  if (r.gearId) {
+    const gearName = grantGear(state, r.gearId);
+    if (gearName) lines.push(`戰利品：「${gearName}」`);
+  }
+  if (combat.source === 'spar' && c.sectId) {
+    const stand = tryGainSectStanding(state, 0.55);
+    if (stand) lines.push(stand);
+  }
+  for (const sid of combat.usedExternalSkillIds) {
+    const adv = tryAdvanceSkill(state, sid, 'combat');
+    if (adv) lines.push(adv);
+  }
+
+  const chronicleExtra =
+    dispositionLabel === 'kill'
+      ? '——殺之'
+      : dispositionLabel === 'release'
+        ? '——放走'
+        : dispositionLabel === 'stun'
+          ? '——擊暈'
+          : '';
+
+  combat.phase = 'ended';
+  combat.log.push(...lines);
+  const title = combat.title;
+  state.pendingCombat = null;
+  pushChronicle(state, [`「${title}」${chronicleExtra}`, ...lines]);
+  return lines;
+}
+
+function finishCombat(state: LifeGameState, won: boolean): string[] {
+  const combat = state.pendingCombat;
+  if (!combat) return [];
 
   if (won) {
-    c.stats.combatsWon += 1;
-    lines.push(`你戰勝了${combat.foe.name}！`);
-    const r = combat.rewardOnWin ?? {};
-    if (r.money) {
-      c.money += r.money;
-      lines.push(`銀兩＋${r.money}`);
-    }
-    if (r.reputation) {
-      c.reputation += r.reputation;
-      lines.push(`名望＋${r.reputation}`);
-    }
-    if (r.martial) {
-      c.martial += r.martial;
-      lines.push(`武學＋${r.martial}`);
-    }
-    if (r.skillId && !c.skills.includes(r.skillId)) {
-      lines.push(learnMartialArt(state, r.skillId, r.skillName));
-    }
-    if (r.gearId) {
-      const gearName = grantGear(state, r.gearId);
-      if (gearName) lines.push(`戰利品：「${gearName}」`);
-    }
-    if (combat.source === 'spar' && c.sectId) {
-      const stand = tryGainSectStanding(state, 0.55);
-      if (stand) lines.push(stand);
-    }
-    for (const sid of combat.usedExternalSkillIds) {
-      const adv = tryAdvanceSkill(state, sid, 'combat');
-      if (adv) lines.push(adv);
-    }
+    return finishCombatWin(state);
+  }
+
+  const c = state.character;
+  const lines: string[] = [];
+
+  const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
+  c.health = clamp(Math.round(c.maxHealth * Math.min(1, hpRatio)), 0, c.maxHealth);
+  c.qi = clamp(combat.player.qi, 0, c.maxQi);
+  c.fatigue = clamp(c.fatigue + 14, 0, 100);
+  c.stats.combats += 1;
+
+  lines.push(`你敗於${combat.foe.name}。`);
+  const r = combat.rewardOnLose ?? {};
+  if (r.money) {
+    c.money = Math.max(0, c.money + r.money);
+    lines.push(r.money < 0 ? `銀兩${r.money}` : `銀兩＋${r.money}`);
+  }
+  if (r.reputation) {
+    c.reputation += r.reputation;
+    lines.push(`名望${r.reputation > 0 ? '＋' : ''}${r.reputation}`);
+  }
+  if (c.health <= 0) {
+    c.alive = false;
+    state.phase = 'summary';
+    state.summaryText = buildLifeSummary(state);
+    lines.push('你力竭倒地，江湖路斷。');
   } else {
-    lines.push(`你敗於${combat.foe.name}。`);
-    const r = combat.rewardOnLose ?? {};
-    if (r.money) {
-      c.money = Math.max(0, c.money + r.money);
-      lines.push(r.money < 0 ? `銀兩${r.money}` : `銀兩＋${r.money}`);
-    }
-    if (r.reputation) {
-      c.reputation += r.reputation;
-      lines.push(`名望${r.reputation > 0 ? '＋' : ''}${r.reputation}`);
-    }
-    if (c.health <= 0) {
-      c.alive = false;
-      state.phase = 'summary';
-      state.summaryText = buildLifeSummary(state);
-      lines.push('你力竭倒地，江湖路斷。');
-    } else {
-      c.health = Math.max(1, c.health);
-    }
+    c.health = Math.max(1, c.health);
   }
 
   combat.phase = 'ended';
@@ -421,6 +521,11 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
   }
 
   if (combat.foe.hp <= 0) {
+    if (needsFoeDisposition(combat)) {
+      const resolveLines = enterVictoryResolve(state);
+      snapshotRng(state);
+      return [...lines, ...resolveLines];
+    }
     const end = finishCombat(state, true);
     snapshotRng(state);
     return [...lines, ...end];
@@ -431,6 +536,11 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
   lines.push(...foeStatus);
   combat.log.push(...foeStatus);
   if (combat.foe.hp <= 0) {
+    if (needsFoeDisposition(combat)) {
+      const resolveLines = enterVictoryResolve(state);
+      snapshotRng(state);
+      return [...lines, ...resolveLines];
+    }
     const end = finishCombat(state, true);
     snapshotRng(state);
     return [...lines, ...end];

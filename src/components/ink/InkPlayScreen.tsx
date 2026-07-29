@@ -43,6 +43,7 @@ export function InkPlayScreen({ state }: Props) {
   const newLife = useLifeStore((s) => s.newLife);
   const practice = useLifeStore((s) => s.practice);
   const combatMove = useLifeStore((s) => s.combatMove);
+  const combatResolveFoe = useLifeStore((s) => s.combatResolveFoe);
   const clearResult = useLifeStore((s) => s.clearResult);
   const lastResult = useLifeStore((s) => s.lastResult);
   const saveLabel = useLifeStore((s) => s.saveLabel);
@@ -471,36 +472,66 @@ export function InkPlayScreen({ state }: Props) {
               </div>
             </div>
           </div>
-          <p className="ink-note">外功可出招；內功只加攻防／內息等被動，不佔招式欄。</p>
-          <div className="ink-choice-list">
-            {moves.map((mv, i) => {
-              const short = combat.player.qi < mv.qiCost;
-              const ownerSkill = c.skills.find((id) => getSkillDef(id)?.move?.id === mv.id);
-              const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
-              const effPower = mv.power * (ownerSkill ? rankPowerMult(rank) : 1);
-              return (
+          <p className="ink-note">
+            {combat.phase === 'resolve'
+              ? '勝負已分——如何處置落敗之人，亦會留在心性裡。'
+              : '外功可出招；內功只加攻防／內息等被動，不佔招式欄。'}
+          </p>
+          {combat.phase === 'resolve' ? (
+            <div className="ink-choice-list ink-combat-resolve">
+              {(
+                [
+                  ['kill', '殺', '殺死', '永絕後患，戾氣難消'],
+                  ['release', '放', '放走', '留其一命，寬恕在胸'],
+                  ['stun', '暈', '擊暈', '點穴制住，不傷性命'],
+                ] as const
+              ).map(([id, mark, label, hint], i) => (
                 <button
-                  key={mv.id}
+                  key={id}
                   type="button"
                   className="ink-choice"
-                  disabled={combat.phase !== 'player' || short}
                   style={{ ['--i' as string]: i }}
-                  onClick={() => combatMove(mv.id)}
+                  onClick={() => combatResolveFoe(id)}
                 >
-                  <span className="ink-choice-mark">{i === 0 ? '普' : '功'}</span>
+                  <span className="ink-choice-mark">{mark}</span>
                   <span className="ink-combat-move">
-                    <strong>{mv.name}</strong>
-                    <em>
-                      {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威能 {effPower.toFixed(2)} 倍
-                      {ownerSkill && rank > 0 ? `（階位加持）` : ''}
-                      {short ? ' · 內息不足' : ''}
-                    </em>
-                    <small>{mv.description}</small>
+                    <strong>{label}</strong>
+                    <em>{hint}</em>
                   </span>
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="ink-choice-list">
+              {moves.map((mv, i) => {
+                const short = combat.player.qi < mv.qiCost;
+                const ownerSkill = c.skills.find((id) => getSkillDef(id)?.move?.id === mv.id);
+                const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
+                const effPower = mv.power * (ownerSkill ? rankPowerMult(rank) : 1);
+                return (
+                  <button
+                    key={mv.id}
+                    type="button"
+                    className="ink-choice"
+                    disabled={combat.phase !== 'player' || short}
+                    style={{ ['--i' as string]: i }}
+                    onClick={() => combatMove(mv.id)}
+                  >
+                    <span className="ink-choice-mark">{i === 0 ? '普' : '功'}</span>
+                    <span className="ink-combat-move">
+                      <strong>{mv.name}</strong>
+                      <em>
+                        {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威能 {effPower.toFixed(2)} 倍
+                        {ownerSkill && rank > 0 ? `（階位加持）` : ''}
+                        {short ? ' · 內息不足' : ''}
+                      </em>
+                      <small>{mv.description}</small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <ul className="ink-combat-log">
             {combat.log.slice(-6).map((line, i) => (
               <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>

@@ -287,7 +287,7 @@ export interface PendingCombat {
   source: 'spar' | 'event' | 'bandit' | 'road';
   title: string;
   turn: number;
-  phase: 'player' | 'enemy' | 'ended';
+  phase: 'player' | 'enemy' | 'resolve' | 'ended';
   player: CombatFighterState;
   foe: CombatFighterState;
   log: string[];

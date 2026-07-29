@@ -201,11 +201,39 @@ describe('life event engine', () => {
     combat.foe.hp = 1;
     combat.player.qi = 200;
     while (state.pendingCombat && state.pendingCombat.phase !== 'ended') {
+      if (state.pendingCombat.phase === 'resolve') {
+        const { resolveCombatDisposition } = await import('../core/life/combat');
+        resolveCombatDisposition(state, 'kill');
+        break;
+      }
       playerCombatTurn(state, 'basic_strike');
       if (state.pendingCombat && state.pendingCombat.turn > 40) break;
     }
     expect(state.character.skills).toContain('art_shadow_needle');
     expect(state.character.gear).toContain('sleeve-darts');
+  });
+
+  it('victory prompts foe disposition except spar', async () => {
+    const { startCombat, playerCombatTurn, resolveCombatDisposition } = await import(
+      '../core/life/combat'
+    );
+    initRng(9);
+    const state = createNewLife(9);
+    state.character.martial = 60;
+    startCombat(state, {
+      source: 'event',
+      title: '路遇',
+      foeName: '剪徑之徒',
+      foePower: 'weak',
+    });
+    state.pendingCombat!.foe.hp = 0;
+    playerCombatTurn(state, 'basic_strike');
+    expect(state.pendingCombat?.phase).toBe('resolve');
+    const beforeEvil = state.character.nature!.e;
+    resolveCombatDisposition(state, 'release');
+    expect(state.pendingCombat).toBeNull();
+    expect(state.character.nature!.xia).toBeGreaterThan(12);
+    expect(state.character.nature!.e).toBeLessThanOrEqual(beforeEvil);
   });
 
   it('displayChoiceText hides placeholder English', async () => {
