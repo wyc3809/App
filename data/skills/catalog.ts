@@ -113,13 +113,13 @@ export const GUARD_STANCE: CombatMoveDef = {
   name: '守勢',
   qiCost: 0,
   power: 0,
-  description: '收招守中，暫增防禦並回些許內息。',
+  description: '收招守中，暫增防禦；戰鬥中可藉此緩回些許內力。',
 };
 
 export const CHARGE_STANCE: CombatMoveDef = {
   id: 'sys_charge',
   name: '蓄勢',
-  qiCost: 6,
+  qiCost: 12,
   power: 0,
   description: '凝勁一輪，下一擊威能大增。',
 };
@@ -133,6 +133,10 @@ export const FLEE_MOVE: CombatMoveDef = {
 };
 
 export const SYSTEM_MOVES: CombatMoveDef[] = [GUARD_STANCE, CHARGE_STANCE, FLEE_MOVE];
+
+export function isCombatActionMove(moveId: string): boolean {
+  return SYSTEM_MOVES.some((m) => m.id === moveId);
+}
 
 export const SKILL_DEFS: Record<string, SkillDef> = buildCatalog();
 
@@ -173,19 +177,9 @@ export function formatSkillEffects(id: string): string {
   const bits: string[] = [];
   if (def.flavor) bits.push(def.flavor);
   if (def.move) {
-    const m = def.move;
-    const fx: string[] = [];
-    if (m.pierce) fx.push(`破防${Math.round(m.pierce * 100)}%`);
-    if (m.multiHit && m.multiHit > 1) fx.push(`連擊×${m.multiHit}`);
-    if (m.qiDrain) fx.push(`耗息${m.qiDrain}`);
-    if (m.bleedChance) fx.push('流血');
-    if (m.stunChance) fx.push('定身');
-    if (m.lifesteal) fx.push('吸血');
-    if (m.healSelf) fx.push(`回血${m.healSelf}`);
-    if (m.applyBlind) fx.push('迷目');
-    if (m.defenseBreak) fx.push(`破防−${m.defenseBreak}`);
+    const fx = formatCombatMoveEffectBits(def.move);
     if (fx.length) bits.push(`特效：${fx.join('、')}`);
-    else if (m.description) bits.push(m.description);
+    else if (def.move.description) bits.push(def.move.description);
   } else if (def.passive) {
     const p = def.passive;
     const fx: string[] = [];
@@ -202,6 +196,31 @@ export function formatSkillEffects(id: string): string {
     bits.push(`需兵器：${def.weaponKind === 'sword' ? '劍' : def.weaponKind === 'blade' ? '刀' : def.weaponKind === 'spear' ? '槍' : def.weaponKind === 'staff' ? '杖' : def.weaponKind === 'whip' ? '鞭' : def.weaponKind === 'bow' ? '弓' : '暗器'}（持之加威）`);
   }
   return bits.join(' — ');
+}
+
+/** 戰鬥招式特效短語（不含 flavor） */
+export function formatCombatMoveEffectBits(m: CombatMoveDef): string[] {
+  const fx: string[] = [];
+  if (m.pierce) fx.push(`破防${Math.round(m.pierce * 100)}%`);
+  if (m.multiHit && m.multiHit > 1) fx.push(`連擊×${m.multiHit}`);
+  if (m.qiDrain) fx.push(`耗敵息${m.qiDrain}`);
+  if (m.bleedChance) fx.push('流血');
+  if (m.stunChance) fx.push('定身');
+  if (m.lifesteal) fx.push(`吸血${Math.round(m.lifesteal * 100)}%`);
+  if (m.healSelf) fx.push(`回血${m.healSelf}`);
+  if (m.applyBlind) fx.push('迷目');
+  if (m.defenseBreak) fx.push(`破防−${m.defenseBreak}`);
+  if (m.hitBonus) fx.push(`命中+${Math.round(m.hitBonus * 100)}%`);
+  return fx;
+}
+
+export function formatCombatMoveSummary(m: CombatMoveDef, effPower?: number): string {
+  const bits: string[] = [];
+  bits.push(m.qiCost > 0 ? `耗內力 ${m.qiCost}` : '無耗');
+  if (m.power > 0) bits.push(`威能 ${(effPower ?? m.power).toFixed(2)} 倍`);
+  const fx = formatCombatMoveEffectBits(m);
+  if (fx.length) bits.push(fx.join('、'));
+  return bits.join(' · ');
 }
 
 export function formatSkillDetail(id: string, rank: number): string {

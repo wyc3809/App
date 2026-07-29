@@ -19,7 +19,7 @@
       "move": {
         "id": "mv_river_fist",
         "name": "長河崩拳",
-        "qiCost": 17,
+        "qiCost": 41,
         "power": 1.5,
         "description": "拳勢如河，一往無前。",
         "pierce": 0.08
@@ -33,7 +33,7 @@
       "move": {
         "id": "mv_stone_palm",
         "name": "裂石掌",
-        "qiCost": 18,
+        "qiCost": 43,
         "power": 1.55,
         "description": "掌力沉猛，專破硬架。",
         "pierce": 0.2,
@@ -48,7 +48,7 @@
       "move": {
         "id": "mv_bridge_step",
         "name": "斷橋踏",
-        "qiCost": 12,
+        "qiCost": 29,
         "power": 1.15,
         "hitBonus": 0.12,
         "description": "步法欺近，一踏即中。"
@@ -63,7 +63,7 @@
       "move": {
         "id": "mv_tomb_sword",
         "name": "無銘一刺",
-        "qiCost": 22,
+        "qiCost": 53,
         "power": 1.7,
         "hitBonus": 0.05,
         "pierce": 0.35,
@@ -92,7 +92,7 @@
       "move": {
         "id": "mv_rain_sword",
         "name": "聽雨連刺",
-        "qiCost": 16,
+        "qiCost": 44,
         "power": 0.75,
         "hitBonus": 0.08,
         "multiHit": 3,
@@ -108,7 +108,7 @@
       "move": {
         "id": "mv_nine_shadow",
         "name": "九影閃擊",
-        "qiCost": 14,
+        "qiCost": 34,
         "power": 1.2,
         "hitBonus": 0.18,
         "applyBlind": 0.15,
@@ -123,7 +123,7 @@
       "move": {
         "id": "mv_cold_palm",
         "name": "寒霜掌",
-        "qiCost": 20,
+        "qiCost": 48,
         "power": 1.45,
         "qiDrain": 14,
         "description": "掌風帶寒，傷人內息。"
@@ -148,7 +148,7 @@
       "move": {
         "id": "mv_moon_sword",
         "name": "弄月一劍",
-        "qiCost": 15,
+        "qiCost": 36,
         "power": 1.4,
         "hitBonus": 0.06,
         "pierce": 0.12,
@@ -175,7 +175,7 @@
       "move": {
         "id": "mv_silk_hand",
         "name": "柔絲鎖脈",
-        "qiCost": 13,
+        "qiCost": 31,
         "power": 1.1,
         "hitBonus": 0.1,
         "healSelf": 8,
@@ -191,7 +191,7 @@
       "move": {
         "id": "mv_thunder_blade",
         "name": "驚雷一刀",
-        "qiCost": 24,
+        "qiCost": 58,
         "power": 1.85,
         "bleedChance": 0.35,
         "bleedDamage": 6,
@@ -208,7 +208,7 @@
       "move": {
         "id": "mv_wind_chase",
         "name": "追風三連",
-        "qiCost": 16,
+        "qiCost": 38,
         "power": 1.35,
         "hitBonus": 0.1,
         "multiHit": 2,
@@ -223,7 +223,7 @@
       "move": {
         "id": "mv_hook_silk",
         "name": "鐵線鎖刃",
-        "qiCost": 18,
+        "qiCost": 43,
         "power": 1.42,
         "pierce": 0.15,
         "defenseBreak": 4,
@@ -239,7 +239,7 @@
       "move": {
         "id": "mv_meteor_palm",
         "name": "流星墜",
-        "qiCost": 19,
+        "qiCost": 46,
         "power": 1.5,
         "stunChance": 0.22,
         "description": "掌風壓頂，令人氣短。"
@@ -276,7 +276,7 @@
       "move": {
         "id": "mv_shadow_needle",
         "name": "無影一針",
-        "qiCost": 14,
+        "qiCost": 34,
         "power": 1.25,
         "hitBonus": 0.14,
         "pierce": 0.25,
@@ -357,7 +357,7 @@
       "move": {
         "id": "mv_spear_cloud",
         "name": "穿雲一刺",
-        "qiCost": 17,
+        "qiCost": 41,
         "power": 1.48,
         "pierce": 0.18,
         "hitBonus": 0.05,
@@ -373,7 +373,7 @@
       "move": {
         "id": "mv_staff_iron",
         "name": "鐵杖橫掃",
-        "qiCost": 15,
+        "qiCost": 36,
         "power": 1.32,
         "defenseBreak": 3,
         "stunChance": 0.18,
@@ -389,7 +389,7 @@
       "move": {
         "id": "mv_whip_silk",
         "name": "柔絲鎖喉",
-        "qiCost": 16,
+        "qiCost": 38,
         "power": 1.28,
         "hitBonus": 0.12,
         "applyBlind": 0.1,
@@ -405,7 +405,7 @@
       "move": {
         "id": "mv_bow_star",
         "name": "逐星一矢",
-        "qiCost": 14,
+        "qiCost": 34,
         "power": 1.4,
         "hitBonus": 0.16,
         "pierce": 0.12,
@@ -440,7 +440,7 @@
       "move": {
         "id": "mv_sand_palm",
         "name": "流沙掩目",
-        "qiCost": 15,
+        "qiCost": 36,
         "power": 1.22,
         "applyBlind": 0.18,
         "hitBonus": 0.08,
@@ -477,7 +477,7 @@
       "move": {
         "id": "mv_heavy_halberd",
         "name": "開山一戟",
-        "qiCost": 22,
+        "qiCost": 53,
         "power": 1.75,
         "pierce": 0.22,
         "stunChance": 0.2,
@@ -494,7 +494,7 @@
       "move": {
         "id": "mv_qy_cloud",
         "name": "青雲初劍",
-        "qiCost": 10,
+        "qiCost": 30,
         "power": 1.28,
         "hitBonus": 0.06,
         "pierce": 0.1,
@@ -512,7 +512,7 @@
       "move": {
         "id": "mv_qy_mist",
         "name": "雲中連點",
-        "qiCost": 14,
+        "qiCost": 38,
         "power": 0.7,
         "hitBonus": 0.14,
         "multiHit": 2,
@@ -530,7 +530,7 @@
       "move": {
         "id": "mv_qy_pierce",
         "name": "破雲刺",
-        "qiCost": 18,
+        "qiCost": 43,
         "power": 1.35,
         "hitBonus": 0.08,
         "pierce": 0.4,
@@ -548,7 +548,7 @@
       "move": {
         "id": "mv_qy_sky",
         "name": "青冥三刺",
-        "qiCost": 22,
+        "qiCost": 53,
         "power": 0.85,
         "hitBonus": 0.1,
         "multiHit": 3,
@@ -566,7 +566,7 @@
       "move": {
         "id": "mv_td_open",
         "name": "開山一刀",
-        "qiCost": 12,
+        "qiCost": 30,
         "power": 1.42,
         "description": "刀勢開山，剛猛直取。"
       },
@@ -582,7 +582,7 @@
       "move": {
         "id": "mv_td_wind",
         "name": "裂風斬",
-        "qiCost": 16,
+        "qiCost": 38,
         "power": 1.38,
         "bleedChance": 0.55,
         "bleedDamage": 7,
@@ -600,7 +600,7 @@
       "move": {
         "id": "mv_td_thunder",
         "name": "雷鳴三斬",
-        "qiCost": 20,
+        "qiCost": 48,
         "power": 0.8,
         "multiHit": 3,
         "bleedChance": 0.25,
@@ -619,7 +619,7 @@
       "move": {
         "id": "mv_td_noreturn",
         "name": "無回一刀",
-        "qiCost": 28,
+        "qiCost": 67,
         "power": 2.15,
         "pierce": 0.15,
         "bleedChance": 0.4,
@@ -638,7 +638,7 @@
       "move": {
         "id": "mv_em_soft",
         "name": "柔掌回春",
-        "qiCost": 11,
+        "qiCost": 26,
         "power": 1.12,
         "hitBonus": 0.08,
         "healSelf": 10,
@@ -655,7 +655,7 @@
       "move": {
         "id": "mv_em_silk",
         "name": "繞指鎖脈",
-        "qiCost": 14,
+        "qiCost": 34,
         "power": 1.05,
         "hitBonus": 0.12,
         "applyBlind": 0.18,
@@ -673,7 +673,7 @@
       "move": {
         "id": "mv_em_golden",
         "name": "金頂綿掌",
-        "qiCost": 17,
+        "qiCost": 41,
         "power": 1.3,
         "healSelf": 6,
         "lifesteal": 0.28,
@@ -704,7 +704,7 @@
       "move": {
         "id": "mv_sl_luohan",
         "name": "羅漢崩拳",
-        "qiCost": 11,
+        "qiCost": 30,
         "power": 1.36,
         "description": "架勢沉穩，拳拳到肉。"
       }
@@ -719,7 +719,7 @@
       "move": {
         "id": "mv_sl_weituo",
         "name": "韋陀點穴",
-        "qiCost": 16,
+        "qiCost": 38,
         "power": 1.25,
         "stunChance": 0.28,
         "description": "杖意點穴，敵身一滯。"
@@ -763,7 +763,7 @@
       "move": {
         "id": "mv_wd_sword",
         "name": "武當圓劍",
-        "qiCost": 10,
+        "qiCost": 30,
         "power": 1.22,
         "hitBonus": 0.07,
         "pierce": 0.1,
@@ -781,7 +781,7 @@
       "move": {
         "id": "mv_wd_push",
         "name": "太極推手",
-        "qiCost": 13,
+        "qiCost": 31,
         "power": 1.08,
         "healSelf": 12,
         "defenseBreak": 4,
@@ -812,7 +812,7 @@
       "move": {
         "id": "mv_wd_wuji",
         "name": "無極連刺",
-        "qiCost": 21,
+        "qiCost": 50,
         "power": 0.78,
         "multiHit": 3,
         "pierce": 0.22,
@@ -829,7 +829,7 @@
       "move": {
         "id": "mv_qingyun_sword",
         "name": "青雲初劍",
-        "qiCost": 10,
+        "qiCost": 30,
         "power": 1.25,
         "hitBonus": 0.05,
         "pierce": 0.1,
@@ -845,7 +845,7 @@
       "move": {
         "id": "mv_tiandao_blade",
         "name": "天刀開山",
-        "qiCost": 12,
+        "qiCost": 30,
         "power": 1.35,
         "description": "門中開山刀式。"
       }

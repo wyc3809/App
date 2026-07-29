@@ -1331,6 +1331,22 @@ body::before {
   margin: 8px 0 12px;
 }
 
+.ink-combat-group-label {
+  margin: 10px 0 2px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0.32em;
+  color: var(--ink-wash);
+}
+
+.ink-combat-group-label:first-child {
+  margin-top: 2px;
+}
+
+.ink-combat-moves .ink-choice {
+  align-items: flex-start;
+}
+
 .ink-combat-move {
   display: flex;
   flex-direction: column;

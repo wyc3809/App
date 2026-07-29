@@ -248,6 +248,47 @@ describe('life event engine', () => {
     expect(state.character.nature!.e).toBeLessThanOrEqual(beforeEvil);
   });
 
+  it('external move qi costs are meaningful and qi persists after combat', async () => {
+    const { startCombat, playerCombatTurn, resolveCombatDisposition } = await import('../core/life/combat');
+    const { getSkillDef, listExternalMovesForSkills } = await import('../data/skills/catalog');
+    const river = getSkillDef('art_river_fist')!.move!;
+    expect(river.qiCost).toBeGreaterThanOrEqual(30);
+
+    const moves = listExternalMovesForSkills(['art_river_fist']);
+    expect(moves.some((m) => m.id === 'sys_guard')).toBe(true);
+    expect(moves.find((m) => m.id === 'mv_river_fist')!.qiCost).toBeGreaterThanOrEqual(30);
+
+    initRng(6);
+    const state = createNewLife(6);
+    state.character.martial = 60;
+    state.character.maxQi = 200;
+    state.character.qi = 200;
+    state.character.maxHealth = 400;
+    state.character.health = 400;
+    startCombat(state, {
+      source: 'event',
+      title: '試耗',
+      foeName: '剪徑',
+      foePower: 'weak',
+      rewardOnWin: { martial: 1 },
+    });
+    expect(state.pendingCombat!.player.qiRegen).toBe(0);
+    state.pendingCombat!.foe.hp = 500;
+    state.pendingCombat!.foe.maxHp = 500;
+    const before = state.pendingCombat!.player.qi;
+    playerCombatTurn(state, 'mv_river_fist');
+    expect(state.pendingCombat).toBeTruthy();
+    expect(state.pendingCombat!.player.qi).toBeLessThanOrEqual(before - river.qiCost);
+    state.pendingCombat!.foe.hp = 0;
+    playerCombatTurn(state, 'basic_strike');
+    expect(state.pendingCombat?.phase).toBe('resolve');
+    const midQi = state.pendingCombat!.player.qi;
+    resolveCombatDisposition(state, 'stun');
+    expect(state.pendingCombat).toBeNull();
+    expect(state.character.qi).toBe(midQi);
+    expect(state.character.qi).toBeLessThan(state.character.maxQi);
+  });
+
   it('displayChoiceText hides placeholder English', async () => {
     const { displayChoiceText, sanitizePlayerLine } = await import('../core/life/playerText');
     expect(displayChoiceText('None', 'accept')).toBe('應允');

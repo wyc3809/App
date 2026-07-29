@@ -50,7 +50,8 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
     defense: 6 + Math.floor(c.attributes.genGu / 12) + gear.defense + (passive.defense ?? 0),
     hitBonus: 0.05 + c.attributes.danShi / 400 + (passive.hitBonus ?? 0),
     evasion: Math.min(0.45, evasion),
-    qiRegen: 6 + (passive.qiRegen ?? 0),
+    // 戰鬥中不自動回內力；耗去的內力戰後亦保留，需打坐／歇息再復。
+    qiRegen: 0,
     blind: 0,
     isPlayer: true,
     stun: 0,
@@ -462,7 +463,8 @@ function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDispo
 
   const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
   c.health = clamp(Math.round(c.maxHealth * Math.min(1, hpRatio)), 0, c.maxHealth);
-  c.qi = clamp(combat.player.qi, 0, c.maxQi);
+  // 戰後不回滿內力：沿用交手結束時剩餘內力
+  c.qi = clamp(Math.round(combat.player.qi), 0, c.maxQi);
   c.fatigue = clamp(c.fatigue + 8, 0, 100);
   c.stats.combats += 1;
   c.stats.combatsWon += 1;
@@ -548,7 +550,8 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
 
   const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
   c.health = clamp(Math.round(c.maxHealth * Math.min(1, hpRatio)), 0, c.maxHealth);
-  c.qi = clamp(combat.player.qi, 0, c.maxQi);
+  // 戰敗同樣不回滿內力
+  c.qi = clamp(Math.round(combat.player.qi), 0, c.maxQi);
   c.fatigue = clamp(c.fatigue + 14, 0, 100);
   c.stats.combats += 1;
 
@@ -631,8 +634,9 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
       // fall through to enemy turn without attacking
     } else if (move.id === GUARD_STANCE.id) {
       combat.player.defenseMod += 6;
-      combat.player.qi = clamp(combat.player.qi + 8, 0, combat.player.maxQi);
-      lines.push('你收招守中，架勢更穩，內息也緩了過來。');
+      const recover = 12;
+      combat.player.qi = clamp(combat.player.qi + recover, 0, combat.player.maxQi);
+      lines.push(`你收招守中，架勢更穩，緩回內力 ${recover}。`);
       combat.log.push(...lines);
     } else if (move.id === CHARGE_STANCE.id) {
       if (combat.player.qi < move.qiCost) {

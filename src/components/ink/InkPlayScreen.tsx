@@ -16,12 +16,17 @@ import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
-import { GUARD_STANCE, CHARGE_STANCE, FLEE_MOVE } from '@data/skills/catalog';
+import { GUARD_STANCE, CHARGE_STANCE } from '@data/skills/catalog';
 import { playInkSeal, playInkTap, playInkWin, playInkLose } from '../../audio/inkAudio';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
-import { formatSkillEffects, getSkillDef } from '@data/skills/catalog';
+import {
+  formatCombatMoveSummary,
+  formatSkillEffects,
+  getSkillDef,
+  isCombatActionMove,
+} from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
 import { displayChoiceText } from '@core/life/playerText';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
@@ -91,6 +96,8 @@ export function InkPlayScreen({ state }: Props) {
   const busy = Boolean(state.pending) || Boolean(combat) || showResult || !c.alive;
   const practiceBusy = busy || practiceLeft <= 0;
   const moves = combat ? getPlayerMoves(state) : [];
+  const techniqueMoves = moves.filter((mv) => !isCombatActionMove(mv.id));
+  const actionMoves = moves.filter((mv) => isCombatActionMove(mv.id));
   const onPracticeTab = tab === 'practice';
   const onHomeTab = tab === 'home';
   const canAdvanceMonth =
@@ -497,7 +504,7 @@ export function InkPlayScreen({ state }: Props) {
           <p className="ink-note">
             {combat.phase === 'resolve'
               ? '勝負已分——如何處置落敗之人，亦會留在心性裡。'
-              : '外功出招；守勢／蓄勢／抽身可調節奏。內功與輕功為被動。'}
+              : '招式耗內力；行動可守勢回息、蓄勢加威或抽身離場。戰後內力不自動回滿。'}
           </p>
           {combat.phase === 'resolve' ? (
             <div className="ink-choice-list ink-combat-resolve">
@@ -530,8 +537,9 @@ export function InkPlayScreen({ state }: Props) {
               ))}
             </div>
           ) : (
-            <div className="ink-choice-list">
-              {moves.map((mv, i) => {
+            <div className="ink-choice-list ink-combat-moves">
+              <p className="ink-combat-group-label">招式</p>
+              {techniqueMoves.map((mv, i) => {
                 const short = combat.player.qi < mv.qiCost;
                 const ownerSkill = c.skills.find((id) => getSkillDef(id)?.move?.id === mv.id);
                 const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
@@ -548,23 +556,42 @@ export function InkPlayScreen({ state }: Props) {
                       combatMove(mv.id);
                     }}
                   >
-                    <span className="ink-choice-mark">
-                      {mv.id === GUARD_STANCE.id
-                        ? '守'
-                        : mv.id === CHARGE_STANCE.id
-                          ? '蓄'
-                          : mv.id === FLEE_MOVE.id
-                            ? '遁'
-                            : i === 0
-                              ? '普'
-                              : '功'}
-                    </span>
+                    <span className="ink-choice-mark">{mv.id === 'basic_strike' ? '普' : '招'}</span>
                     <span className="ink-combat-move">
                       <strong>{mv.name}</strong>
                       <em>
-                        {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威能 {effPower.toFixed(2)} 倍
-                        {ownerSkill && rank > 0 ? `（階位加持）` : ''}
-                        {short ? ' · 內息不足' : ''}
+                        {formatCombatMoveSummary(mv, effPower)}
+                        {ownerSkill && rank > 0 ? ' · 階位加持' : ''}
+                        {short ? ' · 內力不足' : ''}
+                      </em>
+                      <small>{mv.description}</small>
+                    </span>
+                  </button>
+                );
+              })}
+              <p className="ink-combat-group-label">行動</p>
+              {actionMoves.map((mv, i) => {
+                const short = combat.player.qi < mv.qiCost;
+                const mark =
+                  mv.id === GUARD_STANCE.id ? '守' : mv.id === CHARGE_STANCE.id ? '蓄' : '遁';
+                return (
+                  <button
+                    key={mv.id}
+                    type="button"
+                    className="ink-choice"
+                    disabled={combat.phase !== 'player' || short}
+                    style={{ ['--i' as string]: techniqueMoves.length + i }}
+                    onClick={() => {
+                      playInkTap();
+                      combatMove(mv.id);
+                    }}
+                  >
+                    <span className="ink-choice-mark">{mark}</span>
+                    <span className="ink-combat-move">
+                      <strong>{mv.name}</strong>
+                      <em>
+                        {formatCombatMoveSummary(mv)}
+                        {short ? ' · 內力不足' : ''}
                       </em>
                       <small>{mv.description}</small>
                     </span>
