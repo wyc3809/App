@@ -94,6 +94,10 @@ export const effectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('maxQi'), amount: z.number() }),
   z.object({ type: z.literal('qi'), amount: z.number() }),
   z.object({ type: z.literal('condition'), id: z.string() }),
+  z.object({
+    type: z.literal('practice'),
+    action: z.enum(['train_martial', 'train_internal', 'temper_body', 'forge', 'seek_master']),
+  }),
 ]);
 
 export type GameEffect = z.infer<typeof effectSchema>;

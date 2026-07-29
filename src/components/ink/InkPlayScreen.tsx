@@ -307,7 +307,7 @@ export function InkPlayScreen({ state }: Props) {
             <>
               <h3>修煉</h3>
               <p className="ink-note">
-                本月可修煉 {practiceLeft}/3 次。苦練、鑄兵、尋訪——階位靠實戰與修煉進境。
+                本月可修煉 {practiceLeft}/3 次。打聽傳聞可提高翻頁遇首領／奇遇的機率；苦練、鑄兵、尋訪會在翻頁時隨機遇上。
               </p>
               {practiceLearningHints(state).map((h) => (
                 <p key={h} className="ink-note ink-hint-learn">

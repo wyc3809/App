@@ -11,6 +11,7 @@ import { ORDINARY_EVENTS } from '@data/events/ordinary';
 import { EVENT_CATALOG } from '@data/events/catalog';
 import { SECRET_ART_EVENTS } from '@data/events/secretArts';
 import { BOSS_ENCOUNTER_EVENTS, getBossFightConfig } from '@data/events/bossEncounters';
+import { PRACTICE_WANDER_EVENTS } from '@data/events/practiceWander';
 import { getRng } from '@core/random';
 import { rollAdventureGear } from '@data/equipment/catalog';
 import { grantGear } from './equipment';
@@ -69,9 +70,16 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
   return catalog.find((e) => e.id === id);
 }
 
-/** 合併：日常 + 秘傳奇遇 + 舊 50 + 百人包 */
+/** 合併：日常 + 修煉機緣 + 秘傳奇遇 + 舊 50 + 百人包 */
 export function fullCatalog(): GameEvent[] {
-  return [...ORDINARY_EVENTS, ...SECRET_ART_EVENTS, ...BOSS_ENCOUNTER_EVENTS, ...ENRICHED_CATALOG, ...RANDOM_PACK_EVENTS];
+  return [
+    ...ORDINARY_EVENTS,
+    ...PRACTICE_WANDER_EVENTS,
+    ...SECRET_ART_EVENTS,
+    ...BOSS_ENCOUNTER_EVENTS,
+    ...ENRICHED_CATALOG,
+    ...RANDOM_PACK_EVENTS,
+  ];
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
@@ -316,11 +324,15 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let event: GameEvent | null = null;
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
+  const rumorBoost = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
+  const bossChance = 0.055 + rumorBoost * 0.028;
+  const secretExtraChance = rumorBoost > 0 ? 0.04 + rumorBoost * 0.025 : 0;
+
   const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
-  if (bossPool.length && rng.chance(0.055)) {
+  if (bossPool.length && rng.chance(bossChance)) {
     event = weightedPick(state, bossPool);
     kind = 'special';
-  } else if (shouldTriggerSpecial(state)) {
+  } else if (shouldTriggerSpecial(state) || (secretExtraChance > 0 && rng.chance(secretExtraChance))) {
     // Pack v1 流程：conditions 過濾 → weight 加權；再混入秘傳奇遇
     const packPick = pickPackEvent(state);
     if (packPick) {
@@ -335,6 +347,14 @@ export function startMonth(state: LifeGameState): LifeGameState {
   }
 
   if (!event) {
+    const wanderPool = listEligibleEvents(PRACTICE_WANDER_EVENTS, state);
+    if (wanderPool.length && rng.chance(0.34)) {
+      event = weightedPick(state, wanderPool);
+      kind = 'ordinary';
+    }
+  }
+
+  if (!event) {
     // mix ordinary + non-birth catalog events (exclude pack)
     const pool = listEligibleEvents(
       [...ORDINARY_EVENTS, ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth')],
@@ -342,6 +362,11 @@ export function startMonth(state: LifeGameState): LifeGameState {
     ).filter((e) => !(e.tags ?? []).includes('pack'));
     event = weightedPick(state, pool);
     kind = 'ordinary';
+  }
+
+  // 打聽傳聞的加成每翻一頁消耗一層
+  if (rumorBoost > 0) {
+    state.character.flags.rumor_boost = rumorBoost - 1;
   }
 
   if (event) {

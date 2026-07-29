@@ -151,6 +151,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const label =
       PRACTICE_ACTIONS.find((a) => a.id === actionId)?.label ??
       ({
+        inquire_rumors: '打聽傳聞',
         join_sect: '拜入門派',
         sect_duty: '門派差事',
         sect_ask_elder: '請教長老',
@@ -158,6 +159,11 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         sect_guard: '守護山門',
         sect_meditate: '靜室修煉',
         sect_leave: '離開門派',
+        train_martial: '苦練外功',
+        train_internal: '打坐運功',
+        temper_body: '淬體強身',
+        forge: '鍛造兵器',
+        seek_master: '尋訪高人',
       } as Record<string, string>)[actionId] ??
       actionId;
     const startedCombat = Boolean(next.pendingCombat);

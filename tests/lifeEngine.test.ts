@@ -84,6 +84,21 @@ describe('life event engine', () => {
     expect(market.choices.every((c) => c.outcomes.length >= 2)).toBe(true);
   });
 
+  it('practice page actions are rumors/heal/equip; wander arts appear on month flip', async () => {
+    const { PRACTICE_ACTIONS, performPracticeAction } = await import('../core/life/actions');
+    const { PRACTICE_WANDER_EVENTS } = await import('../data/events/practiceWander');
+    expect(PRACTICE_ACTIONS.map((a) => a.id)).toEqual(['inquire_rumors', 'heal', 'equip_best']);
+    expect(PRACTICE_WANDER_EVENTS.some((e) => e.id === 'wander_seek_master')).toBe(true);
+    expect(fullCatalog().some((e) => e.id === 'wander_train_martial')).toBe(true);
+
+    initRng(12);
+    const state = createNewLife(12);
+    state.character.money = 20;
+    const logs = performPracticeAction(state, 'inquire_rumors');
+    expect(Number(state.character.flags.rumor_boost)).toBe(1);
+    expect(logs.some((l) => /打聽|傳聞/.test(l))).toBe(true);
+  });
+
   it('practice can raise max hp and qi', async () => {
     const { performPracticeAction } = await import('../core/life/actions');
     initRng(3);

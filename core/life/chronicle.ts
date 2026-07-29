@@ -56,6 +56,16 @@ export function formatEffectLine(eff: GameEffect, state: LifeGameState): string 
     }
     case 'die':
       return eff.reason ?? '撒手人寰';
+    case 'practice': {
+      const labels: Record<string, string> = {
+        train_martial: '苦練外功',
+        train_internal: '打坐運功',
+        temper_body: '淬體強身',
+        forge: '鍛造兵器',
+        seek_master: '尋訪高人',
+      };
+      return labels[eff.action] ?? '修煉機緣';
+    }
     case 'flag':
     case 'worldFlag':
     case 'relationship':

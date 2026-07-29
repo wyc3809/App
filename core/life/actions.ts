@@ -22,6 +22,7 @@ export type PracticeActionId =
   | 'temper_body'
   | 'forge'
   | 'seek_master'
+  | 'inquire_rumors'
   | 'heal'
   | 'equip_best'
   | 'join_sect'
@@ -32,19 +33,22 @@ export type PracticeActionId =
   | 'sect_meditate'
   | 'sect_leave';
 
+export type WanderPracticeActionId =
+  | 'train_martial'
+  | 'train_internal'
+  | 'temper_body'
+  | 'forge'
+  | 'seek_master';
+
 export interface PracticeAction {
   id: PracticeActionId;
   label: string;
   hint: string;
 }
 
-/** 主修煉選單（門派另開子頁） */
+/** 修煉頁主選單（苦練／鑄兵／尋訪改為翻頁機緣） */
 export const PRACTICE_ACTIONS: PracticeAction[] = [
-  { id: 'train_martial', label: '苦練外功', hint: '武學↑，或有階位進境' },
-  { id: 'train_internal', label: '打坐運功', hint: '內息與內力上限↑' },
-  { id: 'temper_body', label: '淬體強身', hint: '氣血上限↑，疲勞↑' },
-  { id: 'forge', label: '鑄造兵器', hint: '花費 40 兩，或得良器乃至神兵' },
-  { id: 'seek_master', label: '尋訪高人', hint: '或可習得／進階武學' },
+  { id: 'inquire_rumors', label: '打聽傳聞', hint: '小幅提高翻頁後遇首領／奇遇的機率' },
   { id: 'heal', label: '醫館調養', hint: '花費 15 兩，恢復並減傷勢' },
   { id: 'equip_best', label: '整裝披掛', hint: '自動裝備庫中最佳器物' },
 ];
@@ -72,25 +76,18 @@ const RARITY_RANK: Record<GearRarity, number> = {
   divine: 5,
 };
 
-export function performPracticeAction(
+/** 執行一項修煉／機緣結果（不扣本月修煉次數；不寫年譜） */
+export function applyPracticeOutcome(
   state: LifeGameState,
   actionId: PracticeActionId,
   opts?: { sectId?: string },
 ): string[] {
-  if (!state.character.alive || state.phase !== 'playing') return ['你已無法行動。'];
-  if (state.pending) return ['眼前尚有未決之事，先作抉擇。'];
-  if (state.pendingCombat) return ['交手未了，豈能分心。'];
-  if ((state.practiceActionsLeft ?? 0) <= 0) {
-    return ['本月修煉次數已盡，且回鎮居翻過一頁再來。'];
-  }
-
   syncRngFromState(state);
   const rng = getRng();
   const c = state.character;
   ensureGear(c);
   if (!c.skillRanks) c.skillRanks = {};
   const logs: string[] = [];
-  state.practiceActionsLeft = Math.max(0, (state.practiceActionsLeft ?? 3) - 1);
 
   switch (actionId) {
     case 'train_martial': {
@@ -137,6 +134,22 @@ export function performPracticeAction(
       logs.push(`你以藥浴與樁功淬體，氣血上限 +${up}（現 ${c.maxHealth}）。`);
       break;
     }
+    case 'inquire_rumors': {
+      const cur = Math.max(0, Number(c.flags.rumor_boost ?? 0));
+      if (cur >= 3) {
+        logs.push('傳聞已聽得夠多，再問也只是舊話翻新。你換了個話題，只當聽書散心。');
+        break;
+      }
+      const paid = c.money >= 4;
+      if (paid) c.money -= 4;
+      c.flags.rumor_boost = cur + 1;
+      logs.push(
+        paid
+          ? `你在茶棚酒肆間花了 4 兩打聽風聲。往後翻頁，遇首領與奇遇的機緣略增（傳聞層數 ${cur + 1}）。`
+          : `你空口打聽，也聽得幾句江湖碎語。往後翻頁，遇首領與奇遇的機緣略增（傳聞層數 ${cur + 1}）。`,
+      );
+      break;
+    }
     case 'join_sect': {
       if (c.sectId) {
         logs.push(`你已是${state.sects[c.sectId]?.name ?? '門派'}中人。`);
@@ -147,7 +160,6 @@ export function performPracticeAction(
         logs.push('你尚未選定要拜的門派。');
         break;
       }
-      // 後台門檻，不對玩家顯示數字
       if (c.martial < 12 && overallWeak(c)) {
         logs.push(`${state.sects[target].name}看你根基尚淺，暫未收錄。`);
         break;
@@ -211,14 +223,16 @@ export function performPracticeAction(
         break;
       }
       const foeName = `${state.sects[c.sectId].name}師兄`;
-      logs.push(...startCombat(state, {
-        source: 'spar',
-        title: '師門比武',
-        foeName,
-        foePower: 'normal',
-        rewardOnWin: { reputation: 2, martial: 2 },
-        rewardOnLose: { reputation: -1 },
-      }));
+      logs.push(
+        ...startCombat(state, {
+          source: 'spar',
+          title: '師門比武',
+          foeName,
+          foePower: 'normal',
+          rewardOnWin: { reputation: 2, martial: 2 },
+          rewardOnLose: { reputation: -1 },
+        }),
+      );
       break;
     }
     case 'sect_guard': {
@@ -247,7 +261,17 @@ export function performPracticeAction(
       c.qi = clamp(c.qi + rng.nextInt(10, 22), 0, c.maxQi);
       logs.push('靜室之中，你按門中心法緩緩吐納。');
       const sectArts = c.skills.filter((s) => getSkillDef(s)?.sectId === c.sectId);
-      const focus = sectArts[0] ?? c.skills.find((s) => s.startsWith('sect_art_') || s.startsWith('qy_') || s.startsWith('td_') || s.startsWith('em_') || s.startsWith('sl_') || s.startsWith('wd_'));
+      const focus =
+        sectArts[0] ??
+        c.skills.find(
+          (s) =>
+            s.startsWith('sect_art_') ||
+            s.startsWith('qy_') ||
+            s.startsWith('td_') ||
+            s.startsWith('em_') ||
+            s.startsWith('sl_') ||
+            s.startsWith('wd_'),
+        );
       if (focus) {
         const adv = tryAdvanceSkill(state, focus, 'practice');
         if (adv) logs.push(adv);
@@ -369,6 +393,23 @@ export function performPracticeAction(
       logs.push('無事可做。');
   }
 
+  return logs;
+}
+
+export function performPracticeAction(
+  state: LifeGameState,
+  actionId: PracticeActionId,
+  opts?: { sectId?: string },
+): string[] {
+  if (!state.character.alive || state.phase !== 'playing') return ['你已無法行動。'];
+  if (state.pending) return ['眼前尚有未決之事，先作抉擇。'];
+  if (state.pendingCombat) return ['交手未了，豈能分心。'];
+  if ((state.practiceActionsLeft ?? 0) <= 0) {
+    return ['本月修煉次數已盡，且回鎮居翻過一頁再來。'];
+  }
+
+  state.practiceActionsLeft = Math.max(0, (state.practiceActionsLeft ?? 3) - 1);
+  const logs = applyPracticeOutcome(state, actionId, opts);
   logs.push(`本月尚餘修煉 ${state.practiceActionsLeft} 次。`);
   pushChronicle(state, logs);
   snapshotRng(state);
