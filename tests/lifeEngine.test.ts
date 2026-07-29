@@ -170,6 +170,18 @@ describe('life event engine', () => {
     expect(logs.some((l) => /武當|機緣未到|根基尚淺/.test(l))).toBe(true);
   });
 
+  it('weapon-matched skill gets combat boost label path', async () => {
+    const { startCombat, playerCombatTurn } = await import('../core/life/combat');
+    const { learnMartialArt } = await import('../core/life/flavor');
+    initRng(2);
+    const state = createNewLife(2);
+    learnMartialArt(state, 'art_moon_sword', '弄月劍法');
+    state.character.equipment.weapon = 'old-sword'; // sword
+    startCombat(state, { source: 'spar', title: '試', foeName: '木人', foePower: 'weak' });
+    const logs = playerCombatTurn(state, 'mv_moon_sword');
+    expect(logs.some((l) => /兵刃相契|弄月/.test(l))).toBe(true);
+  });
+
   it('qinggong passives increase combat evasion', async () => {
     const { startCombat } = await import('../core/life/combat');
     const { learnMartialArt } = await import('../core/life/flavor');

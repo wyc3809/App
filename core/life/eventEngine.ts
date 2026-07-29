@@ -17,7 +17,7 @@ import { grantGear } from './equipment';
 import { withRiskAndThree } from './choiceEnrich';
 import { pickPackEvent, getPackChoice } from './jianghuEventRepository';
 import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
-import { isFleeChoice, startCombat } from './combat';
+import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
 
 /** 把數值行與故事行分開，故事作主文 */
@@ -311,11 +311,19 @@ export function startMonth(state: LifeGameState): LifeGameState {
     return state;
   }
 
+  // 戰後餘波交手優先於新事件
+  const aftermathLogs = tryStartAftermathCombat(state);
+  if (state.pendingCombat) {
+    if (aftermathLogs.length) pushChronicle(state, aftermathLogs);
+    snapshotRng(state);
+    return state;
+  }
+
   let event: GameEvent | null = null;
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
   const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
-  if (bossPool.length && rng.chance(0.048)) {
+  if (bossPool.length && rng.chance(0.055)) {
     event = weightedPick(state, bossPool);
     kind = 'special';
   } else if (shouldTriggerSpecial(state)) {

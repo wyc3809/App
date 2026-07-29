@@ -2,6 +2,8 @@ import type { LifeGameState, WorldState, StoryState, LifeCondition } from '@inte
 import { getRng } from '@core/random';
 import { STORY_CHAPTERS } from '@data/content/packs';
 import { tryMonthlyBirth } from './family';
+import { tickAftermath } from './aftermath';
+import { pushChronicle } from './chronicle';
 
 export function makeWorldState(): WorldState {
   const rng = getRng();
@@ -79,6 +81,15 @@ export function tickConditions(state: LifeGameState): void {
   c.stamina = clamp(c.stamina, 0, c.maxStamina);
 }
 
+const RUMOR_LINES: { flag: string; text: string }[] = [
+  { flag: 'rumor_boss_scarlet', text: '茶棚裡有人把「赤練娘」三字咬得很輕。' },
+  { flag: 'rumor_boss_iron', text: '官道塵土裡，似有鐵輪碾過的痕跡。' },
+  { flag: 'rumor_boss_monk', text: '破廟方向傳來酒氣與木魚聲。' },
+  { flag: 'rumor_boss_black', text: '黑風過林，有人說寨主在點名。' },
+  { flag: 'rumor_boss_frost', text: '北嶺寒意逼人，刀聲隱約。' },
+  { flag: 'rumor_boss_lute', text: '河舫夜曲一響，便有船家改道。' },
+];
+
 export function simulateWorldMonth(state: LifeGameState): void {
   const rng = getRng();
   const w = state.world;
@@ -88,16 +99,23 @@ export function simulateWorldMonth(state: LifeGameState): void {
   w.rumors = clamp(w.rumors + rng.nextInt(-6, 8), 5, 95);
   const moods = ['平穩', '風雨欲來', '市井熙攘', '人心惶惶', '清平'];
   w.seasonMood = rng.pick(moods);
-  w.lastWorldShift =
-    w.danger > 60
-      ? '山道不太平，行人都加快腳步。'
-      : w.economy > 65
-        ? '千燈鎮市集熱鬧，銀錢流動得快。'
-        : '鎮外風聲仍不大。';
+
+  const activeRumors = RUMOR_LINES.filter((r) => state.character.flags[r.flag]);
+  if (activeRumors.length && rng.chance(0.55)) {
+    w.lastWorldShift = rng.pick(activeRumors).text;
+  } else {
+    w.lastWorldShift =
+      w.danger > 60
+        ? '山道不太平，行人都加快腳步。'
+        : w.economy > 65
+          ? '千燈鎮市集熱鬧，銀錢流動得快。'
+          : '鎮外風聲仍不大。';
+  }
 }
 
 export function advanceStoryMonth(state: LifeGameState): void {
   const s = state.story;
+  const prevChapter = s.chapter;
   s.progress += 1;
   if (s.progress >= s.nextMilestone) {
     s.chapter += 1;
@@ -113,6 +131,16 @@ export function advanceStoryMonth(state: LifeGameState): void {
       s.goal = '讓這一生留下可被傳頌的痕跡。';
     }
   }
+  if (s.chapter > prevChapter) {
+    const poetic = [
+      '歲月無聲翻過一頁，你覺得腳下的路又長了一寸。',
+      '燈火依舊，心事卻換了顏色。',
+      '有些約定淡了，有些刀痕卻更深。',
+      '你把一段日子折進袖裡，繼續趕路。',
+    ];
+    const rng = getRng();
+    pushChronicle(state, [rng.pick(poetic)]);
+  }
 }
 
 export function simulateMonthBody(state: LifeGameState): void {
@@ -126,6 +154,7 @@ export function simulateMonthBody(state: LifeGameState): void {
   simulateWorldMonth(state);
   advanceStoryMonth(state);
   tryMonthlyBirth(state);
+  tickAftermath(state);
 
   if (c.health <= 0) {
     c.alive = false;

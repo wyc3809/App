@@ -6,7 +6,10 @@
       "name": "基礎吐納",
       "kind": "internal",
       "flavor": "凡人皆可習的吐納法門，穩固丹田，徐徐生息。",
-      "passive": { "maxQi": 10, "qiRegen": 4 }
+      "passive": {
+        "maxQi": 10,
+        "qiRegen": 4
+      }
     },
     {
       "id": "art_river_fist",
@@ -65,7 +68,8 @@
         "hitBonus": 0.05,
         "pierce": 0.35,
         "description": "劍意無形，專取破綻。"
-      }
+      },
+      "weaponKind": "sword"
     },
     {
       "id": "art_lake_breath",
@@ -73,7 +77,11 @@
       "kind": "internal",
       "flavor": "湖心寒氣入體，內息清冷，護體愈堅。",
       "encounterOnly": true,
-      "passive": { "maxQi": 25, "qiRegen": 8, "defense": 4 }
+      "passive": {
+        "maxQi": 25,
+        "qiRegen": 8,
+        "defense": 4
+      }
     },
     {
       "id": "art_rain_sword",
@@ -89,7 +97,8 @@
         "hitBonus": 0.08,
         "multiHit": 3,
         "description": "劍如細雨，連點不絕。"
-      }
+      },
+      "weaponKind": "sword"
     },
     {
       "id": "art_nine_shadow",
@@ -125,7 +134,11 @@
       "name": "鐵布衫",
       "kind": "internal",
       "flavor": "外壯皮肉，抗打耐磨，江湖硬功入門。",
-      "passive": { "defense": 12, "maxHp": 40, "reflect": 0.08 }
+      "passive": {
+        "defense": 12,
+        "maxHp": 40,
+        "reflect": 0.08
+      }
     },
     {
       "id": "art_moon_sword",
@@ -140,14 +153,19 @@
         "hitBonus": 0.06,
         "pierce": 0.12,
         "description": "劍光如月，弧線取敵。"
-      }
+      },
+      "weaponKind": "sword"
     },
     {
       "id": "art_void_breath",
       "name": "空冥吐納",
       "kind": "internal",
       "flavor": "空冥之息，氣海悠長，攻守皆得增益。",
-      "passive": { "maxQi": 35, "qiRegen": 10, "attack": 3 }
+      "passive": {
+        "maxQi": 35,
+        "qiRegen": 10,
+        "attack": 3
+      }
     },
     {
       "id": "art_silk_hand",
@@ -179,9 +197,9 @@
         "bleedDamage": 6,
         "bleedTurns": 2,
         "description": "刀出如雷，勢不可擋。"
-      }
+      },
+      "weaponKind": "blade"
     },
-
     {
       "id": "art_wind_chase",
       "name": "追風腿",
@@ -210,7 +228,8 @@
         "pierce": 0.15,
         "defenseBreak": 4,
         "description": "鉤尖一繞，敵刃難發。"
-      }
+      },
+      "weaponKind": "blade"
     },
     {
       "id": "art_meteor_palm",
@@ -231,14 +250,22 @@
       "name": "虎嘯內勁",
       "kind": "internal",
       "flavor": "以聲催氣，內勁沉雄，非名門亦可自悟殘篇。",
-      "passive": { "attack": 5, "maxHp": 30, "qiRegen": 6 }
+      "passive": {
+        "attack": 5,
+        "maxHp": 30,
+        "qiRegen": 6
+      }
     },
     {
       "id": "art_spring_well",
       "name": "涌泉訣",
       "kind": "internal",
       "flavor": "氣海如泉，內息不竭，行走江湖的保命底氣。",
-      "passive": { "maxQi": 40, "qiRegen": 12, "defense": 3 }
+      "passive": {
+        "maxQi": 40,
+        "qiRegen": 12,
+        "defense": 3
+      }
     },
     {
       "id": "art_shadow_needle",
@@ -257,28 +284,36 @@
         "bleedDamage": 5,
         "bleedTurns": 2,
         "description": "針出無聲，血線難察。"
-      }
+      },
+      "weaponKind": "hidden"
     },
     {
       "id": "qg_snow_track",
       "name": "踏雪無痕",
       "kind": "qinggong",
       "flavor": "足尖點地，不留痕跡，身法輕靈。",
-      "passive": { "evasionBonus": 0.06 }
+      "passive": {
+        "evasionBonus": 0.06
+      }
     },
     {
       "id": "qg_swallow_turn",
       "name": "燕子三轉",
       "kind": "qinggong",
       "flavor": "身如燕返，危機中往往能錯開半寸致命一擊。",
-      "passive": { "evasionBonus": 0.08, "qiRegen": 2 }
+      "passive": {
+        "evasionBonus": 0.08,
+        "qiRegen": 2
+      }
     },
     {
       "id": "qg_feiyan",
       "name": "飛燕功",
       "kind": "qinggong",
       "flavor": "縱躍如飛，江湖逃命第一等身法。",
-      "passive": { "evasionBonus": 0.07 }
+      "passive": {
+        "evasionBonus": 0.07
+      }
     },
     {
       "id": "qg_canopy_void",
@@ -286,14 +321,20 @@
       "kind": "qinggong",
       "flavor": "步法近乎凌虛，傳聞只授有德之人。",
       "encounterOnly": true,
-      "passive": { "evasionBonus": 0.12, "hitBonus": 0.03 }
+      "passive": {
+        "evasionBonus": 0.12,
+        "hitBonus": 0.03
+      }
     },
     {
       "id": "qg_broken_bridge",
       "name": "斷橋步",
       "kind": "qinggong",
       "flavor": "雨夜橋上所得身法，專長閃避欺近。",
-      "passive": { "evasionBonus": 0.05, "hitBonus": 0.04 }
+      "passive": {
+        "evasionBonus": 0.05,
+        "hitBonus": 0.04
+      }
     },
     {
       "id": "skill_sword_basic",
@@ -307,7 +348,90 @@
       "kind": "internal",
       "legacyAliasOf": "art_void_breath"
     },
-
+    {
+      "id": "art_spear_cloud",
+      "name": "穿雲槍",
+      "kind": "external",
+      "weaponKind": "spear",
+      "flavor": "槍尖破空，江湖槍法散篇，持槍則勢倍。",
+      "move": {
+        "id": "mv_spear_cloud",
+        "name": "穿雲一刺",
+        "qiCost": 17,
+        "power": 1.48,
+        "pierce": 0.18,
+        "hitBonus": 0.05,
+        "description": "槍出如電，專取中宮。"
+      }
+    },
+    {
+      "id": "art_staff_iron",
+      "name": "鐵杖訣",
+      "kind": "external",
+      "weaponKind": "staff",
+      "flavor": "杖走大開大闔，持杖則守中有攻。",
+      "move": {
+        "id": "mv_staff_iron",
+        "name": "鐵杖橫掃",
+        "qiCost": 15,
+        "power": 1.32,
+        "defenseBreak": 3,
+        "stunChance": 0.18,
+        "description": "杖影橫掃，敵勢一滯。"
+      }
+    },
+    {
+      "id": "art_whip_silk",
+      "name": "柔絲鞭法",
+      "kind": "external",
+      "weaponKind": "whip",
+      "flavor": "鞭影如絲，遠近皆宜，持鞭方見真章。",
+      "move": {
+        "id": "mv_whip_silk",
+        "name": "柔絲鎖喉",
+        "qiCost": 16,
+        "power": 1.28,
+        "hitBonus": 0.12,
+        "applyBlind": 0.1,
+        "description": "鞭梢點穴，視線一花。"
+      }
+    },
+    {
+      "id": "art_bow_star",
+      "name": "逐星箭意",
+      "kind": "external",
+      "weaponKind": "bow",
+      "flavor": "以弓意入拳腳亦可，持弓則箭意更準。",
+      "move": {
+        "id": "mv_bow_star",
+        "name": "逐星一矢",
+        "qiCost": 14,
+        "power": 1.4,
+        "hitBonus": 0.16,
+        "pierce": 0.12,
+        "description": "箭意貫中，遠點取敵。"
+      }
+    },
+    {
+      "id": "qg_reed_drift",
+      "name": "蘆花身法",
+      "kind": "qinggong",
+      "flavor": "身似蘆花，隨風錯步，報恩或奇遇可傳。",
+      "passive": {
+        "evasionBonus": 0.07,
+        "qiRegen": 1
+      }
+    },
+    {
+      "id": "qg_wall_cat",
+      "name": "壁虎遊牆",
+      "kind": "qinggong",
+      "encounterOnly": true,
+      "flavor": "貼壁如蠅，危牆亦可借力。",
+      "passive": {
+        "evasionBonus": 0.09
+      }
+    },
     {
       "id": "qy_cloud_sword",
       "name": "青雲初劍",
@@ -323,7 +447,8 @@
         "hitBonus": 0.06,
         "pierce": 0.1,
         "description": "劍勢清正，點破敵招破綻。"
-      }
+      },
+      "weaponKind": "sword"
     },
     {
       "id": "qy_mist_step",
@@ -379,7 +504,6 @@
         "description": "三刺連綿，如青冥覆頂。"
       }
     },
-
     {
       "id": "td_open_blade",
       "name": "天刀開山",
@@ -393,7 +517,8 @@
         "qiCost": 12,
         "power": 1.42,
         "description": "刀勢開山，剛猛直取。"
-      }
+      },
+      "weaponKind": "blade"
     },
     {
       "id": "td_wind_slash",
@@ -451,7 +576,6 @@
         "description": "全力一刀，勢無回頭。"
       }
     },
-
     {
       "id": "em_soft_palm",
       "name": "峨嵋柔掌",
@@ -511,9 +635,13 @@
       "sectId": "sect_emei",
       "unlockStanding": 3,
       "flavor": "執事心法：柔中藏剛，護體命中兼得。",
-      "passive": { "defense": 8, "qiRegen": 7, "hitBonus": 0.06, "maxQi": 20 }
+      "passive": {
+        "defense": 8,
+        "qiRegen": 7,
+        "hitBonus": 0.06,
+        "maxQi": 20
+      }
     },
-
     {
       "id": "sl_luohan_fist",
       "name": "羅漢拳",
@@ -552,7 +680,11 @@
       "sectId": "sect_shaolin",
       "unlockStanding": 2,
       "flavor": "真傳硬功：皮肉如鐵，反震來招。",
-      "passive": { "defense": 14, "maxHp": 50, "reflect": 0.12 }
+      "passive": {
+        "defense": 14,
+        "maxHp": 50,
+        "reflect": 0.12
+      }
     },
     {
       "id": "sl_yijin",
@@ -561,9 +693,14 @@
       "sectId": "sect_shaolin",
       "unlockStanding": 3,
       "flavor": "執事吐納：筋骨重塑，攻防氣海皆厚。",
-      "passive": { "attack": 5, "defense": 10, "maxQi": 30, "maxHp": 25, "qiRegen": 5 }
+      "passive": {
+        "attack": 5,
+        "defense": 10,
+        "maxQi": 30,
+        "maxHp": 25,
+        "qiRegen": 5
+      }
     },
-
     {
       "id": "wd_sword_form",
       "name": "武當劍式",
@@ -579,7 +716,8 @@
         "hitBonus": 0.07,
         "pierce": 0.1,
         "description": "劍走圓弧，以靜制動。"
-      }
+      },
+      "weaponKind": "sword"
     },
     {
       "id": "wd_tai_push",
@@ -606,7 +744,11 @@
       "sectId": "sect_wudang",
       "unlockStanding": 2,
       "flavor": "真傳吐納：氣機悠長，越打越有後勁。",
-      "passive": { "maxQi": 40, "qiRegen": 12, "attack": 2 }
+      "passive": {
+        "maxQi": 40,
+        "qiRegen": 12,
+        "attack": 2
+      }
     },
     {
       "id": "wd_wuji_sword",
@@ -626,7 +768,6 @@
         "description": "劍意無極，連刺耗脈。"
       }
     },
-
     {
       "id": "sect_art_sect_qingyun",
       "name": "青雲入門劍訣",
@@ -663,7 +804,11 @@
       "kind": "internal",
       "legacyAliasOf": "em_soft_palm",
       "flavor": "（舊存檔相容）柔勁護體。",
-      "passive": { "defense": 6, "hitBonus": 0.04, "qiRegen": 3 }
+      "passive": {
+        "defense": 6,
+        "hitBonus": 0.04,
+        "qiRegen": 3
+      }
     },
     {
       "id": "sect_art_sect_shaolin",
@@ -671,7 +816,10 @@
       "kind": "internal",
       "legacyAliasOf": "sl_luohan_fist",
       "flavor": "（舊存檔相容）樁功護體。",
-      "passive": { "maxHp": 30, "defense": 8 }
+      "passive": {
+        "maxHp": 30,
+        "defense": 8
+      }
     },
     {
       "id": "sect_art_sect_wudang",
@@ -679,7 +827,11 @@
       "kind": "internal",
       "legacyAliasOf": "wd_sword_form",
       "flavor": "（舊存檔相容）吐納入門。",
-      "passive": { "maxQi": 20, "qiRegen": 6, "attack": 2 }
+      "passive": {
+        "maxQi": 20,
+        "qiRegen": 6,
+        "attack": 2
+      }
     }
   ]
 }

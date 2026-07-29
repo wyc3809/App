@@ -1,13 +1,8 @@
-import type { LifeGameState, CombatFighterState, PendingCombat as PendingCombatState } from '@interfaces/lifeEngine';
-import { getRng } from '@core/random';
-import { syncRngFromState, snapshotRng } from './gameState';
-import { gearTotals, ensureGear } from './equipment';
-import { tryAdvanceSkill } from './flavor';
-import { pushChronicle } from './chronicle';
-import { buildLifeSummary } from './summary';
-import { tryGainSectStanding } from './sectStanding';
 import {
   BASIC_STRIKE,
+  GUARD_STANCE,
+  CHARGE_STANCE,
+  FLEE_MOVE,
   getSkillDef,
   listExternalMovesForSkills,
   sumInternalPassives,
@@ -15,10 +10,18 @@ import {
   type CombatMoveDef,
 } from '@data/skills/catalog';
 import { rankPowerMult } from './martialRanks';
-import { grantGear } from './equipment';
-import { learnMartialArt } from './flavor';
+import { grantGear, ensureGear, gearTotals } from './equipment';
+import { getGearDef } from '@data/equipment/catalog';
+import { learnMartialArt, tryAdvanceSkill } from './flavor';
 import { applyNatureDelta } from './nature';
+import { recordDispositionAftermath } from './aftermath';
 import type { NatureAttr } from '@interfaces/lifeEngine';
+import { syncRngFromState, snapshotRng } from './gameState';
+import { pushChronicle } from './chronicle';
+import { buildLifeSummary } from './summary';
+import { tryGainSectStanding } from './sectStanding';
+import { getRng } from '@core/random';
+import type { LifeGameState, CombatFighterState, PendingCombat as PendingCombatState } from '@interfaces/lifeEngine';
 
 export type CombatFoeDisposition = 'kill' | 'release' | 'stun';
 
@@ -55,6 +58,7 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
     bleedTurns: 0,
     defenseMod: 0,
     reflect: Math.min(0.35, passive.reflect ?? 0),
+    chargeBonus: 0,
   };
 }
 
@@ -84,6 +88,7 @@ export function buildFoe(
     bleedTurns: 0,
     defenseMod: 0,
     reflect: 0,
+    chargeBonus: 0,
   };
 }
 
@@ -113,6 +118,7 @@ export function startCombat(
     rewardOnWin: opts.rewardOnWin,
     rewardOnLose: opts.rewardOnLose,
     eventId: opts.eventId,
+    foePower: opts.foePower ?? 'normal',
   };
   combat.player.hp = clamp(combat.player.hp, 1, combat.player.maxHp);
   combat.player.qi = clamp(combat.player.qi, 0, combat.player.maxQi);
@@ -128,6 +134,9 @@ export function getPlayerMoves(state: LifeGameState): CombatMoveDef[] {
 
 function findMove(state: LifeGameState, moveId: string): CombatMoveDef | null {
   if (moveId === BASIC_STRIKE.id) return BASIC_STRIKE;
+  if (moveId === GUARD_STANCE.id) return GUARD_STANCE;
+  if (moveId === CHARGE_STANCE.id) return CHARGE_STANCE;
+  if (moveId === FLEE_MOVE.id) return FLEE_MOVE;
   for (const id of state.character.skills) {
     const def = getSkillDef(id);
     if (def?.move?.id === moveId) return def.move;
@@ -141,6 +150,20 @@ function skillIdForMove(state: LifeGameState, moveId: string): string | null {
     if (def?.kind === 'external' && def.move?.id === moveId) return id;
   }
   return null;
+}
+
+/** 持對應兵器時：威力×1.15、命中+0.06 */
+function weaponMatchBoost(state: LifeGameState, skillId: string | null): { power: number; hit: number; label?: string } {
+  if (!skillId) return { power: 1, hit: 0 };
+  const def = getSkillDef(skillId);
+  if (!def?.weaponKind) return { power: 1, hit: 0 };
+  const equipped = state.character.equipment?.weapon
+    ? getGearDef(state.character.equipment.weapon)
+    : undefined;
+  if (equipped?.weaponKind === def.weaponKind) {
+    return { power: 1.15, hit: 0.06, label: `兵刃相契（${equipped.name}）` };
+  }
+  return { power: 1, hit: 0 };
 }
 
 function effectiveDefense(f: CombatFighter): number {
@@ -184,10 +207,14 @@ function resolveOneHit(
     0.95,
   );
   if (!rng.chance(hitChance)) {
+    const qing =
+      defender.isPlayer && (defender.evasion ?? 0) >= 0.05
+        ? '，借輕功錯開半寸'
+        : '';
     lines.push(
       totalHits > 1
-        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被${defender.name}閃過。`
-        : `${attacker.name}使出「${move.name}」，被${defender.name}閃過！`,
+        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被${defender.name}閃過${qing}。`
+        : `${attacker.name}使出「${move.name}」，被${defender.name}閃過${qing}！`,
     );
     return lines;
   }
@@ -268,36 +295,61 @@ function resolveStrike(
   move: CombatMoveDef,
   rng: ReturnType<typeof getRng>,
   powerMult = 1,
+  extraHit = 0,
 ): string[] {
   const lines: string[] = [];
+  if (move.id === GUARD_STANCE.id || move.id === CHARGE_STANCE.id || move.id === FLEE_MOVE.id) {
+    return lines;
+  }
   if (attacker.qi < move.qiCost) {
     lines.push(`${attacker.name}內息不足，無法使出「${move.name}」，改為普通攻擊。`);
-    return resolveStrike(attacker, defender, BASIC_STRIKE, rng, 1);
+    return resolveStrike(attacker, defender, BASIC_STRIKE, rng, 1, extraHit);
   }
   attacker.qi -= move.qiCost;
   defender.blind = Math.max(0, defender.blind * 0.35);
 
+  let charge = 1;
+  if (attacker.chargeBonus > 0) {
+    charge = 1 + attacker.chargeBonus;
+    attacker.chargeBonus = 0;
+    lines.push(`${attacker.name}蓄勢已久，這一擊沉猛異常！`);
+  }
+
   const hits = Math.max(1, move.multiHit ?? 1);
+  const boostedMove =
+    extraHit > 0 ? { ...move, hitBonus: (move.hitBonus ?? 0) + extraHit } : move;
   let anyHit = false;
   for (let i = 0; i < hits; i++) {
     const before = defender.hp;
-    const hitLines = resolveOneHit(attacker, defender, move, rng, i, hits, powerMult);
+    const hitLines = resolveOneHit(
+      attacker,
+      defender,
+      boostedMove,
+      rng,
+      i,
+      hits,
+      powerMult * charge,
+    );
     lines.push(...hitLines);
     if (defender.hp < before) anyHit = true;
     if (defender.hp <= 0) break;
   }
-  lines.push(...applyOnHitEffects(attacker, defender, move, rng, anyHit, powerMult));
+  lines.push(...applyOnHitEffects(attacker, defender, move, rng, anyHit, powerMult * charge));
   return lines;
 }
 
-function enemyChooseMove(foe: CombatFighter, rng: ReturnType<typeof getRng>): CombatMoveDef {
+function enemyChooseMove(
+  foe: CombatFighter,
+  rng: ReturnType<typeof getRng>,
+  bossEnraged = false,
+): CombatMoveDef {
   const pool: CombatMoveDef[] = [
     BASIC_STRIKE,
     {
       id: 'enemy_heavy',
       name: '猛攻',
       qiCost: 12,
-      power: 1.4,
+      power: bossEnraged ? 1.7 : 1.4,
       description: '',
     },
     {
@@ -305,10 +357,20 @@ function enemyChooseMove(foe: CombatFighter, rng: ReturnType<typeof getRng>): Co
       name: '虛晃',
       qiCost: 8,
       power: 0.9,
-      hitBonus: 0.15,
+      hitBonus: bossEnraged ? 0.22 : 0.15,
       description: '',
     },
   ];
+  if (bossEnraged) {
+    pool.push({
+      id: 'enemy_burst',
+      name: '絕境反撲',
+      qiCost: 18,
+      power: 1.95,
+      pierce: 0.2,
+      description: '',
+    });
+  }
   const affordable = pool.filter((m) => foe.qi >= m.qiCost);
   return rng.pick(affordable.length ? affordable : [BASIC_STRIKE]);
 }
@@ -363,6 +425,17 @@ export function resolveCombatDisposition(
   const c = state.character;
   const lines: string[] = [DISPOSITION_NARRATE[disposition]];
 
+  // 俠心過重仍選殺：額外損俠
+  if (disposition === 'kill' && (c.nature?.xia ?? 0) >= 35) {
+    applyNatureDelta(c, { xia: -2 });
+    lines.push('你心裡清楚：這一刀，也斬在自己的俠名上。');
+  }
+  // 惡念過重仍放人：額外抑惡
+  if (disposition === 'release' && (c.nature?.e ?? 0) >= 30) {
+    applyNatureDelta(c, { e: -2 });
+    lines.push('你按捺殺意，強留三分餘地。');
+  }
+
   const natureLines = applyNatureDelta(c, DISPOSITION_NATURE[disposition]);
   if (natureLines.length) {
     lines.push(`心性有變：${natureLines.join('、')}`);
@@ -373,6 +446,7 @@ export function resolveCombatDisposition(
     lines.push(`名望${rep > 0 ? '＋' : ''}${rep}`);
   }
 
+  lines.push(...recordDispositionAftermath(state, disposition, combat.foe.name));
   lines.push(...finishCombatWin(state, disposition));
   snapshotRng(state);
   return lines;
@@ -383,6 +457,7 @@ function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDispo
   if (!combat) return [];
   const c = state.character;
   const lines: string[] = [];
+  const rng = getRng();
 
   const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
   c.health = clamp(Math.round(c.maxHealth * Math.min(1, hpRatio)), 0, c.maxHealth);
@@ -395,7 +470,25 @@ function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDispo
     lines.push(`你戰勝了${combat.foe.name}！`);
   }
 
-  const r = combat.rewardOnWin ?? {};
+  const r = { ...(combat.rewardOnWin ?? {}) };
+  // 擊暈：戰利略薄；殺死：略加銀錢；放走：銀錢略減但可能有後續報恩
+  if (dispositionLabel === 'stun') {
+    if (r.money) r.money = Math.max(1, Math.floor(r.money * 0.55));
+    if (r.gearId && rng.chance(0.45)) {
+      lines.push('對方昏倒時行囊散落不全，兵器未能穩穩入手。');
+      delete r.gearId;
+    }
+    if (r.skillId && rng.chance(0.35)) {
+      lines.push('倉促點穴離去，未及細看對方攜帶的殘譜。');
+      delete r.skillId;
+      delete r.skillName;
+    }
+  } else if (dispositionLabel === 'kill') {
+    if (r.money) r.money = Math.floor(r.money * 1.15) + 3;
+  } else if (dispositionLabel === 'release') {
+    if (r.money) r.money = Math.max(0, Math.floor(r.money * 0.7));
+  }
+
   if (r.money) {
     c.money += r.money;
     lines.push(`銀兩＋${r.money}`);
@@ -510,14 +603,58 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
   } else {
     tickRegen(combat.player);
     const move = findMove(state, moveId) ?? BASIC_STRIKE;
-    const sid = skillIdForMove(state, move.id);
-    if (sid && !combat.usedExternalSkillIds.includes(sid)) {
-      combat.usedExternalSkillIds.push(sid);
+
+    if (move.id === FLEE_MOVE.id) {
+      const chance = clamp(0.32 + combat.player.evasion + state.character.attributes.danShi / 400, 0.15, 0.82);
+      if (rng.chance(chance)) {
+        const hpRatio = combat.player.hp / Math.max(1, combat.player.maxHp);
+        state.character.health = clamp(
+          Math.round(state.character.maxHealth * Math.min(1, hpRatio)),
+          1,
+          state.character.maxHealth,
+        );
+        state.character.qi = clamp(combat.player.qi, 0, state.character.maxQi);
+        state.character.reputation = Math.max(0, state.character.reputation - 2);
+        state.character.fatigue = clamp(state.character.fatigue + 6, 0, 100);
+        const fleeLines = [`你足尖一點，借身法抽身離場（逃離成功）。`, '名望－2'];
+        lines.push(...fleeLines);
+        combat.log.push(...fleeLines);
+        combat.phase = 'ended';
+        state.pendingCombat = null;
+        pushChronicle(state, [`「${combat.title}」——抽身`, ...fleeLines]);
+        snapshotRng(state);
+        return lines;
+      }
+      lines.push('你欲抽身，卻被對方截住去路！');
+      combat.log.push(lines[lines.length - 1]);
+      // fall through to enemy turn without attacking
+    } else if (move.id === GUARD_STANCE.id) {
+      combat.player.defenseMod += 6;
+      combat.player.qi = clamp(combat.player.qi + 8, 0, combat.player.maxQi);
+      lines.push('你收招守中，架勢更穩，內息也緩了過來。');
+      combat.log.push(...lines);
+    } else if (move.id === CHARGE_STANCE.id) {
+      if (combat.player.qi < move.qiCost) {
+        lines.push('內息不足，無法蓄勢，只好改為普通攻擊。');
+        lines.push(...resolveStrike(combat.player, combat.foe, BASIC_STRIKE, rng, 1));
+      } else {
+        combat.player.qi -= move.qiCost;
+        combat.player.chargeBonus = Math.max(combat.player.chargeBonus, 0.55);
+        lines.push('你凝勁於腕，蓄勢待發。');
+      }
+      combat.log.push(...lines);
+    } else {
+      const sid = skillIdForMove(state, move.id);
+      if (sid && !combat.usedExternalSkillIds.includes(sid)) {
+        combat.usedExternalSkillIds.push(sid);
+      }
+      const rank = sid ? (state.character.skillRanks?.[sid] ?? 0) : 0;
+      const wpn = weaponMatchBoost(state, sid);
+      if (wpn.label) lines.push(wpn.label);
+      const powerMult = (sid ? rankPowerMult(rank) : 1) * wpn.power;
+      lines.push(...resolveStrike(combat.player, combat.foe, move, rng, powerMult, wpn.hit));
+      combat.log.push(...lines);
     }
-    const rank = sid ? (state.character.skillRanks?.[sid] ?? 0) : 0;
-    const powerMult = sid ? rankPowerMult(rank) : 1;
-    lines.push(...resolveStrike(combat.player, combat.foe, move, rng, powerMult));
-    combat.log.push(...lines);
   }
 
   if (combat.foe.hp <= 0) {
@@ -553,7 +690,14 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
     combat.log.push(skip);
   } else {
     tickRegen(combat.foe);
-    const enemyMove = enemyChooseMove(combat.foe, rng);
+    const bossEnraged =
+      combat.foePower === 'boss' && combat.foe.maxHp > 0 && combat.foe.hp / combat.foe.maxHp <= 0.45;
+    if (bossEnraged && !combat.log.some((l) => l.includes('氣息陡變'))) {
+      const roar = `${combat.foe.name}氣息陡變，招式更加狠辣！`;
+      lines.push(roar);
+      combat.log.push(roar);
+    }
+    const enemyMove = enemyChooseMove(combat.foe, rng, bossEnraged);
     const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng);
     combat.log.push(...enemyLines);
     lines.push(...enemyLines);
@@ -574,4 +718,37 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
 export function isFleeChoice(choiceId: string, text: string): boolean {
   const s = `${choiceId} ${text}`;
   return /avoid|flee|leave|delay|watch|run|逃|避|離開|觀望|改日|抽身|退去|不戰/.test(s);
+}
+
+/** 由 startMonth 呼叫：處理放走／血債引發的延遲交手 */
+export function tryStartAftermathCombat(state: LifeGameState): string[] {
+  if (state.pending || state.pendingCombat || !state.character.alive) return [];
+  const c = state.character;
+  const revenge = c.flags['pending_revenge_foe'];
+  if (typeof revenge === 'string' && revenge) {
+    delete c.flags['pending_revenge_foe'];
+    return startCombat(state, {
+      source: 'event',
+      title: '舊怨重燃',
+      foeName: revenge,
+      foePower: 'normal',
+      rewardOnWin: { money: 15, martial: 2, reputation: 2 },
+      rewardOnLose: { money: -8, reputation: -2 },
+      eventId: 'aftermath_revenge',
+    });
+  }
+  const blood = c.flags['pending_blood_foe'];
+  if (typeof blood === 'string' && blood) {
+    delete c.flags['pending_blood_foe'];
+    return startCombat(state, {
+      source: 'event',
+      title: '血債討還',
+      foeName: `${blood}舊部`,
+      foePower: 'strong',
+      rewardOnWin: { money: 20, martial: 3 },
+      rewardOnLose: { money: -12, reputation: -4 },
+      eventId: 'aftermath_blood',
+    });
+  }
+  return [];
 }

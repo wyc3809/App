@@ -406,6 +406,49 @@ const RAW: GameEvent[] = [
       },
     ],
   },
+  {
+    id: 'secret_wall_cat',
+    title: '危牆夜影',
+    body: '舊城危牆邊，一個蒙面人影如壁虎遊走。他見你根骨尚可，拋下一卷殘頁：「貼壁借力，可保一命。」',
+    tags: ['special', 'martial', 'secret'],
+    weight: 5,
+    requirements: { minAge: 16, once: true, minAttrs: { danShi: 38 }, maxNature: { e: 50 } },
+    choices: [
+      {
+        id: 'learn',
+        text: '摹下身法',
+        outcomes: [
+          {
+            effects: [
+              { type: 'learnSkill', skillId: 'qg_wall_cat', name: '壁虎遊牆' },
+              { type: 'martial', amount: 6 },
+              {
+                type: 'narrate',
+                text: '你依殘頁貼牆試步，指尖扣磚，身形竟真能錯開半尺。蒙面人影已無踪，只餘牆上淡墨。',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'chase',
+        text: '追問來歷',
+        outcomes: [
+          {
+            effects: [
+              { type: 'martial', amount: 2 },
+              { type: 'narrate', text: '對方只留一句「莫問」便沒入巷影。你空手而歸，卻多了幾分對身法的渴望。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '怕有古怪，離去',
+        outcomes: [{ effects: [{ type: 'narrate', text: '危牆風聲嗚咽，你轉身離去，把殘影留在夜色裡。' }] }],
+      },
+    ],
+  },
 ];
 
 export const SECRET_ART_EVENTS: GameEvent[] = RAW.map((ev) =>

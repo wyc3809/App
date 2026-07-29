@@ -1,3 +1,4 @@
+import type { WeaponKind } from '@data/equipment/catalog';
 import { MARTIAL_CATALOG_RAW } from '@data/content/packs';
 import { rankName } from '@core/life/martialRanks';
 
@@ -53,6 +54,8 @@ export interface SkillDef {
   sectId?: string;
   unlockStanding?: number;
   encounterOnly?: boolean;
+  /** 持對應兵器時招式加威／加準 */
+  weaponKind?: WeaponKind;
   move?: CombatMoveDef;
   passive?: InternalPassive;
 }
@@ -66,6 +69,7 @@ interface RawSkill {
   unlockStanding?: number;
   encounterOnly?: boolean;
   legacyAliasOf?: string;
+  weaponKind?: WeaponKind;
   move?: CombatMoveDef;
   passive?: InternalPassive;
 }
@@ -87,6 +91,7 @@ function buildCatalog(): Record<string, SkillDef> {
       sectId: raw.sectId,
       unlockStanding: raw.unlockStanding,
       encounterOnly: raw.encounterOnly,
+      weaponKind: raw.weaponKind,
       move: raw.move,
       passive: raw.passive,
     };
@@ -102,6 +107,32 @@ export const BASIC_STRIKE: CombatMoveDef = {
   power: 1,
   description: '一記尋常拳腳／兵刃。',
 };
+
+export const GUARD_STANCE: CombatMoveDef = {
+  id: 'sys_guard',
+  name: '守勢',
+  qiCost: 0,
+  power: 0,
+  description: '收招守中，暫增防禦並回些許內息。',
+};
+
+export const CHARGE_STANCE: CombatMoveDef = {
+  id: 'sys_charge',
+  name: '蓄勢',
+  qiCost: 6,
+  power: 0,
+  description: '凝勁一輪，下一擊威能大增。',
+};
+
+export const FLEE_MOVE: CombatMoveDef = {
+  id: 'sys_flee',
+  name: '抽身',
+  qiCost: 0,
+  power: 0,
+  description: '伺機脫戰；成敗看身法與氣運。',
+};
+
+export const SYSTEM_MOVES: CombatMoveDef[] = [GUARD_STANCE, CHARGE_STANCE, FLEE_MOVE];
 
 export const SKILL_DEFS: Record<string, SkillDef> = buildCatalog();
 
@@ -167,6 +198,9 @@ export function formatSkillEffects(id: string): string {
     if (p.evasionBonus) fx.push(`閃避+${Math.round(p.evasionBonus * 100)}%`);
     if (fx.length) bits.push(`被動：${fx.join('、')}`);
   }
+  if (def.weaponKind) {
+    bits.push(`需兵器：${def.weaponKind === 'sword' ? '劍' : def.weaponKind === 'blade' ? '刀' : def.weaponKind === 'spear' ? '槍' : def.weaponKind === 'staff' ? '杖' : def.weaponKind === 'whip' ? '鞭' : def.weaponKind === 'bow' ? '弓' : '暗器'}（持之加威）`);
+  }
   return bits.join(' — ');
 }
 
@@ -177,7 +211,7 @@ export function formatSkillDetail(id: string, rank: number): string {
 }
 
 export function listExternalMovesForSkills(skillIds: string[]): CombatMoveDef[] {
-  const moves: CombatMoveDef[] = [BASIC_STRIKE];
+  const moves: CombatMoveDef[] = [BASIC_STRIKE, ...SYSTEM_MOVES];
   for (const id of skillIds) {
     const def = getSkillDef(id);
     if (def?.kind === 'external' && def.move) moves.push(def.move);

@@ -186,19 +186,21 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     void save(next);
     const combat = next.pendingCombat;
     const resolving = combat?.phase === 'resolve';
+    const fled = logs.some((l) => /逃離成功/.test(l));
     const ended = !combat;
+    const moveName =
+      getPlayerMoves(state).find((m) => m.id === moveId)?.name ??
+      (moveId === BASIC_STRIKE.id ? BASIC_STRIKE.name : displayChoiceText(moveId));
     set({
       state: next,
-      sealText: next.phase === 'summary' ? '終' : resolving ? '勝' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : '戰',
+      sealText: next.phase === 'summary' ? '終' : resolving ? '勝' : fled ? '遁' : ended ? (logs.some((l) => /敗於|力竭/.test(l)) ? '敗' : '勝') : '戰',
       flashLines: ended || resolving ? [] : logs.slice(0, 5),
       lastResult:
         ended && !resolving
           ? {
               title: state.pendingCombat!.title,
-              choiceText:
-                getPlayerMoves(state).find((m) => m.id === moveId)?.name ??
-                (moveId === BASIC_STRIKE.id ? BASIC_STRIKE.name : displayChoiceText(moveId)),
-              feedback: logs.find((l) => /戰勝|敗於|力竭/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
+              choiceText: moveName,
+              feedback: logs.find((l) => /戰勝|敗於|力竭|逃離/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
               deltas: logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境|心性/.test(l)),
             }
           : get().lastResult,

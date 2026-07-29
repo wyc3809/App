@@ -222,20 +222,33 @@ export function getGearDef(id: string): GearDef | undefined {
   return GEAR_CATALOG.find((g) => g.id === id);
 }
 
-export function rollForgeResult(rng: { nextFloat: () => number; chance: (p: number) => boolean }): string {
+export function rollForgeResult(
+  rng: { nextFloat: () => number; chance: (p: number) => boolean },
+  opts?: { age?: number; martial?: number },
+): string {
+  const age = opts?.age ?? 20;
+  const martial = opts?.martial ?? 10;
+  // 年輕／武淺：神兵幾乎無；年長武深：絕品／神兵機率上升
+  const tier = Math.min(1, Math.max(0, (age - 18) / 40 + martial / 120));
   const roll = rng.nextFloat();
-  if (roll < 0.03) return 'divine-xuan-sword';
-  if (roll < 0.06) return 'divine-silk-armor';
-  if (roll < 0.09) return 'divine-moon-pendant';
-  if (roll < 0.22) return 'hundredfold-blade';
-  if (roll < 0.35) return 'inkrain-sword';
-  if (roll < 0.48) return 'twin-hooks';
-  if (roll < 0.55) return 'jade-token';
-  if (roll < 0.65) return 'meteor-whip';
-  if (roll < 0.72) return 'crescent-blade';
-  if (roll < 0.78) return 'cloud-boots';
-  if (roll < 0.88) return 'iron-blade';
-  if (roll < 0.94) return 'bronze-spear';
+  const divineGate = 0.008 + tier * 0.045;
+  const epicGate = divineGate + 0.08 + tier * 0.12;
+  const rareGate = epicGate + 0.18 + tier * 0.1;
+  if (roll < divineGate * 0.34) return 'divine-xuan-sword';
+  if (roll < divineGate * 0.67) return 'divine-silk-armor';
+  if (roll < divineGate) return 'divine-moon-pendant';
+  if (roll < epicGate * 0.4) return 'hundredfold-blade';
+  if (roll < epicGate * 0.7) return 'inkrain-sword';
+  if (roll < epicGate) return 'twin-hooks';
+  if (roll < rareGate * 0.35) return 'jade-token';
+  if (roll < rareGate * 0.55) return 'meteor-whip';
+  if (roll < rareGate * 0.75) return 'crescent-blade';
+  if (roll < rareGate) return 'sleeve-darts';
+  if (roll < rareGate + 0.12) return 'cloud-boots';
+  if (roll < rareGate + 0.22) return 'iron-blade';
+  if (roll < rareGate + 0.32) return 'bronze-spear';
+  if (roll < rareGate + 0.4) return 'hunter-bow';
+  if (roll < rareGate + 0.48) return 'pine-staff';
   return 'pine-armor';
 }
 

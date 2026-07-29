@@ -14,7 +14,7 @@ export type BossFightConfig = {
   };
 };
 
-/** 首領戰結算：勝後掉落（finishCombat 讀取 rewardOnWin） */
+/** 首領戰結算：勝後掉落 */
 export const BOSS_FIGHT_CONFIG: Record<string, BossFightConfig> = {
   boss_scarlet_viper: {
     foeName: '赤練娘',
@@ -64,46 +64,303 @@ export const BOSS_FIGHT_CONFIG: Record<string, BossFightConfig> = {
       gearId: 'meteor-whip',
     },
   },
+  boss_frost_blade: {
+    foeName: '霜刀客',
+    foePower: 'boss',
+    rewardOnWin: {
+      money: 48,
+      reputation: 11,
+      martial: 10,
+      skillId: 'art_thunder_blade',
+      skillName: '驚雷刀',
+      gearId: 'crescent-blade',
+    },
+  },
+  boss_lute_ferry: {
+    foeName: '琵琶舫主',
+    foePower: 'boss',
+    rewardOnWin: {
+      money: 42,
+      reputation: 14,
+      martial: 8,
+      skillId: 'art_whip_silk',
+      skillName: '柔絲鞭法',
+      gearId: 'meteor-whip',
+    },
+  },
 };
 
-const RAW: GameEvent[] = [
+const RUMORS: GameEvent[] = [
   {
-    id: 'boss_scarlet_viper',
-    title: '赤練娘',
-    body: '茶棚外傳來女子笑聲，紅裙一閃，袖中寒芒已對準你的咽喉。她自稱「赤練娘」，專劫過路武人，奪其兵譜與暗器。',
-    tags: ['special', 'combat', 'boss', 'secret'],
-    weight: 3,
-    requirements: { minAge: 20, minMartial: 28, once: true },
+    id: 'rumor_scarlet',
+    title: '茶棚耳語',
+    body: '茶博士壓低聲音：赤練娘近日在千燈外截人，專取暗器與殘譜。有緣人若撞上，須留三分神。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 6,
+    requirements: { minAge: 18, once: true, notFlags: ['rumor_boss_scarlet'] },
     choices: [
       {
-        id: 'fight',
-        text: '拔刃應戰',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你踏前一步，劍光與袖針在半空交錯。' }] }],
-      },
-      {
-        id: 'talk',
-        text: '試探口風',
+        id: 'listen',
+        text: '默記於心',
         outcomes: [
           {
             effects: [
-              {
-                type: 'narrate',
-                text: '赤練娘冷笑：「嘴皮子利的不見得命長。」話未落，袖針已至眉心——你只能以武作答。',
-              },
+              { type: 'flag', key: 'rumor_boss_scarlet', value: true },
+              { type: 'narrate', text: '你把「赤練娘」三字咬進心裡。茶香未散，風聲已在路上。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'ask',
+        text: '追問細節',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_scarlet', value: true },
+              { type: 'money', amount: -2 },
+              { type: 'narrate', text: '你多丟了兩文茶錢，換來袖針與紅裙的細節。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'ignore',
+        text: '只當閒話',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你笑笑不語。有些風聲，聽過也就過了。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'rumor_iron',
+    title: '官道鐵輪',
+    body: '商旅說官道有鐵甲車攔路，車主聲如悶雷，過路要買命錢。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 5,
+    requirements: { minAge: 20, once: true, notFlags: ['rumor_boss_iron'] },
+    choices: [
+      {
+        id: 'mark',
+        text: '記下方位',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_iron', value: true },
+              { type: 'narrate', text: '你在袖裡劃了道痕：鐵輪過處，日後或要硬闖。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'warn',
+        text: '轉告路人',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_iron', value: true },
+              { type: 'reputation', amount: 2 },
+              { type: 'narrate', text: '你把消息傳開，名望略振，鐵甲車的影子卻更清晰了。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '改走野徑',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你暫時避開官道。野徑泥濘，心卻稍安。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'rumor_monk',
+    title: '破廟酒氣',
+    body: '有人見破廟裡瘋僧敲木魚飲酒，揚言要試過路人三掌。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 5,
+    requirements: { minAge: 17, once: true, notFlags: ['rumor_boss_monk'], minNature: { xia: 6 } },
+    choices: [
+      {
+        id: 'seek',
+        text: '心生好奇',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_monk', value: true },
+              { type: 'narrate', text: '你決定日後若近破廟，便去見見那瘋僧。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'pray',
+        text: '遙遙合十',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_monk', value: true },
+              { type: 'attr', delta: { fuYuan: 1 } },
+              { type: 'narrate', text: '你合十一禮。酒氣與梵音，似乎都遠了些。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'avoid',
+        text: '不去招惹',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你把破廟劃出行程。有些緣，強求無益。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'rumor_black',
+    title: '黑風過林',
+    body: '獵人說黑風寨主鞭影如幕，點名要找過往的江湖人比武。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 5,
+    requirements: { minAge: 22, once: true, notFlags: ['rumor_boss_black'] },
+    choices: [
+      {
+        id: 'ready',
+        text: '磨刀以待',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_black', value: true },
+              { type: 'martial', amount: 1 },
+              { type: 'narrate', text: '你把兵器擦亮。黑風若來，便以武相見。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'scout',
+        text: '探聽寨口',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_black', value: true },
+              { type: 'narrate', text: '你摸清寨口方位，風聲裡多了一分把握。' },
             ],
           },
         ],
       },
       {
         id: 'flee',
-        text: '抽身退入人群',
+        text: '遠走他鄉',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你暫時離開林緣。黑風再大，也有吹不到的地方。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'rumor_frost',
+    title: '北嶺寒刀',
+    body: '北嶺客商說霜刀客獨行雪地，刀未出鞘已寒氣入骨，似在等人試刀。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 4,
+    requirements: { minAge: 21, once: true, notFlags: ['rumor_boss_frost'] },
+    choices: [
+      {
+        id: 'note',
+        text: '記下刀勢',
         outcomes: [
           {
             effects: [
-              {
-                type: 'narrate',
-                text: '你混入茶客之中，赤練娘瞥了你一眼，竟未追來。江湖上有些煞星，躲得過一次，未必躲得過第二次。',
-              },
+              { type: 'flag', key: 'rumor_boss_frost', value: true },
+              { type: 'narrate', text: '你把「霜刀」二字與北嶺風向一併記牢。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'buy',
+        text: '買件厚襖',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_frost', value: true },
+              { type: 'money', amount: -5 },
+              { type: 'narrate', text: '厚襖在身，寒意略退，刀聲卻更清晰。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'ignore',
+        text: '不當回事',
+        outcomes: [{ effects: [{ type: 'narrate', text: '北嶺再遠，與你何干——至少此刻如此。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'rumor_lute',
+    title: '河舫夜曲',
+    body: '船家說夜半琵琶一響，便有人失踪。舫主以樂會友，實則以樂試人。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 4,
+    requirements: { minAge: 19, once: true, notFlags: ['rumor_boss_lute'], maxNature: { e: 55 } },
+    choices: [
+      {
+        id: 'listen',
+        text: '隔岸傾聽',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_lute', value: true },
+              { type: 'narrate', text: '琵琶聲斷續入耳。你知這曲，日後或要親身接。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'coin',
+        text: '丟錢問訊',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_lute', value: true },
+              { type: 'money', amount: -3 },
+              { type: 'narrate', text: '船家收了錢，點出舫尾燈火的方位。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '連夜改道',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你改走旱路。夜曲再美，也不必以命相和。' }] }],
+      },
+    ],
+  },
+];
+
+const FIGHTS: GameEvent[] = [
+  {
+    id: 'boss_scarlet_viper',
+    title: '赤練娘',
+    body: '茶棚外紅裙一閃，袖中寒芒對準咽喉。赤練娘笑道：「聽說你記得我名字——那便留下暗器與命，選一樣。」',
+    tags: ['special', 'combat', 'boss', 'secret'],
+    weight: 4,
+    requirements: { minAge: 20, minMartial: 28, once: true, flags: { rumor_boss_scarlet: true } },
+    choices: [
+      {
+        id: 'fight',
+        text: '拔刃應戰',
+        outcomes: [{ effects: [{ type: 'narrate', text: '劍光與袖針在半空交錯。' }] }],
+      },
+      {
+        id: 'fight_kill',
+        text: '存心取她性命',
+        requirements: { minNature: { e: 18 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你眼神一冷，招招奔著咽喉去。' }] }],
+      },
+      {
+        id: 'flee',
+        text: '抽身退入人群',
+        requirements: { maxNature: { kuang: 45 } },
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '你混入茶客之中。赤練娘瞥一眼，竟未追來。' },
               { type: 'reputation', amount: -2 },
             ],
           },
@@ -114,15 +371,15 @@ const RAW: GameEvent[] = [
   {
     id: 'boss_iron_chariot',
     title: '鐵甲車',
-    body: '官道塵土飛揚，一輛鐵甲車橫在路心。車簾掀起，魁梧漢子全身重甲，聲如悶雷：「此路是我開——留下買路錢，或者留下命。」',
+    body: '官道橫着鐵甲車。車簾掀起，魁梧漢子聲如悶雷：「買路錢，或者命。」',
     tags: ['special', 'combat', 'boss', 'secret'],
-    weight: 3,
-    requirements: { minAge: 22, minMartial: 35, once: true },
+    weight: 4,
+    requirements: { minAge: 22, minMartial: 35, once: true, flags: { rumor_boss_iron: true } },
     choices: [
       {
         id: 'fight',
         text: '破車斬將',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你繞至車側，尋甲縫破綻，戰端已開。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你繞至車側，尋甲縫破綻。' }] }],
       },
       {
         id: 'pay',
@@ -130,10 +387,7 @@ const RAW: GameEvent[] = [
         outcomes: [
           {
             effects: [
-              {
-                type: 'narrate',
-                text: '銀兩落地，鐵甲車主卻哈哈大笑：「不夠買命！」他揮拳砸來，你只能硬接。',
-              },
+              { type: 'narrate', text: '銀兩落地，對方大笑：「不夠買命！」拳風已至。' },
               { type: 'money', amount: -20 },
             ],
           },
@@ -142,31 +396,29 @@ const RAW: GameEvent[] = [
       {
         id: 'flee',
         text: '繞道而行',
-        outcomes: [
-          {
-            effects: [
-              {
-                type: 'narrate',
-                text: '你棄官道走野徑，身後鐵輪碾過的聲音漸遠。這份僥倖，日後或要還。',
-              },
-            ],
-          },
-        ],
+        requirements: { minNature: { xia: 8 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你棄官道走野徑，鐵輪聲漸遠。' }] }],
       },
     ],
   },
   {
     id: 'boss_wandering_monk',
     title: '瘋癲僧',
-    body: '破廟裡酒氣沖天，僧袍油亮。瘋僧敲著木魚大笑：「小友骨骼清奇，可願接老衲三掌？接得住，傳你凌虛；接不住，骨頭散架。」',
+    body: '破廟酒氣沖天。瘋僧敲木魚大笑：「小友可願接老衲三掌？」',
     tags: ['special', 'combat', 'boss', 'secret'],
-    weight: 2,
-    requirements: { minAge: 18, minAttrs: { wuXing: 50 }, once: true, minNature: { xia: 8 } },
+    weight: 3,
+    requirements: {
+      minAge: 18,
+      minAttrs: { wuXing: 48 },
+      once: true,
+      flags: { rumor_boss_monk: true },
+      minNature: { xia: 8 },
+    },
     choices: [
       {
         id: 'fight',
         text: '合掌應掌',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你氣沉丹田，迎上瘋僧第一掌，廟柱震落灰塵。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你氣沉丹田，迎上第一掌。' }] }],
       },
       {
         id: 'wine',
@@ -174,10 +426,7 @@ const RAW: GameEvent[] = [
         outcomes: [
           {
             effects: [
-              {
-                type: 'narrate',
-                text: '你連飲三碗，瘋僧拍腿叫好，卻仍要試你身法：「酒喝得，掌也得接！」',
-              },
+              { type: 'narrate', text: '酒過三碗，瘋僧仍要試你身法。' },
               { type: 'health', amount: -8 },
             ],
           },
@@ -186,13 +435,11 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '合十告退',
+        requirements: { maxNature: { kuang: 40 } },
         outcomes: [
           {
             effects: [
-              {
-                type: 'narrate',
-                text: '瘋僧也不攔你，只對著背影唱了一句梵音。你走出廟門，心裡竟有些空落。',
-              },
+              { type: 'narrate', text: '瘋僧不攔，只對着背影唱了一句梵音。' },
               { type: 'attr', delta: { fuYuan: 1 } },
             ],
           },
@@ -203,29 +450,21 @@ const RAW: GameEvent[] = [
   {
     id: 'boss_black_wind',
     title: '黑風寨主',
-    body: '山風驟冷，林間響起鐵鏈拖地聲。黑風寨主率眾現身，鞭影如幕：「闖我寨門者，今日要留一件東西——命，或者武學。」',
+    body: '林間鐵鏈拖地。黑風寨主鞭影如幕：「今日要留一件——命，或者武學。」',
     tags: ['special', 'combat', 'boss', 'secret'],
-    weight: 3,
-    requirements: { minAge: 24, minMartial: 42, once: true },
+    weight: 4,
+    requirements: { minAge: 24, minMartial: 42, once: true, flags: { rumor_boss_black: true } },
     choices: [
       {
         id: 'fight',
         text: '直取寨主',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你無視嘍囉，直撲寨主腕脈，鞭風已至面門。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你直撲腕脈，鞭風已至面門。' }] }],
       },
       {
-        id: 'bluff',
-        text: '揚言官府將至',
-        outcomes: [
-          {
-            effects: [
-              {
-                type: 'narrate',
-                text: '寨主眯眼片刻，仍揮鞭：「官府？先過我這關！」謊言換不得真安寧。',
-              },
-            ],
-          },
-        ],
+        id: 'fight_kill',
+        text: '打算斬草除根',
+        requirements: { minNature: { e: 22 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你眼神一沉，招招不留餘地。' }] }],
       },
       {
         id: 'flee',
@@ -233,11 +472,80 @@ const RAW: GameEvent[] = [
         outcomes: [
           {
             effects: [
-              {
-                type: 'narrate',
-                text: '你在密林中連轉數個方向，身後追殺聲漸息。黑風寨的帳，遲早要算。',
-              },
+              { type: 'narrate', text: '密林連轉，追殺聲漸息。' },
               { type: 'reputation', amount: -3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'boss_frost_blade',
+    title: '霜刀客',
+    body: '北嶺雪地上，一柄未出鞘的刀凝着霜。刀客抬頭：「來試刀的，就你？」',
+    tags: ['special', 'combat', 'boss', 'secret'],
+    weight: 3,
+    requirements: { minAge: 21, minMartial: 38, once: true, flags: { rumor_boss_frost: true } },
+    choices: [
+      {
+        id: 'fight',
+        text: '拔刀相對',
+        outcomes: [{ effects: [{ type: 'narrate', text: '寒氣入骨，刀光已起。' }] }],
+      },
+      {
+        id: 'talk',
+        text: '先問來歷',
+        requirements: { minNature: { xia: 12 } },
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '他只回一句「刀不問名」，下一瞬刀已出鞘——只能接。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'flee',
+        text: '退回南坡',
+        requirements: { maxNature: { kuang: 50 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你退回南坡。霜意在背後追了一程。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'boss_lute_ferry',
+    title: '琵琶舫主',
+    body: '河舫燈火晃動，琵琶聲忽然一緊。舫主笑：「以樂會友，或以命相和——請。」',
+    tags: ['special', 'combat', 'boss', 'secret'],
+    weight: 3,
+    requirements: {
+      minAge: 19,
+      minMartial: 30,
+      once: true,
+      flags: { rumor_boss_lute: true },
+      maxNature: { e: 60 },
+    },
+    choices: [
+      {
+        id: 'fight',
+        text: '以武接曲',
+        outcomes: [{ effects: [{ type: 'narrate', text: '弦音化作鞭影，河面濺起水花。' }] }],
+      },
+      {
+        id: 'fight_kill',
+        text: '打算拆了這舫',
+        requirements: { minNature: { e: 20, kuang: 15 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你不再客氣，招招奔着桅索與人影。' }] }],
+      },
+      {
+        id: 'flee',
+        text: '跳幫離去',
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '你躍向鄰船。琵琶聲在水上碎成一片。' },
+              { type: 'reputation', amount: -1 },
             ],
           },
         ],
@@ -246,18 +554,18 @@ const RAW: GameEvent[] = [
   },
 ];
 
-export const BOSS_ENCOUNTER_EVENTS: GameEvent[] = RAW.map((ev) =>
+export const BOSS_ENCOUNTER_EVENTS: GameEvent[] = [...RUMORS, ...FIGHTS].map((ev) =>
   withRiskAndThree(
     ev,
     (_id, text = '此舉') => [
       {
         type: 'narrate',
-        text: `首領之戰中你欲「${text}」，卻被對方識破破綻，當場吃了暗虧。`,
+        text: `風聲或首領之局中你欲「${text}」，卻踏空一步，當場吃了暗虧。`,
       },
-      { type: 'health', amount: -22 },
-      { type: 'money', amount: -15 },
+      { type: 'health', amount: -16 },
+      { type: 'money', amount: -8 },
     ],
-    0.14,
+    0.12,
   ),
 );
 

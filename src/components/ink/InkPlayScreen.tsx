@@ -14,6 +14,9 @@ import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
+import { jianghuHints, playerEvasionPercent } from '@core/life/jianghuHints';
+import { meetsRequirements } from '@core/life/requirements';
+import { GUARD_STANCE, CHARGE_STANCE, FLEE_MOVE } from '@data/skills/catalog';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
@@ -154,6 +157,16 @@ export function InkPlayScreen({ state }: Props) {
 
       <div key={`${state.year}-${month}`} className="ink-scroll-flip ink-play-body">
 
+      {onHomeTab && (
+        <section className="ink-world" aria-label="近日傳聞">
+          {jianghuHints(state).map((h) => (
+            <p key={h} className="ink-note">
+              {h}
+            </p>
+          ))}
+        </section>
+      )}
+
       {tab === 'jianghu' && (
         <section key="jianghu" className="ink-panel ink-world-panel ink-tab-pane" aria-label="心性">
           <h3>心性</h3>
@@ -242,7 +255,7 @@ export function InkPlayScreen({ state }: Props) {
           </div>
           <p className="ink-note">{natureSummary(c)}</p>
           <p className="ink-note">
-            體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0}
+            體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0} · 閃避約 {playerEvasionPercent(state)}%
           </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
@@ -475,7 +488,7 @@ export function InkPlayScreen({ state }: Props) {
           <p className="ink-note">
             {combat.phase === 'resolve'
               ? '勝負已分——如何處置落敗之人，亦會留在心性裡。'
-              : '外功可出招；內功只加攻防／內息等被動，不佔招式欄。'}
+              : '外功出招；守勢／蓄勢／抽身可調節奏。內功與輕功為被動。'}
           </p>
           {combat.phase === 'resolve' ? (
             <div className="ink-choice-list ink-combat-resolve">
@@ -517,7 +530,17 @@ export function InkPlayScreen({ state }: Props) {
                     style={{ ['--i' as string]: i }}
                     onClick={() => combatMove(mv.id)}
                   >
-                    <span className="ink-choice-mark">{i === 0 ? '普' : '功'}</span>
+                    <span className="ink-choice-mark">
+                      {mv.id === GUARD_STANCE.id
+                        ? '守'
+                        : mv.id === CHARGE_STANCE.id
+                          ? '蓄'
+                          : mv.id === FLEE_MOVE.id
+                            ? '遁'
+                            : i === 0
+                              ? '普'
+                              : '功'}
+                    </span>
                     <span className="ink-combat-move">
                       <strong>{mv.name}</strong>
                       <em>
@@ -615,7 +638,10 @@ export function InkPlayScreen({ state }: Props) {
           <h3>{displayTitle}</h3>
           {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
           <div className="ink-choice-list">
-            {pendingEvent.choices.slice(0, 3).map((ch, i) => (
+            {pendingEvent.choices
+              .filter((ch) => meetsRequirements(state, ch.requirements))
+              .slice(0, 3)
+              .map((ch, i) => (
               <button
                 key={ch.id}
                 type="button"

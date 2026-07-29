@@ -280,6 +280,8 @@ export interface CombatFighterState {
   bleedTurns: number;
   defenseMod: number;
   reflect: number;
+  /** 蓄勢：下一擊威力倍率加成 */
+  chargeBonus: number;
 }
 
 export interface PendingCombat {
@@ -302,6 +304,7 @@ export interface PendingCombat {
   };
   rewardOnLose?: { money?: number; reputation?: number };
   eventId?: string;
+  foePower?: 'weak' | 'normal' | 'strong' | 'boss';
 }
 
 export const lifeCharacterSchema = z.object({
