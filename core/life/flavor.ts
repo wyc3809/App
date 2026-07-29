@@ -1,10 +1,11 @@
 import type { LifeCharacter, LifeGameState, WuxiaAttribute } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
 import {
-  ADVANCE_CHANCE,
   ensureSkillRanks,
   grantSkillRank,
+  PRACTICE_PROGRESS_WEIGHT,
   rankName,
+  rollAdvanceNeed,
 } from './martialRanks';
 import { formatSkillLine, skillLabel } from '@data/skills/catalog';
 
@@ -143,7 +144,7 @@ export function deltaRep(amount: number): string {
 }
 
 /**
- * 修煉／實戰嘗試進階某一武學（後台百分比，成功才回報文言）
+ * 修煉／實戰累積進度；達門檻才進階（戰鬥約 10–30／50–60／90–120 次，修煉較慢）
  */
 export function tryAdvanceSkill(
   state: LifeGameState,
@@ -152,17 +153,31 @@ export function tryAdvanceSkill(
 ): string | null {
   const c = state.character;
   c.skillRanks = ensureSkillRanks(c.skillRanks);
+  if (!c.skillProgress) c.skillProgress = {};
+  if (!c.skillAdvanceNeed) c.skillAdvanceNeed = {};
   grantSkillRank(c.skillRanks, skillId);
   const rank = c.skillRanks[skillId] ?? 0;
   if (rank >= 3) return null;
-  const chance = ADVANCE_CHANCE[source][rank] ?? 0;
+
   const rng = getRng();
-  if (!rng.chance(chance)) return null;
+  if (c.skillAdvanceNeed[skillId] === undefined) {
+    c.skillAdvanceNeed[skillId] = rollAdvanceNeed(rank, rng);
+  }
+  const gain = source === 'combat' ? 1 : PRACTICE_PROGRESS_WEIGHT;
+  c.skillProgress[skillId] = (c.skillProgress[skillId] ?? 0) + gain;
+
+  const need = c.skillAdvanceNeed[skillId] ?? rollAdvanceNeed(rank, rng);
+  if ((c.skillProgress[skillId] ?? 0) < need) return null;
+
   c.skillRanks[skillId] = rank + 1;
+  c.skillProgress[skillId] = 0;
+  const nextRank = rank + 1;
+  c.skillAdvanceNeed[skillId] =
+    nextRank >= 3 ? Number.POSITIVE_INFINITY : rollAdvanceNeed(nextRank, rng);
   c.martial += 2 + rank;
   const name = skillLabel(skillId);
-  const next = rankName(rank + 1);
-  return `「${name}」進境至「${next}」。`;
+  const next = rankName(nextRank);
+  return `「${name}」進境至「${next}」，招式威力更盛。`;
 }
 
 /** 對已學武學隨機挑一門嘗試進階 */
@@ -180,9 +195,16 @@ export function tryAdvanceRandomSkill(
 
 export function learnMartialArt(state: LifeGameState, skillId: string, displayName?: string): string {
   const c = state.character;
+  const rng = getRng();
   c.skillRanks = ensureSkillRanks(c.skillRanks);
   if (!c.skills.includes(skillId)) c.skills.push(skillId);
   grantSkillRank(c.skillRanks, skillId, 0);
+  if (!c.skillProgress) c.skillProgress = {};
+  if (!c.skillAdvanceNeed) c.skillAdvanceNeed = {};
+  c.skillProgress[skillId] = c.skillProgress[skillId] ?? 0;
+  if (c.skillAdvanceNeed[skillId] === undefined) {
+    c.skillAdvanceNeed[skillId] = rollAdvanceNeed(0, rng);
+  }
   const label = displayName ?? skillLabel(skillId);
   return `習得「${label}」，階位「${rankName(0)}」。`;
 }

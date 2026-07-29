@@ -69,6 +69,11 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     nature: defaultNature(),
     skills: ['基礎吐納', 'art_river_fist'],
     skillRanks: { 基礎吐納: 0, art_river_fist: 0 },
+    skillProgress: { 基礎吐納: 0, art_river_fist: 0 },
+    skillAdvanceNeed: {
+      基礎吐納: rng.nextInt(10, 30),
+      art_river_fist: rng.nextInt(10, 30),
+    },
     gear: ['old-sword', 'plain-robe'],
     equipment: { weapon: 'old-sword', armor: 'plain-robe', accessory: null },
     sectId: null,
@@ -210,8 +215,11 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (!c.gear) c.gear = ['old-sword', 'plain-robe'];
   if (!c.equipment) c.equipment = { weapon: 'old-sword', armor: 'plain-robe', accessory: null };
   if (!c.skillRanks) c.skillRanks = {};
+  if (!c.skillProgress) c.skillProgress = {};
+  if (!c.skillAdvanceNeed) c.skillAdvanceNeed = {};
   for (const id of c.skills ?? []) {
     if (c.skillRanks[id] === undefined) c.skillRanks[id] = 0;
+    if (c.skillProgress[id] === undefined) c.skillProgress[id] = 0;
   }
   if (c.sectStanding === undefined) c.sectStanding = c.sectId ? 0 : 0;
   if (c.childrenCount === undefined) c.childrenCount = c.family?.childrenNames?.length ?? 0;

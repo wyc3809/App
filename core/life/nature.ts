@@ -81,6 +81,10 @@ export function natureSummary(c: LifeCharacter): string {
   return `${natureLabels.xia}${n.xia} · ${natureLabels.xie}${n.xie} · ${natureLabels.kuang}${n.kuang} · ${natureLabels.e}${n.e}（偏「${natureLabels[dom]}」）`;
 }
 
+export function natureColorClass(k: NatureAttr): string {
+  return `ink-nature ink-nature--${k}`;
+}
+
 export function meetsNatureGate(c: LifeCharacter, gate: NatureGate | undefined): boolean {
   if (!gate) return true;
   const n = ensureNature(c);

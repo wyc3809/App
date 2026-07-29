@@ -64,12 +64,15 @@ body::before {
   flex-direction: column;
   gap: 14px;
   background:
-    linear-gradient(90deg, rgba(26, 26, 26, 0.04), transparent 12px),
-    linear-gradient(270deg, rgba(26, 26, 26, 0.04), transparent 12px),
+    linear-gradient(90deg, rgba(26, 26, 26, 0.05), transparent 14px),
+    linear-gradient(270deg, rgba(26, 26, 26, 0.05), transparent 14px),
+    radial-gradient(ellipse at 18% 12%, rgba(163, 58, 50, 0.05), transparent 42%),
     linear-gradient(168deg, var(--paper-bright) 0%, var(--paper) 48%, var(--paper-aged) 100%);
   box-shadow:
-    0 0 0 1px rgba(26, 26, 26, 0.08),
+    0 0 0 1px rgba(26, 26, 26, 0.1),
+    inset 0 0 0 1px rgba(250, 246, 238, 0.35),
     10px 18px 48px rgba(26, 26, 26, 0.12);
+  border-radius: 2px;
 }
 
 .scroll-shell--play {
@@ -111,6 +114,7 @@ body::before {
   height: 90px;
   top: 10%;
   right: -30px;
+  animation: inkBreathe 7s ease-in-out infinite;
 }
 
 .ink-blot--bl {
@@ -119,6 +123,51 @@ body::before {
   bottom: 18%;
   left: 6px;
   opacity: 0.7;
+  animation: inkBreathe 9s ease-in-out infinite reverse;
+}
+
+.ink-blot--drift {
+  width: 48px;
+  height: 48px;
+  top: 38%;
+  left: 42%;
+  opacity: 0.35;
+  animation: inkDrift 14s ease-in-out infinite;
+}
+
+.ink-mist-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(105deg, transparent 20%, rgba(250, 246, 238, 0.12) 48%, transparent 72%);
+  animation: mistSweep 16s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ink-brush-sweep {
+  position: absolute;
+  left: -20%;
+  top: 22%;
+  width: 70%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(26, 26, 26, 0.12), transparent);
+  transform: rotate(-8deg);
+  animation: brushSweep 11s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ink-ridge--far {
+  animation: ridgeFloat 18s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.ink-ridge--near {
+  animation: ridgeFloat 12s ease-in-out infinite reverse;
+  transform-origin: center bottom;
+}
+
+.ink-mist-orb {
+  animation: inkBreathe 8s ease-in-out infinite;
 }
 
 /* motion */
@@ -158,6 +207,78 @@ body::before {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes inkBreathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes inkDrift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(18px, -12px);
+    opacity: 0.45;
+  }
+}
+
+@keyframes mistSweep {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translateX(-4%);
+  }
+  50% {
+    opacity: 0.55;
+    transform: translateX(6%);
+  }
+}
+
+@keyframes brushSweep {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateX(0) rotate(-8deg);
+  }
+  40% {
+    opacity: 0.7;
+  }
+  70% {
+    opacity: 0;
+    transform: translateX(45%) rotate(-8deg);
+  }
+}
+
+@keyframes ridgeFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes panelWashIn {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
   }
 }
 
@@ -392,10 +513,48 @@ body::before {
 }
 
 .ink-panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--ink-faint);
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(250, 246, 238, 0.88), rgba(243, 235, 220, 0.72));
+  border: 1px solid rgba(26, 26, 26, 0.16);
   padding: 14px 12px;
   backdrop-filter: blur(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 0 rgba(26, 26, 26, 0.04);
+  animation: panelWashIn 0.55s ease both;
+}
+
+.ink-panel::before,
+.ink-panel::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+/* 水墨框：四角飛白 */
+.ink-panel::before {
+  inset: 4px;
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: 1px;
+  background:
+    linear-gradient(var(--ink), var(--ink)) top left / 12px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) top left / 1px 12px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) top right / 12px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) top right / 1px 12px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) bottom left / 12px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) bottom left / 1px 12px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) bottom right / 12px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) bottom right / 1px 12px no-repeat;
+  opacity: 0.55;
+}
+
+.ink-panel::after {
+  left: 10px;
+  right: 10px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(26, 26, 26, 0.22), transparent);
 }
 
 .ink-panel h3 {
@@ -431,6 +590,85 @@ body::before {
 .ink-attr strong {
   font-size: 1.05rem;
   font-weight: 600;
+}
+
+/* 心性顏色：俠淺藍／邪紫／狂黃／惡紅 */
+.ink-nature--xia {
+  --nature-color: #4a7fa8;
+  --nature-wash: rgba(74, 127, 168, 0.16);
+}
+.ink-nature--xie {
+  --nature-color: #6e4a8a;
+  --nature-wash: rgba(110, 74, 138, 0.16);
+}
+.ink-nature--kuang {
+  --nature-color: #b08a2a;
+  --nature-wash: rgba(176, 138, 42, 0.18);
+}
+.ink-nature--e {
+  --nature-color: #a33a32;
+  --nature-wash: rgba(163, 58, 50, 0.16);
+}
+
+.ink-nature-card {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--nature-color) 45%, transparent);
+  border-bottom-style: solid;
+  background: var(--nature-wash);
+  padding: 8px 10px;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.ink-nature-card .ink-attr-label,
+.ink-nature-card strong {
+  color: var(--nature-color);
+}
+
+.ink-nature-card.ink-nature--dominant {
+  border-color: var(--nature-color);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--nature-color) 35%, transparent),
+    0 4px 14px var(--nature-wash);
+  transform: translateY(-1px);
+  animation: naturePulse 2.8s ease-in-out infinite;
+}
+
+.ink-nature-chip {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--nature-color) 40%, transparent);
+  color: var(--nature-color);
+  background: var(--nature-wash);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.ink-nature-chip.ink-nature--dominant {
+  font-weight: 700;
+  border-width: 1.5px;
+}
+
+.ink-nature-line {
+  line-height: 1.9;
+}
+
+@keyframes naturePulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--nature-color) 30%, transparent),
+      0 3px 10px var(--nature-wash);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--nature-color) 45%, transparent),
+      0 6px 16px var(--nature-wash);
+  }
 }
 
 .ink-note {
@@ -1044,7 +1282,14 @@ body::before {
   .ink-choice,
   .ink-seal-stamp,
   .ink-flash,
-  .ink-result {
+  .ink-result,
+  .ink-panel,
+  .ink-blot,
+  .ink-mist-layer,
+  .ink-brush-sweep,
+  .ink-ridge,
+  .ink-mist-orb,
+  .ink-nature-card.ink-nature--dominant {
     animation: none !important;
   }
 }

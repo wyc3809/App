@@ -1,4 +1,4 @@
-/** 宣紙遠山 + 墨漬（純裝飾） */
+/** 宣紙遠山 + 墨漬 + 水墨微動（純裝飾） */
 export function InkScrollBackdrop({ variant = 'play' }: { variant?: 'hero' | 'play' }) {
   return (
     <div className={`ink-backdrop ink-backdrop--${variant}`} aria-hidden>
@@ -16,20 +16,33 @@ export function InkScrollBackdrop({ variant = 'play' }: { variant?: 'hero' | 'pl
             <feGaussianBlur stdDeviation="1.4" />
           </filter>
         </defs>
-        <circle cx="340" cy="42" r="36" fill="#1a1a1a" fillOpacity="0.05" filter="url(#softInk)" />
+        <circle
+          className="ink-mist-orb"
+          cx="340"
+          cy="42"
+          r="36"
+          fill="#1a1a1a"
+          fillOpacity="0.05"
+          filter="url(#softInk)"
+        />
         <path
+          className="ink-ridge ink-ridge--far"
           fill="url(#washB)"
           filter="url(#softInk)"
           d="M-30,180 L-30,110 Q70,58 150,88 Q240,118 330,70 L450,100 L450,180 Z"
         />
         <path
+          className="ink-ridge ink-ridge--near"
           fill="url(#washA)"
           filter="url(#softInk)"
           d="M0,180 L0,95 Q90,40 200,72 Q290,98 420,55 L420,180 Z"
         />
       </svg>
+      <div className="ink-mist-layer" />
+      <div className="ink-brush-sweep" />
       <div className="ink-blot ink-blot--tr" />
       <div className="ink-blot ink-blot--bl" />
+      <div className="ink-blot ink-blot--drift" />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   sumInternalPassives,
   type CombatMoveDef,
 } from '@data/skills/catalog';
+import { rankPowerMult } from './martialRanks';
 
 export type CombatFighter = CombatFighterState;
 export type PendingCombat = PendingCombatState;
@@ -158,6 +159,7 @@ function resolveOneHit(
   rng: ReturnType<typeof getRng>,
   hitIndex: number,
   totalHits: number,
+  powerMult = 1,
 ): string[] {
   const lines: string[] = [];
   const hitChance = clamp(
@@ -176,7 +178,7 @@ function resolveOneHit(
 
   const pierce = clamp(move.pierce ?? 0, 0, 0.85);
   const def = effectiveDefense(defender) * (1 - pierce);
-  const raw = attacker.attack * move.power;
+  const raw = attacker.attack * move.power * powerMult;
   const mitigated = Math.max(3, Math.round(raw - def * 0.55 + rng.nextInt(-3, 4)));
   defender.hp = clamp(defender.hp - mitigated, 0, defender.maxHp);
   lines.push(
@@ -186,7 +188,7 @@ function resolveOneHit(
   );
 
   if (move.lifesteal) {
-    const steal = Math.max(1, Math.round(mitigated * move.lifesteal));
+    const steal = Math.max(1, Math.round(mitigated * move.lifesteal * (0.85 + powerMult * 0.15)));
     attacker.hp = clamp(attacker.hp + steal, 0, attacker.maxHp);
     lines.push(`${attacker.name}借力回氣，回復 ${steal} 點氣血。`);
   }
@@ -206,34 +208,38 @@ function applyOnHitEffects(
   move: CombatMoveDef,
   rng: ReturnType<typeof getRng>,
   anyHit: boolean,
+  powerMult = 1,
 ): string[] {
   const lines: string[] = [];
   if (!anyHit) return lines;
 
   if (move.healSelf) {
-    attacker.hp = clamp(attacker.hp + move.healSelf, 0, attacker.maxHp);
-    lines.push(`${attacker.name}順勢調息，氣血回復 ${move.healSelf}。`);
+    const heal = Math.round(move.healSelf * (0.9 + powerMult * 0.1));
+    attacker.hp = clamp(attacker.hp + heal, 0, attacker.maxHp);
+    lines.push(`${attacker.name}順勢調息，氣血回復 ${heal}。`);
   }
   if (move.applyBlind) {
     defender.blind = Math.max(defender.blind, move.applyBlind);
     lines.push(`${defender.name}眼前一花，招式顯得滯澀。`);
   }
   if (move.qiDrain) {
-    defender.qi = clamp(defender.qi - move.qiDrain, 0, defender.maxQi);
-    lines.push(`${defender.name}內息被擾，散去 ${move.qiDrain}。`);
+    const drain = Math.round(move.qiDrain * powerMult);
+    defender.qi = clamp(defender.qi - drain, 0, defender.maxQi);
+    lines.push(`${defender.name}內息被擾，散去 ${drain}。`);
   }
   if (move.defenseBreak) {
-    defender.defenseMod -= move.defenseBreak;
+    const brk = Math.round(move.defenseBreak * (0.85 + powerMult * 0.15));
+    defender.defenseMod -= brk;
     lines.push(`${defender.name}架勢散亂，防禦暫降。`);
   }
   if (move.bleedChance && rng.chance(move.bleedChance)) {
-    const dmg = move.bleedDamage ?? 5;
+    const dmg = Math.round((move.bleedDamage ?? 5) * powerMult);
     const turns = move.bleedTurns ?? 2;
     defender.bleedDamage = Math.max(defender.bleedDamage, dmg);
     defender.bleedTurns = Math.max(defender.bleedTurns, turns);
     lines.push(`${defender.name}被劃出血線，一時難止。`);
   }
-  if (move.stunChance && rng.chance(move.stunChance)) {
+  if (move.stunChance && rng.chance(Math.min(0.55, move.stunChance * (0.9 + powerMult * 0.1)))) {
     defender.stun = Math.max(defender.stun, 1);
     lines.push(`${defender.name}穴道一滯，動作遲了半拍！`);
   }
@@ -245,11 +251,12 @@ function resolveStrike(
   defender: CombatFighter,
   move: CombatMoveDef,
   rng: ReturnType<typeof getRng>,
+  powerMult = 1,
 ): string[] {
   const lines: string[] = [];
   if (attacker.qi < move.qiCost) {
     lines.push(`${attacker.name}內息不足，無法使出「${move.name}」，改為普通攻擊。`);
-    return resolveStrike(attacker, defender, BASIC_STRIKE, rng);
+    return resolveStrike(attacker, defender, BASIC_STRIKE, rng, 1);
   }
   attacker.qi -= move.qiCost;
   defender.blind = Math.max(0, defender.blind * 0.35);
@@ -258,12 +265,12 @@ function resolveStrike(
   let anyHit = false;
   for (let i = 0; i < hits; i++) {
     const before = defender.hp;
-    const hitLines = resolveOneHit(attacker, defender, move, rng, i, hits);
+    const hitLines = resolveOneHit(attacker, defender, move, rng, i, hits, powerMult);
     lines.push(...hitLines);
     if (defender.hp < before) anyHit = true;
     if (defender.hp <= 0) break;
   }
-  lines.push(...applyOnHitEffects(attacker, defender, move, rng, anyHit));
+  lines.push(...applyOnHitEffects(attacker, defender, move, rng, anyHit, powerMult));
   return lines;
 }
 
@@ -388,7 +395,9 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
     if (sid && !combat.usedExternalSkillIds.includes(sid)) {
       combat.usedExternalSkillIds.push(sid);
     }
-    lines.push(...resolveStrike(combat.player, combat.foe, move, rng));
+    const rank = sid ? (state.character.skillRanks?.[sid] ?? 0) : 0;
+    const powerMult = sid ? rankPowerMult(rank) : 1;
+    lines.push(...resolveStrike(combat.player, combat.foe, move, rng, powerMult));
     combat.log.push(...lines);
   }
 

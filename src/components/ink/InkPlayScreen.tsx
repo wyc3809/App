@@ -17,9 +17,10 @@ import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/acti
 import { getGearDef } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay, worldTone } from '@core/life/flavor';
 import { describeSectProgress } from '@core/life/sectStanding';
-import { ensureNature, natureGateHint, natureSummary } from '@core/life/nature';
+import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
 import { formatSkillEffects, getSkillDef } from '@data/skills/catalog';
+import { rankPowerMult } from '@core/life/martialRanks';
 import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -95,6 +96,8 @@ export function InkPlayScreen({ state }: Props) {
     !showResult &&
     onHomeTab;
   const nature = ensureNature(c);
+  const dominant = dominantNature(c);
+  const showVitalsBars = tab === 'home' || tab === 'person' || Boolean(combat);
   const resultKind = lastResult?.title === '修煉' ? 'practice' : 'month';
 
   useEffect(() => {
@@ -191,29 +194,46 @@ export function InkPlayScreen({ state }: Props) {
               第{story.chapter}章「{story.title}」· {story.goal}
             </p>
           )}
-          <p className="ink-note">心性 · {natureSummary(c)}</p>
+          <p className="ink-note ink-nature-line">
+            心性 ·{' '}
+            {natureKeys.map((k, i) => (
+              <span
+                key={k}
+                className={`ink-nature-chip ink-nature--${k}${k === dominant ? ' ink-nature--dominant' : ''}`}
+              >
+                {i > 0 ? ' ' : ''}
+                {natureLabels[k]}
+                {nature[k]}
+                {k === dominant ? '◆' : ''}
+              </span>
+            ))}
+          </p>
         </section>
       )}
 
-      <section className="ink-vitals" aria-label="氣血內力">
-        <div className="ink-vitals-label">
-          <span>氣血</span>
-          <span>
-            {Math.round(c.health)}/{c.maxHealth}
-          </span>
-        </div>
-        <div className="ink-bar">
-          <div className="ink-bar-fill" style={{ width: `${hpPct}%` }} />
-        </div>
-        <div className="ink-vitals-label">
-          <span>內力</span>
-          <span>
-            {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
-          </span>
-        </div>
-        <div className="ink-bar ink-bar--qi">
-          <div className="ink-bar-fill ink-bar-fill--qi" style={{ width: `${qiPct}%` }} />
-        </div>
+      <section className="ink-vitals" aria-label={showVitalsBars ? '氣血內力' : '江湖概況'}>
+        {showVitalsBars && (
+          <>
+            <div className="ink-vitals-label">
+              <span>氣血</span>
+              <span>
+                {Math.round(c.health)}/{c.maxHealth}
+              </span>
+            </div>
+            <div className="ink-bar">
+              <div className="ink-bar-fill" style={{ width: `${hpPct}%` }} />
+            </div>
+            <div className="ink-vitals-label">
+              <span>內力</span>
+              <span>
+                {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
+              </span>
+            </div>
+            <div className="ink-bar ink-bar--qi">
+              <div className="ink-bar-fill ink-bar-fill--qi" style={{ width: `${qiPct}%` }} />
+            </div>
+          </>
+        )}
         <div className="ink-stat-row">
           <span>銀兩 {c.money}</span>
           <span>名望 {c.reputation}</span>
@@ -245,8 +265,14 @@ export function InkPlayScreen({ state }: Props) {
           <h3 className="ink-subhead">心性</h3>
           <div className="ink-attr-grid">
             {natureKeys.map((k) => (
-              <div key={k} className="ink-attr">
-                <span className="ink-attr-label">{natureLabels[k]}</span>
+              <div
+                key={k}
+                className={`ink-attr ink-nature-card ink-nature--${k}${k === dominant ? ' ink-nature--dominant' : ''}`}
+              >
+                <span className="ink-attr-label">
+                  {natureLabels[k]}
+                  {k === dominant ? ' · 獨顯' : ''}
+                </span>
                 <strong>{nature[k]}</strong>
               </div>
             ))}
@@ -481,6 +507,9 @@ export function InkPlayScreen({ state }: Props) {
           <div className="ink-choice-list">
             {moves.map((mv, i) => {
               const short = combat.player.qi < mv.qiCost;
+              const ownerSkill = c.skills.find((id) => getSkillDef(id)?.move?.id === mv.id);
+              const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
+              const effPower = mv.power * (ownerSkill ? rankPowerMult(rank) : 1);
               return (
                 <button
                   key={mv.id}
@@ -494,7 +523,8 @@ export function InkPlayScreen({ state }: Props) {
                   <span className="ink-combat-move">
                     <strong>{mv.name}</strong>
                     <em>
-                      {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威能 {mv.power.toFixed(1)} 倍
+                      {mv.qiCost > 0 ? `耗息 ${mv.qiCost}` : '無耗'} · 威能 {effPower.toFixed(2)} 倍
+                      {ownerSkill && rank > 0 ? `（階位加持）` : ''}
                       {short ? ' · 內息不足' : ''}
                     </em>
                     <small>{mv.description}</small>

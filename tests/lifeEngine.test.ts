@@ -115,6 +115,38 @@ describe('life event engine', () => {
     expect(ranks.every((r) => r >= 0 && r <= 3)).toBe(true);
   });
 
+  it('external art advances after enough combat uses and gains power', async () => {
+    const { tryAdvanceSkill } = await import('../core/life/flavor');
+    const { rankPowerMult, ADVANCE_COMBAT_BANDS } = await import('../core/life/martialRanks');
+    initRng(9);
+    const state = createNewLife(9);
+    const sid = 'art_river_fist';
+    state.character.skillAdvanceNeed[sid] = 12;
+    state.character.skillProgress[sid] = 0;
+    let advanced = false;
+    for (let i = 0; i < 40; i++) {
+      const msg = tryAdvanceSkill(state, sid, 'combat');
+      if (msg) {
+        advanced = true;
+        break;
+      }
+    }
+    expect(advanced).toBe(true);
+    expect(state.character.skillRanks[sid]).toBe(1);
+    expect(rankPowerMult(1)).toBe(1.25);
+    expect(ADVANCE_COMBAT_BANDS[0].min).toBe(10);
+    expect(ADVANCE_COMBAT_BANDS[1].min).toBe(50);
+    // second rank needs much more
+    state.character.skillAdvanceNeed[sid] = 55;
+    state.character.skillProgress[sid] = 0;
+    let second = false;
+    for (let i = 0; i < 20; i++) {
+      if (tryAdvanceSkill(state, sid, 'combat')) second = true;
+    }
+    expect(second).toBe(false);
+    expect(state.character.skillRanks[sid]).toBe(1);
+  });
+
   it('limits practice to three actions per month', async () => {
     const { performPracticeAction } = await import('../core/life/actions');
     initRng(2);

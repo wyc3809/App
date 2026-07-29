@@ -192,8 +192,12 @@ export interface LifeCharacter {
   /** 心性：俠、邪、狂、惡 */
   nature: NatureState;
   skills: string[];
-  /** 武學階位 0–3：略有小成→神乎其技（後台百分比進階） */
+  /** 武學階位 0–3：略有小成→神乎其技 */
   skillRanks: Record<string, number>;
+  /** 朝下一階累積的戰鬥等值進度 */
+  skillProgress: Record<string, number>;
+  /** 升至下一階所需戰鬥等值次數 */
+  skillAdvanceNeed: Record<string, number>;
   gear: string[];
   equipment: {
     weapon: string | null;
@@ -329,6 +333,8 @@ export const lifeCharacterSchema = z.object({
     .default({ xia: 12, xie: 8, kuang: 10, e: 6 }),
   skills: z.array(z.string()),
   skillRanks: z.record(z.string(), z.number()).default({}),
+  skillProgress: z.record(z.string(), z.number()).default({}),
+  skillAdvanceNeed: z.record(z.string(), z.number()).default({}),
   gear: z.array(z.string()).default(['old-sword', 'plain-robe']),
   equipment: z
     .object({
