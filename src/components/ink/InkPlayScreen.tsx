@@ -551,13 +551,22 @@ export function InkPlayScreen({ state }: Props) {
               </p>
               <h3>{lastResult.title}</h3>
               <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
-              <p className="ink-event-body">{lastResult.feedback}</p>
+              <div className="ink-result-story">
+                {lastResult.feedback.split(/\n\n+/).map((para, i) => (
+                  <p key={`${i}-${para.slice(0, 12)}`} className="ink-event-body">
+                    {para}
+                  </p>
+                ))}
+              </div>
               {lastResult.deltas.length > 0 && (
-                <ul className="ink-delta-list">
-                  {lastResult.deltas.map((d) => (
-                    <li key={d}>{d}</li>
-                  ))}
-                </ul>
+                <>
+                  <p className="ink-result-delta-label">此局得失</p>
+                  <ul className="ink-delta-list">
+                    {lastResult.deltas.map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                </>
               )}
               <button
                 type="button"

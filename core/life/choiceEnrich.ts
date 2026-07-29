@@ -39,12 +39,17 @@ export function ensureThreeChoices(event: GameEvent): GameEvent {
 
 export function withRiskAndThree(
   event: GameEvent,
-  negativeFactory: (choiceId: string) => EventChoice['outcomes'][number]['effects'],
+  negativeFactory: (
+    choiceId: string,
+    choiceText?: string,
+  ) => EventChoice['outcomes'][number]['effects'],
   badChance = 0.18,
 ): GameEvent {
   const base = ensureThreeChoices(event);
   return {
     ...base,
-    choices: base.choices.map((ch) => enrichChoiceWithRisk(ch, negativeFactory(ch.id), badChance)),
+    choices: base.choices.map((ch) =>
+      enrichChoiceWithRisk(ch, negativeFactory(ch.id, ch.text), badChance),
+    ),
   };
 }

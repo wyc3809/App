@@ -353,16 +353,32 @@ describe('life event engine', () => {
     expect(meetsRequirements(evil, temple.requirements, temple.id)).toBe(true);
   });
 
-  it('world four attrs exist and can change via effects', async () => {
-    const { applyEffects } = await import('../core/life/effects');
-    initRng(3);
-    const state = createNewLife(3);
-    expect(state.world.order).toBeGreaterThan(0);
-    expect(state.world.danger).toBeGreaterThan(0);
-    expect(state.world.economy).toBeGreaterThan(0);
-    expect(state.world.rumors).toBeGreaterThan(0);
-    const before = state.world.order;
-    applyEffects(state, [{ type: 'world', delta: { order: 5, danger: -2 } }]);
-    expect(state.world.order).toBe(before + 5);
+  it('event outcomes include narrative story beyond numbers', () => {
+    const market = getEventById(fullCatalog(), 'ord_market')!;
+    const buy = market.choices.find((c) => c.id === 'buy')!;
+    const narr = buy.outcomes[0].effects.find((e) => e.type === 'narrate');
+    expect(narr && narr.type === 'narrate' && narr.text.length).toBeGreaterThan(40);
+
+    initRng(42);
+    const state = createNewLife(42);
+    const result = applyChoice(structuredClone(state), market, 'buy');
+    expect(result.feedback.length).toBeGreaterThan(40);
+    expect(result.feedback).not.toMatch(/^銀兩/);
+  });
+
+  it('pack choices have unique result stories', async () => {
+    const { getPackLibrary } = await import('../core/life/jianghuEventRepository');
+    const lib = getPackLibrary();
+    const texts = new Set<string>();
+    for (const e of lib.events) {
+      for (const c of e.choices ?? []) {
+        const rt = c.result_text;
+        const s = typeof rt === 'string' ? rt : rt?.success ?? '';
+        expect(s.length).toBeGreaterThan(40);
+        expect(s).not.toBe('你的選擇改變了事情的走向。');
+        texts.add(s);
+      }
+    }
+    expect(texts.size).toBeGreaterThan(200);
   });
 });

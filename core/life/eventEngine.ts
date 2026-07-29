@@ -19,6 +19,26 @@ import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
 import { isFleeChoice, startCombat } from './combat';
 import { applyChoiceNature } from './nature';
 
+/** 把數值行與故事行分開，故事作主文 */
+function isStatLine(line: string): boolean {
+  return /^(銀兩|氣血|名望|武學|內息|內力|裝備|心性|天下|疲勞|閱事)/.test(line);
+}
+
+function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
+  const story = logs.filter((l) => l && !isStatLine(l));
+  if (!story.length) return logs[0] || fallback;
+  // 去重並以段落拼接
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const s of story) {
+    const t = s.trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    parts.push(t);
+  }
+  return parts.join('\n\n') || fallback;
+}
+
 function enrichLegacyEvent(event: GameEvent): GameEvent {
   if (event.choices.length >= 3 && event.choices.every((c) => c.outcomes.length >= 2)) {
     return event;
@@ -26,7 +46,7 @@ function enrichLegacyEvent(event: GameEvent): GameEvent {
   return withRiskAndThree(
     event,
     () => [
-      { type: 'narrate', text: '事與願違，你吃了暗虧。' },
+      { type: 'narrate', text: '事與願違：你失了分寸，場面翻轉，銀錢與氣血都捱了一記。你把這場教訓嚥進肚裡，改日再走。' },
       { type: 'health', amount: -12 },
       { type: 'money', amount: -5 },
     ],
@@ -152,7 +172,9 @@ export function applyChoice(
       logs.push(`心性有變：${natureLines.join('、')}`);
       deltas.push(...natureLines.map((l) => `心性${l}`));
     }
-    const feedback = logs[0] ?? '戰端已開。';
+    const prelude = `就「${tags.includes('pack') ? '江湖偶遇' : event.title}」一事，你選擇「${choice.text}」。刀光將起，對方已擋在眼前——這一局，要用真功夫說話。`;
+    logs.unshift(prelude);
+    const feedback = buildStoryFeedback(logs, prelude);
     pushChronicle(state, [`「${tags.includes('pack') ? '江湖偶遇' : event.title}」——${choice.text}`, feedback, ...deltas]);
     snapshotRng(state);
     return { state, logs, deltas, feedback, died: false };
@@ -169,7 +191,7 @@ export function applyChoice(
     const resolved = resolvePackOutcomes(state, packChoice);
     logs = [...resolved.logs];
     deltas = [...resolved.deltas];
-    feedback = resolved.feedback;
+    feedback = buildStoryFeedback(logs, resolved.feedback);
     died = resolved.died;
     if (resolved.success) {
       const riskLogs = applyPackRiskTail(state, 0.12);
@@ -209,15 +231,24 @@ export function applyChoice(
         }
       }
     }
-    feedback =
-      logs.find((l) => !/^(銀兩|氣血|名望|武學|內息|內力|裝備|心性)/.test(l)) || logs[0] || '事已了結。';
+    feedback = buildStoryFeedback(logs, '事已了結。');
   }
 
   const natureLines = applyChoiceNature(state, choice.text);
   if (natureLines.length) {
     logs.push(`心性有變：${natureLines.join('、')}`);
     deltas.push(...natureLines.map((l) => `心性${l}`));
+    // 心性句留在 deltas；故事主文不重複塞數值感句子
+    if (!feedback.includes('心性')) {
+      // keep story as-is
+    }
   }
+
+  // 若心性變化後仍要用完整故事，重新彙總一次（排除純數值）
+  feedback = buildStoryFeedback(
+    logs.filter((l) => !l.startsWith('心性有變')),
+    feedback,
+  );
 
   if (tags.includes('combat') || /duel|assassin|bandit|rival/.test(event.id)) {
     // 真交手已改走回合制；逃避選項維持敘事結算

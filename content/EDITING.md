@@ -56,18 +56,15 @@
 - `monthlyBirthChance`：有伴侶時每月機率（刻意偏低）  
 - `minAge` / `maxAge` / `cooldownMonths`
 
-## 怎麼用手機改劇本
+## 事件結果解說
 
-1. 打開對應 JSON，用文字編輯器改標題、正文、選項、效果。  
-2. 把「改了什麼」用訊息告訴 AI，例如：
+每個選項的結果除數值外，應有「故事解說」：
 
-```
-請改 martial/catalog.json：
-- 青雲「破雲刺」的 pierce 改成 0.45，並加上 qiDrain 18
-- 天刀門第四套改名「回風絕刀」，說明改成……
-```
+- 日常／奇遇：寫在 `outcomes[].effects` 的 `{ "type": "narrate", "text": "……" }`
+- 江湖百人包：寫在 `choices[].result_text.success` / `failure`
+- 事與願違分支也要有解說，勿只顯示銀兩／氣血變化
 
-3. AI 會直接改倉庫檔案；重新部署後手機即可玩到新內容。
+修改後告訴 AI「把某某事件甲選結果改成……」即可。
 
 ## 注意
 

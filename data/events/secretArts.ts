@@ -20,7 +20,7 @@ const RAW: GameEvent[] = [
               { type: 'learnSkill', skillId: 'art_stone_palm', name: '裂石殘掌' },
               { type: 'martial', amount: 12 },
               { type: 'maxQi', amount: 20 },
-              { type: 'narrate', text: '掌影入心，內息為之一振。' },
+              { type: 'narrate', text: '你借着半截火折子的光，一筆筆摹下石壁掌譜。枯骨無言，掌影卻在心口反覆敲打。練到第三遍時，內息忽然一振——裂石之意已入筋骨，洞外風聲也像遠了。' },
             ],
           },
         ],
@@ -32,7 +32,7 @@ const RAW: GameEvent[] = [
           {
             effects: [
               { type: 'martial', amount: 4 },
-              { type: 'narrate', text: '你不敢久留，只帶回殘篇日後再研。' },
+              { type: 'narrate', text: '洞裡陰氣太重，你不敢貪功。匆匆把殘篇拓下，收入懷中退出山腹。日光刺眼的一瞬，你知道這份掌譜還要日後慢慢拆，至少今夜活着走出來了。' },
             ],
           },
         ],
@@ -40,7 +40,7 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '怕有詭異，退去',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你退出洞口，風聲如哭。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你總覺得石壁後還有未醒之物，於是轉身退出。洞口風聲嗚咽，像有人在暗處哭泣。你沒有回頭，把詭異留在山腹，把性命留在路上。' }] }],
       },
     ],
   },
@@ -54,14 +54,14 @@ const RAW: GameEvent[] = [
     choices: [
       {
         id: 'accept',
-        text: '拜謝受教',
+        text: 'None',
         outcomes: [
           {
             effects: [
               { type: 'learnSkill', skillId: 'art_bridge_step', name: '斷橋步' },
               { type: 'martial', amount: 10 },
               { type: 'maxHealth', amount: 15 },
-              { type: 'narrate', text: '三招過後，老者已不見踪影。' },
+              { type: 'narrate', text: '雨打石橋，老者只點你三處破綻，又教你三步身法。你依言演過，衣袖已濕透。抬頭再找時，青衣人影已沒入雨幕，只餘橋下水聲——斷橋之步，卻留在了你腿上。' },
             ],
           },
         ],
@@ -73,7 +73,7 @@ const RAW: GameEvent[] = [
           {
             effects: [
               { type: 'martial', amount: 3 },
-              { type: 'narrate', text: '老者一笑，只丟下一句「莫問前程」。' },
+              { type: 'narrate', text: '你追問來歷，老者只笑，袖中拋出一句「莫問前程」。雨更大了，他轉身便走。你沒討到身世，卻把那一笑記得很清楚：江湖人，往往只傳功夫，不傳姓名。' },
             ],
           },
         ],
@@ -81,7 +81,7 @@ const RAW: GameEvent[] = [
       {
         id: 'refuse',
         text: '婉言謝絕',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你拱手退去，雨聲更大。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你婉言謝絕，拱手退去。老者也不勉強，只把斗笠壓低。雨聲忽然更大，像替這段未成的師徒緣蓋上章印。你走下橋時，心裡竟有一絲空落。' }] }],
       },
     ],
   },
@@ -102,7 +102,7 @@ const RAW: GameEvent[] = [
               { type: 'grantGear', gearId: 'divine-xuan-sword' },
               { type: 'learnSkill', skillId: 'art_tomb_sword', name: '無銘劍意' },
               { type: 'martial', amount: 15 },
-              { type: 'narrate', text: '劍出鞘，墓中塵土盡退——神兵在握。' },
+              { type: 'narrate', text: '你握住無銘劍脊，用力一拔。劍鳴如龍吟，墓道塵土竟退開半尺。劍意無形，卻在腕底生出寒意——神兵在握的同時，你也感覺到：這柄劍要的不是主人，是敢試鋒的人。' },
             ],
           },
         ],
@@ -115,7 +115,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'attr', delta: { fuYuan: 3 } },
               { type: 'maxQi', amount: 10 },
-              { type: 'narrate', text: '你只取心法感悟，空手而出。' },
+              { type: 'narrate', text: '你上香三炷，不敢妄取。石台前靜坐片刻，劍意如潮卻不近身。出墓時兩手空空，福緣卻似被地下之物點了一下——有時不拿，才是真正拿住了。' },
             ],
           },
         ],
@@ -123,7 +123,7 @@ const RAW: GameEvent[] = [
       {
         id: 'seal',
         text: '重新封土離開',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你封好墓道，不敢驚動地下之事。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你重新封土，把墓道隱回山壁。手掌沾泥，心卻定了：有些東西沉在地下更好。江湖路上，不是每柄劍都該出鞘。' }] }],
       },
     ],
   },
@@ -144,7 +144,7 @@ const RAW: GameEvent[] = [
               { type: 'learnSkill', skillId: 'art_lake_breath', name: '寒湖吐納' },
               { type: 'maxQi', amount: 35 },
               { type: 'qi', amount: 40 },
-              { type: 'narrate', text: '你借湖心寒息，打通一縷奇經。' },
+              { type: 'narrate', text: '你在岸邊對着湖心吐納。薄冰下似有氣息起伏，寒意沿奇經緩緩遊走。不知過了多久，一縷冰涼卻清明的內息貫穿丹田——寒湖吐納，就此落子。' },
             ],
           },
         ],
@@ -157,7 +157,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'health', amount: -20 },
               { type: 'martial', amount: 6 },
-              { type: 'narrate', text: '冰水刺骨，你只撈到一塊刻字玉佩。' },
+              { type: 'narrate', text: '你破冰探入，湖水刺骨如刀。深處幽暗，只撈到一塊刻字玉佩，字跡已被水蝕。上岸時牙齒打顫，武意卻因這場硬闖多了幾分狠勁。' },
             ],
           },
         ],
@@ -165,7 +165,7 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '恐有蹊蹺，離去',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你遠遠看了一眼，轉身回鎮。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你總覺得湖心不似善地，遠遠看了一眼便轉身回鎮。冬風刮面，平安比奇遇更值錢——至少此刻如此。' }] }],
       },
     ],
   },
@@ -185,7 +185,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'learnSkill', skillId: 'art_silk_hand', name: '柔絲手' },
               { type: 'martial', amount: 8 },
-              { type: 'narrate', text: '帛書所載竟是化力手法，你越讀越入迷。' },
+              { type: 'narrate', text: '你在客棧展開油污帛書。字跡歪斜，卻句句是化力卸勁的門道。讀到夜半，手指不自覺在桌沿比劃——柔絲手的影子，已悄悄纏上你的關節。' },
             ],
           },
         ],
@@ -197,7 +197,7 @@ const RAW: GameEvent[] = [
           {
             effects: [
               { type: 'money', amount: 25 },
-              { type: 'narrate', text: '書商只當它是舊物，給了你一筆小錢。' },
+              { type: 'narrate', text: '你拿到市集問價，書商嗅了嗅，只當舊物，給了一筆小錢。帛書易主的一瞬，你說不清是鬆了口氣，還是丟了機緣。銀兩入袋，心事卻還在。' },
             ],
           },
         ],
@@ -205,7 +205,7 @@ const RAW: GameEvent[] = [
       {
         id: 'burn',
         text: '恐是禍端，付之一炬',
-        outcomes: [{ effects: [{ type: 'narrate', text: '火光一閃，紙灰隨風散盡。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你怕這殘卷是禍端，一火焚之。火光一閃，紙灰隨風散盡。有人會說可惜，你只覺得夜色忽然乾淨了些。' }] }],
       },
     ],
   },
@@ -225,7 +225,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'learnSkill', skillId: 'art_nine_shadow', name: '九影迷踪步' },
               { type: 'martial', amount: 11 },
-              { type: 'narrate', text: '你記下步位，身法忽然輕了半寸。' },
+              { type: 'narrate', text: '你藏在崖側暗處，把影中人的步位一寸寸記下。暮色收盡時，拳影散了，你自己演過半套，發覺身法輕了半寸——九影迷踪，原來是從影子裡偷來的路。' },
             ],
           },
         ],
@@ -238,7 +238,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'reputation', amount: 2 },
               { type: 'martial', amount: 4 },
-              { type: 'narrate', text: '影中人只點你一處肩線，不肯多言。' },
+              { type: 'narrate', text: '你上前請教，影中人停拳，只伸手點你肩線一處，便轉身沒入林影。不肯多言，卻已把要害說完。你揉着肩膀下山，名望與悟處都多了一點。' },
             ],
           },
         ],
@@ -246,7 +246,7 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '不便打擾，悄然退去',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你留下餘影在心，轉身下山。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你不便打擾，悄然退去。崖上拳影仍在，你把那餘影收進心裡，轉身下山——有些功夫，看過一遍也算見過世面。' }] }],
       },
     ],
   },
@@ -267,7 +267,7 @@ const RAW: GameEvent[] = [
               { type: 'learnSkill', skillId: 'art_thunder_blade', name: '驚雷刀' },
               { type: 'martial', amount: 10 },
               { type: 'grantGear', gearId: 'iron-blade' },
-              { type: 'narrate', text: '譜中刀意如雷，你越練越覺腕底生風。' },
+              { type: 'narrate', text: '你收下梁上拳譜，回房苦練。譜中刀意如雷，越打越覺得腕底生風；連同寺中那柄鐵刀，也像突然有了脾氣。鐘聲再響時，你已不是空手進寺的人。' },
             ],
           },
         ],
@@ -280,7 +280,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'maxQi', amount: 15 },
               { type: 'attr', delta: { fuYuan: 2 } },
-              { type: 'narrate', text: '鐘聲再響一記，你內息竟平穩許多。' },
+              { type: 'narrate', text: '你把拳譜重新供上，只求心安。鐘聲再響一記，梁塵微落，你內息竟平穩許多。福緣這種東西，有時不是搶來的，是放回去的。' },
             ],
           },
         ],
@@ -288,7 +288,7 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '不敢久留，離寺',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你退出山門，回望時寺中已無聲。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你不敢久留，退出山門。回望荒寺，鐘聲已止，連香火味都淡了。山路上只有你的腳步——有些奇遇，適可而止才走得遠。' }] }],
       },
     ],
   },
@@ -309,7 +309,7 @@ const RAW: GameEvent[] = [
               { type: 'learnSkill', skillId: 'art_void_breath', name: '空冥吐納' },
               { type: 'maxQi', amount: 30 },
               { type: 'qi', amount: 35 },
-              { type: 'narrate', text: '隱士只教半炷香，你已覺丹田溫熱。' },
+              { type: 'narrate', text: '雪夜茅屋，隱士煮雪點茶，又指點你吐納滯處。只教半炷香，你已覺丹田溫熱，空冥之息如雪融入脈。門外大雪仍封路，屋內卻像另有春天。' },
             ],
           },
         ],
@@ -322,7 +322,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'health', amount: 20 },
               { type: 'attr', delta: { meiLi: 2 } },
-              { type: 'narrate', text: '一碗熱湯入腹，你氣色回了許多。' },
+              { type: 'narrate', text: '你不談武學，只與隱士敘些家常。一碗熱湯入腹，凍僵的手指回了血色。有時候，活着走完雪路，比多學一招更要緊。' },
             ],
           },
         ],
@@ -330,7 +330,7 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '道謝後繼續趕路',
-        outcomes: [{ effects: [{ type: 'narrate', text: '雪更大了，茅屋很快被白茫茫吞沒。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你道謝後繼續趕路。回頭看時，茅屋已被大雪吞沒，像從未存在。雪地上只留你一行腳印——遇見過，便不算空走。' }] }],
       },
     ],
   },
@@ -348,7 +348,7 @@ const RAW: GameEvent[] = [
         outcomes: [
           {
             effects: [
-              { type: 'narrate', text: '茶棚外讓出空地，戰端將起。' },
+              { type: 'narrate', text: '你應下比試，茶棚外人群讓出空地。譏諷你的人搓拳上場，圍觀者起哄。刀光未出，風先緊了——這一局，要用真功夫說話。' },
               { type: 'martial', amount: 2 },
             ],
           },
@@ -361,7 +361,7 @@ const RAW: GameEvent[] = [
           {
             effects: [
               { type: 'reputation', amount: 3 },
-              { type: 'narrate', text: '你拱手認弱，對方反倒不好意思，雙方罷手。' },
+              { type: 'narrate', text: '你拱手認弱，把場面讓下去。對方愣了愣，反倒不好意思，雙方罷手。圍觀者有人失望，也有人點頭：能收能放，也是一種厲害。' },
             ],
           },
         ],
@@ -369,7 +369,7 @@ const RAW: GameEvent[] = [
       {
         id: 'leave',
         text: '不與爭鋒，離席',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你放下茶錢離席，背後有人嗤笑。' }, { type: 'reputation', amount: -1 }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你不與爭鋒，放下茶錢離席。背後有嗤笑傳來，你當作風聲。面子薄了半分，麻煩卻少了一場——今日的路，你還想走遠些。' }, { type: 'reputation', amount: -1 }] }],
       },
     ],
   },
@@ -384,7 +384,7 @@ const RAW: GameEvent[] = [
       {
         id: 'chase',
         text: '追出夜巷',
-        outcomes: [{ effects: [{ type: 'narrate', text: '你提氣追出，夜巷中刀光一閃。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你提氣追出客棧，夜巷狹長，黑影折轉。刀光忽然一閃，逼得你不得不應——盜譜之人不只會跑，還會動手。' }] }],
       },
       {
         id: 'trap',
@@ -394,7 +394,7 @@ const RAW: GameEvent[] = [
             effects: [
               { type: 'money', amount: 15 },
               { type: 'martial', amount: 3 },
-              { type: 'narrate', text: '你抓住盜者手腕，對方丟下一袋碎銀逃走。' },
+              { type: 'narrate', text: '你假裝入睡，呼吸放緩。黑影伸手的一瞬，你反扣其腕。對方吃痛，丟下一袋碎銀便逃。殘譜仍在枕下，夜色裡你聽見自己的心跳。' },
             ],
           },
         ],
@@ -402,7 +402,7 @@ const RAW: GameEvent[] = [
       {
         id: 'yell',
         text: '大喊有賊',
-        outcomes: [{ effects: [{ type: 'narrate', text: '客棧喧鬧起來，黑影早已無踪。' }] }],
+        outcomes: [{ effects: [{ type: 'narrate', text: '你大喊有賊，客棧立刻喧鬧起來。燈火亂晃，黑影早已無踪。譜還在，人已散——有時候喊一聲，比追一程更管用。' }] }],
       },
     ],
   },
@@ -411,8 +411,11 @@ const RAW: GameEvent[] = [
 export const SECRET_ART_EVENTS: GameEvent[] = RAW.map((ev) =>
   withRiskAndThree(
     ev,
-    () => [
-      { type: 'narrate', text: '事與願違，你受了暗傷。' },
+    (_id, text = '此舉') => [
+      {
+        type: 'narrate',
+        text: `奇遇之中你欲「${text}」，卻踏空一步：暗勁反噬，內息紊亂。事與願違之後，你扶牆站穩，把這場驚險記進傷口。`,
+      },
       { type: 'health', amount: -18 },
       { type: 'condition', id: 'internal' },
     ],

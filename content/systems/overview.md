@@ -41,5 +41,6 @@
 ## 劇本／事件
 
 - 主線章節：`story/chapters.json`
-- 隨機江湖包：`events/jianghu_random_events_100.json`
+- 隨機江湖包：`events/jianghu_random_events_100.json`（每選有 success／failure 解說）
+- 日常／奇遇結果皆含 `narrate` 故事段，結果浮層先顯示解說，再列數值得失
 - 編輯方式見根目錄 `EDITING.md`
