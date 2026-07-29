@@ -84,6 +84,24 @@ describe('life event engine', () => {
     expect(market.choices.every((c) => c.outcomes.length >= 2)).toBe(true);
   });
 
+  it('combat moves get role tags without capping count', async () => {
+    const { combatMoveRole, formatCombatMoveCompact, BASIC_STRIKE, listExternalMovesForSkills } =
+      await import('../data/skills/catalog');
+    expect(combatMoveRole(BASIC_STRIKE)).toBe('普');
+    const stone = listExternalMovesForSkills(['art_stone_palm']).find((m) => m.id === 'mv_stone_palm')!;
+    expect(combatMoveRole(stone)).toBe('破');
+    expect(formatCombatMoveCompact(stone)).toMatch(/破/);
+    const many = listExternalMovesForSkills([
+      'art_river_fist',
+      'art_stone_palm',
+      'art_rain_sword',
+      'art_moon_sword',
+      'art_thunder_blade',
+      'art_shadow_needle',
+    ]);
+    expect(many.filter((m) => !m.id.startsWith('sys_') && m.id !== 'basic_strike').length).toBeGreaterThan(4);
+  });
+
   it('practice page actions are rumors/heal/equip; wander arts appear on month flip', async () => {
     const { PRACTICE_ACTIONS, performPracticeAction } = await import('../core/life/actions');
     const { PRACTICE_WANDER_EVENTS } = await import('../data/events/practiceWander');

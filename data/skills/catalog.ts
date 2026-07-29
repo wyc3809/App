@@ -214,12 +214,44 @@ export function formatCombatMoveEffectBits(m: CombatMoveDef): string[] {
   return fx;
 }
 
+/** 招式戰場角色：用於篩選與短標，非裝備欄上限 */
+export type CombatMoveRole = '普' | '破' | '連' | '控' | '耗' | '殺' | '巧' | '守' | '蓄' | '遁';
+
+export const COMBAT_TECHNIQUE_ROLES: CombatMoveRole[] = ['破', '連', '控', '耗', '殺', '巧', '普'];
+
+export function combatMoveRole(m: CombatMoveDef): CombatMoveRole {
+  if (m.id === BASIC_STRIKE.id) return '普';
+  if (m.id === GUARD_STANCE.id) return '守';
+  if (m.id === CHARGE_STANCE.id) return '蓄';
+  if (m.id === FLEE_MOVE.id) return '遁';
+  if ((m.stunChance ?? 0) > 0 || (m.applyBlind ?? 0) > 0) return '控';
+  if ((m.bleedChance ?? 0) > 0 && (m.power ?? 0) < 1.45) return '控';
+  if ((m.pierce ?? 0) > 0 || (m.defenseBreak ?? 0) > 0) return '破';
+  if ((m.multiHit ?? 1) > 1) return '連';
+  if ((m.qiDrain ?? 0) > 0) return '耗';
+  if ((m.lifesteal ?? 0) > 0 || (m.healSelf ?? 0) > 0 || (m.hitBonus ?? 0) >= 0.08) return '巧';
+  if ((m.power ?? 0) >= 1.45) return '殺';
+  return '殺';
+}
+
 export function formatCombatMoveSummary(m: CombatMoveDef, effPower?: number): string {
   const bits: string[] = [];
   bits.push(m.qiCost > 0 ? `耗內力 ${m.qiCost}` : '無耗');
   if (m.power > 0) bits.push(`威能 ${(effPower ?? m.power).toFixed(2)} 倍`);
   const fx = formatCombatMoveEffectBits(m);
   if (fx.length) bits.push(fx.join('、'));
+  return bits.join(' · ');
+}
+
+/** 戰鬥清單用短標：內力 · 角色 · 主特效 */
+export function formatCombatMoveCompact(m: CombatMoveDef, effPower?: number): string {
+  const role = combatMoveRole(m);
+  const bits: string[] = [];
+  bits.push(m.qiCost > 0 ? `${m.qiCost}` : '0');
+  bits.push(role);
+  if (m.power > 0) bits.push(`×${(effPower ?? m.power).toFixed(1)}`);
+  const fx = formatCombatMoveEffectBits(m);
+  if (fx[0]) bits.push(fx[0]);
   return bits.join(' · ');
 }
 

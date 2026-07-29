@@ -22,10 +22,13 @@ import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
 import {
-  formatCombatMoveSummary,
+  COMBAT_TECHNIQUE_ROLES,
+  combatMoveRole,
+  formatCombatMoveCompact,
   formatSkillEffects,
   getSkillDef,
   isCombatActionMove,
+  type CombatMoveRole,
 } from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
 import { displayChoiceText } from '@core/life/playerText';
@@ -37,6 +40,7 @@ type Props = {
 };
 
 type PracticeView = 'main' | 'sect';
+type CombatRoleFilter = 'all' | CombatMoveRole;
 
 const RARITY_ZH: Record<string, string> = {
   common: '凡',
@@ -63,6 +67,9 @@ export function InkPlayScreen({ state }: Props) {
   const flashLines = useLifeStore((s) => s.flashLines);
   const clearSeal = useLifeStore((s) => s.clearSeal);
   const [practiceView, setPracticeView] = useState<PracticeView>('main');
+  const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
+  const [combatLogOpen, setCombatLogOpen] = useState(false);
+  const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sealText) return;
@@ -76,6 +83,17 @@ export function InkPlayScreen({ state }: Props) {
   useEffect(() => {
     if ((state.tab ?? 'home') !== 'practice') setPracticeView('main');
   }, [state.tab]);
+
+  useEffect(() => {
+    setCombatRoleFilter('all');
+    setCombatLogOpen(false);
+    setExpandedMoveId(null);
+  }, [state.pendingCombat?.id]);
+
+  useEffect(() => {
+    // 新戰報出現時預設看置頂一句，完整 log 保持摺疊
+    if (state.pendingCombat?.log?.length) setCombatLogOpen(false);
+  }, [state.pendingCombat?.log?.length]);
 
   const c = state.character;
   const month = state.month ?? 1;
@@ -98,6 +116,35 @@ export function InkPlayScreen({ state }: Props) {
   const moves = combat ? getPlayerMoves(state) : [];
   const techniqueMoves = moves.filter((mv) => !isCombatActionMove(mv.id));
   const actionMoves = moves.filter((mv) => isCombatActionMove(mv.id));
+  const equippedWeapon = equipment.weapon ? getGearDef(equipment.weapon) : undefined;
+  const sortedTechniques = [...techniqueMoves].sort((a, b) => {
+    const skillOf = (moveId: string) => c.skills.find((id) => getSkillDef(id)?.move?.id === moveId);
+    const score = (mv: (typeof techniqueMoves)[number]) => {
+      const short = combat ? combat.player.qi < mv.qiCost : true;
+      const sid = skillOf(mv.id);
+      const def = sid ? getSkillDef(sid) : undefined;
+      const match = Boolean(def?.weaponKind && equippedWeapon?.weaponKind === def.weaponKind);
+      let s = 0;
+      if (!short) s += 100;
+      if (match) s += 40;
+      if (mv.id === 'basic_strike') s += 10;
+      s += (mv.power ?? 0) * 5;
+      return s;
+    };
+    return score(b) - score(a);
+  });
+  const visibleTechniques =
+    combatRoleFilter === 'all'
+      ? sortedTechniques
+      : sortedTechniques.filter((mv) => combatMoveRole(mv) === combatRoleFilter);
+  const roleCounts = COMBAT_TECHNIQUE_ROLES.reduce(
+    (acc, role) => {
+      acc[role] = techniqueMoves.filter((mv) => combatMoveRole(mv) === role).length;
+      return acc;
+    },
+    {} as Record<CombatMoveRole, number>,
+  );
+  const latestBeat = combat?.log?.length ? combat.log[combat.log.length - 1] : '';
   const onPracticeTab = tab === 'practice';
   const onHomeTab = tab === 'home';
   const canAdvanceMonth =
@@ -469,9 +516,25 @@ export function InkPlayScreen({ state }: Props) {
           <div className="ink-combat-bars">
             <div>
               <div className="ink-vitals-label">
+                <span>{combat.foe.name}</span>
+                <span>
+                  氣血 {Math.round(combat.foe.hp)}/{combat.foe.maxHp}
+                </span>
+              </div>
+              <div className="ink-bar">
+                <div
+                  className="ink-bar-fill ink-bar-fill--foe"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, (combat.foe.hp / combat.foe.maxHp) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="ink-vitals-label">
                 <span>{combat.player.name}</span>
                 <span>
-                  氣血 {Math.round(combat.player.hp)}/{combat.player.maxHp} · 內息{' '}
+                  氣血 {Math.round(combat.player.hp)}/{combat.player.maxHp} · 內力{' '}
                   {Math.round(combat.player.qi)}/{combat.player.maxQi}
                 </span>
               </div>
@@ -483,128 +546,192 @@ export function InkPlayScreen({ state }: Props) {
                   }}
                 />
               </div>
-            </div>
-            <div>
-              <div className="ink-vitals-label">
-                <span>{combat.foe.name}</span>
-                <span>
-                  氣血 {Math.round(combat.foe.hp)}/{combat.foe.maxHp}
-                </span>
-              </div>
-              <div className="ink-bar">
+              <div className="ink-bar ink-bar--qi">
                 <div
-                  className="ink-bar-fill"
+                  className="ink-bar-fill ink-bar-fill--qi"
                   style={{
-                    width: `${Math.max(0, Math.min(100, (combat.foe.hp / combat.foe.maxHp) * 100))}%`,
+                    width: `${Math.max(0, Math.min(100, (combat.player.qi / Math.max(1, combat.player.maxQi)) * 100))}%`,
                   }}
                 />
               </div>
             </div>
           </div>
-          <p className="ink-note">
-            {combat.phase === 'resolve'
-              ? '勝負已分——如何處置落敗之人，亦會留在心性裡。'
-              : '招式耗內力；行動可守勢回息、蓄勢加威或抽身離場。戰後內力不自動回滿。'}
-          </p>
-          {combat.phase === 'resolve' ? (
-            <div className="ink-choice-list ink-combat-resolve">
-              {(
-                [
-                  ['kill', '殺', '殺死', '永絕後患，戾氣難消', dominant === 'xia' ? '俠心較重，下手需自問' : ''],
-                  ['release', '放', '放走', '留其一命，寬恕在胸', dominant === 'e' ? '惡念未消，放人亦是克制' : ''],
-                  ['stun', '暈', '擊暈', '點穴制住，不傷性命', '戰利或略薄，心性較穩'],
-                ] as const
-              ).map(([id, mark, label, hint, extra], i) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="ink-choice"
-                  style={{ ['--i' as string]: i }}
-                  onClick={() => {
-                    playInkTap();
-                    combatResolveFoe(id);
-                  }}
-                >
-                  <span className="ink-choice-mark">{mark}</span>
-                  <span className="ink-combat-move">
-                    <strong>{label}</strong>
-                    <em>
-                      {hint}
-                      {extra ? ` · ${extra}` : ''}
-                    </em>
-                  </span>
-                </button>
+
+          {latestBeat && (
+            <p key={`${combat.turn}-${latestBeat.slice(0, 16)}`} className="ink-combat-beat">
+              {latestBeat}
+            </p>
+          )}
+
+          <button
+            type="button"
+            className="ink-combat-log-toggle"
+            onClick={() => setCombatLogOpen((v) => !v)}
+          >
+            {combatLogOpen ? '收起戰報' : `戰報（${combat.log.length}）`}
+          </button>
+          {combatLogOpen && (
+            <ul className="ink-combat-log">
+              {combat.log.slice(-10).map((line, i) => (
+                <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
               ))}
-            </div>
-          ) : (
-            <div className="ink-choice-list ink-combat-moves">
-              <p className="ink-combat-group-label">招式</p>
-              {techniqueMoves.map((mv, i) => {
-                const short = combat.player.qi < mv.qiCost;
-                const ownerSkill = c.skills.find((id) => getSkillDef(id)?.move?.id === mv.id);
-                const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
-                const effPower = mv.power * (ownerSkill ? rankPowerMult(rank) : 1);
-                return (
+            </ul>
+          )}
+
+          {combat.phase === 'resolve' ? (
+            <>
+              <p className="ink-note">勝負已分——如何處置落敗之人，亦會留在心性裡。</p>
+              <div className="ink-choice-list ink-combat-resolve">
+                {(
+                  [
+                    ['kill', '殺', '殺死', '永絕後患，戾氣難消', dominant === 'xia' ? '俠心較重，下手需自問' : ''],
+                    ['release', '放', '放走', '留其一命，寬恕在胸', dominant === 'e' ? '惡念未消，放人亦是克制' : ''],
+                    ['stun', '暈', '擊暈', '點穴制住，不傷性命', '戰利或略薄，心性較穩'],
+                  ] as const
+                ).map(([id, mark, label, hint, extra], i) => (
                   <button
-                    key={mv.id}
+                    key={id}
                     type="button"
                     className="ink-choice"
-                    disabled={combat.phase !== 'player' || short}
                     style={{ ['--i' as string]: i }}
                     onClick={() => {
                       playInkTap();
-                      combatMove(mv.id);
-                    }}
-                  >
-                    <span className="ink-choice-mark">{mv.id === 'basic_strike' ? '普' : '招'}</span>
-                    <span className="ink-combat-move">
-                      <strong>{mv.name}</strong>
-                      <em>
-                        {formatCombatMoveSummary(mv, effPower)}
-                        {ownerSkill && rank > 0 ? ' · 階位加持' : ''}
-                        {short ? ' · 內力不足' : ''}
-                      </em>
-                      <small>{mv.description}</small>
-                    </span>
-                  </button>
-                );
-              })}
-              <p className="ink-combat-group-label">行動</p>
-              {actionMoves.map((mv, i) => {
-                const short = combat.player.qi < mv.qiCost;
-                const mark =
-                  mv.id === GUARD_STANCE.id ? '守' : mv.id === CHARGE_STANCE.id ? '蓄' : '遁';
-                return (
-                  <button
-                    key={mv.id}
-                    type="button"
-                    className="ink-choice"
-                    disabled={combat.phase !== 'player' || short}
-                    style={{ ['--i' as string]: techniqueMoves.length + i }}
-                    onClick={() => {
-                      playInkTap();
-                      combatMove(mv.id);
+                      combatResolveFoe(id);
                     }}
                   >
                     <span className="ink-choice-mark">{mark}</span>
                     <span className="ink-combat-move">
-                      <strong>{mv.name}</strong>
+                      <strong>{label}</strong>
                       <em>
-                        {formatCombatMoveSummary(mv)}
-                        {short ? ' · 內力不足' : ''}
+                        {hint}
+                        {extra ? ` · ${extra}` : ''}
                       </em>
-                      <small>{mv.description}</small>
                     </span>
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="ink-note">
+                以角色篩選招式（全部可選，不設數量上限）；兵刃契合與內力足夠者排前。行動在下方。
+              </p>
+              <div className="ink-combat-filters" role="tablist" aria-label="招式篩選">
+                <button
+                  type="button"
+                  className={`ink-combat-filter${combatRoleFilter === 'all' ? ' ink-combat-filter--on' : ''}`}
+                  onClick={() => setCombatRoleFilter('all')}
+                >
+                  全部 {techniqueMoves.length}
+                </button>
+                {COMBAT_TECHNIQUE_ROLES.filter((role) => (roleCounts[role] ?? 0) > 0).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`ink-combat-filter${combatRoleFilter === role ? ' ink-combat-filter--on' : ''}`}
+                    onClick={() => setCombatRoleFilter(role)}
+                  >
+                    {role} {roleCounts[role]}
+                  </button>
+                ))}
+              </div>
+
+              <div className="ink-choice-list ink-combat-moves">
+                {visibleTechniques.map((mv, i) => {
+                  const short = combat.player.qi < mv.qiCost;
+                  const ownerSkill = c.skills.find((id) => getSkillDef(id)?.move?.id === mv.id);
+                  const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
+                  const effPower = mv.power * (ownerSkill ? rankPowerMult(rank) : 1);
+                  const role = combatMoveRole(mv);
+                  const def = ownerSkill ? getSkillDef(ownerSkill) : undefined;
+                  const matched = Boolean(
+                    def?.weaponKind && equippedWeapon?.weaponKind === def.weaponKind,
+                  );
+                  const expanded = expandedMoveId === mv.id;
+                  return (
+                    <div key={mv.id} className="ink-combat-move-row">
+                      <button
+                        type="button"
+                        className={`ink-choice ink-choice--compact${matched ? ' ink-choice--match' : ''}`}
+                        disabled={combat.phase !== 'player' || short}
+                        style={{ ['--i' as string]: i }}
+                        onClick={() => {
+                          playInkTap();
+                          combatMove(mv.id);
+                        }}
+                      >
+                        <span className="ink-choice-mark">{role}</span>
+                        <span className="ink-combat-move">
+                          <strong>
+                            {mv.name}
+                            {matched ? ' · 契' : ''}
+                            {short ? ' · 不足' : ''}
+                          </strong>
+                          <em>{formatCombatMoveCompact(mv, effPower)}</em>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="ink-combat-detail-btn"
+                        aria-expanded={expanded}
+                        onClick={() => setExpandedMoveId(expanded ? null : mv.id)}
+                      >
+                        {expanded ? '收' : '詳'}
+                      </button>
+                      {expanded && (
+                        <p className="ink-combat-move-detail">
+                          {mv.description}
+                          {ownerSkill && rank > 0 ? ' · 階位加持' : ''}
+                          {def?.weaponKind
+                            ? ` · 宜${WEAPON_KIND_LABEL[def.weaponKind] ?? def.weaponKind}`
+                            : ''}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+                {visibleTechniques.length === 0 && (
+                  <p className="ink-note">此類暫無招式，可切回「全部」。</p>
+                )}
+              </div>
+
+              <div className="ink-combat-actions">
+                <p className="ink-combat-group-label">行動</p>
+                <div className="ink-combat-action-bar">
+                  {actionMoves.map((mv) => {
+                    const short = combat.player.qi < mv.qiCost;
+                    const mark =
+                      mv.id === GUARD_STANCE.id ? '守' : mv.id === CHARGE_STANCE.id ? '蓄' : '遁';
+                    return (
+                      <button
+                        key={mv.id}
+                        type="button"
+                        className="ink-combat-action"
+                        disabled={combat.phase !== 'player' || short}
+                        title={mv.description}
+                        onClick={() => {
+                          playInkTap();
+                          combatMove(mv.id);
+                        }}
+                      >
+                        <strong>
+                          {mark} {mv.name}
+                        </strong>
+                        <span>
+                          {mv.id === GUARD_STANCE.id
+                            ? '回息守中'
+                            : mv.id === CHARGE_STANCE.id
+                              ? `耗${mv.qiCost} · 下一擊加威`
+                              : '伺機離場'}
+                          {short ? ' · 不足' : ''}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
-          <ul className="ink-combat-log">
-            {combat.log.slice(-6).map((line, i) => (
-              <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
-            ))}
-          </ul>
         </section>
       )}
 
