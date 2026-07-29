@@ -72,8 +72,8 @@ describe('life event engine', () => {
     expect(state.character.age).toBe(16);
     expect(state.character.birthplace).toBe('千燈鎮');
     expect(state.month).toBe(1);
-    expect(state.specialEventCountdown).toBeGreaterThanOrEqual(5);
-    expect(state.specialEventCountdown).toBeLessThanOrEqual(30);
+    expect(state.specialEventCountdown).toBeGreaterThanOrEqual(3);
+    expect(state.specialEventCountdown).toBeLessThanOrEqual(15);
     expect(state.character.maxHealth).toBeGreaterThan(100);
     expect(state.character.maxQi).toBeGreaterThan(100);
   });

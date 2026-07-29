@@ -136,7 +136,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     sects,
     world: makeWorldState(),
     story: makeStoryState(),
-    specialEventCountdown: rng.nextInt(5, 30),
+    specialEventCountdown: rng.nextInt(3, 15),
     worldFlags: {},
     completedEvents: [],
     pending: null,

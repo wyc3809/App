@@ -278,7 +278,7 @@ export function applyChoice(
 
 function shouldTriggerSpecial(state: LifeGameState): boolean {
   if (!Number.isFinite(state.specialEventCountdown)) {
-    state.specialEventCountdown = getRng().nextInt(5, 30);
+    state.specialEventCountdown = getRng().nextInt(3, 15);
   }
   state.specialEventCountdown -= 1;
   return state.specialEventCountdown <= 0;
@@ -343,7 +343,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
       event = weightedPick(state, secretPool);
     }
     kind = 'special';
-    state.specialEventCountdown = rng.nextInt(5, 30);
+    state.specialEventCountdown = rng.nextInt(3, 15);
   }
 
   if (!event) {
