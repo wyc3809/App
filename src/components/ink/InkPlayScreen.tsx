@@ -19,6 +19,7 @@ import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@co
 import { getPlayerMoves } from '@core/life/combat';
 import { formatSkillEffects, getSkillDef } from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
+import { displayChoiceText } from '@core/life/playerText';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -259,6 +260,9 @@ export function InkPlayScreen({ state }: Props) {
                     <strong>{skillDisplay(c, id)}</strong>
                     {def?.kind === 'internal' && def.passive ? (
                       <span className="ink-skill-passive"> · 內功被動</span>
+                    ) : null}
+                    {def?.kind === 'qinggong' && def.passive ? (
+                      <span className="ink-skill-passive"> · 輕功身法</span>
                     ) : null}
                     {def?.kind === 'external' && def.move ? (
                       <span className="ink-skill-passive"> · 戰招「{def.move.name}」</span>
@@ -589,7 +593,7 @@ export function InkPlayScreen({ state }: Props) {
                 onClick={() => choose(ch.id)}
               >
                 <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
-                {ch.text}
+                {displayChoiceText(ch.text, ch.id)}
               </button>
             ))}
           </div>

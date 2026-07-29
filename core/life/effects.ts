@@ -6,6 +6,7 @@ import { artForStanding } from '@data/content/packs';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, ensureGear } from './equipment';
 import { addCondition } from './monthly';
 import { learnMartialArt } from './flavor';
+import { displaySkillName } from './playerText';
 import { applyNatureDelta, ensureNature } from './nature';
 
 export interface EffectResult {
@@ -122,7 +123,7 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
       case 'learnSkill': {
         const line = learnMartialArt(state, eff.skillId, eff.name);
         logs.push(line);
-        deltas.push(`武功＋${eff.name ?? eff.skillId}`);
+        deltas.push(`武功＋${displaySkillName(eff.skillId, eff.name)}`);
         break;
       }
       case 'grantGear': {

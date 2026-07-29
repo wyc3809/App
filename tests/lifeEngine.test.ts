@@ -208,6 +208,12 @@ describe('life event engine', () => {
     expect(state.character.gear).toContain('sleeve-darts');
   });
 
+  it('displayChoiceText hides placeholder English', async () => {
+    const { displayChoiceText } = await import('../core/life/playerText');
+    expect(displayChoiceText('None', 'accept')).toBe('應允');
+    expect(displayChoiceText('拱手請教', 'accept')).toBe('拱手請教');
+  });
+
   it('turn-based combat uses external moves and internal passives', async () => {
     const { startCombat, playerCombatTurn, getPlayerMoves } = await import('../core/life/combat');
     initRng(5);

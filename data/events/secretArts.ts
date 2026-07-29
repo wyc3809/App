@@ -54,7 +54,7 @@ const RAW: GameEvent[] = [
     choices: [
       {
         id: 'accept',
-        text: 'None',
+        text: '拱手請教',
         outcomes: [
           {
             effects: [

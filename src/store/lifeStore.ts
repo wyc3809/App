@@ -6,6 +6,8 @@ import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexed
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
 import { playerCombatTurn, getPlayerMoves } from '@core/life/combat';
+import { displayChoiceText } from '@core/life/playerText';
+import { BASIC_STRIKE } from '@data/skills/catalog';
 
 const CATALOG = fullCatalog();
 
@@ -128,7 +130,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         ? null
         : {
             title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
-            choiceText: choice?.text ?? choiceId,
+            choiceText: displayChoiceText(choice?.text, choiceId),
             feedback: result.feedback,
             deltas: result.deltas,
           },
@@ -189,7 +191,9 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       lastResult: ended
         ? {
             title: state.pendingCombat.title,
-            choiceText: getPlayerMoves(state).find((m) => m.id === moveId)?.name ?? moveId,
+            choiceText:
+              getPlayerMoves(state).find((m) => m.id === moveId)?.name ??
+              (moveId === BASIC_STRIKE.id ? BASIC_STRIKE.name : displayChoiceText(moveId)),
             feedback: logs.find((l) => /戰勝|敗於|力竭/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
             deltas: logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境/.test(l)),
           }
