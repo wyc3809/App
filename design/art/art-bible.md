@@ -48,9 +48,13 @@
 ## 7. VFX & Motion
 
 - 入場：墨暈淡入（opacity + slight blur）
-- 抉擇：朱砂印輕蓋（scale 0.85→1）
-- 翻年：紙面輕微上移淡出／淡入
+- 抉擇：批註式錯落入 + 左側筆觸加深；朱砂印輕蓋（scale 0.85→1）
+- 翻月：紙面輕微上移淡出／淡入（僅年／月變更，分卷不整頁 remount）
+- 分卷：題簽 wash-in（clip）
+- 結果匣：墨暈升起 + 角印殘影；故事段落錯落寫入
+- 遠山／霧／飛白：極緩呼吸與掃霧（10–18s）
 - 禁止彈跳、霓虹脈衝
+- 詳見 `design/ux/motion-polish.md`；尊重 `prefers-reduced-motion`
 
 ## 8. Asset Standards
 

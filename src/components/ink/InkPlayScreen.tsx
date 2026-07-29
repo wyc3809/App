@@ -21,7 +21,7 @@ import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@co
 import { getPlayerMoves } from '@core/life/combat';
 import { formatSkillEffects, getSkillDef } from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
-import { InkScrollBackdrop, InkSealStamp } from './InkDecor';
+import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
 type Props = {
@@ -57,7 +57,7 @@ export function InkPlayScreen({ state }: Props) {
 
   useEffect(() => {
     if (!sealText) return;
-    const t = window.setTimeout(() => clearSeal(), 900);
+    const t = window.setTimeout(() => clearSeal(), 920);
     return () => window.clearTimeout(t);
   }, [sealText, clearSeal]);
 
@@ -110,10 +110,7 @@ export function InkPlayScreen({ state }: Props) {
   }, [showResult]);
 
   return (
-    <div
-      className="scroll-shell scroll-shell--play ink-enter"
-      key={`${state.year}-${month}-${tab}`}
-    >
+    <div className="scroll-shell scroll-shell--play ink-enter">
       <InkScrollBackdrop variant="play" />
       {sealText && <InkSealStamp text={sealText} onDone={clearSeal} />}
 
@@ -157,6 +154,8 @@ export function InkPlayScreen({ state }: Props) {
         ))}
       </nav>
 
+      <div key={`${state.year}-${month}`} className="ink-scroll-flip ink-play-body">
+
       {tab === 'home' && (
         <section className="ink-world" aria-label="天下風聲">
           <p className="ink-world-compact">
@@ -177,7 +176,7 @@ export function InkPlayScreen({ state }: Props) {
       )}
 
       {tab === 'jianghu' && (
-        <section className="ink-panel ink-world-panel" aria-label="天下四維">
+        <section key="jianghu" className="ink-panel ink-world-panel ink-tab-pane" aria-label="天下四維">
           <h3>天下四維</h3>
           <div className="ink-attr-grid ink-world-grid">
             {worldAttrKeys.map((k) => (
@@ -252,7 +251,7 @@ export function InkPlayScreen({ state }: Props) {
       </section>
 
       {tab === 'person' && (
-        <section className="ink-panel ink-attrs">
+        <section key="person" className="ink-panel ink-attrs ink-tab-pane">
           <h3>五維</h3>
           <div className="ink-attr-grid">
             {wuxiaAttributeKeys.map((k) => (
@@ -312,7 +311,7 @@ export function InkPlayScreen({ state }: Props) {
       )}
 
       {tab === 'practice' && (
-        <section className="ink-panel ink-practice">
+        <section key="practice" className="ink-panel ink-practice ink-tab-pane">
           {practiceView === 'main' && (
             <>
               <h3>修煉</h3>
@@ -516,7 +515,7 @@ export function InkPlayScreen({ state }: Props) {
                   type="button"
                   className="ink-choice"
                   disabled={combat.phase !== 'player' || short}
-                  style={{ animationDelay: `${0.04 * i}s` }}
+                  style={{ ['--i' as string]: i }}
                   onClick={() => combatMove(mv.id)}
                 >
                   <span className="ink-choice-mark">{i === 0 ? '普' : '功'}</span>
@@ -546,6 +545,7 @@ export function InkPlayScreen({ state }: Props) {
         createPortal(
           <div className="ink-modal" role="dialog" aria-modal="true" aria-label="結果">
             <div className="ink-modal-card ink-result">
+              <InkResultSeal text={resultKind === 'practice' ? '修' : '定'} />
               <p className="ink-event-year">
                 {resultKind === 'practice' ? '修煉已定' : '本月際遇'}
               </p>
@@ -620,7 +620,7 @@ export function InkPlayScreen({ state }: Props) {
                 key={ch.id}
                 type="button"
                 className="ink-choice"
-                style={{ animationDelay: `${0.05 * i}s` }}
+                style={{ ['--i' as string]: i }}
                 onClick={() => choose(ch.id)}
               >
                 <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
@@ -658,6 +658,7 @@ export function InkPlayScreen({ state }: Props) {
           </ul>
         </section>
       )}
+      </div>
 
       {debugOpen && <LifeDebugPanel state={state} />}
     </div>

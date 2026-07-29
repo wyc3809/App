@@ -10,7 +10,7 @@ type Props = {
 
 export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }: Props) {
   return (
-    <div className="scroll-shell ink-enter">
+    <div className="scroll-shell ink-enter ink-start">
       <InkScrollBackdrop variant="hero" />
       <header className="ink-hero">
         <span className="ink-seal-static" aria-hidden>
