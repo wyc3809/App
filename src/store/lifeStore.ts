@@ -6,7 +6,7 @@ import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexed
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
 import { playerCombatTurn, getPlayerMoves, resolveCombatDisposition, type CombatFoeDisposition } from '@core/life/combat';
-import { displayChoiceText } from '@core/life/playerText';
+import { displayChoiceText, sanitizePlayerLine, sanitizePlayerLines } from '@core/life/playerText';
 import { BASIC_STRIKE } from '@data/skills/catalog';
 
 const CATALOG = fullCatalog();
@@ -132,8 +132,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         : {
             title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
             choiceText: displayChoiceText(choice?.text, choiceId),
-            feedback: result.feedback,
-            deltas: result.deltas,
+            feedback: sanitizePlayerLine(result.feedback),
+            deltas: sanitizePlayerLines(result.deltas),
           },
     });
   },
@@ -170,8 +170,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         : {
             title: '修煉',
             choiceText: label,
-            feedback: logs[0] ?? '事畢。',
-            deltas: logs.slice(1),
+            feedback: sanitizePlayerLine(logs[0] ?? '事畢。'),
+            deltas: sanitizePlayerLines(logs.slice(1)),
           },
     });
   },
@@ -200,8 +200,10 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
           ? {
               title: state.pendingCombat!.title,
               choiceText: moveName,
-              feedback: logs.find((l) => /戰勝|敗於|力竭|逃離/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
-              deltas: logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境|心性/.test(l)),
+              feedback: sanitizePlayerLine(
+                logs.find((l) => /戰勝|敗於|力竭|逃離/.test(l)) ?? logs[logs.length - 1] ?? '交手結束。',
+              ),
+              deltas: sanitizePlayerLines(logs.filter((l) => /＋|－|\+|武學|銀兩|名望|進境|心性/.test(l))),
             }
           : get().lastResult,
     });
@@ -229,10 +231,12 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       lastResult: {
         title: state.pendingCombat.title,
         choiceText: labels[disposition],
-        feedback: logs
-          .filter((l) => !/^銀兩|^名望＋|^名望－|^武學|^戰利品|^習得|^進境/.test(l))
-          .join('\n\n'),
-        deltas: logs.filter((l) => /^銀兩|^名望|^武學|^心性|^戰利品|^習得|^進境/.test(l)),
+        feedback: sanitizePlayerLine(
+          logs
+            .filter((l) => !/^銀兩|^名望＋|^名望－|^武學|^戰利品|^習得|^進境/.test(l))
+            .join('\n\n'),
+        ),
+        deltas: sanitizePlayerLines(logs.filter((l) => /^銀兩|^名望|^武學|^心性|^戰利品|^習得|^進境/.test(l))),
       },
     });
   },

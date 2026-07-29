@@ -88,6 +88,30 @@ export const BOSS_FIGHT_CONFIG: Record<string, BossFightConfig> = {
       gearId: 'meteor-whip',
     },
   },
+  boss_sand_scorpion: {
+    foeName: '沙蠍客',
+    foePower: 'boss',
+    rewardOnWin: {
+      money: 44,
+      reputation: 9,
+      martial: 9,
+      skillId: 'art_sand_palm',
+      skillName: '流沙掌',
+      gearId: 'bronze-spear',
+    },
+  },
+  boss_mirror_lake: {
+    foeName: '鏡湖隱士',
+    foePower: 'boss',
+    rewardOnWin: {
+      money: 40,
+      reputation: 16,
+      martial: 11,
+      skillId: 'art_mirror_breath',
+      skillName: '澄心鏡息',
+      gearId: 'jade-token',
+    },
+  },
 };
 
 const RUMORS: GameEvent[] = [
@@ -331,6 +355,92 @@ const RUMORS: GameEvent[] = [
       },
     ],
   },
+  {
+    id: 'rumor_sand',
+    title: '沙道蝎影',
+    body: '西行客說沙道有人揮掌揚沙，專劫過路武人，人稱沙蠍客。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 4,
+    requirements: { minAge: 20, once: true, notFlags: ['rumor_boss_sand'] },
+    choices: [
+      {
+        id: 'note',
+        text: '記下沙道',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_sand', value: true },
+              { type: 'narrate', text: '你把沙道方位與「揚沙迷目」記在心裡。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'buy',
+        text: '買塊面紗',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_sand', value: true },
+              { type: 'money', amount: -4 },
+              { type: 'narrate', text: '面紗遮塵，也提醒你：沙蠍若現，先護眼。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'ignore',
+        text: '不當回事',
+        outcomes: [{ effects: [{ type: 'narrate', text: '西行再遠，此刻與你無干。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'rumor_mirror',
+    title: '鏡湖夜燈',
+    body: '漁人說鏡湖夜有孤燈，隱士以息會友，能接下他吐納者，可傳澄心之法。',
+    tags: ['special', 'rumor', 'secret'],
+    weight: 4,
+    requirements: {
+      minAge: 18,
+      once: true,
+      notFlags: ['rumor_boss_mirror'],
+      minNature: { xia: 10 },
+      maxNature: { e: 45 },
+    },
+    choices: [
+      {
+        id: 'seek',
+        text: '願一訪湖',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_mirror', value: true },
+              { type: 'narrate', text: '你把鏡湖畫進行程。孤燈若在，便去一見。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'pray',
+        text: '隔岸一禮',
+        outcomes: [
+          {
+            effects: [
+              { type: 'flag', key: 'rumor_boss_mirror', value: true },
+              { type: 'attr', delta: { fuYuan: 1 } },
+              { type: 'narrate', text: '你隔岸一禮。湖面無風，心卻靜了半分。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '不去打擾',
+        outcomes: [{ effects: [{ type: 'narrate', text: '隱士之緣，強求不得。你轉身離去。' }] }],
+      },
+    ],
+  },
 ];
 
 const FIGHTS: GameEvent[] = [
@@ -546,6 +656,80 @@ const FIGHTS: GameEvent[] = [
             effects: [
               { type: 'narrate', text: '你躍向鄰船。琵琶聲在水上碎成一片。' },
               { type: 'reputation', amount: -1 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'boss_sand_scorpion',
+    title: '沙蠍客',
+    body: '沙道揚塵，掌風挾沙直撲面門。沙蠍客低笑：「留下兵器，或留下眼睛。」',
+    tags: ['special', 'combat', 'boss', 'secret'],
+    weight: 3,
+    requirements: { minAge: 20, minMartial: 32, once: true, flags: { rumor_boss_sand: true } },
+    choices: [
+      {
+        id: 'fight',
+        text: '閉氣硬接',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你閉氣護目，迎上沙掌。' }] }],
+      },
+      {
+        id: 'fight_kill',
+        text: '打算埋了他',
+        requirements: { minNature: { e: 20 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你眼神一寒，招招奔着要害。' }] }],
+      },
+      {
+        id: 'flee',
+        text: '退回綠洲',
+        requirements: { maxNature: { kuang: 48 } },
+        outcomes: [{ effects: [{ type: 'narrate', text: '你退回綠洲。沙塵在身後翻湧。' }] }],
+      },
+    ],
+  },
+  {
+    id: 'boss_mirror_lake',
+    title: '鏡湖隱士',
+    body: '鏡湖孤燈下，隱士盤膝：「以息相會。接得住，傳你澄心；接不住，湖水會記得你。」',
+    tags: ['special', 'combat', 'boss', 'secret'],
+    weight: 3,
+    requirements: {
+      minAge: 18,
+      minMartial: 28,
+      once: true,
+      flags: { rumor_boss_mirror: true },
+      minNature: { xia: 10 },
+      maxNature: { e: 48 },
+    },
+    choices: [
+      {
+        id: 'fight',
+        text: '以息相迎',
+        outcomes: [{ effects: [{ type: 'narrate', text: '兩道內息在湖面相交，水紋成圓。' }] }],
+      },
+      {
+        id: 'talk',
+        text: '先請教心法',
+        requirements: { minNature: { xia: 16 } },
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '隱士只道「言多無益」，下一息已至——只能硬接。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '合十告退',
+        requirements: { maxNature: { kuang: 42 } },
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '隱士點頭，孤燈依舊。你帶着未完的緣離開湖岸。' },
+              { type: 'attr', delta: { fuYuan: 1 } },
             ],
           },
         ],

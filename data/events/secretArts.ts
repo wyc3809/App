@@ -449,6 +449,55 @@ const RAW: GameEvent[] = [
       },
     ],
   },
+  {
+    id: 'secret_lotus_steps',
+    title: '池邊殘步',
+    body: '荷塘邊有人踏葉而過，水面只顫一瞬。殘頁壓在石上，墨跡未乾。',
+    tags: ['special', 'martial', 'secret', 'qinggong'],
+    weight: 4,
+    requirements: {
+      minAge: 16,
+      once: true,
+      minAttrs: { danShi: 40 },
+      minNature: { xia: 8 },
+      maxNature: { e: 48 },
+    },
+    choices: [
+      {
+        id: 'learn',
+        text: '讀殘頁習步',
+        outcomes: [
+          {
+            effects: [
+              { type: 'learnSkill', skillId: 'qg_lotus_steps', name: '踏蓮步' },
+              { type: 'martial', amount: 5 },
+              {
+                type: 'narrate',
+                text: '你依殘頁在塘邊試步，足尖輕點，荷葉竟未全沉。水紋散開時，身法已多了一分借力之意。',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'copy',
+        text: '只拓下帶走',
+        outcomes: [
+          {
+            effects: [
+              { type: 'martial', amount: 2 },
+              { type: 'narrate', text: '你不敢久留，匆匆拓下殘頁。塘水復靜，腳下卻仍記得那一瞬輕顫。' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        text: '不驚塘水',
+        outcomes: [{ effects: [{ type: 'narrate', text: '你合上殘頁，原樣壓回石上。荷香一陣，你轉身離去。' }] }],
+      },
+    ],
+  },
 ];
 
 export const SECRET_ART_EVENTS: GameEvent[] = RAW.map((ev) =>

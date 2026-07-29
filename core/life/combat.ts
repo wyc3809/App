@@ -119,6 +119,7 @@ export function startCombat(
     rewardOnLose: opts.rewardOnLose,
     eventId: opts.eventId,
     foePower: opts.foePower ?? 'normal',
+    bossPhase2: false,
   };
   combat.player.hp = clamp(combat.player.hp, 1, combat.player.maxHp);
   combat.player.qi = clamp(combat.player.qi, 0, combat.player.maxQi);
@@ -692,12 +693,17 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
     tickRegen(combat.foe);
     const bossEnraged =
       combat.foePower === 'boss' && combat.foe.maxHp > 0 && combat.foe.hp / combat.foe.maxHp <= 0.45;
-    if (bossEnraged && !combat.log.some((l) => l.includes('氣息陡變'))) {
-      const roar = `${combat.foe.name}氣息陡變，招式更加狠辣！`;
+    if (bossEnraged && !combat.bossPhase2) {
+      combat.bossPhase2 = true;
+      const heal = Math.round(combat.foe.maxHp * 0.12);
+      combat.foe.hp = clamp(combat.foe.hp + heal, 0, combat.foe.maxHp);
+      combat.foe.defenseMod += 4;
+      combat.foe.qi = clamp(combat.foe.qi + 20, 0, combat.foe.maxQi);
+      const roar = `${combat.foe.name}氣息陡變，強行續命，招式更加狠辣！`;
       lines.push(roar);
       combat.log.push(roar);
     }
-    const enemyMove = enemyChooseMove(combat.foe, rng, bossEnraged);
+    const enemyMove = enemyChooseMove(combat.foe, rng, Boolean(combat.bossPhase2));
     const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng);
     combat.log.push(...enemyLines);
     lines.push(...enemyLines);

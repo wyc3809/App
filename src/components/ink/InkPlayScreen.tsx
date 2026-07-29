@@ -14,9 +14,10 @@ import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
-import { jianghuHints, playerEvasionPercent } from '@core/life/jianghuHints';
+import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
 import { GUARD_STANCE, CHARGE_STANCE, FLEE_MOVE } from '@data/skills/catalog';
+import { playInkSeal, playInkTap, playInkWin, playInkLose } from '../../audio/inkAudio';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
@@ -60,6 +61,9 @@ export function InkPlayScreen({ state }: Props) {
 
   useEffect(() => {
     if (!sealText) return;
+    if (sealText === '勝') playInkWin();
+    else if (sealText === '敗' || sealText === '終') playInkLose();
+    else playInkSeal();
     const t = window.setTimeout(() => clearSeal(), 920);
     return () => window.clearTimeout(t);
   }, [sealText, clearSeal]);
@@ -298,6 +302,11 @@ export function InkPlayScreen({ state }: Props) {
               <p className="ink-note">
                 本月可修煉 {practiceLeft}/3 次。苦練、鑄兵、尋訪——階位靠實戰與修煉進境。
               </p>
+              {practiceLearningHints(state).map((h) => (
+                <p key={h} className="ink-note ink-hint-learn">
+                  {h}
+                </p>
+              ))}
               <div className="ink-practice-grid">
                 <button
                   type="button"
@@ -494,22 +503,28 @@ export function InkPlayScreen({ state }: Props) {
             <div className="ink-choice-list ink-combat-resolve">
               {(
                 [
-                  ['kill', '殺', '殺死', '永絕後患，戾氣難消'],
-                  ['release', '放', '放走', '留其一命，寬恕在胸'],
-                  ['stun', '暈', '擊暈', '點穴制住，不傷性命'],
+                  ['kill', '殺', '殺死', '永絕後患，戾氣難消', dominant === 'xia' ? '俠心較重，下手需自問' : ''],
+                  ['release', '放', '放走', '留其一命，寬恕在胸', dominant === 'e' ? '惡念未消，放人亦是克制' : ''],
+                  ['stun', '暈', '擊暈', '點穴制住，不傷性命', '戰利或略薄，心性較穩'],
                 ] as const
-              ).map(([id, mark, label, hint], i) => (
+              ).map(([id, mark, label, hint, extra], i) => (
                 <button
                   key={id}
                   type="button"
                   className="ink-choice"
                   style={{ ['--i' as string]: i }}
-                  onClick={() => combatResolveFoe(id)}
+                  onClick={() => {
+                    playInkTap();
+                    combatResolveFoe(id);
+                  }}
                 >
                   <span className="ink-choice-mark">{mark}</span>
                   <span className="ink-combat-move">
                     <strong>{label}</strong>
-                    <em>{hint}</em>
+                    <em>
+                      {hint}
+                      {extra ? ` · ${extra}` : ''}
+                    </em>
                   </span>
                 </button>
               ))}
@@ -528,7 +543,10 @@ export function InkPlayScreen({ state }: Props) {
                     className="ink-choice"
                     disabled={combat.phase !== 'player' || short}
                     style={{ ['--i' as string]: i }}
-                    onClick={() => combatMove(mv.id)}
+                    onClick={() => {
+                      playInkTap();
+                      combatMove(mv.id);
+                    }}
                   >
                     <span className="ink-choice-mark">
                       {mv.id === GUARD_STANCE.id
@@ -647,7 +665,10 @@ export function InkPlayScreen({ state }: Props) {
                 type="button"
                 className="ink-choice"
                 style={{ ['--i' as string]: i }}
-                onClick={() => choose(ch.id)}
+                onClick={() => {
+                  playInkTap();
+                  choose(ch.id);
+                }}
               >
                 <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
                 {displayChoiceText(ch.text, ch.id)}

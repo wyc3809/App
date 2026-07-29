@@ -304,10 +304,14 @@ export function performPracticeAction(
           { id: 'qg_swallow_turn', name: '燕子三轉' },
           { id: 'qg_feiyan', name: '飛燕功' },
           { id: 'qg_reed_drift', name: '蘆花身法' },
+          { id: 'qg_lotus_steps', name: '踏蓮步' },
           { id: 'art_spear_cloud', name: '穿雲槍' },
           { id: 'art_staff_iron', name: '鐵杖訣' },
           { id: 'art_whip_silk', name: '柔絲鞭法' },
           { id: 'art_bow_star', name: '逐星箭意' },
+          { id: 'art_sand_palm', name: '流沙掌' },
+          { id: 'art_mirror_breath', name: '澄心鏡息' },
+          { id: 'art_heavy_halberd', name: '開山戟意' },
         ];
         const art = rng.pick(arts);
         if (!c.skills.includes(art.id)) {

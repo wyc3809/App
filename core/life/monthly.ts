@@ -88,6 +88,8 @@ const RUMOR_LINES: { flag: string; text: string }[] = [
   { flag: 'rumor_boss_black', text: '黑風過林，有人說寨主在點名。' },
   { flag: 'rumor_boss_frost', text: '北嶺寒意逼人，刀聲隱約。' },
   { flag: 'rumor_boss_lute', text: '河舫夜曲一響，便有船家改道。' },
+  { flag: 'rumor_boss_sand', text: '西邊沙道揚塵，似有人揮掌迷目。' },
+  { flag: 'rumor_boss_mirror', text: '鏡湖孤燈未熄，有人說隱士仍在等客。' },
 ];
 
 export function simulateWorldMonth(state: LifeGameState): void {

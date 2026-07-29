@@ -433,6 +433,58 @@
       }
     },
     {
+      "id": "art_sand_palm",
+      "name": "流沙掌",
+      "kind": "external",
+      "flavor": "掌力如沙掩人耳目，沙漠散修所傳。",
+      "move": {
+        "id": "mv_sand_palm",
+        "name": "流沙掩目",
+        "qiCost": 15,
+        "power": 1.22,
+        "applyBlind": 0.18,
+        "hitBonus": 0.08,
+        "description": "掌風揚沙，迷敵耳目。"
+      }
+    },
+    {
+      "id": "art_mirror_breath",
+      "name": "澄心鏡息",
+      "kind": "internal",
+      "flavor": "湖心澄息，內力清朗，攻防皆穩。",
+      "passive": {
+        "maxQi": 28,
+        "defense": 5,
+        "qiRegen": 7
+      }
+    },
+    {
+      "id": "qg_lotus_steps",
+      "name": "踏蓮步",
+      "kind": "qinggong",
+      "flavor": "步步生蓮，水岸亦可借力閃避。",
+      "passive": {
+        "evasionBonus": 0.08,
+        "hitBonus": 0.02
+      }
+    },
+    {
+      "id": "art_heavy_halberd",
+      "name": "開山戟意",
+      "kind": "external",
+      "weaponKind": "spear",
+      "flavor": "戟走開山勢，持長兵則勢不可擋。",
+      "move": {
+        "id": "mv_heavy_halberd",
+        "name": "開山一戟",
+        "qiCost": 22,
+        "power": 1.75,
+        "pierce": 0.22,
+        "stunChance": 0.2,
+        "description": "長兵砸落，敵勢一窒。"
+      }
+    },
+    {
       "id": "qy_cloud_sword",
       "name": "青雲初劍",
       "kind": "external",

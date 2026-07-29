@@ -1649,3 +1649,75 @@ body::before {
 .ink-combat {
   animation: panelWashIn 0.5s ease both;
 }
+
+.ink-hint-learn {
+  margin-top: 4px;
+  color: var(--ink-wash);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  line-height: 1.55;
+}
+
+.ink-combat-resolve {
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.ink-combat-resolve .ink-choice {
+  min-height: 56px;
+  padding: 16px 12px;
+  align-items: flex-start;
+}
+
+.ink-combat-resolve .ink-combat-move em {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .scroll-shell--play {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .ink-choice {
+    min-height: 52px;
+    padding: 15px 12px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .ink-practice-btn {
+    min-height: 52px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .ink-modal {
+    align-items: flex-end;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .ink-modal-card {
+    width: 100%;
+    max-height: min(88dvh, 640px);
+    border-radius: 12px 12px 0 0;
+    padding: 20px 16px max(20px, env(safe-area-inset-bottom));
+  }
+
+  .ink-combat-resolve .ink-choice {
+    min-height: 60px;
+  }
+
+  .ink-combat-bars {
+    gap: 8px;
+  }
+
+  .ink-hint-learn {
+    font-size: 0.74rem;
+  }
+}

@@ -305,6 +305,8 @@ export interface PendingCombat {
   rewardOnLose?: { money?: number; reputation?: number };
   eventId?: string;
   foePower?: 'weak' | 'normal' | 'strong' | 'boss';
+  /** 首領二階段是否已觸發 */
+  bossPhase2?: boolean;
 }
 
 export const lifeCharacterSchema = z.object({

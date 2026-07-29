@@ -249,9 +249,42 @@ describe('life event engine', () => {
   });
 
   it('displayChoiceText hides placeholder English', async () => {
-    const { displayChoiceText } = await import('../core/life/playerText');
+    const { displayChoiceText, sanitizePlayerLine } = await import('../core/life/playerText');
     expect(displayChoiceText('None', 'accept')).toBe('應允');
     expect(displayChoiceText('拱手請教', 'accept')).toBe('拱手請教');
+    expect(sanitizePlayerLine('習得 skill_foo 與 None')).toMatch(/習得/);
+    expect(sanitizePlayerLine('習得 skill_foo 與 None')).not.toMatch(/skill_foo|None/i);
+  });
+
+  it('boss phase 2 heals and hardens once', async () => {
+    const { startCombat, playerCombatTurn } = await import('../core/life/combat');
+    initRng(4);
+    const state = createNewLife(4);
+    state.character.martial = 80;
+    state.character.maxHealth = 500;
+    state.character.health = 500;
+    startCombat(state, {
+      source: 'event',
+      title: '首領試',
+      foeName: '沙蠍客',
+      foePower: 'boss',
+      rewardOnWin: { martial: 1 },
+    });
+    const combat = state.pendingCombat!;
+    combat.foe.hp = Math.floor(combat.foe.maxHp * 0.4);
+    const before = combat.foe.hp;
+    const logs = playerCombatTurn(state, 'basic_strike');
+    expect(state.pendingCombat?.bossPhase2).toBe(true);
+    expect(logs.some((l) => /氣息陡變|強行續命/.test(l))).toBe(true);
+    expect(state.pendingCombat!.foe.hp).toBeGreaterThan(before - 5);
+  });
+
+  it('sand and mirror bosses are wired with rewards', async () => {
+    const { getBossFightConfig, BOSS_ENCOUNTER_EVENTS } = await import('../data/events/bossEncounters');
+    expect(getBossFightConfig('boss_sand_scorpion')?.rewardOnWin.skillId).toBe('art_sand_palm');
+    expect(getBossFightConfig('boss_mirror_lake')?.rewardOnWin.skillName).toBe('澄心鏡息');
+    expect(BOSS_ENCOUNTER_EVENTS.some((e) => e.id === 'rumor_sand')).toBe(true);
+    expect(BOSS_ENCOUNTER_EVENTS.some((e) => e.id === 'boss_mirror_lake')).toBe(true);
   });
 
   it('turn-based combat uses external moves and internal passives', async () => {

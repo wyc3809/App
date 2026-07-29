@@ -17,6 +17,8 @@ export function jianghuHints(state: LifeGameState): string[] {
   if (f.rumor_boss_black) hints.push('黑風寨鞭影如幕，寨主點名尋人比武。');
   if (f.rumor_boss_frost) hints.push('北嶺傳來寒刀聲，霜刀客似在等人。');
   if (f.rumor_boss_lute) hints.push('河舫夜曲不祥，琵琶一響便有人失踪。');
+  if (f.rumor_boss_sand) hints.push('西行沙道有人揚沙劫武，人稱沙蠍客。');
+  if (f.rumor_boss_mirror) hints.push('鏡湖夜有孤燈，隱士以息會友。');
 
   if (Number(f.aftermath_mercy_months ?? 0) > 0) {
     hints.push('你曾放走過對手，江湖上或有回音。');
@@ -67,4 +69,40 @@ export function playerEvasionPercent(state: LifeGameState): number {
   const c = state.character;
   const ev = sumEvasionBonus(c.skills, c.skillRanks ?? {}) + c.attributes.danShi / 500;
   return Math.round(Math.min(0.45, ev) * 100);
+}
+
+/** 修煉頁：尚未習得的江湖武學／輕功提示 */
+export function practiceLearningHints(state: LifeGameState): string[] {
+  const c = state.character;
+  const known = new Set(c.skills);
+  const tips: string[] = [];
+
+  const pools: { id: string; how: string }[] = [
+    { id: 'art_spear_cloud', how: '尋訪或奇遇可學「穿雲槍」（持槍加威）' },
+    { id: 'art_staff_iron', how: '尋訪可學「鐵杖訣」（持杖加威）' },
+    { id: 'art_whip_silk', how: '首領或尋訪可學「柔絲鞭法」' },
+    { id: 'art_bow_star', how: '尋訪可學「逐星箭意」（持弓加準）' },
+    { id: 'art_sand_palm', how: '沙道傳聞或尋訪可學「流沙掌」' },
+    { id: 'art_mirror_breath', how: '鏡湖隱士或尋訪可傳「澄心鏡息」' },
+    { id: 'art_heavy_halberd', how: '尋訪或可習「開山戟意」（持槍／長兵加威）' },
+    { id: 'qg_snow_track', how: '尋訪高人或可傳「踏雪無痕」輕功' },
+    { id: 'qg_reed_drift', how: '放走對手後的報恩，或可傳「蘆花身法」' },
+    { id: 'qg_wall_cat', how: '危牆夜影奇遇可習「壁虎遊牆」' },
+    { id: 'qg_lotus_steps', how: '荷塘奇遇或尋訪可習「踏蓮步」輕功' },
+    { id: 'art_shadow_needle', how: '戰勝赤練娘可奪「無影針訣」' },
+  ];
+  for (const p of pools) {
+    if (!known.has(p.id)) tips.push(p.how);
+  }
+
+  const weaponId = c.equipment?.weapon;
+  const weapon = weaponId ? getGearDef(weaponId) : undefined;
+  if (weapon?.weaponKind) {
+    const hasMatch = c.skills.some((id) => getSkillDef(id)?.weaponKind === weapon.weaponKind);
+    if (!hasMatch) {
+      tips.unshift(`當前兵刃「${weapon.name}」尚無對應江湖武學，尋訪／奇遇可補。`);
+    }
+  }
+
+  return tips.slice(0, 3);
 }
