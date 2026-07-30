@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
 import { useLifeStore } from '../../store/lifeStore';
+import { playInkTap } from '../../audio/inkAudio';
 
 export function InkCreateScreen() {
   const newLife = useLifeStore((s) => s.newLife);
@@ -43,17 +44,25 @@ export function InkCreateScreen() {
         <button
           type="button"
           className="ink-btn ink-btn--primary"
-          onClick={() =>
+          onClick={() => {
+            playInkTap();
             newLife({
               name: name.trim() || undefined,
               gender,
               birthplace: '千燈鎮',
-            })
-          }
+            });
+          }}
         >
           落筆開卷
         </button>
-        <button type="button" className="ink-btn ink-btn--ghost" onClick={cancelCreate}>
+        <button
+          type="button"
+          className="ink-btn ink-btn--ghost"
+          onClick={() => {
+            playInkTap();
+            cancelCreate();
+          }}
+        >
           返回
         </button>
       </div>

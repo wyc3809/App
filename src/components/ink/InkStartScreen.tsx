@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
+import { playInkTap } from '../../audio/inkAudio';
 
 type Props = {
   onStart: () => void;
@@ -30,7 +31,14 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
 
       <div className="ink-cta-stack">
         {resumeHint && (
-          <button type="button" className="ink-btn ink-btn--primary" onClick={onContinue}>
+          <button
+            type="button"
+            className="ink-btn ink-btn--primary"
+            onClick={() => {
+              playInkTap();
+              onContinue();
+            }}
+          >
             續寫前緣
             <span className="ink-btn-sub">{resumeHint}</span>
           </button>
@@ -38,12 +46,22 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <button
           type="button"
           className={resumeHint ? 'ink-btn ink-btn--ghost' : 'ink-btn ink-btn--primary'}
-          onClick={onStart}
+          onClick={() => {
+            playInkTap();
+            onStart();
+          }}
         >
           {resumeHint ? '開卷新篇' : '開卷'}
         </button>
         {onSeedDebug && (
-          <button type="button" className="ink-btn ink-btn--quiet" onClick={onSeedDebug}>
+          <button
+            type="button"
+            className="ink-btn ink-btn--quiet"
+            onClick={() => {
+              playInkTap();
+              onSeedDebug();
+            }}
+          >
             定種子 · 除錯
           </button>
         )}

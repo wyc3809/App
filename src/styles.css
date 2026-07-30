@@ -578,8 +578,10 @@ body::before {
   box-shadow: 0 8px 22px rgba(26, 26, 26, 0.2);
 }
 
-.ink-btn--primary:active {
-  transform: translateY(1px) scale(0.992);
+.ink-btn--primary:active:not(:disabled) {
+  transform: scale(0.96);
+  background: #151515;
+  box-shadow: 0 2px 8px rgba(26, 26, 26, 0.18);
 }
 
 .ink-btn--ghost {
@@ -591,11 +593,23 @@ body::before {
   background: var(--mist);
 }
 
+.ink-btn--ghost:active:not(:disabled),
+.ink-btn--quiet:active:not(:disabled),
+.ink-btn:active:not(:disabled):not(.ink-btn--primary) {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
+}
+
 .ink-btn--quiet {
   border-color: transparent;
   color: var(--ink-wash);
   font-size: 0.8rem;
   letter-spacing: 0.1em;
+}
+
+.ink-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .ink-btn-sub {
@@ -642,11 +656,23 @@ body::before {
   font-family: inherit;
   cursor: pointer;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.08s ease,
+    color 0.08s ease,
+    border-color 0.08s ease,
+    transform 0.06s ease;
 }
 
 .ink-icon-btn:hover {
   border-color: var(--ink);
   color: var(--ink);
+}
+
+.ink-icon-btn:active {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
 }
 
 .ink-save {
@@ -737,6 +763,11 @@ body::before {
   font-size: 0.75rem;
 }
 
+.ink-toggle-quiet:active:not(:disabled) {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
+}
+
 .ink-chronicle-toggle {
   display: flex;
   width: 100%;
@@ -749,6 +780,16 @@ body::before {
   color: inherit;
   cursor: pointer;
   text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.08s ease,
+    transform 0.06s ease;
+}
+
+.ink-chronicle-toggle:active {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.06);
 }
 
 .ink-chronicle-toggle h3 {
@@ -1147,9 +1188,9 @@ body::before {
   padding-left: 14px;
 }
 
-.ink-choice:active {
-  transform: scale(0.985) translateX(1px);
-  background: rgba(26, 26, 26, 0.1);
+.ink-choice:active:not(:disabled) {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
 }
 
 .ink-choice-mark {
@@ -1359,10 +1400,13 @@ body::before {
   background: transparent;
   color: var(--ink-wash);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    background 0.22s ease,
-    color 0.22s ease,
-    border-color 0.22s ease;
+    background 0.08s ease,
+    color 0.08s ease,
+    border-color 0.08s ease,
+    transform 0.06s ease;
 }
 
 .ink-tab::after {
@@ -1385,10 +1429,21 @@ body::before {
   border-color: rgba(26, 26, 26, 0.28);
 }
 
+.ink-tab:active {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
+}
+
 .ink-tab--active {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--ink);
+}
+
+.ink-tab--active:active {
+  transform: scale(0.96);
+  background: #2c2c2c;
+  color: var(--paper);
 }
 
 .ink-tab--active::after {
@@ -1502,7 +1557,7 @@ body::before {
 }
 
 .ink-practice-btn:active:not(:disabled) {
-  transform: scale(0.985);
+  transform: scale(0.96);
   background: rgba(26, 26, 26, 0.08);
 }
 
@@ -1604,6 +1659,18 @@ body::before {
   letter-spacing: 0.22em;
   text-align: left;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.08s ease,
+    transform 0.06s ease,
+    color 0.08s ease;
+}
+
+.ink-combat-log-toggle:active {
+  transform: scale(0.96);
+  background: rgba(26, 26, 26, 0.08);
+  color: var(--ink);
 }
 
 .ink-combat-filters {
@@ -1676,7 +1743,8 @@ body::before {
 
 .ink-combat-action:active:not(:disabled),
 .ink-combat-filter:active,
-.ink-combat-detail-btn:active {
+.ink-combat-detail-btn:active,
+.ink-combat-log-toggle:active {
   transform: scale(0.96);
   background: rgba(26, 26, 26, 0.08);
 }
@@ -2033,6 +2101,36 @@ body::before {
   .ink-bar-fill--live {
     transition: none !important;
   }
+  .ink-btn:active:not(:disabled),
+  .ink-btn--primary:active:not(:disabled),
+  .ink-choice:active:not(:disabled),
+  .ink-tab:active,
+  .ink-tab--active:active,
+  .ink-practice-btn:active:not(:disabled),
+  .ink-icon-btn:active,
+  .ink-chronicle-toggle:active,
+  .ink-combat-action:active:not(:disabled),
+  .ink-combat-filter:active,
+  .ink-combat-detail-btn:active,
+  .ink-combat-log-toggle:active,
+  .ink-toggle-quiet:active:not(:disabled) {
+    transform: none !important;
+  }
+}
+
+/* —— 全域按壓觸感（對齊戰鬥按鈕 scale 0.96）—— */
+.ink-btn,
+.ink-choice,
+.ink-tab,
+.ink-practice-btn,
+.ink-icon-btn,
+.ink-chronicle-toggle,
+.ink-combat-log-toggle,
+.ink-combat-filter,
+.ink-combat-detail-btn,
+.ink-combat-action {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .ink-result-choice {

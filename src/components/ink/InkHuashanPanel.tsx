@@ -7,6 +7,7 @@ import {
   getPendingHuashanMatch,
   huashanSeasonLabel,
 } from '@core/life/huashan';
+import { playInkTap } from '../../audio/inkAudio';
 
 type Props = {
   state: LifeGameState;
@@ -78,7 +79,10 @@ export function InkHuashanPanel({
           type="button"
           className="ink-btn ink-btn--primary"
           disabled={!gate.ok}
-          onClick={onStart}
+          onClick={() => {
+            playInkTap();
+            onStart();
+          }}
         >
           持帖報名
         </button>
@@ -100,7 +104,14 @@ export function InkHuashanPanel({
           <BracketTreeView bracket={bracket} />
 
           {bracket.status === 'active' && pending && (
-            <button type="button" className="ink-btn ink-btn--primary" onClick={onFight}>
+            <button
+              type="button"
+              className="ink-btn ink-btn--primary"
+              onClick={() => {
+                playInkTap();
+                onFight();
+              }}
+            >
               赴戰
             </button>
           )}
@@ -109,14 +120,28 @@ export function InkHuashanPanel({
             <div className="ink-huashan-log">
               <h4 className="ink-subhead">戰報</h4>
               <pre className="ink-epitaph-text ink-huashan-pre">{lastLog.join('\n')}</pre>
-              <button type="button" className="ink-btn ink-btn--quiet" onClick={onDismissReport}>
+              <button
+                type="button"
+                className="ink-btn ink-btn--quiet"
+                onClick={() => {
+                  playInkTap();
+                  onDismissReport();
+                }}
+              >
                 收起戰報
               </button>
             </div>
           )}
 
           {bracket.status === 'completed' && (
-            <button type="button" className="ink-btn ink-btn--ghost" onClick={onCloseTournament}>
+            <button
+              type="button"
+              className="ink-btn ink-btn--ghost"
+              onClick={() => {
+                playInkTap();
+                onCloseTournament();
+              }}
+            >
               離開論劍台
             </button>
           )}
