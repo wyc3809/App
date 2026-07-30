@@ -343,6 +343,24 @@
       "legacyAliasOf": "art_moon_sword"
     },
     {
+      "id": "skill_breath",
+      "name": "基礎吐納",
+      "kind": "internal",
+      "legacyAliasOf": "基礎吐納"
+    },
+    {
+      "id": "skill_palm",
+      "name": "降龍十八掌（殘）",
+      "kind": "external",
+      "legacyAliasOf": "sl_luohan_fist"
+    },
+    {
+      "id": "skill_hermit",
+      "name": "逍遙步",
+      "kind": "qinggong",
+      "legacyAliasOf": "qg_broken_bridge"
+    },
+    {
       "id": "skill_internal",
       "name": "混元心法",
       "kind": "internal",

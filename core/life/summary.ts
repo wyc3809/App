@@ -1,5 +1,6 @@
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { wuxiaAttributeLabels, wuxiaAttributeKeys } from '@interfaces/lifeEngine';
+import { skillDisplay } from './flavor';
 import { getLifeStageLabel } from './stages';
 
 export function buildLifeSummary(state: LifeGameState): string {
@@ -26,7 +27,8 @@ export function buildLifeSummary(state: LifeGameState): string {
   ];
 
   if (c.skills.length) {
-    lines.push('', '　　【武功】', `　　${c.skills.join('、')}`);
+    const skillLine = c.skills.map((id) => skillDisplay(c, id)).join('、');
+    lines.push('', '　　【武功】', `　　${skillLine}`);
   }
   if (c.sectId && state.sects[c.sectId]) {
     lines.push('', `　　【門派】${state.sects[c.sectId].name}`);

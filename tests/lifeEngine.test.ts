@@ -367,6 +367,19 @@ describe('life event engine', () => {
     expect(state.character.qi).toBeLessThan(state.character.maxQi);
   });
 
+  it('life summary lists martial arts in Chinese, not internal ids', async () => {
+    const { buildLifeSummary } = await import('../core/life/summary');
+    initRng(5);
+    const state = createNewLife(5);
+    state.character.skills.push('skill_breath');
+    state.character.skillRanks['skill_breath'] = 0;
+    const text = buildLifeSummary(state);
+    expect(text).toContain('【武功】');
+    expect(text).toContain('長河拳');
+    expect(text).toContain('基礎吐納');
+    expect(text).not.toMatch(/art_river_fist|skill_breath|skill_[a-z]/);
+  });
+
   it('displayChoiceText hides placeholder English', async () => {
     const { displayChoiceText, sanitizePlayerLine } = await import('../core/life/playerText');
     expect(displayChoiceText('None', 'accept')).toBe('應允');

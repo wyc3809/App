@@ -145,7 +145,12 @@ export const SKILL_NAMES: Record<string, string> = Object.fromEntries(
 );
 
 export function skillLabel(id: string): string {
-  return SKILL_NAMES[id] ?? id.replace(/^art_/, '').replace(/^sect_art_/, '').replace(/_/g, '·');
+  const def = getSkillDef(id);
+  if (def?.name && /[\u4e00-\u9fff]/.test(def.name)) return def.name;
+  const named = SKILL_NAMES[id];
+  if (named) return named;
+  if (/[\u4e00-\u9fff]/.test(id)) return id;
+  return '無名功法';
 }
 
 export function getSkillDef(id: string): SkillDef | undefined {

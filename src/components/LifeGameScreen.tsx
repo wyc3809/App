@@ -2,6 +2,7 @@ import type { LifeGameState } from '@interfaces/lifeEngine';
 import { wuxiaAttributeKeys, wuxiaAttributeLabels } from '@interfaces/lifeEngine';
 import { EVENT_CATALOG } from '@data/events/catalog';
 import { getEventById } from '@core/life/eventEngine';
+import { skillDisplay } from '@core/life/flavor';
 import { useLifeStore } from '../store/lifeStore';
 import { LifeDebugPanel } from './LifeDebugPanel';
 import { InkWashDecor } from './InkWashDecor';
@@ -67,7 +68,9 @@ export function LifeGameScreen({ state }: Props) {
           ))}
         </div>
         {lover && <p className="muted">眷屬：{lover.name}</p>}
-        {c.skills.length > 0 && <p className="muted">武功：{c.skills.join('、')}</p>}
+        {c.skills.length > 0 && (
+          <p className="muted">武功：{c.skills.map((id) => skillDisplay(c, id)).join('、')}</p>
+        )}
       </section>
 
       {state.phase === 'summary' && (
