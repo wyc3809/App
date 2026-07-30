@@ -33,6 +33,7 @@ import {
 import { rankPowerMult } from '@core/life/martialRanks';
 import { displayChoiceText } from '@core/life/playerText';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
+import { InkHuashanPanel } from './InkHuashanPanel';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
 type Props = {
@@ -87,6 +88,10 @@ export function InkPlayScreen({ state }: Props) {
   const debugOpen = useLifeStore((s) => s.debugOpen);
   const setDebugOpen = useLifeStore((s) => s.setDebugOpen);
   const setTab = useLifeStore((s) => s.setTab);
+  const huashanStart = useLifeStore((s) => s.huashanStart);
+  const huashanFight = useLifeStore((s) => s.huashanFight);
+  const huashanDismissReport = useLifeStore((s) => s.huashanDismissReport);
+  const huashanClose = useLifeStore((s) => s.huashanClose);
   const sealText = useLifeStore((s) => s.sealText);
   const flashLines = useLifeStore((s) => s.flashLines);
   const clearSeal = useLifeStore((s) => s.clearSeal);
@@ -273,6 +278,16 @@ export function InkPlayScreen({ state }: Props) {
           </p>
           <p className="ink-note">{natureSummary(c)}</p>
         </section>
+      )}
+
+      {tab === 'jianghu' && (
+        <InkHuashanPanel
+          state={state}
+          onStart={huashanStart}
+          onFight={huashanFight}
+          onDismissReport={huashanDismissReport}
+          onCloseTournament={huashanClose}
+        />
       )}
 
       <section className="ink-vitals" aria-label={showVitalsBars ? '氣血內力' : '江湖概況'}>

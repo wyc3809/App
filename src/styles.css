@@ -700,6 +700,22 @@ body::before {
   border: none;
 }
 
+.ink-huashan-panel {
+  margin-top: 0.75rem;
+}
+
+.ink-huashan-pre {
+  max-height: 14rem;
+  overflow: auto;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.ink-huashan-hint {
+  margin-top: 0.5rem;
+  opacity: 0.85;
+}
+
 .ink-panel {
   position: relative;
   background:

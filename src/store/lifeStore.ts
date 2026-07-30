@@ -8,6 +8,12 @@ import { buildLifeSummary } from '@core/life/summary';
 import { playerCombatTurn, getPlayerMoves, resolveCombatDisposition, type CombatFoeDisposition } from '@core/life/combat';
 import { displayChoiceText, sanitizePlayerLine, sanitizePlayerLines } from '@core/life/playerText';
 import { BASIC_STRIKE } from '@data/skills/catalog';
+import {
+  startHuashanBracket,
+  dismissHuashanReport,
+  clearCompletedHuashan,
+  runPlayerHuashanDuel,
+} from '@core/life/huashan';
 
 const CATALOG = fullCatalog();
 
@@ -43,6 +49,10 @@ export interface LifeStore {
   setDebugOpen: (open: boolean) => void;
   importState: (state: LifeGameState) => void;
   clearSeal: () => void;
+  huashanStart: () => void;
+  huashanFight: () => void;
+  huashanDismissReport: () => void;
+  huashanClose: () => void;
 }
 
 async function save(state: LifeGameState) {
@@ -268,6 +278,66 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   },
 
   clearSeal: () => set({ sealText: null }),
+
+  huashanStart: () => {
+    const { state } = get();
+    if (!state) return;
+    const next = structuredClone(state);
+    const logs = startHuashanBracket(next);
+    void save(next);
+    set({
+      state: next,
+      sealText: '劍',
+      flashLines: [],
+      lastResult: {
+        title: '華山論劍',
+        choiceText: '持帖報名',
+        feedback: sanitizePlayerLine(logs.join('\n')),
+        deltas: [],
+      },
+    });
+  },
+
+  huashanFight: () => {
+    const { state } = get();
+    if (!state?.huashan) return;
+    const next = structuredClone(state);
+    const logs = runPlayerHuashanDuel(next);
+    const won = /晉級|冠軍|告捷/.test(logs.join(''));
+    const lost = /止步|敗北/.test(logs.join(''));
+    void save(next);
+    set({
+      state: next,
+      sealText: next.huashan?.status === 'completed' ? (won && !lost ? '勝' : '敗') : won ? '勝' : lost ? '敗' : '劍',
+      flashLines: [],
+      lastResult: {
+        title: '華山論劍',
+        choiceText: '赴戰',
+        feedback: sanitizePlayerLine(logs.slice(-6).join('\n')),
+        deltas: sanitizePlayerLines(
+          logs.filter((l) => /^名望|^銀兩|^武學|冠軍|四強/.test(l)),
+        ),
+      },
+    });
+  },
+
+  huashanDismissReport: () => {
+    const { state } = get();
+    if (!state) return;
+    const next = structuredClone(state);
+    dismissHuashanReport(next);
+    void save(next);
+    set({ state: next });
+  },
+
+  huashanClose: () => {
+    const { state } = get();
+    if (!state) return;
+    const next = structuredClone(state);
+    clearCompletedHuashan(next);
+    void save(next);
+    set({ state: next });
+  },
 }));
 
 export async function resetLifeSave() {

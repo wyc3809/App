@@ -241,6 +241,70 @@ export interface PendingEvent {
   kind?: 'ordinary' | 'special' | 'story';
 }
 
+/** 華山論劍報名快照（可對戰、可存檔） */
+export interface ContestantBuild {
+  id: string;
+  name: string;
+  martial: number;
+  reputation?: number;
+  age?: number;
+  maxHealth: number;
+  maxQi: number;
+  attributes: Record<WuxiaAttribute, number>;
+  skills: string[];
+  skillRanks: Record<string, number>;
+  gear: string[];
+  equipment: LifeCharacter['equipment'];
+  isPlayer?: boolean;
+}
+
+export interface HuashanBracketMatch {
+  id: string;
+  round: 1 | 2 | 3;
+  aId: string;
+  bId: string;
+  winnerId?: string;
+  log?: string[];
+  resolved: boolean;
+}
+
+/** 單淘汰八強賽（P0：幽靈對手） */
+export interface HuashanBracketState {
+  seasonKey: string;
+  contestants: Record<string, ContestantBuild>;
+  playerId: string;
+  matches: HuashanBracketMatch[];
+  pendingMatchId?: string;
+  status: 'active' | 'completed';
+  placement?: number;
+  lastDuelLog?: string[];
+  fatigueCostPaid?: boolean;
+}
+
+export const huashanBracketSchema = z
+  .object({
+    seasonKey: z.string(),
+    contestants: z.record(z.string(), z.any()),
+    playerId: z.string(),
+    matches: z.array(
+      z.object({
+        id: z.string(),
+        round: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+        aId: z.string(),
+        bId: z.string(),
+        winnerId: z.string().optional(),
+        log: z.array(z.string()).optional(),
+        resolved: z.boolean(),
+      }),
+    ),
+    pendingMatchId: z.string().optional(),
+    status: z.enum(['active', 'completed']),
+    placement: z.number().optional(),
+    lastDuelLog: z.array(z.string()).optional(),
+    fatigueCostPaid: z.boolean().optional(),
+  })
+  .optional();
+
 export interface LifeGameState {
   version: 1;
   seed: number;
@@ -267,6 +331,8 @@ export interface LifeGameState {
   phase: 'create' | 'playing' | 'summary';
   summaryText?: string;
   tab?: 'home' | 'person' | 'jianghu' | 'practice';
+  /** 華山論劍淘汰賽（幽靈對手 P0） */
+  huashan?: HuashanBracketState;
 }
 
 export interface CombatFighterState {
@@ -462,4 +528,5 @@ export const lifeGameStateSchema = z.object({
   phase: z.enum(['create', 'playing', 'summary']),
   summaryText: z.string().optional(),
   tab: z.enum(['home', 'person', 'jianghu', 'practice']).optional(),
+  huashan: huashanBracketSchema,
 });

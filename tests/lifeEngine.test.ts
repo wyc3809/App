@@ -367,6 +367,38 @@ describe('life event engine', () => {
     expect(state.character.qi).toBeLessThan(state.character.maxQi);
   });
 
+  it('huashan bracket runs elimination with ghost opponents', async () => {
+    const { startHuashanBracket, runPlayerHuashanDuel, canEnterHuashan } = await import(
+      '../core/life/huashan'
+    );
+    const { simulateContestDuel } = await import('../core/life/duelSim');
+    initRng(77);
+    const state = createNewLife(77);
+    state.character.martial = 25;
+    state.character.age = 20;
+    expect(canEnterHuashan(state).ok).toBe(true);
+    const startLines = startHuashanBracket(state);
+    expect(startLines[0]).toMatch(/華山論劍/);
+    expect(state.huashan?.status).toBe('active');
+    expect(state.huashan?.matches.length).toBe(7);
+    let safety = 0;
+    while (state.huashan?.status === 'active' && state.huashan.pendingMatchId && safety < 6) {
+      runPlayerHuashanDuel(state);
+      safety += 1;
+    }
+    expect(state.huashan?.status).toBe('completed');
+    expect(state.huashan?.placement).toBeGreaterThanOrEqual(1);
+    expect(state.character.flags.huashan_last_season).toBeTruthy();
+    expect(canEnterHuashan(state).ok).toBe(false);
+
+    const a = state.huashan!.contestants.player!;
+    const b = state.huashan!.contestants.ghost_0!;
+    const r1 = simulateContestDuel({ title: '測試', a, b, seed: 99, aIsPlayer: true });
+    const r2 = simulateContestDuel({ title: '測試', a, b, seed: 99, aIsPlayer: true });
+    expect(r1.winnerId).toBe(r2.winnerId);
+    expect(r1.log.join('')).not.toMatch(/art_|skill_/);
+  });
+
   it('life summary lists martial arts in Chinese, not internal ids', async () => {
     const { buildLifeSummary } = await import('../core/life/summary');
     initRng(5);
