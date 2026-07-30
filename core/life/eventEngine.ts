@@ -30,12 +30,14 @@ import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
 
 /** 把數值行與故事行分開，故事作主文 */
 function isStatLine(line: string): boolean {
-  return /^(銀兩|氣血|名望|武學|內息|內力|裝備|心性|天下|疲勞|閱事|[俠邪狂惡][+\-]+)/.test(line);
+  return /^(銀兩|氣血|名望|武學|內息|內力|裝備|心性|天下|疲勞|閱事|膽識|悟性|魅力|根骨|福緣|人情|記下|獲得|後續|傷勢|餘波|屬性|[俠邪狂惡][+\-]+)/.test(
+    line,
+  );
 }
 
 function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
-  const story = logs.filter((l) => l && !isStatLine(l));
-  if (!story.length) return logs[0] || fallback;
+  const story = logs.filter((l) => l && !isStatLine(l) && !/\[object Object\]/i.test(l) && !/\b[a-z]{3,}\b/i.test(l));
+  if (!story.length) return fallback;
   // 去重並以段落拼接
   const seen = new Set<string>();
   const parts: string[] = [];

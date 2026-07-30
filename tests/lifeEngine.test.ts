@@ -373,6 +373,20 @@ describe('life event engine', () => {
     expect(displayChoiceText('拱手請教', 'accept')).toBe('拱手請教');
     expect(sanitizePlayerLine('習得 skill_foo 與 None')).toMatch(/習得/);
     expect(sanitizePlayerLine('習得 skill_foo 與 None')).not.toMatch(/skill_foo|None/i);
+    expect(sanitizePlayerLine('閱歷加深（courage）[object Object]')).not.toMatch(/courage|object Object/i);
+    expect(sanitizePlayerLine('閱歷加深（courage）')).toMatch(/膽識|閱歷/);
+  });
+
+  it('pack outcomes never leak English paths or [object Object]', async () => {
+    const { getPackChoice } = await import('../core/life/jianghuEventRepository');
+    const { resolvePackOutcomes } = await import('../core/life/outcomeResolver');
+    initRng(42);
+    const state = createNewLife({ seed: 42, name: '沈雲舟', birthplace: '千燈鎮' });
+    const choice = getPackChoice('event_004', 'choice_1')!;
+    const resolved = resolvePackOutcomes(state, choice);
+    const blob = `${resolved.feedback}\n${resolved.logs.join('\n')}\n${resolved.deltas.join('\n')}`;
+    expect(blob).not.toMatch(/courage|perception|charisma|\[object Object\]|acted_with|player\.|attributes\./i);
+    expect(resolved.deltas.some((d) => /膽識|名望|疲勞/.test(d))).toBe(true);
   });
 
   it('boss phase 2 heals and hardens once', async () => {

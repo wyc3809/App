@@ -40,6 +40,33 @@ const CHOICE_FALLBACK: Record<string, string> = {
   run: '抽身',
 };
 
+const LATIN_WORD_ZH: Record<string, string> = {
+  courage: '膽識',
+  perception: '悟性',
+  intelligence: '悟性',
+  charisma: '魅力',
+  strength: '根骨',
+  agility: '身法',
+  luck: '福緣',
+  fame: '名望',
+  honor: '名望',
+  reputation: '名望',
+  health: '氣血',
+  fatigue: '疲勞',
+  stress: '心神',
+  calm: '內息',
+  curiosity: '內息',
+  wealth: '銀兩',
+  coins: '銀兩',
+  none: '……',
+  undefined: '',
+  null: '',
+  true: '',
+  false: '',
+  invalid: '',
+  object: '',
+};
+
 export function displayChoiceText(text: string | undefined, choiceId?: string): string {
   const raw = (text ?? '').trim();
   if (!raw || /^none$/i.test(raw) || /^undefined$/i.test(raw) || /^null$/i.test(raw)) {
@@ -49,7 +76,7 @@ export function displayChoiceText(text: string | undefined, choiceId?: string): 
   if (/^[a-z][a-z0-9_-]*$/i.test(raw) && !/[\u4e00-\u9fff]/.test(raw)) {
     return CHOICE_FALLBACK[choiceId ?? ''] ?? CHOICE_FALLBACK[raw] ?? '抉擇';
   }
-  return raw;
+  return sanitizePlayerLine(raw) || CHOICE_FALLBACK[choiceId ?? ''] || '抉擇';
 }
 
 export function displaySkillName(skillId: string, displayName?: string): string {
@@ -64,15 +91,34 @@ export function displaySkillName(skillId: string, displayName?: string): string 
 
 /** 過濾結果匣／年譜中誤入的英文技術字串 */
 export function sanitizePlayerLine(line: string): string {
-  let s = line.trim();
+  let s = String(line ?? '').trim();
   if (!s) return '';
   if (/^none$/i.test(s)) return '……';
-  s = s.replace(/\b(undefined|null|NaN|true|false|None)\b/gi, '');
-  s = s.replace(/\b(skill|gear|event|boss|flag|art|qg|qy|mv)_[a-z0-9_]+\b/gi, '……');
-  s = s.replace(/\b[a-z]+(?:_[a-z0-9]+)+\b/gi, (m) => (CHOICE_FALLBACK[m] ? CHOICE_FALLBACK[m] : '……'));
+  // JS 物件誤印
+  s = s.replace(/\[object Object\]/gi, '');
+  s = s.replace(/\bundefined\b|\bnull\b|\bNaN\b|\btrue\b|\bfalse\b|\bNone\b/gi, '');
+  // 技術 id
+  s = s.replace(/\b(skill|gear|event|boss|flag|art|qg|qy|mv|item|memory|followup|acted|chose)_[a-z0-9_]+\b/gi, '');
+  s = s.replace(/\b[a-z]+(?:_[a-z0-9]+)+\b/gi, (m) => CHOICE_FALLBACK[m] ?? '');
+  // 括號內純英文（如 courage）
+  s = s.replace(/[（(]\s*([a-z][a-z0-9_]*)\s*[）)]/gi, (_m, word: string) => {
+    const zh = LATIN_WORD_ZH[word.toLowerCase()];
+    return zh ? `（${zh}）` : '';
+  });
+  // 殘留拉丁詞替換或剔除
+  s = s.replace(/\b([a-z]{2,})\b/gi, (m) => {
+    const zh = LATIN_WORD_ZH[m.toLowerCase()];
+    if (zh !== undefined) return zh;
+    if (CHOICE_FALLBACK[m]) return CHOICE_FALLBACK[m];
+    return '';
+  });
+  s = s.replace(/\s{2,}/g, ' ');
+  s = s.replace(/[（(]\s*[）)]/g, '');
+  s = s.replace(/[·…\s，、：:]+$/g, '').replace(/^[·…\s，、：:]+/g, '');
   s = s.replace(/\s{2,}/g, ' ').trim();
-  s = s.replace(/^[·…\s]+|[·…\s]+$/g, '').trim();
-  return s || '……';
+  // 整行若幾乎無中文且無數字符號，視為無效技術行
+  if (s && !/[\u4e00-\u9fff0-9＋＋+\-－]/.test(s)) return '';
+  return s;
 }
 
 export function sanitizePlayerLines(lines: string[]): string[] {

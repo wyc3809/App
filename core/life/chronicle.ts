@@ -1,7 +1,7 @@
 import type { GameEffect, LifeGameState, NatureAttr, WuxiaAttribute, WorldAttr } from '@interfaces/lifeEngine';
 import { natureLabels, wuxiaAttributeLabels, worldAttrLabels } from '@interfaces/lifeEngine';
 import { getLifeStageLabel } from './stages';
-import { displaySkillName } from './playerText';
+import { displaySkillName, sanitizePlayerLine } from './playerText';
 
 export function formatEffectLine(eff: GameEffect, state: LifeGameState): string | null {
   switch (eff.type) {
@@ -78,6 +78,7 @@ export function formatEffectLine(eff: GameEffect, state: LifeGameState): string 
 
 export function pushChronicle(state: LifeGameState, lines: string[]): void {
   const stamped = lines
+    .map((t) => sanitizePlayerLine(String(t ?? '')))
     .filter(Boolean)
     .map((t) => {
       const month = state.month ?? 1;

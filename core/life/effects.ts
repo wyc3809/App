@@ -160,7 +160,7 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
           if (artId && !c.skills.includes(artId)) {
             const line = learnMartialArt(state, artId);
             logs.push(line);
-            deltas.push(`武功＋${artId}`);
+            deltas.push(`武功＋${displaySkillName(artId)}`);
           }
         }
         break;
