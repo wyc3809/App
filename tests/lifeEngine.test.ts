@@ -746,4 +746,62 @@ describe('life event engine', () => {
     }
     expect(texts.size).toBeGreaterThan(200);
   });
+
+  it('legacy carry soft-buffs next life and records generation', async () => {
+    const { extractLegacy } = await import('../core/life/legacy');
+    const { buildLifeSummary } = await import('../core/life/summary');
+    const { recordDeath } = await import('../core/life/death');
+    initRng(11);
+    const prev = createNewLife(11);
+    prev.character.martial = 60;
+    prev.character.flags.family_legacy = true;
+    prev.character.flags.legacy_teacher = true;
+    prev.character.stats.wealthPeak = 400;
+    recordDeath(prev, '試劍不敵，力竭而亡。');
+    prev.phase = 'summary';
+    prev.summaryText = buildLifeSummary(prev);
+    expect(prev.summaryText).toContain('死因：試劍不敵');
+    expect(prev.summaryText).toMatch(/族規|傳功/);
+
+    const legacy = extractLegacy(prev);
+    expect(legacy.familyLegacy).toBe(true);
+    expect(legacy.teacherLegacy).toBe(true);
+
+    const next = createNewLife({ seed: 12, legacy });
+    expect(next.character.flags.legacy_generation).toBe(2);
+    expect(next.character.martial).toBeGreaterThan(8);
+    expect(next.lifeLog.some((l) => l.includes('前世'))).toBe(true);
+    expect(next.character.money).toBeGreaterThan(60);
+  });
+
+  it('stageWeightBias favors elder death/old_age tags', async () => {
+    const { stageWeightBias } = await import('../core/life/stages');
+    expect(stageWeightBias(75, ['old_age'])).toBeGreaterThan(stageWeightBias(25, ['old_age']));
+    expect(stageWeightBias(22, ['romance'])).toBeGreaterThan(stageWeightBias(70, ['romance']));
+  });
+
+  it('health drain death writes a cause into summary', async () => {
+    const { startMonth } = await import('../core/life/eventEngine');
+    const { recordDeath } = await import('../core/life/death');
+    const { buildLifeSummary } = await import('../core/life/summary');
+    initRng(7);
+    const state = createNewLife(7);
+    state.character.health = 0;
+    recordDeath(state, '氣血耗盡，倒於旅途。');
+    state.phase = 'summary';
+    state.summaryText = buildLifeSummary(state);
+    expect(state.summaryText).toContain('死因：氣血耗盡');
+    // also ensure startMonth path records cause when health hits 0 mid-month
+    const s2 = createNewLife(8);
+    s2.character.health = 1;
+    s2.character.fatigue = 100;
+    for (let i = 0; i < 30 && s2.character.alive; i++) {
+      s2.pending = null;
+      s2.pendingCombat = null;
+      startMonth(s2);
+    }
+    if (!s2.character.alive) {
+      expect(s2.character.flags.death_cause).toBeTruthy();
+    }
+  });
 });

@@ -630,6 +630,56 @@ body::before {
   border-bottom: 1px solid var(--ink-faint);
 }
 
+.ink-status-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ink-story-strip {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-left: 2px solid rgba(163, 58, 50, 0.45);
+  background: linear-gradient(90deg, rgba(163, 58, 50, 0.06), transparent 70%);
+  font-family: 'Noto Serif TC', serif;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-wash);
+}
+
+.ink-story-chapter {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.ink-story-goal {
+  display: block;
+}
+
+.ink-coach {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px dashed rgba(45, 42, 38, 0.28);
+  background: rgba(255, 252, 245, 0.72);
+  animation: inkFadeUp 0.5s ease both;
+}
+
+.ink-coach h3 {
+  margin: 0 0 6px;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.ink-coach p {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink-wash);
+}
+
 .ink-name {
   margin: 0;
   font-family: 'Ma Shan Zheng', 'Noto Serif TC', serif;

@@ -18,7 +18,7 @@ import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
 import { GUARD_STANCE, CHARGE_STANCE } from '@data/skills/catalog';
-import { playInkSeal, playInkWin, playInkLose } from '../../audio/inkAudio';
+import { playInkSeal, playInkWin, playInkLose, isInkAudioMuted, toggleInkAudioMuted } from '../../audio/inkAudio';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
@@ -33,6 +33,8 @@ import {
 } from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
 import { displayChoiceText } from '@core/life/playerText';
+import { coachCopy, nextCoachStep } from '@core/life/tutorial';
+import { track } from '../../telemetry/events';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
 import { InkHuashanPanel } from './InkHuashanPanel';
 import { LifeDebugPanel } from '../LifeDebugPanel';
@@ -78,8 +80,10 @@ const RARITY_ZH: Record<string, string> = {
 
 export function InkPlayScreen({ state }: Props) {
   const choose = useLifeStore((s) => s.choose);
+  const dismissEvent = useLifeStore((s) => s.dismissEvent);
+  const dismissCoach = useLifeStore((s) => s.dismissCoach);
   const advanceMonth = useLifeStore((s) => s.advanceMonth);
-  const newLife = useLifeStore((s) => s.newLife);
+  const reincarnate = useLifeStore((s) => s.reincarnate);
   const practice = useLifeStore((s) => s.practice);
   const combatMove = useLifeStore((s) => s.combatMove);
   const combatResolveFoe = useLifeStore((s) => s.combatResolveFoe);
@@ -101,11 +105,13 @@ export function InkPlayScreen({ state }: Props) {
   const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
   const [combatLogOpen, setCombatLogOpen] = useState(false);
   const [combatFiltersOpen, setCombatFiltersOpen] = useState(false);
-  const [chronicleOpen, setChronicleOpen] = useState(false);
+  const [chronicleOpen, setChronicleOpen] = useState(() => (state.character.stats.monthsLived ?? 0) < 3);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
   const [previewGearId, setPreviewGearId] = useState<string | null>(null);
+  const [audioMuted, setAudioMuted] = useState(() => isInkAudioMuted());
   const combatBeatRef = useRef<HTMLDivElement | null>(null);
+  const resultAckRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!sealText) return;
@@ -210,10 +216,28 @@ export function InkPlayScreen({ state }: Props) {
     if (!showResult) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') clearResult();
+    };
+    window.addEventListener('keydown', onKey);
+    window.requestAnimationFrame(() => resultAckRef.current?.focus());
     return () => {
       document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
     };
-  }, [showResult]);
+  }, [showResult, clearResult]);
+
+  const eligibleChoices =
+    pendingEvent?.choices.filter((ch) => meetsRequirements(state, ch.requirements)).slice(0, 3) ?? [];
+  const coachStep = nextCoachStep(c.flags);
+  const coach = coachCopy(coachStep);
+  const showCoach =
+    onHomeTab &&
+    !combat &&
+    !showResult &&
+    state.phase === 'playing' &&
+    Boolean(coach) &&
+    !c.flags.coach_done;
 
   return (
     <div className={`scroll-shell scroll-shell--play ink-enter${combat ? ' scroll-shell--combat' : ''}`}>
@@ -228,19 +252,44 @@ export function InkPlayScreen({ state }: Props) {
             {sect ? ` · ${sect.name}` : ''}
           </p>
         </div>
-        <button
-          type="button"
-          className="ink-icon-btn"
-          onClick={() => {
-            setDebugOpen(!debugOpen);
-          }}
-          title="除錯"
-        >
-          墨
-        </button>
+        <div className="ink-status-actions">
+          <button
+            type="button"
+            className="ink-icon-btn"
+            onClick={() => {
+              const next = toggleInkAudioMuted();
+              setAudioMuted(next);
+              track('audio_mute_toggle', { muted: next });
+            }}
+            title={audioMuted ? '開聲' : '靜音'}
+            aria-pressed={audioMuted}
+            aria-label={audioMuted ? '開聲' : '靜音'}
+          >
+            {audioMuted ? '默' : '聲'}
+          </button>
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              className="ink-icon-btn"
+              onClick={() => {
+                setDebugOpen(!debugOpen);
+              }}
+              title="除錯"
+            >
+              墨
+            </button>
+          )}
+        </div>
       </header>
 
       {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
+
+      {!combat && state.phase === 'playing' && state.story && (
+        <p className="ink-story-strip" aria-label="心志">
+          <span className="ink-story-chapter">第{state.story.chapter}章 · {state.story.title}</span>
+          <span className="ink-story-goal">{state.story.goal}</span>
+        </p>
+      )}
 
       {!combat && (
         <nav className="ink-tabs" aria-label="分卷">
@@ -271,6 +320,16 @@ export function InkPlayScreen({ state }: Props) {
       {/* 鎮居首屏：事件／翻頁優先於儀表與年譜 */}
       {onHomeTab && !combat && (
         <div key={`${state.year}-${month}`} className="ink-home-focus ink-scroll-flip">
+          {showCoach && coach && (
+            <section className="ink-coach" aria-live="polite">
+              <h3>{coach.title}</h3>
+              <p>{coach.body}</p>
+              <button type="button" className="ink-btn ink-btn--ghost" onClick={() => dismissCoach()}>
+                已知曉
+              </button>
+            </section>
+          )}
+
           {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && (
             <section className="ink-flash" aria-live="polite">
               {flashLines.map((line) => (
@@ -288,23 +347,26 @@ export function InkPlayScreen({ state }: Props) {
               <h3>{displayTitle}</h3>
               {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
               <div className="ink-choice-list">
-                {pendingEvent.choices
-                  .filter((ch) => meetsRequirements(state, ch.requirements))
-                  .slice(0, 3)
-                  .map((ch, i) => (
-                    <button
-                      key={ch.id}
-                      type="button"
-                      className="ink-choice"
-                      style={{ ['--i' as string]: i }}
-                      onClick={() => {
-                        choose(ch.id);
-                      }}
-                    >
-                      <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
-                      {displayChoiceText(ch.text, ch.id)}
-                    </button>
-                  ))}
+                {eligibleChoices.map((ch, i) => (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    className="ink-choice"
+                    style={{ ['--i' as string]: i }}
+                    onClick={() => {
+                      choose(ch.id);
+                    }}
+                  >
+                    <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
+                    {displayChoiceText(ch.text, ch.id)}
+                  </button>
+                ))}
+                {eligibleChoices.length === 0 && (
+                  <button type="button" className="ink-choice" onClick={() => dismissEvent()}>
+                    <span className="ink-choice-mark">避</span>
+                    暫避鋒芒（此刻無可行之選）
+                  </button>
+                )}
               </div>
             </section>
           )}
@@ -1001,6 +1063,7 @@ export function InkPlayScreen({ state }: Props) {
               <button
                 type="button"
                 className="ink-btn ink-btn--primary ink-btn--ack"
+                ref={resultAckRef}
                 onClick={() => {
                   clearResult();
                 }}
@@ -1033,9 +1096,16 @@ export function InkPlayScreen({ state }: Props) {
           <div className="ink-seal-static ink-seal-static--end" aria-hidden>
             終
           </div>
-          <button type="button" className="ink-btn ink-btn--primary" onClick={() => newLife()}>
+          <button type="button" className="ink-btn ink-btn--primary" onClick={() => reincarnate()}>
             轉世再入江湖
           </button>
+          <p className="ink-note ink-note--center">
+            前世武學餘韻
+            {c.flags.family_legacy || c.flags.legacy_teacher
+              ? `與${[c.flags.family_legacy ? '族規' : '', c.flags.legacy_teacher ? '傳功' : ''].filter(Boolean).join('、')}`
+              : ''}
+            將淡淡帶入來世。
+          </p>
         </section>
       )}
 

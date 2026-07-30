@@ -21,6 +21,9 @@ import {
   clearCompletedHuashan,
   runPlayerHuashanDuel,
 } from '@core/life/huashan';
+import { extractLegacy } from '@core/life/legacy';
+import { pushChronicle } from '@core/life/chronicle';
+import { track } from '../telemetry/events';
 
 const CATALOG = fullCatalog();
 
@@ -44,10 +47,15 @@ export interface LifeStore {
   beginCreate: () => void;
   cancelCreate: () => void;
   newLife: (opts?: CreateLifeOptions | number) => void;
+  /** 帶前世墨跡轉世 */
+  reincarnate: () => void;
   continueLife: () => Promise<boolean>;
   advanceMonth: () => void;
   advanceYear: () => void;
   choose: (choiceId: string) => void;
+  /** 無可選抉擇時暫避 */
+  dismissEvent: () => void;
+  dismissCoach: () => void;
   practice: (actionId: PracticeActionId, opts?: { sectId?: string }) => void;
   combatMove: (moveId: string) => void;
   combatResolveFoe: (disposition: CombatFoeDisposition) => void;
@@ -93,6 +101,10 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   newLife: (opts?: CreateLifeOptions | number) => {
     const state = createNewLife(opts);
     void save(state);
+    track('life_create', {
+      seed: state.seed,
+      hasLegacy: Boolean(typeof opts === 'object' && opts && 'legacy' in opts && opts.legacy),
+    });
     set({
       state,
       creating: false,
@@ -103,11 +115,27 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     });
   },
 
+  reincarnate: () => {
+    const prev = get().state;
+    if (!prev || prev.phase !== 'summary') {
+      get().newLife();
+      return;
+    }
+    const legacy = extractLegacy(prev);
+    track('life_reincarnate', {
+      generation: legacy.generation,
+      family: legacy.familyLegacy,
+      teacher: legacy.teacherLegacy,
+    });
+    get().newLife({ legacy });
+  },
+
   continueLife: async () => {
     const loaded = await loadLifeSave();
     if (!loaded) return false;
     const state = migrateLifeState(loaded.state);
     syncRngFromState(state);
+    track('life_resume', { age: state.character.age });
     set({
       state,
       creating: false,
@@ -125,7 +153,13 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       return;
     if (get().lastResult) set({ lastResult: null });
     const next = structuredClone(state);
+    if (!next.character.flags.coach_flipped) next.character.flags.coach_flipped = true;
     startMonth(next);
+    if (next.phase === 'summary') {
+      track('life_death', { cause: String(next.character.flags.death_cause ?? '') });
+    } else {
+      track('month_advance', { month: next.month, age: next.character.age });
+    }
     void save(next);
     set({
       state: next,
@@ -143,8 +177,14 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     if (!event) return;
     const choice = event.choices.find((c) => c.id === choiceId);
     const next = structuredClone(state);
+    if (!next.character.flags.coach_chose) next.character.flags.coach_chose = true;
     const result = applyChoice(next, event, choiceId);
     const startedCombat = Boolean(result.state.pendingCombat);
+    track('choice_made', { eventId: event.id, choiceId });
+    if (result.died || result.state.phase === 'summary') {
+      track('life_death', { cause: String(result.state.character.flags.death_cause ?? '') });
+    }
+    if (startedCombat) track('combat_start', { title: result.state.pendingCombat?.title ?? '' });
     void save(result.state);
     set({
       state: result.state,
@@ -161,10 +201,41 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     });
   },
 
+  dismissEvent: () => {
+    const { state } = get();
+    if (!state?.pending || state.pendingCombat) return;
+    const next = structuredClone(state);
+    const title = getEventById(CATALOG, next.pending!.eventId)?.title ?? '機緣';
+    next.pending = null;
+    pushChronicle(next, [`「${title}」`, '你選擇暫避鋒芒，此事輕輕揭過。']);
+    void save(next);
+    set({
+      state: next,
+      sealText: '定',
+      lastResult: {
+        title,
+        choiceText: '暫避鋒芒',
+        feedback: '你選擇暫避鋒芒，此事輕輕揭過。',
+        deltas: [],
+      },
+    });
+  },
+
+  dismissCoach: () => {
+    const { state } = get();
+    if (!state) return;
+    const next = structuredClone(state);
+    next.character.flags.coach_done = true;
+    track('coach_dismiss');
+    void save(next);
+    set({ state: next });
+  },
+
   practice: (actionId: PracticeActionId, opts?: { sectId?: string }) => {
     const { state } = get();
     if (!state || state.phase !== 'playing' || !state.character.alive) return;
     const next = structuredClone(state);
+    if (!next.character.flags.coach_practiced) next.character.flags.coach_practiced = true;
     const logs = performPracticeAction(next, actionId, opts);
     if (!next.character.alive) {
       next.phase = 'summary';

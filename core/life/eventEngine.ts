@@ -11,6 +11,8 @@ import {
 import { buildLifeSummary } from './summary';
 import { pushChronicle } from './chronicle';
 import { simulateMonthBody, seasonLabel } from './monthly';
+import { stageWeightBias } from './stages';
+import { recordDeath } from './death';
 import { RANDOM_PACK_EVENTS } from './packAdapter';
 import { ORDINARY_EVENTS } from '@data/events/ordinary';
 import { EVENT_CATALOG } from '@data/events/catalog';
@@ -121,16 +123,21 @@ export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): 
   return fresh.length ? fresh : eligible;
 }
 
-function weightedPick(_state: LifeGameState, events: GameEvent[]): GameEvent | null {
+function weightedPick(state: LifeGameState, events: GameEvent[]): GameEvent | null {
   if (!events.length) return null;
   const rng = getRng();
-  const total = events.reduce((s, e) => s + (e.weight ?? 10), 0);
+  const age = state.character.age;
+  const weighted = events.map((e) => ({
+    e,
+    w: Math.max(0.05, (e.weight ?? 10) * stageWeightBias(age, e.tags)),
+  }));
+  const total = weighted.reduce((s, x) => s + x.w, 0);
   let roll = rng.nextFloat() * total;
-  for (const e of events) {
-    roll -= e.weight ?? 10;
-    if (roll <= 0) return e;
+  for (const x of weighted) {
+    roll -= x.w;
+    if (roll <= 0) return x.e;
   }
-  return events[events.length - 1];
+  return weighted[weighted.length - 1]!.e;
 }
 
 export function pickOutcomeForChoice(
@@ -303,7 +310,11 @@ export function applyChoice(
   pushChronicle(state, [`「${titleForLog}」——${choice.text}`, feedback, ...deltas]);
 
   if (died || !state.character.alive) {
-    state.character.alive = false;
+    if (!state.character.flags.death_cause) {
+      recordDeath(state, '際遇難測，墨盡人散。');
+    } else {
+      state.character.alive = false;
+    }
     state.phase = 'summary';
     state.summaryText = buildLifeSummary(state);
   }
@@ -352,9 +363,12 @@ export function startMonth(state: LifeGameState): LifeGameState {
   simulateMonthBody(state);
 
   if (!state.character.alive) {
+    if (!state.character.flags.death_cause) {
+      recordDeath(state, '氣血耗盡，墨盡人散。');
+    }
     state.phase = 'summary';
     state.summaryText = buildLifeSummary(state);
-    pushChronicle(state, ['氣血耗盡，墨盡人散。']);
+    pushChronicle(state, [String(state.character.flags.death_cause ?? '氣血耗盡，墨盡人散。')]);
     snapshotRng(state);
     return state;
   }

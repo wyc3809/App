@@ -28,6 +28,7 @@ import {
   tickRegen,
   resolveStrike,
 } from './combatCore';
+import { recordDeath } from './death';
 
 export type CombatFoeDisposition = 'kill' | 'release' | 'stun';
 
@@ -398,7 +399,7 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
     lines.push(`名望${r.reputation > 0 ? '＋' : ''}${r.reputation}`);
   }
   if (c.health <= 0) {
-    c.alive = false;
+    recordDeath(state, `敗於${combat.foe.name}，力竭倒地。`);
     state.phase = 'summary';
     state.summaryText = buildLifeSummary(state);
     lines.push('你力竭倒地，江湖路斷。');

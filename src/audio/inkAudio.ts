@@ -1,9 +1,39 @@
-/** 水墨風極輕音效（Web Audio）；尊重系統「減少動態」時靜音 */
+/** 水墨風極輕音效（Web Audio）；玩家可靜音，並尊重系統「減少動態」 */
+
+const MUTE_KEY = 'ink_audio_muted';
 
 let ctx: AudioContext | null = null;
+let muted = false;
+
+try {
+  if (typeof localStorage !== 'undefined') {
+    muted = localStorage.getItem(MUTE_KEY) === '1';
+  }
+} catch {
+  muted = false;
+}
+
+export function isInkAudioMuted(): boolean {
+  return muted;
+}
+
+export function setInkAudioMuted(next: boolean): void {
+  muted = next;
+  try {
+    localStorage.setItem(MUTE_KEY, next ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
+}
+
+export function toggleInkAudioMuted(): boolean {
+  setInkAudioMuted(!muted);
+  return muted;
+}
 
 function canPlay(): boolean {
   if (typeof window === 'undefined') return false;
+  if (muted) return false;
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
   return true;
 }
@@ -38,7 +68,6 @@ function tone(freq: number, dur = 0.08, type: OscillatorType = 'sine', gain = 0.
 }
 
 export function playInkTap() {
-  // 短促「咔」感，避免拖長音拖慢手感
   tone(760, 0.022, 'square', 0.016);
   tone(420, 0.03, 'triangle', 0.012);
 }
@@ -55,4 +84,12 @@ export function playInkWin() {
 
 export function playInkLose() {
   tone(180, 0.16, 'triangle', 0.03);
+}
+
+export function playInkHit() {
+  tone(520, 0.04, 'square', 0.018);
+}
+
+export function playInkMiss() {
+  tone(260, 0.05, 'triangle', 0.012);
 }

@@ -9,6 +9,7 @@ import { learnMartialArt } from './flavor';
 import { displaySkillName } from './playerText';
 import { applyNatureDelta, ensureNature } from './nature';
 import { applyPracticeOutcome, type WanderPracticeActionId } from './actions';
+import { recordDeath } from './death';
 
 export interface EffectResult {
   logs: string[];
@@ -204,12 +205,14 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
         }
         break;
       }
-      case 'die':
-        c.alive = false;
+      case 'die': {
+        const reason = eff.reason ?? '你撒手人寰。';
         c.health = 0;
         died = true;
-        logs.push(eff.reason ?? '你撒手人寰。');
+        recordDeath(state, reason);
+        logs.push(reason);
         break;
+      }
       case 'practice': {
         const outcomeLogs = applyPracticeOutcome(state, eff.action as WanderPracticeActionId);
         logs.push(...outcomeLogs);
@@ -227,9 +230,13 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
 
   if (c.money < 0) c.money = 0;
   if (c.health <= 0) {
-    c.alive = false;
     died = true;
-    if (!logs.some((l) => /撒手|身亡|離世|倒下/.test(l))) logs.push('氣血歸零，你倒下了。');
+    if (!c.flags.death_cause) {
+      recordDeath(state, '氣血歸零，你倒下了。');
+    } else {
+      c.alive = false;
+    }
+    if (!logs.some((l) => /撒手|身亡|離世|倒下|氣血/.test(l))) logs.push('氣血歸零，你倒下了。');
   }
   return { logs, died, deltas };
 }

@@ -7,6 +7,7 @@ import { rollLifetimeChildrenMax } from './family';
 import { defaultNature } from './nature';
 import { makeStoryState, makeWorldState } from './monthly';
 import { recomputeCapBonuses } from './equipment';
+import { applyLegacyToCharacter, type LegacyCarry } from './legacy';
 
 export const SECT_DEFS = SECT_CONTENT.map((s) => ({
   id: s.id,
@@ -29,6 +30,10 @@ export interface CreateLifeOptions {
   name?: string;
   gender?: 'male' | 'female';
   birthplace?: string;
+  /** 前世傳承；轉世時帶入 */
+  legacy?: LegacyCarry;
+  /** 首局教練（預設開） */
+  skipCoach?: boolean;
 }
 
 export function createNewLife(options: CreateLifeOptions | number = {}): LifeGameState {
@@ -40,7 +45,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
 
   const gender: 'male' | 'female' = opts.gender ?? (rng.chance(0.5) ? 'male' : 'female');
   const name = opts.name?.trim() || randomChineseName();
-  const birthplace = opts.birthplace || '千燈鎮';
+  const birthplace = opts.birthplace || opts.legacy?.birthplace || '千燈鎮';
   const fatherName = randomChineseName();
   const motherName = randomChineseName();
   const attrs = createAttributes(rng);
@@ -83,7 +88,12 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     childrenCount: 0,
     childrenMax: rollLifetimeChildrenMax(rng),
     monthsSinceLastBirth: 99,
-    flags: { baseMaxHp: maxHealth, baseMaxQi: maxQi },
+    flags: {
+      baseMaxHp: maxHealth,
+      baseMaxQi: maxQi,
+      legacy_generation: opts.legacy?.generation ?? 1,
+      ...(opts.skipCoach || opts.legacy ? { coach_done: true } : {}),
+    },
     family: { fatherName, motherName, childrenNames: [] },
     stats: {
       yearsLived: 0,
@@ -126,8 +136,14 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
 
   const year = 18;
   const month = 1;
+  const lifeLog = [
+    `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
+    `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
+    `心性 俠${character.nature.xia} · 邪${character.nature.xie} · 狂${character.nature.kuang} · 惡${character.nature.e}`,
+    `氣血上限 ${maxHealth} · 內力上限 ${maxQi}`,
+  ];
 
-  return {
+  const state: LifeGameState = {
     version: 1,
     seed: s,
     rngState: getRngState(),
@@ -146,15 +162,18 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     pending: null,
     pendingCombat: null,
     practiceActionsLeft: 3,
-    lifeLog: [
-      `【${year}年${month}月·${birthplace}】${name}辭別父母，踏上江湖。`,
-      `根骨 ${attrs.genGu} · 悟性 ${attrs.wuXing} · 福緣 ${attrs.fuYuan} · 魅力 ${attrs.meiLi} · 膽識 ${attrs.danShi}`,
-      `心性 俠${character.nature.xia} · 邪${character.nature.xie} · 狂${character.nature.kuang} · 惡${character.nature.e}`,
-      `氣血上限 ${maxHealth} · 內力上限 ${maxQi}`,
-    ],
+    lifeLog,
     phase: 'playing',
     tab: 'home',
   };
+
+  if (opts.legacy) {
+    const legacyLines = applyLegacyToCharacter(state, opts.legacy);
+    state.lifeLog.push(...legacyLines);
+    recomputeCapBonuses(state.character);
+  }
+
+  return state;
 }
 
 export function syncRngFromState(state: LifeGameState): void {

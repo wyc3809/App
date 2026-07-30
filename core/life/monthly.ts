@@ -4,6 +4,7 @@ import { STORY_CHAPTERS } from '@data/content/packs';
 import { tryMonthlyBirth } from './family';
 import { tickAftermath } from './aftermath';
 import { pushChronicle } from './chronicle';
+import { recordDeath } from './death';
 
 export function makeWorldState(): WorldState {
   const rng = getRng();
@@ -159,11 +160,13 @@ export function simulateMonthBody(state: LifeGameState): void {
   tickAftermath(state);
 
   if (c.health <= 0) {
-    c.alive = false;
     c.health = 0;
+    if (c.alive) {
+      recordDeath(state, '氣血耗盡，倒於旅途。');
+    }
   }
-  if (c.age > 72 && rng.chance((c.age - 70) / 180)) {
-    c.alive = false;
+  if (c.alive && c.age > 72 && rng.chance((c.age - 70) / 180)) {
+    recordDeath(state, '年邁體衰，無疾而終。');
   }
 }
 

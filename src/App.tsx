@@ -53,7 +53,7 @@ export default function App() {
         onStart={() => void handleStart()}
         onContinue={() => void handleContinue()}
         resumeHint={canResume ? resumeHint : undefined}
-        onSeedDebug={() => void handleSeed()}
+        onSeedDebug={import.meta.env.DEV ? () => void handleSeed() : undefined}
       />
     </>
   );
