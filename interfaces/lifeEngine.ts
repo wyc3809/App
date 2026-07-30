@@ -255,6 +255,8 @@ export interface LifeGameState {
   specialEventCountdown: number;
   worldFlags: Record<string, boolean | number | string>;
   completedEvents: string[];
+  /** 近期出現過的事件（用於約 50 月內去重） */
+  recentEvents?: { id: string; at: number }[];
   pending: PendingEvent | null;
   pendingCombat?: PendingCombat | null;
   /** 本月剩餘修煉行動次數（每月三次） */
@@ -439,6 +441,10 @@ export const lifeGameStateSchema = z.object({
   specialEventCountdown: z.number().default(12),
   worldFlags: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])),
   completedEvents: z.array(z.string()),
+  recentEvents: z
+    .array(z.object({ id: z.string(), at: z.number() }))
+    .optional()
+    .default([]),
   pending: z
     .object({
       eventId: z.string(),

@@ -1,7 +1,7 @@
 import packJson from '@data/events/jianghu_random_events_100.json';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
-import { syncRngFromState, snapshotRng } from './gameState';
+import { syncRngFromState, snapshotRng, isEventOnRepeatCooldown } from './gameState';
 
 /** Pack v1 原始結構（對應 content/events/jianghu_random_events_100.json） */
 export type PackOutcomeOp = {
@@ -87,6 +87,8 @@ export function filterPackByConditions(state: LifeGameState): PackEventRaw[] {
       const loc = c.location || c.birthplace || '';
       if (!allowed.includes(loc)) return false;
     }
+
+    if (isEventOnRepeatCooldown(state, event.id)) return false;
 
     return true;
   });

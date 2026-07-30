@@ -7,7 +7,9 @@ import {
   startMonth,
   getEventById,
   fullCatalog,
+  listEligibleEvents,
 } from '../core/life/eventEngine';
+import { JIANGHU_EXTRA_EVENTS } from '../data/events/jianghuExtra100';
 import { createNewLife } from '../core/life/gameState';
 import { meetsRequirements } from '../core/life/requirements';
 import { getLifeStage } from '../core/life/stages';
@@ -23,7 +25,26 @@ describe('life event catalog', () => {
 
   it('loads 100 pack events', () => {
     expect(RANDOM_PACK_EVENTS.length).toBe(100);
-    expect(fullCatalog().length).toBeGreaterThan(150);
+    expect(fullCatalog().length).toBeGreaterThan(250);
+  });
+
+  it('includes 100 jianghu extra events', () => {
+    expect(JIANGHU_EXTRA_EVENTS.length).toBe(100);
+    expect(JIANGHU_EXTRA_EVENTS.every((e) => e.choices.length === 3)).toBe(true);
+    expect(fullCatalog().some((e) => e.id === 'jx_black_inn')).toBe(true);
+  });
+
+  it('avoids repeating the same event within 50 months', () => {
+    const state = createNewLife({ seed: 99, name: '測試', birthplace: '千燈鎮' });
+    state.character.age = 18;
+    state.character.stats.monthsLived = 10;
+    state.recentEvents = [{ id: 'jx_black_inn', at: 8 }];
+    const pool = listEligibleEvents(JIANGHU_EXTRA_EVENTS, state);
+    expect(pool.some((e) => e.id === 'jx_black_inn')).toBe(false);
+
+    state.character.stats.monthsLived = 60;
+    const later = listEligibleEvents(JIANGHU_EXTRA_EVENTS, state);
+    expect(later.some((e) => e.id === 'jx_black_inn')).toBe(true);
   });
 
   it('preserves original pack choice texts (3 each)', () => {

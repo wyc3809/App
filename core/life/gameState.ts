@@ -139,6 +139,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     specialEventCountdown: rng.nextInt(3, 15),
     worldFlags: {},
     completedEvents: [],
+    recentEvents: [],
     pending: null,
     pendingCombat: null,
     practiceActionsLeft: 3,
@@ -170,6 +171,9 @@ export function advanceYear(state: LifeGameState): void {
   state.year += 1;
 }
 
+/** 同一事件約略 50 個月內不再重複抽出 */
+export const EVENT_REPEAT_COOLDOWN_MONTHS = 50;
+
 export function markEventComplete(state: LifeGameState, eventId: string): void {
   if (!state.completedEvents.includes(eventId)) {
     state.completedEvents.push(eventId);
@@ -179,7 +183,18 @@ export function markEventComplete(state: LifeGameState, eventId: string): void {
   if (eventId.startsWith('event_')) {
     state.character.flags[`completed_${eventId}`] = true;
   }
+  const at = state.character.stats.monthsLived ?? 0;
+  const recent = state.recentEvents ?? [];
+  recent.push({ id: eventId, at });
+  state.recentEvents = recent.filter((e) => at - e.at < EVENT_REPEAT_COOLDOWN_MONTHS + 4);
   state.character.stats.eventsSeen += 1;
+}
+
+export function isEventOnRepeatCooldown(state: LifeGameState, eventId: string): boolean {
+  const at = state.character.stats.monthsLived ?? 0;
+  return (state.recentEvents ?? []).some(
+    (e) => e.id === eventId && at - e.at < EVENT_REPEAT_COOLDOWN_MONTHS,
+  );
 }
 
 export function ensureNpc(
@@ -241,5 +256,6 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (!raw.tab) raw.tab = 'home';
   if (raw.pendingCombat === undefined) raw.pendingCombat = null;
   if (raw.practiceActionsLeft === undefined) raw.practiceActionsLeft = 3;
+  if (!Array.isArray(raw.recentEvents)) raw.recentEvents = [];
   return raw;
 }

@@ -2,7 +2,12 @@ import type { EventChoice, GameEvent, LifeGameState } from '@interfaces/lifeEngi
 import { gameEventSchema } from '@interfaces/lifeEngine';
 import { applyEffects } from './effects';
 import { meetsRequirements } from './requirements';
-import { markEventComplete, snapshotRng, syncRngFromState } from './gameState';
+import {
+  isEventOnRepeatCooldown,
+  markEventComplete,
+  snapshotRng,
+  syncRngFromState,
+} from './gameState';
 import { buildLifeSummary } from './summary';
 import { pushChronicle } from './chronicle';
 import { simulateMonthBody, seasonLabel } from './monthly';
@@ -12,6 +17,7 @@ import { EVENT_CATALOG } from '@data/events/catalog';
 import { SECRET_ART_EVENTS } from '@data/events/secretArts';
 import { BOSS_ENCOUNTER_EVENTS, getBossFightConfig } from '@data/events/bossEncounters';
 import { PRACTICE_WANDER_EVENTS } from '@data/events/practiceWander';
+import { JIANGHU_EXTRA_EVENTS } from '@data/events/jianghuExtra100';
 import { getRng } from '@core/random';
 import { rollAdventureGear } from '@data/equipment/catalog';
 import { grantGear } from './equipment';
@@ -70,10 +76,11 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
   return catalog.find((e) => e.id === id);
 }
 
-/** 合併：日常 + 修煉機緣 + 秘傳奇遇 + 舊 50 + 百人包 */
+/** 合併：日常 + 江湖百事 + 修煉機緣 + 秘傳奇遇 + 舊目錄 + 百人包 */
 export function fullCatalog(): GameEvent[] {
   return [
     ...ORDINARY_EVENTS,
+    ...JIANGHU_EXTRA_EVENTS,
     ...PRACTICE_WANDER_EVENTS,
     ...SECRET_ART_EVENTS,
     ...BOSS_ENCOUNTER_EVENTS,
@@ -83,7 +90,10 @@ export function fullCatalog(): GameEvent[] {
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
-  return catalog.filter((e) => meetsRequirements(state, e.requirements, e.id));
+  const eligible = catalog.filter((e) => meetsRequirements(state, e.requirements, e.id));
+  const fresh = eligible.filter((e) => !isEventOnRepeatCooldown(state, e.id));
+  // 池子被冷卻抽乾時退回全部合格項，避免卡死無事件
+  return fresh.length ? fresh : eligible;
 }
 
 function weightedPick(_state: LifeGameState, events: GameEvent[]): GameEvent | null {
@@ -355,9 +365,13 @@ export function startMonth(state: LifeGameState): LifeGameState {
   }
 
   if (!event) {
-    // mix ordinary + non-birth catalog events (exclude pack)
+    // mix ordinary + 江湖百事 + non-birth catalog events (exclude pack)
     const pool = listEligibleEvents(
-      [...ORDINARY_EVENTS, ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth')],
+      [
+        ...ORDINARY_EVENTS,
+        ...JIANGHU_EXTRA_EVENTS,
+        ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth'),
+      ],
       state,
     ).filter((e) => !(e.tags ?? []).includes('pack'));
     event = weightedPick(state, pool);
