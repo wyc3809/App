@@ -140,6 +140,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     worldFlags: {},
     completedEvents: [],
     recentEvents: [],
+    combatEncounterCountdown: rng.nextInt(7, 15),
     pending: null,
     pendingCombat: null,
     practiceActionsLeft: 3,
@@ -257,5 +258,8 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (raw.pendingCombat === undefined) raw.pendingCombat = null;
   if (raw.practiceActionsLeft === undefined) raw.practiceActionsLeft = 3;
   if (!Array.isArray(raw.recentEvents)) raw.recentEvents = [];
+  if (raw.combatEncounterCountdown === undefined) {
+    raw.combatEncounterCountdown = 10;
+  }
   return raw;
 }

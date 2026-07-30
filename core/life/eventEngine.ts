@@ -21,11 +21,12 @@ import { JIANGHU_EXTRA_EVENTS } from '@data/events/jianghuExtra100';
 import { getRng } from '@core/random';
 import { rollAdventureGear } from '@data/equipment/catalog';
 import { grantGear } from './equipment';
-import { withRiskAndThree } from './choiceEnrich';
+import { withRiskAndThree, jitterEffectsForRoll } from './choiceEnrich';
 import { pickPackEvent, getPackChoice } from './jianghuEventRepository';
-import { resolvePackOutcomes, applyPackRiskTail } from './outcomeResolver';
+import { resolvePackOutcomes, applyPackFortuneTwist } from './outcomeResolver';
 import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
+import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
 
 /** 把數值行與故事行分開，故事作主文 */
 function isStatLine(line: string): boolean {
@@ -76,11 +77,12 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
   return catalog.find((e) => e.id === id);
 }
 
-/** 合併：日常 + 江湖百事 + 修煉機緣 + 秘傳奇遇 + 舊目錄 + 百人包 */
+/** 合併：日常 + 江湖百事 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包 */
 export function fullCatalog(): GameEvent[] {
   return [
     ...ORDINARY_EVENTS,
     ...JIANGHU_EXTRA_EVENTS,
+    ...ROAD_ENCOUNTER_EVENTS,
     ...PRACTICE_WANDER_EVENTS,
     ...SECRET_ART_EVENTS,
     ...BOSS_ENCOUNTER_EVENTS,
@@ -91,7 +93,11 @@ export function fullCatalog(): GameEvent[] {
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
   const eligible = catalog.filter((e) => meetsRequirements(state, e.requirements, e.id));
-  const fresh = eligible.filter((e) => !isEventOnRepeatCooldown(state, e.id));
+  const fresh = eligible.filter((e) => {
+    // 路遇交手可重複，不受 50 月冷卻限制（另有 7–15 月倒數節奏）
+    if ((e.tags ?? []).includes('road')) return true;
+    return !isEventOnRepeatCooldown(state, e.id);
+  });
   // 池子被冷卻抽乾時退回全部合格項，避免卡死無事件
   return fresh.length ? fresh : eligible;
 }
@@ -215,14 +221,14 @@ export function applyChoice(
     deltas = [...resolved.deltas];
     feedback = buildStoryFeedback(logs, resolved.feedback);
     died = resolved.died;
+    const twistLogs = applyPackFortuneTwist(state);
+    if (twistLogs.length) {
+      logs.push(...twistLogs);
+      deltas.push('餘波');
+    }
     if (resolved.success) {
-      const riskLogs = applyPackRiskTail(state, 0.12);
-      if (riskLogs.length) {
-        logs.push(...riskLogs);
-        deltas.push('餘波');
-      }
       const rng = getRng();
-      if (rng.chance(0.28)) {
+      if (rng.chance(0.22)) {
         const gearId = rollAdventureGear(rng);
         if (gearId) {
           const name = grantGear(state, gearId);
@@ -235,14 +241,15 @@ export function applyChoice(
     }
   } else {
     const outcome = pickOutcomeForChoice(state, choice.outcomes);
-    const applied = applyEffects(state, outcome.effects);
+    const rng = getRng();
+    const jittered = jitterEffectsForRoll(outcome.effects, rng.nextFloat());
+    const applied = applyEffects(state, jittered);
     logs = applied.logs;
     deltas = applied.deltas;
     died = applied.died;
-    const isBad = outcome.id?.endsWith('_bad') || outcome.label === '事與願違';
-    if (!isBad && (tags.includes('secret') || tags.includes('special'))) {
-      const rng = getRng();
-      if (rng.chance(0.28)) {
+    const isIll = outcome.id?.endsWith('_ill') || outcome.label === '事與願違';
+    if (!isIll && (tags.includes('secret') || tags.includes('special'))) {
+      if (rng.chance(0.22)) {
         const gearId = rollAdventureGear(rng);
         if (gearId) {
           const name = grantGear(state, gearId);
@@ -294,6 +301,16 @@ function shouldTriggerSpecial(state: LifeGameState): boolean {
   return state.specialEventCountdown <= 0;
 }
 
+/** 路遇交手：約每 7–15 個月觸發一次 */
+function shouldTriggerRoadCombat(state: LifeGameState): boolean {
+  const rng = getRng();
+  if (!Number.isFinite(state.combatEncounterCountdown)) {
+    state.combatEncounterCountdown = rng.nextInt(7, 15);
+  }
+  state.combatEncounterCountdown = (state.combatEncounterCountdown ?? 10) - 1;
+  return (state.combatEncounterCountdown ?? 0) <= 0;
+}
+
 export function startMonth(state: LifeGameState): LifeGameState {
   if (!state.character.alive || state.phase !== 'playing') return state;
   if (state.pending) return state;
@@ -334,38 +351,48 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let event: GameEvent | null = null;
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
-  const rumorBoost = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
-  const bossChance = 0.055 + rumorBoost * 0.028;
-  const secretExtraChance = rumorBoost > 0 ? 0.04 + rumorBoost * 0.025 : 0;
+  // 路遇遇敵節奏：約 7–15 月一次（可重複池）
+  if (shouldTriggerRoadCombat(state)) {
+    const roadPool = listEligibleEvents(ROAD_ENCOUNTER_EVENTS, state);
+    event = weightedPick(state, roadPool.length ? roadPool : ROAD_ENCOUNTER_EVENTS);
+    kind = 'ordinary';
+    state.combatEncounterCountdown = rng.nextInt(7, 15);
+  }
 
-  const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
-  if (bossPool.length && rng.chance(bossChance)) {
-    event = weightedPick(state, bossPool);
-    kind = 'special';
-  } else if (shouldTriggerSpecial(state) || (secretExtraChance > 0 && rng.chance(secretExtraChance))) {
-    // Pack v1 流程：conditions 過濾 → weight 加權；再混入秘傳奇遇
-    const packPick = pickPackEvent(state);
-    if (packPick) {
-      event = RANDOM_PACK_EVENTS.find((e) => e.id === packPick.id) ?? null;
+  const rumorBoost = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
+  // 首領／傳聞略降，避免與路遇節奏疊加過密；打聽傳聞仍可抬高
+  const bossChance = 0.04 + rumorBoost * 0.025;
+  const secretExtraChance = rumorBoost > 0 ? 0.035 + rumorBoost * 0.022 : 0;
+
+  if (!event) {
+    const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
+    if (bossPool.length && rng.chance(bossChance)) {
+      event = weightedPick(state, bossPool);
+      kind = 'special';
+    } else if (shouldTriggerSpecial(state) || (secretExtraChance > 0 && rng.chance(secretExtraChance))) {
+      const packPick = pickPackEvent(state);
+      if (packPick) {
+        event = RANDOM_PACK_EVENTS.find((e) => e.id === packPick.id) ?? null;
+      }
+      if (!event) {
+        const secretPool = listEligibleEvents(SECRET_ART_EVENTS, state);
+        event = weightedPick(state, secretPool);
+      }
+      kind = 'special';
+      state.specialEventCountdown = rng.nextInt(3, 15);
     }
-    if (!event) {
-      const secretPool = listEligibleEvents(SECRET_ART_EVENTS, state);
-      event = weightedPick(state, secretPool);
-    }
-    kind = 'special';
-    state.specialEventCountdown = rng.nextInt(3, 15);
   }
 
   if (!event) {
+    // 修煉機緣略降：0.34 → 0.28，讓江湖百事更多露出
     const wanderPool = listEligibleEvents(PRACTICE_WANDER_EVENTS, state);
-    if (wanderPool.length && rng.chance(0.34)) {
+    if (wanderPool.length && rng.chance(0.28)) {
       event = weightedPick(state, wanderPool);
       kind = 'ordinary';
     }
   }
 
   if (!event) {
-    // mix ordinary + 江湖百事 + non-birth catalog events (exclude pack)
     const pool = listEligibleEvents(
       [
         ...ORDINARY_EVENTS,
@@ -378,7 +405,6 @@ export function startMonth(state: LifeGameState): LifeGameState {
     kind = 'ordinary';
   }
 
-  // 打聽傳聞的加成每翻一頁消耗一層
   if (rumorBoost > 0) {
     state.character.flags.rumor_boost = rumorBoost - 1;
   }

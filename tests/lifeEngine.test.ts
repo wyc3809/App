@@ -99,10 +99,34 @@ describe('life event engine', () => {
     expect(state.character.maxQi).toBeGreaterThan(100);
   });
 
-  it('ordinary events offer three choices with risk branches', () => {
+  it('ordinary events offer three choices with fair/mixed/ill branches', () => {
     const market = getEventById(fullCatalog(), 'ord_market')!;
     expect(market.choices.length).toBe(3);
-    expect(market.choices.every((c) => c.outcomes.length >= 2)).toBe(true);
+    expect(market.choices.every((c) => c.outcomes.length >= 3)).toBe(true);
+    expect(market.choices.every((c) => c.outcomes.some((o) => o.label === '順遂'))).toBe(true);
+    expect(market.choices.every((c) => c.outcomes.some((o) => o.label === '波折'))).toBe(true);
+    expect(market.choices.every((c) => c.outcomes.some((o) => o.label === '事與願違'))).toBe(true);
+  });
+
+  it('road encounters exist and combat countdown starts in 7–15', () => {
+    const state = createNewLife({ seed: 7, name: '試劍', birthplace: '千燈鎮' });
+    expect(state.combatEncounterCountdown).toBeGreaterThanOrEqual(7);
+    expect(state.combatEncounterCountdown).toBeLessThanOrEqual(15);
+    expect(fullCatalog().some((e) => e.id === 'road_bandit_pass')).toBe(true);
+  });
+
+  it('choice outcomes vary across rolls (anti-memorization)', () => {
+    const market = getEventById(fullCatalog(), 'ord_market')!;
+    const signatures = new Set<string>();
+    for (let i = 0; i < 48; i += 1) {
+      const s = createNewLife({ seed: 2000 + i, name: '雲舟', birthplace: '千燈鎮' });
+      const before = { money: s.character.money, health: s.character.health, rep: s.character.reputation };
+      applyChoice(s, market, market.choices[0].id);
+      signatures.add(
+        `${s.character.money - before.money}|${s.character.health - before.health}|${s.character.reputation - before.rep}`,
+      );
+    }
+    expect(signatures.size).toBeGreaterThan(2);
   });
 
   it('combat moves get role tags without capping count', async () => {

@@ -301,8 +301,8 @@ export function applyPracticeOutcome(
         break;
       }
       c.money -= 40;
-      // 鍛造失敗率提高：爐火難馴
-      if (rng.chance(0.4)) {
+      // 鍛造失敗率：爐火難馴，但不宜高到令人放棄
+      if (rng.chance(0.32)) {
         logs.push('爐火失控，兵器毀於一旦，還燙傷了手。');
         addCondition(state, 'bleeding');
         break;
@@ -346,7 +346,7 @@ export function applyPracticeOutcome(
           const adv = tryAdvanceSkill(state, art.id, 'practice');
           logs.push(adv ?? '高人只點破你舊招中的滯澀。');
         }
-      } else if (rng.chance(0.25)) {
+      } else if (rng.chance(0.18)) {
         logs.push('尋訪無果，山道上卻撞見剪徑之徒——只好交手。');
         logs.push(
           ...startCombat(state, {

@@ -172,18 +172,41 @@ function applyPackOutcome(
   }
 }
 
-/** 低機率負面餘波（不取代 pack outcomes） */
-export function applyPackRiskTail(state: LifeGameState, chance = 0.12): string[] {
+/** 百人包抉擇後的命運餘波：常有得失，難以背出固定結果 */
+export function applyPackFortuneTwist(state: LifeGameState): string[] {
   syncRngFromState(state);
   const rng = getRng();
-  if (!rng.chance(chance)) {
-    snapshotRng(state);
-    return [];
-  }
   const c = state.character;
-  c.health = clamp(c.health - rng.nextInt(8, 18), 0, c.maxHealth);
-  addCondition(state, 'bleeding');
-  const logs = ['此局仍有餘波，你帶傷收場。', '氣血受損', '傷勢'];
+  const roll = rng.nextFloat();
+  const logs: string[] = [];
+
+  if (roll < 0.34) {
+    const dmg = rng.nextInt(6, 14);
+    c.health = clamp(c.health - dmg, 0, c.maxHealth);
+    addCondition(state, 'bleeding');
+    logs.push('此局仍有餘波，你帶傷收場。', '氣血受損', '傷勢');
+  } else if (roll < 0.55) {
+    const loss = rng.nextInt(4, 12);
+    c.money = Math.max(0, c.money - loss);
+    c.martial = Math.min(100, c.martial + 1);
+    logs.push('銀錢散了些，卻也換來一點實戰體會。', `銀兩－${loss}`, '武學＋1');
+  } else if (roll < 0.72) {
+    const gain = rng.nextInt(4, 11);
+    c.money += gain;
+    c.health = clamp(c.health - rng.nextInt(2, 5), 0, c.maxHealth);
+    logs.push('意外撿回一點好處，過程卻磕碰了皮肉。', `銀兩＋${gain}`, '氣血微損');
+  } else if (roll < 0.86) {
+    c.reputation += 1;
+    logs.push('旁人把你的處置傳了開去，名望微升。', '名望＋1');
+  } else {
+    logs.push('餘波平平，你把經過嚥進肚裡，繼續趕路。');
+  }
+
   snapshotRng(state);
   return logs;
+}
+
+/** @deprecated 使用 applyPackFortuneTwist */
+export function applyPackRiskTail(state: LifeGameState, _chance = 0.12): string[] {
+  return applyPackFortuneTwist(state);
 }

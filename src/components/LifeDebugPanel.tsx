@@ -23,7 +23,8 @@ export function LifeDebugPanel({ state }: Props) {
         {catalog.length}
       </p>
       <p className="muted">
-        特殊倒數 {state.specialEventCountdown ?? '—'} · 符合條件 {eligible.length}
+        特殊倒數 {state.specialEventCountdown ?? '—'} · 遇敵倒數 {state.combatEncounterCountdown ?? '—'} ·
+        符合條件 {eligible.length}
       </p>
       <details>
         <summary>符合事件 ID</summary>

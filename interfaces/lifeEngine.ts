@@ -257,6 +257,8 @@ export interface LifeGameState {
   completedEvents: string[];
   /** 近期出現過的事件（用於約 50 月內去重） */
   recentEvents?: { id: string; at: number }[];
+  /** 路遇交手倒數：約 7–15 月遇敵一次 */
+  combatEncounterCountdown?: number;
   pending: PendingEvent | null;
   pendingCombat?: PendingCombat | null;
   /** 本月剩餘修煉行動次數（每月三次） */
@@ -445,6 +447,7 @@ export const lifeGameStateSchema = z.object({
     .array(z.object({ id: z.string(), at: z.number() }))
     .optional()
     .default([]),
+  combatEncounterCountdown: z.number().optional().default(10),
   pending: z
     .object({
       eventId: z.string(),

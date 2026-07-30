@@ -727,7 +727,7 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
 
 export function isFleeChoice(choiceId: string, text: string): boolean {
   const s = `${choiceId} ${text}`;
-  return /avoid|flee|leave|delay|watch|run|逃|避|離開|觀望|改日|抽身|退去|不戰/.test(s);
+  return /avoid|flee|leave|delay|watch|run|逃|避|離開|離去|觀望|改日|抽身|退去|不戰|繞道|自顧/.test(s);
 }
 
 /** 由 startMonth 呼叫：處理放走／血債引發的延遲交手 */
