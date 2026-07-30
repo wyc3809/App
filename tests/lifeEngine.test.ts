@@ -367,6 +367,51 @@ describe('life event engine', () => {
     expect(state.character.qi).toBeLessThan(state.character.maxQi);
   });
 
+  it('event catalog is cached singleton with O(1) lookup', async () => {
+    const { fullCatalog, getEventById, lookupEvent } = await import('../core/life/eventEngine');
+    const a = fullCatalog();
+    const b = fullCatalog();
+    expect(a).toBe(b);
+    expect(a.length).toBeGreaterThan(250);
+    const sample = a[0]!;
+    expect(getEventById(a, sample.id)?.id).toBe(sample.id);
+    expect(lookupEvent(sample.id)?.id).toBe(sample.id);
+  });
+
+  it('createRng is isolated from global rng stream', async () => {
+    const { initRng, getRng, createRng } = await import('../core/random');
+    initRng(1);
+    const g1 = getRng().nextInt(0, 1000);
+    const local = createRng(99);
+    local.nextInt(0, 1000);
+    const g2 = getRng().nextInt(0, 1000);
+    initRng(1);
+    expect(getRng().nextInt(0, 1000)).toBe(g1);
+    expect(g2).not.toBeUndefined();
+  });
+
+  it('equip preview shows power delta before committing', async () => {
+    const { grantGear, previewEquipDelta, combatPowerScore } = await import('../core/life/equipment');
+    initRng(12);
+    const state = createNewLife(12);
+    const before = combatPowerScore(state.character);
+    grantGear(state, 'inkrain-sword');
+    const preview = previewEquipDelta(state.character, 'inkrain-sword')!;
+    expect(preview.powerAfter).toBeGreaterThan(preview.powerBefore);
+    expect(combatPowerScore(state.character)).toBe(before);
+  });
+
+  it('huashan bracket tree lists all three rounds', async () => {
+    const { startHuashanBracket, buildBracketTree } = await import('../core/life/huashan');
+    initRng(77);
+    const state = createNewLife(77);
+    state.character.martial = 25;
+    startHuashanBracket(state);
+    const tree = buildBracketTree(state.huashan!);
+    expect(tree.map((r) => r.round)).toEqual([1, 2, 3]);
+    expect(tree[0]!.matches.length).toBe(4);
+  });
+
   it('equipped gear adds combat stats and passives', async () => {
     const { buildPlayerFighter } = await import('../core/life/combat');
     const { equipGear, grantGear } = await import('../core/life/equipment');

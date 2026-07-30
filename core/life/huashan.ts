@@ -456,4 +456,42 @@ export function bracketProgressLabel(bracket: HuashanBracketState): string {
   return `進行中·八強 ${done}/4`;
 }
 
+export type BracketTreeRound = {
+  round: 1 | 2 | 3;
+  label: string;
+  matches: {
+    id: string;
+    aName: string;
+    bName: string;
+    winnerName?: string;
+    pending: boolean;
+    involvesPlayer: boolean;
+  }[];
+};
+
+/** 供 UI 繪製八強→四強→決賽括號 */
+export function buildBracketTree(bracket: HuashanBracketState): BracketTreeRound[] {
+  const nameOf = (id: string) => {
+    if (!id) return '待定';
+    const c = bracket.contestants[id];
+    if (!c) return '？';
+    return c.isPlayer || id === bracket.playerId ? `${c.name}（你）` : c.name;
+  };
+  const rounds: BracketTreeRound[] = ([1, 2, 3] as const).map((round) => ({
+    round,
+    label: ROUND_LABEL[round],
+    matches: bracket.matches
+      .filter((m) => m.round === round)
+      .map((m) => ({
+        id: m.id,
+        aName: nameOf(m.aId),
+        bName: nameOf(m.bId),
+        winnerName: m.winnerId ? nameOf(m.winnerId) : undefined,
+        pending: Boolean(bracket.pendingMatchId === m.id),
+        involvesPlayer: m.aId === bracket.playerId || m.bId === bracket.playerId,
+      })),
+  }));
+  return rounds;
+}
+
 export { ROUND_LABEL };

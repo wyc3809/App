@@ -53,6 +53,25 @@ export function initRng(seed: number): SeededRng {
   return globalRng;
 }
 
+/** 建立獨立 RNG（不污染全域；論劍／伺服器結算用） */
+export function createRng(seed: number): SeededRng {
+  return new SeededRng(seed);
+}
+
+/**
+ * 暫時切換全域 RNG 執行 fn，結束後還原。
+ * 遷移期便利；新程式優先直接傳入 SeededRng。
+ */
+export function withRng<T>(rng: SeededRng, fn: () => T): T {
+  const prev = globalRng;
+  globalRng = rng;
+  try {
+    return fn();
+  } finally {
+    globalRng = prev;
+  }
+}
+
 export function getRng(): SeededRng {
   if (!globalRng) {
     globalRng = new SeededRng(Date.now() >>> 0);

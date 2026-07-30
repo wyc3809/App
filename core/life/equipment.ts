@@ -137,3 +137,74 @@ export function raiseBaseMaxQi(c: LifeCharacter, amount: number): void {
 export function listOwnedGear(): typeof GEAR_CATALOG {
   return GEAR_CATALOG;
 }
+
+/** 簡易戰力分：用於換裝前後對照 */
+export function combatPowerScore(c: LifeCharacter): number {
+  ensureGear(c);
+  const t = gearTotals(c);
+  const fx = sumGearCombatBonuses(c);
+  return (
+    t.attack * 2 +
+    t.defense +
+    t.martialBonus +
+    Math.round(t.maxHpBonus / 10) +
+    Math.round(t.maxQiBonus / 10) +
+    Math.round(fx.hitBonus * 80) +
+    Math.round(fx.evasion * 80) +
+    Math.round(fx.pierce * 60) +
+    Math.round(fx.reflect * 40) +
+    Math.round(fx.lifesteal * 50)
+  );
+}
+
+export interface EquipPreviewDelta {
+  gearId: string;
+  name: string;
+  slot: GearSlot;
+  alreadyEquipped: boolean;
+  powerBefore: number;
+  powerAfter: number;
+  powerDelta: number;
+  attackDelta: number;
+  defenseDelta: number;
+  summary: string;
+}
+
+/** 預覽將某件已擁有裝備換上後的戰力差（不寫入狀態） */
+export function previewEquipDelta(c: LifeCharacter, gearId: string): EquipPreviewDelta | null {
+  const def = getGearDef(gearId);
+  if (!def) return null;
+  ensureGear(c);
+  const alreadyEquipped = c.equipment[def.slot] === gearId;
+  const powerBefore = combatPowerScore(c);
+  const attackBefore = gearTotals(c).attack;
+  const defenseBefore = gearTotals(c).defense;
+
+  const shadow: LifeCharacter = {
+    ...c,
+    equipment: { ...c.equipment, [def.slot]: gearId },
+    flags: { ...c.flags },
+  };
+  const powerAfter = combatPowerScore(shadow);
+  const attackAfter = gearTotals(shadow).attack;
+  const defenseAfter = gearTotals(shadow).defense;
+  const powerDelta = powerAfter - powerBefore;
+  const attackDelta = attackAfter - attackBefore;
+  const defenseDelta = defenseAfter - defenseBefore;
+  const bits: string[] = [];
+  if (attackDelta) bits.push(`攻${attackDelta > 0 ? '+' : ''}${attackDelta}`);
+  if (defenseDelta) bits.push(`防${defenseDelta > 0 ? '+' : ''}${defenseDelta}`);
+  bits.push(`戰力${powerDelta > 0 ? '+' : ''}${powerDelta}`);
+  return {
+    gearId,
+    name: def.name,
+    slot: def.slot,
+    alreadyEquipped,
+    powerBefore,
+    powerAfter,
+    powerDelta,
+    attackDelta,
+    defenseDelta,
+    summary: bits.join(' · '),
+  };
+}

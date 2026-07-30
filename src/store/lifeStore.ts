@@ -10,6 +10,7 @@ import {
   setPersistFlushHook,
 } from './persistSchedule';
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
+import { equipGear } from '@core/life/equipment';
 import { buildLifeSummary } from '@core/life/summary';
 import { playerCombatTurn, getPlayerMoves, resolveCombatDisposition, type CombatFoeDisposition } from '@core/life/combat';
 import { displayChoiceText, sanitizePlayerLine, sanitizePlayerLines } from '@core/life/playerText';
@@ -59,6 +60,8 @@ export interface LifeStore {
   huashanFight: () => void;
   huashanDismissReport: () => void;
   huashanClose: () => void;
+  /** 免費換裝（不耗修煉次數） */
+  equipOwned: (gearId: string) => void;
 }
 
 async function save(state: LifeGameState, immediate = true) {
@@ -345,6 +348,26 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     clearCompletedHuashan(next);
     void save(next);
     set({ state: next });
+  },
+
+  equipOwned: (gearId: string) => {
+    const { state } = get();
+    if (!state || state.phase !== 'playing' || !state.character.alive) return;
+    if (state.pendingCombat) return;
+    const next = structuredClone(state);
+    const msg = equipGear(next, gearId);
+    void save(next);
+    set({
+      state: next,
+      sealText: '裝',
+      flashLines: [],
+      lastResult: {
+        title: '整裝',
+        choiceText: '換裝',
+        feedback: sanitizePlayerLine(msg),
+        deltas: [],
+      },
+    });
   },
 }));
 

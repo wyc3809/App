@@ -1,4 +1,4 @@
-import { initRng, type SeededRng } from '@core/random';
+import { createRng, type SeededRng } from '@core/random';
 import {
   BASIC_STRIKE,
   GUARD_STANCE,
@@ -14,12 +14,9 @@ import { gearTotals, ensureGear, sumGearCombatBonuses } from './equipment';
 import { rankPowerMult } from './martialRanks';
 import type { CombatFighterState, LifeCharacter, WuxiaAttribute } from '@interfaces/lifeEngine';
 import type { ContestantBuild } from '@interfaces/lifeEngine';
+import { clamp, tickStatus, resolveStrike as resolveStrikeCore } from './combatCore';
 
 export type ContestFighter = CombatFighterState;
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
-}
 
 function fakeCharacter(loadout: ContestantBuild): LifeCharacter {
   const attrs = { ...loadout.attributes };
@@ -110,10 +107,6 @@ export function buildContestantFighter(loadout: ContestantBuild, isPlayerSide = 
 }
 
 
-function effectiveDefense(f: ContestFighter): number {
-  return Math.max(0, f.defense + f.defenseMod);
-}
-
 function skillIdForMove(skills: string[], moveId: string): string | null {
   for (const id of skills) {
     const def = getSkillDef(id);
@@ -136,73 +129,6 @@ function weaponMatchBoost(
   return { power: 1, hit: 0 };
 }
 
-function tickStatus(f: ContestFighter): string[] {
-  const lines: string[] = [];
-  if (f.bleedTurns > 0 && f.bleedDamage > 0) {
-    f.hp = clamp(f.hp - f.bleedDamage, 0, f.maxHp);
-    f.bleedTurns -= 1;
-    lines.push(`${f.name}血流不止，失去 ${f.bleedDamage} 點氣血。`);
-    if (f.bleedTurns <= 0) f.bleedDamage = 0;
-  }
-  if (f.defenseMod < 0) f.defenseMod = Math.min(0, f.defenseMod + 1);
-  return lines;
-}
-
-function resolveOneHit(
-  attacker: ContestFighter,
-  defender: ContestFighter,
-  move: CombatMoveDef,
-  rng: SeededRng,
-  hitIndex: number,
-  totalHits: number,
-  powerMult = 1,
-  extraHit = 0,
-): string[] {
-  const lines: string[] = [];
-  const hitChance = clamp(
-    0.62 +
-      attacker.hitBonus +
-      (move.hitBonus ?? 0) +
-      extraHit -
-      (defender.evasion ?? 0) -
-      defender.blind -
-      hitIndex * 0.04,
-    0.12,
-    0.95,
-  );
-  if (!rng.chance(hitChance)) {
-    const qing =
-      defender.isPlayer && (defender.evasion ?? 0) >= 0.05 ? '，借輕功錯開半寸' : '';
-    lines.push(
-      totalHits > 1
-        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被${defender.name}閃過${qing}。`
-        : `${attacker.name}使出「${move.name}」，被${defender.name}閃過${qing}！`,
-    );
-    return lines;
-  }
-  const pierce = clamp((move.pierce ?? 0) + (attacker.gearPierce ?? 0), 0, 0.85);
-  const def = effectiveDefense(defender) * (1 - pierce);
-  const raw = attacker.attack * move.power * powerMult;
-  const mitigated = Math.max(3, Math.round(raw - def * 0.55 + rng.nextInt(-3, 4)));
-  defender.hp = clamp(defender.hp - mitigated, 0, defender.maxHp);
-  lines.push(
-    totalHits > 1
-      ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊命中，造成 ${mitigated} 點傷害。`
-      : `${attacker.name}「${move.name}」命中，造成 ${mitigated} 點傷害。`,
-  );
-  const stealRate = (move.lifesteal ?? 0) + (attacker.gearLifesteal ?? 0);
-  if (stealRate > 0) {
-    const steal = Math.max(1, Math.round(mitigated * stealRate * (0.85 + powerMult * 0.15)));
-    attacker.hp = clamp(attacker.hp + steal, 0, attacker.maxHp);
-    lines.push(`${attacker.name}借力回氣，回復 ${steal} 點氣血。`);
-  }
-  if (defender.reflect > 0 && mitigated > 0) {
-    const back = Math.max(1, Math.round(mitigated * defender.reflect));
-    attacker.hp = clamp(attacker.hp - back, 0, attacker.maxHp);
-    lines.push(`${defender.name}硬功反震，${attacker.name}受到 ${back} 點反震。`);
-  }
-  return lines;
-}
 
 function resolveStrike(
   attacker: ContestFighter,
@@ -213,43 +139,12 @@ function resolveStrike(
   powerMult = 1,
   extraHit = 0,
 ): string[] {
-  const lines: string[] = [];
-  if (move.id === GUARD_STANCE.id || move.id === CHARGE_STANCE.id) return lines;
-  if (attacker.qi < move.qiCost) {
-    lines.push(`${attacker.name}內息不足，改為普通攻擊。`);
-    return resolveStrike(attacker, defender, BASIC_STRIKE, loadout, rng, 1, extraHit);
-  }
-  attacker.qi -= move.qiCost;
-  defender.blind = Math.max(0, defender.blind * 0.35);
-  let charge = 1;
-  if (attacker.chargeBonus > 0) {
-    charge = 1 + attacker.chargeBonus;
-    attacker.chargeBonus = 0;
-    lines.push(`${attacker.name}蓄勢已久，這一擊沉猛異常！`);
-  }
-  const hits = move.multiHit ?? 1;
+  if (move.id === GUARD_STANCE.id || move.id === CHARGE_STANCE.id) return [];
   const sid = skillIdForMove(loadout.skills, move.id);
   const wpn = weaponMatchBoost(loadout, sid);
   const rank = sid ? (loadout.skillRanks[sid] ?? 0) : 0;
-  const mult = (sid ? rankPowerMult(rank) : 1) * wpn.power * charge * powerMult;
-  let anyHit = false;
-  for (let i = 0; i < hits; i += 1) {
-    const before = defender.hp;
-    lines.push(...resolveOneHit(attacker, defender, move, rng, i, hits, mult, extraHit + wpn.hit));
-    if (defender.hp < before) anyHit = true;
-    if (defender.hp <= 0) break;
-  }
-  if (
-    anyHit &&
-    (move.bleedChance ? rng.chance(move.bleedChance) : false) === false &&
-    (attacker.gearBleedChance ?? 0) > 0 &&
-    rng.chance(attacker.gearBleedChance!)
-  ) {
-    defender.bleedDamage = Math.max(defender.bleedDamage, 5);
-    defender.bleedTurns = Math.max(defender.bleedTurns, 2);
-    lines.push(`${defender.name}兵刃帶血，傷口難合。`);
-  }
-  return lines;
+  const mult = (sid ? rankPowerMult(rank) : 1) * wpn.power * powerMult;
+  return resolveStrikeCore(attacker, defender, move, rng, mult, extraHit + wpn.hit);
 }
 
 function contestChooseMove(
@@ -325,7 +220,7 @@ export function simulateContestDuel(opts: {
   maxTurns?: number;
   aIsPlayer?: boolean;
 }): ContestDuelResult {
-  const rng = initRng(opts.seed >>> 0);
+  const rng = createRng(opts.seed >>> 0);
   const maxTurns = opts.maxTurns ?? 36;
   const aF = buildContestantFighter(opts.a, Boolean(opts.aIsPlayer));
   const bF = buildContestantFighter(opts.b, false);

@@ -13,7 +13,7 @@ import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef, WEAPON_KIND_LABEL, formatGearCombatLine, formatGearStatLine } from '@data/equipment/catalog';
-import { gearTotals, sumGearCombatBonuses } from '@core/life/equipment';
+import { gearTotals, sumGearCombatBonuses, previewEquipDelta, combatPowerScore } from '@core/life/equipment';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
@@ -93,6 +93,7 @@ export function InkPlayScreen({ state }: Props) {
   const huashanFight = useLifeStore((s) => s.huashanFight);
   const huashanDismissReport = useLifeStore((s) => s.huashanDismissReport);
   const huashanClose = useLifeStore((s) => s.huashanClose);
+  const equipOwned = useLifeStore((s) => s.equipOwned);
   const sealText = useLifeStore((s) => s.sealText);
   const flashLines = useLifeStore((s) => s.flashLines);
   const clearSeal = useLifeStore((s) => s.clearSeal);
@@ -103,6 +104,7 @@ export function InkPlayScreen({ state }: Props) {
   const [chronicleOpen, setChronicleOpen] = useState(false);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
+  const [previewGearId, setPreviewGearId] = useState<string | null>(null);
   const combatBeatRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -589,7 +591,7 @@ export function InkPlayScreen({ state }: Props) {
 
           <h3 className="ink-subhead">行囊裝備</h3>
           <p className="ink-note ink-gear-totals">
-            披掛合計：
+            披掛合計：戰力 {combatPowerScore(c)} ·{' '}
             {[
               gearStatTotals.attack ? `攻+${gearStatTotals.attack}` : '',
               gearStatTotals.defense ? `防+${gearStatTotals.defense}` : '',
@@ -615,7 +617,9 @@ export function InkPlayScreen({ state }: Props) {
               return (
                 <p key={slot} className="ink-note">
                   {slot === 'weapon' ? '兵刃' : slot === 'armor' ? '護體' : '佩飾'} ·{' '}
-                  {def ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}${def.weaponKind ? `·${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}）` : '空'}
+                  {def
+                    ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}${def.weaponKind ? `·${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}）`
+                    : '空'}
                   {stats && <span className="ink-gear-stat"> — {stats}</span>}
                   {fx && <span className="ink-gear-fx"> {fx}</span>}
                 </p>
@@ -627,13 +631,16 @@ export function InkPlayScreen({ state }: Props) {
               {gearIds.map((id) => {
                 const def = getGearDef(id);
                 if (!def) return null;
+                const equipped = equipment[def.slot] === id;
+                const preview = previewGearId === id ? previewEquipDelta(c, id) : null;
                 return (
-                  <li key={id}>
+                  <li key={id} className={equipped ? 'ink-gear-item ink-gear-item--on' : 'ink-gear-item'}>
                     <span>
                       {def.name}
                       <em>
                         {RARITY_ZH[def.rarity]}
                         {def.weaponKind ? ` · ${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}
+                        {equipped ? ' · 已披' : ''}
                       </em>
                     </span>
                     {formatGearStatLine(def) && (
@@ -643,6 +650,35 @@ export function InkPlayScreen({ state }: Props) {
                       <span className="ink-gear-fx">{formatGearCombatLine(def)}</span>
                     )}
                     <span className="ink-gear-desc">{def.description}</span>
+                    <div className="ink-gear-actions">
+                      {!equipped && (
+                        <button
+                          type="button"
+                          className="ink-btn ink-btn--quiet"
+                          disabled={busy}
+                          onClick={() => setPreviewGearId(previewGearId === id ? null : id)}
+                        >
+                          {previewGearId === id ? '收起對照' : '預覽'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="ink-btn ink-btn--quiet"
+                        disabled={busy || equipped}
+                        onClick={() => {
+                          playInkTap();
+                          setPreviewGearId(null);
+                          equipOwned(id);
+                        }}
+                      >
+                        {equipped ? '已裝備' : '裝備'}
+                      </button>
+                    </div>
+                    {preview && !preview.alreadyEquipped && (
+                      <p className={`ink-gear-preview${preview.powerDelta >= 0 ? ' ink-gear-preview--up' : ' ink-gear-preview--down'}`}>
+                        換上後：{preview.summary}
+                      </p>
+                    )}
                   </li>
                 );
               })}
@@ -913,13 +949,18 @@ export function InkPlayScreen({ state }: Props) {
         createPortal(
           <div className="ink-modal" role="dialog" aria-modal="true" aria-label="結果">
             <div className="ink-modal-card ink-result">
-              <InkResultSeal text={resultKind === 'practice' ? '修' : '定'} />
+              <InkResultSeal text={resultKind === 'practice' ? '修' : lastResult.title === '整裝' ? '裝' : '定'} />
               <p className="ink-event-year">
-                {resultKind === 'practice' ? '修煉已定' : '本月際遇'}
+                {resultKind === 'practice'
+                  ? '修煉已定'
+                  : lastResult.title === '整裝'
+                    ? '披掛已定'
+                    : '本月際遇'}
               </p>
               <h3>{lastResult.title}</h3>
               <p className="ink-result-choice">你選擇：{lastResult.choiceText}</p>
               <div className="ink-result-story">
+                <p className="ink-result-story-label">經過</p>
                 {lastResult.feedback.split(/\n\n+/).map((para, i) => (
                   <p key={`${i}-${para.slice(0, 12)}`} className="ink-event-body">
                     {para}
@@ -927,14 +968,14 @@ export function InkPlayScreen({ state }: Props) {
                 ))}
               </div>
               {lastResult.deltas.length > 0 && (
-                <>
+                <div className="ink-result-deltas">
                   <p className="ink-result-delta-label">此局得失</p>
                   <ul className="ink-delta-list">
                     {lastResult.deltas.map((d) => (
                       <li key={d}>{d}</li>
                     ))}
                   </ul>
-                </>
+                </div>
               )}
               <button
                 type="button"

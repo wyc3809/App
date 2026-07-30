@@ -76,21 +76,38 @@ export function validateEvents(raw: unknown[]): GameEvent[] {
 }
 
 export function getEventById(catalog: GameEvent[], id: string): GameEvent | undefined {
+  if (catalogById && (catalog === cachedCatalog || catalog.length === cachedCatalog?.length)) {
+    const hit = catalogById.get(id);
+    if (hit) return hit;
+  }
   return catalog.find((e) => e.id === id);
 }
 
-/** 合併：日常 + 江湖百事 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包 */
+let cachedCatalog: GameEvent[] | null = null;
+let catalogById: Map<string, GameEvent> | null = null;
+
+/** 合併：日常 + 江湖百事 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包（單例快取） */
 export function fullCatalog(): GameEvent[] {
-  return [
-    ...ORDINARY_EVENTS,
-    ...JIANGHU_EXTRA_EVENTS,
-    ...ROAD_ENCOUNTER_EVENTS,
-    ...PRACTICE_WANDER_EVENTS,
-    ...SECRET_ART_EVENTS,
-    ...BOSS_ENCOUNTER_EVENTS,
-    ...ENRICHED_CATALOG,
-    ...RANDOM_PACK_EVENTS,
-  ];
+  if (!cachedCatalog) {
+    cachedCatalog = [
+      ...ORDINARY_EVENTS,
+      ...JIANGHU_EXTRA_EVENTS,
+      ...ROAD_ENCOUNTER_EVENTS,
+      ...PRACTICE_WANDER_EVENTS,
+      ...SECRET_ART_EVENTS,
+      ...BOSS_ENCOUNTER_EVENTS,
+      ...ENRICHED_CATALOG,
+      ...RANDOM_PACK_EVENTS,
+    ];
+    catalogById = new Map(cachedCatalog.map((e) => [e.id, e]));
+  }
+  return cachedCatalog;
+}
+
+/** O(1) 查主目錄；測試若傳入局部子集仍走線性掃描 */
+export function lookupEvent(id: string): GameEvent | undefined {
+  fullCatalog();
+  return catalogById?.get(id);
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {
