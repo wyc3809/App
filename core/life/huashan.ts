@@ -13,7 +13,6 @@ import { defaultAttributes, simulateContestDuel } from './duelSim';
 
 export const HUASHAN_MIN_AGE = 16;
 export const HUASHAN_MIN_MARTIAL = 12;
-export const HUASHAN_FATIGUE_COST = 18;
 export const HUASHAN_BRACKET_SIZE = 8;
 
 const ROUND_LABEL: Record<1 | 2 | 3, string> = {
@@ -322,7 +321,6 @@ export function canEnterHuashan(state: LifeGameState): { ok: true } | { ok: fals
   const season = getHuashanSeasonKey();
   if (c.flags.huashan_last_season === season) return { ok: false, reason: '本週已參與過華山論劍。' };
   if (state.huashan?.status === 'active') return { ok: false, reason: '本屆論劍尚未結束。' };
-  if (c.fatigue + HUASHAN_FATIGUE_COST > 100) return { ok: false, reason: '疲勞過重，需調息後再來。' };
   return { ok: true };
 }
 
@@ -349,9 +347,7 @@ export function startHuashanBracket(state: LifeGameState): string[] {
     playerId: player.id,
     matches,
     status: 'active',
-    fatigueCostPaid: true,
   };
-  state.character.fatigue = Math.min(100, state.character.fatigue + HUASHAN_FATIGUE_COST);
   state.huashan = bracket;
   snapshotRng(state);
 

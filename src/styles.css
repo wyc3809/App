@@ -700,6 +700,25 @@ body::before {
   border: none;
 }
 
+.ink-gear-stat {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--ink-mid, #4a4035);
+}
+
+.ink-gear-fx {
+  display: block;
+  font-size: 0.8rem;
+  color: #5c3d2e;
+}
+
+.ink-gear-totals {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+  margin-top: 0.75rem;
+}
+
 .ink-huashan-panel {
   margin-top: 0.75rem;
 }

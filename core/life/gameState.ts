@@ -6,6 +6,7 @@ import { SECT_CONTENT } from '@data/content/packs';
 import { rollLifetimeChildrenMax } from './family';
 import { defaultNature } from './nature';
 import { makeStoryState, makeWorldState } from './monthly';
+import { recomputeCapBonuses } from './equipment';
 
 export const SECT_DEFS = SECT_CONTENT.map((s) => ({
   id: s.id,
@@ -95,6 +96,7 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     },
   };
   character.stats.wealthPeak = character.money;
+  recomputeCapBonuses(character);
 
   const npcs: LifeGameState['npcs'] = {
     parent_father: {
@@ -261,5 +263,6 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (raw.combatEncounterCountdown === undefined) {
     raw.combatEncounterCountdown = 10;
   }
+  recomputeCapBonuses(raw.character);
   return raw;
 }

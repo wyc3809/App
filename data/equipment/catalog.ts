@@ -2,6 +2,16 @@ export type GearSlot = 'weapon' | 'armor' | 'accessory';
 export type GearRarity = 'common' | 'fine' | 'rare' | 'epic' | 'divine';
 export type WeaponKind = 'sword' | 'blade' | 'spear' | 'staff' | 'whip' | 'bow' | 'hidden';
 
+/** 裝備戰鬥特效（與 attack/defense 等基礎數值並存） */
+export interface GearCombatBonus {
+  hitBonus?: number;
+  evasion?: number;
+  reflect?: number;
+  pierce?: number;
+  lifesteal?: number;
+  bleedChance?: number;
+}
+
 export interface GearDef {
   id: string;
   name: string;
@@ -14,6 +24,7 @@ export interface GearDef {
   maxHpBonus?: number;
   maxQiBonus?: number;
   martialBonus?: number;
+  combat?: GearCombatBonus;
   description: string;
 }
 
@@ -35,6 +46,7 @@ export const GEAR_CATALOG: GearDef[] = [
     rarity: 'common',
     weaponKind: 'sword',
     attack: 4,
+    combat: { hitBonus: 0.02 },
     description: '市井鐵匠的粗胚，勉強能防身。',
   },
   {
@@ -43,6 +55,7 @@ export const GEAR_CATALOG: GearDef[] = [
     slot: 'armor',
     rarity: 'common',
     defense: 2,
+    combat: { evasion: 0.01 },
     description: '離家時母親縫好的衣裳。',
   },
   {
@@ -53,6 +66,7 @@ export const GEAR_CATALOG: GearDef[] = [
     weaponKind: 'blade',
     attack: 10,
     martialBonus: 2,
+    combat: { pierce: 0.05 },
     description: '刃口寒光隱現，適合行路。',
   },
   {
@@ -62,6 +76,7 @@ export const GEAR_CATALOG: GearDef[] = [
     rarity: 'fine',
     defense: 8,
     maxHpBonus: 20,
+    combat: { reflect: 0.04 },
     description: '輕便防身，不礙運氣。',
   },
   {
@@ -71,6 +86,7 @@ export const GEAR_CATALOG: GearDef[] = [
     rarity: 'rare',
     defense: 4,
     maxQiBonus: 15,
+    combat: { evasion: 0.05 },
     description: '步履輕捷，似可踏雲。',
   },
   {
@@ -80,6 +96,7 @@ export const GEAR_CATALOG: GearDef[] = [
     rarity: 'rare',
     martialBonus: 5,
     maxQiBonus: 25,
+    combat: { hitBonus: 0.04 },
     description: '門中信物，內息更穩。',
   },
   {
@@ -91,6 +108,7 @@ export const GEAR_CATALOG: GearDef[] = [
     attack: 22,
     martialBonus: 8,
     maxQiBonus: 20,
+    combat: { pierce: 0.08, hitBonus: 0.03 },
     description: '劍身如墨，雨夜出鞘更冷。',
   },
   {
@@ -102,6 +120,7 @@ export const GEAR_CATALOG: GearDef[] = [
     attack: 28,
     martialBonus: 10,
     maxHpBonus: 30,
+    combat: { lifesteal: 0.06 },
     description: '百煉而成，刃口隱有折光。',
   },
   {
@@ -114,6 +133,7 @@ export const GEAR_CATALOG: GearDef[] = [
     martialBonus: 18,
     maxHpBonus: 60,
     maxQiBonus: 40,
+    combat: { pierce: 0.12, hitBonus: 0.06 },
     description: '神兵遺響，重若千鈞，唯有根骨深厚者可御。',
   },
   {
@@ -124,6 +144,7 @@ export const GEAR_CATALOG: GearDef[] = [
     weaponKind: 'spear',
     attack: 11,
     martialBonus: 1,
+    combat: { pierce: 0.06 },
     description: '槍尖沉穩，進退有度，江湖行腳常見。',
   },
   {
@@ -134,6 +155,7 @@ export const GEAR_CATALOG: GearDef[] = [
     weaponKind: 'blade',
     attack: 16,
     martialBonus: 4,
+    combat: { bleedChance: 0.12 },
     description: '刀弧如月，擅取側翼。',
   },
   {
@@ -145,6 +167,7 @@ export const GEAR_CATALOG: GearDef[] = [
     attack: 8,
     defense: 3,
     martialBonus: 2,
+    combat: { reflect: 0.03 },
     description: '杖法入門，攻守兼備。',
   },
   {
@@ -156,6 +179,7 @@ export const GEAR_CATALOG: GearDef[] = [
     attack: 14,
     martialBonus: 5,
     maxQiBonus: 10,
+    combat: { hitBonus: 0.08 },
     description: '鞭影連綿，遠近皆宜。',
   },
   {
@@ -166,6 +190,7 @@ export const GEAR_CATALOG: GearDef[] = [
     weaponKind: 'bow',
     attack: 9,
     martialBonus: 3,
+    combat: { hitBonus: 0.1 },
     description: '弓弦緊繃，百步穿楊需日課。',
   },
   {
@@ -176,6 +201,7 @@ export const GEAR_CATALOG: GearDef[] = [
     weaponKind: 'hidden',
     attack: 12,
     martialBonus: 6,
+    combat: { bleedChance: 0.15 },
     description: '暗器無形，出手須留三分。',
   },
   {
@@ -186,6 +212,7 @@ export const GEAR_CATALOG: GearDef[] = [
     weaponKind: 'blade',
     attack: 24,
     martialBonus: 9,
+    combat: { pierce: 0.1, hitBonus: 0.04 },
     description: '雙鉤相扣，專破兵刃格擋。',
   },
   {
@@ -196,6 +223,7 @@ export const GEAR_CATALOG: GearDef[] = [
     defense: 36,
     maxHpBonus: 100,
     maxQiBonus: 30,
+    combat: { reflect: 0.08, evasion: 0.03 },
     description: '柔若無物，刀槍難入，傳聞出自奇人秘造。',
   },
   {
@@ -206,6 +234,7 @@ export const GEAR_CATALOG: GearDef[] = [
     martialBonus: 15,
     maxQiBonus: 80,
     defense: 8,
+    combat: { hitBonus: 0.08, evasion: 0.04 },
     description: '佩之則內息如潮，夜觀星斗似有所悟。',
   },
 ];
@@ -220,6 +249,40 @@ export const rarityLabel: Record<GearRarity, string> = {
 
 export function getGearDef(id: string): GearDef | undefined {
   return GEAR_CATALOG.find((g) => g.id === id);
+}
+
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+/** 裝備基礎數值一行（攻防、氣血內力、武學） */
+export function formatGearStatLine(def: GearDef): string {
+  const parts: string[] = [];
+  if (def.attack) parts.push(`攻+${def.attack}`);
+  if (def.defense) parts.push(`防+${def.defense}`);
+  if (def.maxHpBonus) parts.push(`氣血上限+${def.maxHpBonus}`);
+  if (def.maxQiBonus) parts.push(`內力上限+${def.maxQiBonus}`);
+  if (def.martialBonus) parts.push(`武學+${def.martialBonus}`);
+  return parts.join(' · ');
+}
+
+/** 裝備戰鬥特效一行 */
+export function formatGearCombatLine(def: GearDef): string {
+  const c = def.combat;
+  if (!c) return '';
+  const parts: string[] = [];
+  if (c.hitBonus) parts.push(`命中+${pct(c.hitBonus)}`);
+  if (c.evasion) parts.push(`閃避+${pct(c.evasion)}`);
+  if (c.reflect) parts.push(`反震${pct(c.reflect)}`);
+  if (c.pierce) parts.push(`破防${pct(c.pierce)}`);
+  if (c.lifesteal) parts.push(`吸血${pct(c.lifesteal)}`);
+  if (c.bleedChance) parts.push(`流血${pct(c.bleedChance)}`);
+  return parts.length ? `特效：${parts.join('、')}` : '';
+}
+
+export function formatGearFullSummary(def: GearDef): string {
+  const base = formatGearStatLine(def);
+  const fx = formatGearCombatLine(def);
+  if (base && fx) return `${base} — ${fx}`;
+  return base || fx || def.description;
 }
 
 export function rollForgeResult(

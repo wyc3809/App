@@ -10,7 +10,7 @@ import {
   type CombatMoveDef,
 } from '@data/skills/catalog';
 import { getGearDef } from '@data/equipment/catalog';
-import { gearTotals, ensureGear } from './equipment';
+import { gearTotals, ensureGear, sumGearCombatBonuses } from './equipment';
 import { rankPowerMult } from './martialRanks';
 import type { CombatFighterState, LifeCharacter, WuxiaAttribute } from '@interfaces/lifeEngine';
 import type { ContestantBuild } from '@interfaces/lifeEngine';
@@ -74,6 +74,7 @@ function fakeCharacter(loadout: ContestantBuild): LifeCharacter {
 export function buildContestantFighter(loadout: ContestantBuild, isPlayerSide = false): ContestFighter {
   const c = fakeCharacter(loadout);
   const gear = gearTotals(c);
+  const gearCombat = sumGearCombatBonuses(c);
   const passive = sumInternalPassives(c.skills, c.skillRanks ?? {});
   const evasion = sumEvasionBonus(c.skills, c.skillRanks ?? {}) + c.attributes.danShi / 500;
   const maxHp = c.maxHealth + (passive.maxHp ?? 0) + gear.maxHpBonus;
@@ -91,8 +92,8 @@ export function buildContestantFighter(loadout: ContestantBuild, isPlayerSide = 
       gear.martialBonus +
       (passive.attack ?? 0),
     defense: 6 + Math.floor(c.attributes.genGu / 12) + gear.defense + (passive.defense ?? 0),
-    hitBonus: 0.05 + c.attributes.danShi / 400 + (passive.hitBonus ?? 0),
-    evasion: Math.min(0.45, evasion),
+    hitBonus: 0.05 + c.attributes.danShi / 400 + (passive.hitBonus ?? 0) + gearCombat.hitBonus,
+    evasion: Math.min(0.45, evasion + gearCombat.evasion),
     qiRegen: 0,
     blind: 0,
     isPlayer: isPlayerSide,
@@ -100,8 +101,11 @@ export function buildContestantFighter(loadout: ContestantBuild, isPlayerSide = 
     bleedDamage: 0,
     bleedTurns: 0,
     defenseMod: 0,
-    reflect: Math.min(0.35, passive.reflect ?? 0),
+    reflect: Math.min(0.35, (passive.reflect ?? 0) + gearCombat.reflect),
     chargeBonus: 0,
+    gearPierce: gearCombat.pierce,
+    gearLifesteal: gearCombat.lifesteal,
+    gearBleedChance: gearCombat.bleedChance,
   };
 }
 
@@ -176,7 +180,7 @@ function resolveOneHit(
     );
     return lines;
   }
-  const pierce = clamp(move.pierce ?? 0, 0, 0.85);
+  const pierce = clamp((move.pierce ?? 0) + (attacker.gearPierce ?? 0), 0, 0.85);
   const def = effectiveDefense(defender) * (1 - pierce);
   const raw = attacker.attack * move.power * powerMult;
   const mitigated = Math.max(3, Math.round(raw - def * 0.55 + rng.nextInt(-3, 4)));
@@ -186,8 +190,9 @@ function resolveOneHit(
       ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊命中，造成 ${mitigated} 點傷害。`
       : `${attacker.name}「${move.name}」命中，造成 ${mitigated} 點傷害。`,
   );
-  if (move.lifesteal) {
-    const steal = Math.max(1, Math.round(mitigated * move.lifesteal * (0.85 + powerMult * 0.15)));
+  const stealRate = (move.lifesteal ?? 0) + (attacker.gearLifesteal ?? 0);
+  if (stealRate > 0) {
+    const steal = Math.max(1, Math.round(mitigated * stealRate * (0.85 + powerMult * 0.15)));
     attacker.hp = clamp(attacker.hp + steal, 0, attacker.maxHp);
     lines.push(`${attacker.name}借力回氣，回復 ${steal} 點氣血。`);
   }
@@ -227,9 +232,22 @@ function resolveStrike(
   const wpn = weaponMatchBoost(loadout, sid);
   const rank = sid ? (loadout.skillRanks[sid] ?? 0) : 0;
   const mult = (sid ? rankPowerMult(rank) : 1) * wpn.power * charge * powerMult;
+  let anyHit = false;
   for (let i = 0; i < hits; i += 1) {
+    const before = defender.hp;
     lines.push(...resolveOneHit(attacker, defender, move, rng, i, hits, mult, extraHit + wpn.hit));
+    if (defender.hp < before) anyHit = true;
     if (defender.hp <= 0) break;
+  }
+  if (
+    anyHit &&
+    (move.bleedChance ? rng.chance(move.bleedChance) : false) === false &&
+    (attacker.gearBleedChance ?? 0) > 0 &&
+    rng.chance(attacker.gearBleedChance!)
+  ) {
+    defender.bleedDamage = Math.max(defender.bleedDamage, 5);
+    defender.bleedTurns = Math.max(defender.bleedTurns, 2);
+    lines.push(`${defender.name}兵刃帶血，傷口難合。`);
   }
   return lines;
 }

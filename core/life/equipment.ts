@@ -1,5 +1,5 @@
 import type { LifeCharacter, LifeGameState } from '@interfaces/lifeEngine';
-import { GEAR_CATALOG, getGearDef, type GearDef, type GearSlot } from '@data/equipment/catalog';
+import { GEAR_CATALOG, getGearDef, type GearCombatBonus, type GearDef, type GearSlot } from '@data/equipment/catalog';
 
 export function emptyEquipment(): Record<GearSlot, string | null> {
   return { weapon: 'old-sword', armor: 'plain-robe', accessory: null };
@@ -56,6 +56,52 @@ export function gearTotals(c: LifeCharacter): {
     }),
     { attack: 0, defense: 0, maxHpBonus: 0, maxQiBonus: 0, martialBonus: 0 },
   );
+}
+
+export type AggregatedGearCombat = Required<{
+  [K in keyof GearCombatBonus]: number;
+}>;
+
+function emptyCombatAgg(): AggregatedGearCombat {
+  return {
+    hitBonus: 0,
+    evasion: 0,
+    reflect: 0,
+    pierce: 0,
+    lifesteal: 0,
+    bleedChance: 0,
+  };
+}
+
+function addCombat(
+  acc: AggregatedGearCombat,
+  bonus: GearCombatBonus | undefined,
+  weaponOnly: boolean,
+  isWeapon: boolean,
+): void {
+  if (!bonus) return;
+  if (bonus.hitBonus) acc.hitBonus += bonus.hitBonus;
+  if (bonus.evasion) acc.evasion += bonus.evasion;
+  if (bonus.reflect) acc.reflect += bonus.reflect;
+  if (!weaponOnly || isWeapon) {
+    if (bonus.pierce) acc.pierce += bonus.pierce;
+    if (bonus.lifesteal) acc.lifesteal += bonus.lifesteal;
+    if (bonus.bleedChance) acc.bleedChance += bonus.bleedChance;
+  }
+}
+
+/** 已裝備之戰鬥特效合計（破防／吸血／流血僅計兵刃槽） */
+export function sumGearCombatBonuses(c: LifeCharacter): AggregatedGearCombat {
+  ensureGear(c);
+  const out = emptyCombatAgg();
+  for (const slot of ['weapon', 'armor', 'accessory'] as const) {
+    const id = c.equipment[slot];
+    if (!id) continue;
+    const def = getGearDef(id);
+    if (!def?.combat) continue;
+    addCombat(out, def.combat, true, slot === 'weapon');
+  }
+  return out;
 }
 
 /** 將裝備上限加成回寫到角色（與基礎上限分開記在 flags） */

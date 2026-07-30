@@ -10,7 +10,7 @@ import {
   type CombatMoveDef,
 } from '@data/skills/catalog';
 import { rankPowerMult } from './martialRanks';
-import { grantGear, ensureGear, gearTotals } from './equipment';
+import { grantGear, ensureGear, gearTotals, sumGearCombatBonuses } from './equipment';
 import { getGearDef } from '@data/equipment/catalog';
 import { learnMartialArt, tryAdvanceSkill } from './flavor';
 import { applyNatureDelta } from './nature';
@@ -36,6 +36,7 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
   const c = state.character;
   ensureGear(c);
   const gear = gearTotals(c);
+  const gearCombat = sumGearCombatBonuses(c);
   const passive = sumInternalPassives(c.skills, c.skillRanks ?? {});
   const evasion = sumEvasionBonus(c.skills, c.skillRanks ?? {}) + c.attributes.danShi / 500;
   const maxHp = c.health;
@@ -48,8 +49,8 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
     maxQi: c.maxQi + (passive.maxQi ?? 0),
     attack: 12 + Math.floor(c.martial / 4) + gear.attack + gear.martialBonus + (passive.attack ?? 0),
     defense: 6 + Math.floor(c.attributes.genGu / 12) + gear.defense + (passive.defense ?? 0),
-    hitBonus: 0.05 + c.attributes.danShi / 400 + (passive.hitBonus ?? 0),
-    evasion: Math.min(0.45, evasion),
+    hitBonus: 0.05 + c.attributes.danShi / 400 + (passive.hitBonus ?? 0) + gearCombat.hitBonus,
+    evasion: Math.min(0.45, evasion + gearCombat.evasion),
     // 戰鬥中不自動回內力；耗去的內力戰後亦保留，需打坐／歇息再復。
     qiRegen: 0,
     blind: 0,
@@ -58,8 +59,11 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
     bleedDamage: 0,
     bleedTurns: 0,
     defenseMod: 0,
-    reflect: Math.min(0.35, passive.reflect ?? 0),
+    reflect: Math.min(0.35, (passive.reflect ?? 0) + gearCombat.reflect),
     chargeBonus: 0,
+    gearPierce: gearCombat.pierce,
+    gearLifesteal: gearCombat.lifesteal,
+    gearBleedChance: gearCombat.bleedChance,
   };
 }
 
@@ -221,7 +225,7 @@ function resolveOneHit(
     return lines;
   }
 
-  const pierce = clamp(move.pierce ?? 0, 0, 0.85);
+  const pierce = clamp((move.pierce ?? 0) + (attacker.gearPierce ?? 0), 0, 0.85);
   const def = effectiveDefense(defender) * (1 - pierce);
   const raw = attacker.attack * move.power * powerMult;
   const mitigated = Math.max(3, Math.round(raw - def * 0.55 + rng.nextInt(-3, 4)));
@@ -232,8 +236,9 @@ function resolveOneHit(
       : `${attacker.name}「${move.name}」命中，造成 ${mitigated} 點傷害。`,
   );
 
-  if (move.lifesteal) {
-    const steal = Math.max(1, Math.round(mitigated * move.lifesteal * (0.85 + powerMult * 0.15)));
+  const stealRate = (move.lifesteal ?? 0) + (attacker.gearLifesteal ?? 0);
+  if (stealRate > 0) {
+    const steal = Math.max(1, Math.round(mitigated * stealRate * (0.85 + powerMult * 0.15)));
     attacker.hp = clamp(attacker.hp + steal, 0, attacker.maxHp);
     lines.push(`${attacker.name}借力回氣，回復 ${steal} 點氣血。`);
   }
@@ -283,6 +288,11 @@ function applyOnHitEffects(
     defender.bleedDamage = Math.max(defender.bleedDamage, dmg);
     defender.bleedTurns = Math.max(defender.bleedTurns, turns);
     lines.push(`${defender.name}被劃出血線，一時難止。`);
+  } else if ((attacker.gearBleedChance ?? 0) > 0 && rng.chance(attacker.gearBleedChance!)) {
+    const dmg = Math.round(5 * powerMult);
+    defender.bleedDamage = Math.max(defender.bleedDamage, dmg);
+    defender.bleedTurns = Math.max(defender.bleedTurns, 2);
+    lines.push(`${defender.name}兵刃帶血，傷口難合。`);
   }
   if (move.stunChance && rng.chance(Math.min(0.55, move.stunChance * (0.9 + powerMult * 0.1)))) {
     defender.stun = Math.max(defender.stun, 1);

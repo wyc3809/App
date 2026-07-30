@@ -12,7 +12,8 @@ import { getEventById } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
-import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
+import { getGearDef, WEAPON_KIND_LABEL, formatGearCombatLine, formatGearStatLine } from '@data/equipment/catalog';
+import { gearTotals, sumGearCombatBonuses } from '@core/life/equipment';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
@@ -149,6 +150,8 @@ export function InkPlayScreen({ state }: Props) {
   const techniqueMoves = moves.filter((mv) => !isCombatActionMove(mv.id));
   const actionMoves = moves.filter((mv) => isCombatActionMove(mv.id));
   const equippedWeapon = equipment.weapon ? getGearDef(equipment.weapon) : undefined;
+  const gearStatTotals = gearTotals(c);
+  const gearFxTotals = sumGearCombatBonuses(c);
   const sortedTechniques = [...techniqueMoves].sort((a, b) => {
     const skillOf = (moveId: string) => c.skills.find((id) => getSkillDef(id)?.move?.id === moveId);
     const score = (mv: (typeof techniqueMoves)[number]) => {
@@ -507,14 +510,36 @@ export function InkPlayScreen({ state }: Props) {
           )}
 
           <h3 className="ink-subhead">行囊裝備</h3>
+          <p className="ink-note ink-gear-totals">
+            披掛合計：
+            {[
+              gearStatTotals.attack ? `攻+${gearStatTotals.attack}` : '',
+              gearStatTotals.defense ? `防+${gearStatTotals.defense}` : '',
+              gearStatTotals.maxHpBonus ? `氣血上限+${gearStatTotals.maxHpBonus}` : '',
+              gearStatTotals.maxQiBonus ? `內力上限+${gearStatTotals.maxQiBonus}` : '',
+              gearStatTotals.martialBonus ? `武學+${gearStatTotals.martialBonus}` : '',
+              gearFxTotals.hitBonus ? `命中+${Math.round(gearFxTotals.hitBonus * 100)}%` : '',
+              gearFxTotals.evasion ? `閃避+${Math.round(gearFxTotals.evasion * 100)}%` : '',
+              gearFxTotals.reflect ? `反震${Math.round(gearFxTotals.reflect * 100)}%` : '',
+              gearFxTotals.pierce ? `破防${Math.round(gearFxTotals.pierce * 100)}%` : '',
+              gearFxTotals.lifesteal ? `吸血${Math.round(gearFxTotals.lifesteal * 100)}%` : '',
+              gearFxTotals.bleedChance ? `流血${Math.round(gearFxTotals.bleedChance * 100)}%` : '',
+            ]
+              .filter(Boolean)
+              .join(' · ') || '無加成'}
+          </p>
           <div className="ink-gear-equipped">
             {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
               const id = equipment[slot];
               const def = id ? getGearDef(id) : null;
+              const stats = def ? formatGearStatLine(def) : '';
+              const fx = def ? formatGearCombatLine(def) : '';
               return (
                 <p key={slot} className="ink-note">
                   {slot === 'weapon' ? '兵刃' : slot === 'armor' ? '護體' : '佩飾'} ·{' '}
                   {def ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}${def.weaponKind ? `·${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}）` : '空'}
+                  {stats && <span className="ink-gear-stat"> — {stats}</span>}
+                  {fx && <span className="ink-gear-fx"> {fx}</span>}
                 </p>
               );
             })}
@@ -533,6 +558,12 @@ export function InkPlayScreen({ state }: Props) {
                         {def.weaponKind ? ` · ${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}
                       </em>
                     </span>
+                    {formatGearStatLine(def) && (
+                      <span className="ink-gear-stat">{formatGearStatLine(def)}</span>
+                    )}
+                    {formatGearCombatLine(def) && (
+                      <span className="ink-gear-fx">{formatGearCombatLine(def)}</span>
+                    )}
                     <span className="ink-gear-desc">{def.description}</span>
                   </li>
                 );

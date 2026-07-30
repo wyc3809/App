@@ -367,6 +367,21 @@ describe('life event engine', () => {
     expect(state.character.qi).toBeLessThan(state.character.maxQi);
   });
 
+  it('equipped gear adds combat stats and passives', async () => {
+    const { buildPlayerFighter } = await import('../core/life/combat');
+    const { equipGear, grantGear } = await import('../core/life/equipment');
+    initRng(12);
+    const state = createNewLife(12);
+    const base = buildPlayerFighter(state).attack;
+    grantGear(state, 'inkrain-sword');
+    equipGear(state, 'inkrain-sword');
+    const boosted = buildPlayerFighter(state).attack;
+    expect(boosted).toBeGreaterThan(base);
+    const fighter = buildPlayerFighter(state);
+    expect(fighter.gearPierce).toBeGreaterThan(0);
+    expect(fighter.hitBonus).toBeGreaterThan(0.05);
+  });
+
   it('huashan bracket runs elimination with ghost opponents', async () => {
     const { startHuashanBracket, runPlayerHuashanDuel, canEnterHuashan } = await import(
       '../core/life/huashan'

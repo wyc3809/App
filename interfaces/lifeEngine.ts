@@ -278,7 +278,6 @@ export interface HuashanBracketState {
   status: 'active' | 'completed';
   placement?: number;
   lastDuelLog?: string[];
-  fatigueCostPaid?: boolean;
 }
 
 export const huashanBracketSchema = z
@@ -301,7 +300,6 @@ export const huashanBracketSchema = z
     status: z.enum(['active', 'completed']),
     placement: z.number().optional(),
     lastDuelLog: z.array(z.string()).optional(),
-    fatigueCostPaid: z.boolean().optional(),
   })
   .optional();
 
@@ -356,6 +354,10 @@ export interface CombatFighterState {
   reflect: number;
   /** 蓄勢：下一擊威力倍率加成 */
   chargeBonus: number;
+  /** 裝備附加（戰鬥推演用） */
+  gearPierce?: number;
+  gearLifesteal?: number;
+  gearBleedChance?: number;
 }
 
 export interface PendingCombat {
