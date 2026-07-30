@@ -7,7 +7,6 @@ import {
   getPendingHuashanMatch,
   huashanSeasonLabel,
 } from '@core/life/huashan';
-import { playInkTap } from '../../audio/inkAudio';
 
 type Props = {
   state: LifeGameState;
@@ -80,7 +79,6 @@ export function InkHuashanPanel({
           className="ink-btn ink-btn--primary"
           disabled={!gate.ok}
           onClick={() => {
-            playInkTap();
             onStart();
           }}
         >
@@ -108,7 +106,6 @@ export function InkHuashanPanel({
               type="button"
               className="ink-btn ink-btn--primary"
               onClick={() => {
-                playInkTap();
                 onFight();
               }}
             >
@@ -124,7 +121,6 @@ export function InkHuashanPanel({
                 type="button"
                 className="ink-btn ink-btn--quiet"
                 onClick={() => {
-                  playInkTap();
                   onDismissReport();
                 }}
               >
@@ -138,7 +134,6 @@ export function InkHuashanPanel({
               type="button"
               className="ink-btn ink-btn--ghost"
               onClick={() => {
-                playInkTap();
                 onCloseTournament();
               }}
             >

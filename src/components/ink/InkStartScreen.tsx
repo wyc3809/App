@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
-import { playInkTap } from '../../audio/inkAudio';
 
 type Props = {
   onStart: () => void;
@@ -35,7 +34,6 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
             type="button"
             className="ink-btn ink-btn--primary"
             onClick={() => {
-              playInkTap();
               onContinue();
             }}
           >
@@ -47,7 +45,6 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
           type="button"
           className={resumeHint ? 'ink-btn ink-btn--ghost' : 'ink-btn ink-btn--primary'}
           onClick={() => {
-            playInkTap();
             onStart();
           }}
         >
@@ -58,7 +55,6 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
             type="button"
             className="ink-btn ink-btn--quiet"
             onClick={() => {
-              playInkTap();
               onSeedDebug();
             }}
           >

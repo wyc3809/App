@@ -18,7 +18,7 @@ import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
 import { GUARD_STANCE, CHARGE_STANCE } from '@data/skills/catalog';
-import { playInkSeal, playInkTap, playInkWin, playInkLose } from '../../audio/inkAudio';
+import { playInkSeal, playInkWin, playInkLose } from '../../audio/inkAudio';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
@@ -232,7 +232,6 @@ export function InkPlayScreen({ state }: Props) {
           type="button"
           className="ink-icon-btn"
           onClick={() => {
-            playInkTap();
             setDebugOpen(!debugOpen);
           }}
           title="除錯"
@@ -258,7 +257,6 @@ export function InkPlayScreen({ state }: Props) {
               type="button"
               className={tab === id ? 'ink-tab ink-tab--active' : 'ink-tab'}
               onClick={() => {
-                playInkTap();
                 setTab(id);
               }}
             >
@@ -300,7 +298,6 @@ export function InkPlayScreen({ state }: Props) {
                       className="ink-choice"
                       style={{ ['--i' as string]: i }}
                       onClick={() => {
-                        playInkTap();
                         choose(ch.id);
                       }}
                     >
@@ -317,7 +314,6 @@ export function InkPlayScreen({ state }: Props) {
               type="button"
               className="ink-btn ink-btn--primary ink-btn--year ink-btn--pulse"
               onClick={() => {
-                playInkTap();
                 advanceMonth();
               }}
             >
@@ -333,7 +329,6 @@ export function InkPlayScreen({ state }: Props) {
                   type="button"
                   className="ink-btn ink-btn--quiet ink-toggle-quiet"
                   onClick={() => {
-                    playInkTap();
                     setHintsOpen((v) => !v);
                   }}
                 >
@@ -507,7 +502,6 @@ export function InkPlayScreen({ state }: Props) {
                   className="ink-practice-btn ink-practice-btn--sect"
                   disabled={practiceBusy}
                   onClick={() => {
-                    playInkTap();
                     setPracticeView('sect');
                   }}
                 >
@@ -521,7 +515,6 @@ export function InkPlayScreen({ state }: Props) {
                     className="ink-practice-btn"
                     disabled={practiceBusy}
                     onClick={() => {
-                      playInkTap();
                       practice(act.id);
                     }}
                   >
@@ -540,7 +533,7 @@ export function InkPlayScreen({ state }: Props) {
             <>
               <div className="ink-sect-head">
                 <h3>{sect ? sect.name : '擇門拜師'}</h3>
-                <button type="button" className="ink-btn ink-btn--quiet" onClick={() => { playInkTap(); setPracticeView('main'); }}>
+                <button type="button" className="ink-btn ink-btn--quiet" onClick={() => setPracticeView('main')}>
                   返回
                 </button>
               </div>
@@ -584,7 +577,6 @@ export function InkPlayScreen({ state }: Props) {
                         className="ink-practice-btn"
                         disabled={practiceBusy}
                         onClick={() => {
-                          playInkTap();
                           practice(act.id);
                         }}
                       >
@@ -597,7 +589,6 @@ export function InkPlayScreen({ state }: Props) {
                       className="ink-practice-btn"
                       disabled={practiceBusy}
                       onClick={() => {
-                        playInkTap();
                         practice('sect_leave');
                         setPracticeView('main');
                       }}
@@ -679,7 +670,6 @@ export function InkPlayScreen({ state }: Props) {
                           className="ink-btn ink-btn--quiet"
                           disabled={busy}
                           onClick={() => {
-                            playInkTap();
                             setPreviewGearId(previewGearId === id ? null : id);
                           }}
                         >
@@ -691,7 +681,6 @@ export function InkPlayScreen({ state }: Props) {
                         className="ink-btn ink-btn--quiet"
                         disabled={busy || equipped}
                         onClick={() => {
-                          playInkTap();
                           setPreviewGearId(null);
                           equipOwned(id);
                         }}
@@ -790,7 +779,6 @@ export function InkPlayScreen({ state }: Props) {
             type="button"
             className="ink-combat-log-toggle"
             onClick={() => {
-              playInkTap();
               setCombatLogOpen((v) => !v);
             }}
           >
@@ -821,7 +809,6 @@ export function InkPlayScreen({ state }: Props) {
                     className="ink-choice"
                     style={{ ['--i' as string]: i }}
                     onClick={() => {
-                      playInkTap();
                       combatResolveFoe(id);
                     }}
                   >
@@ -843,7 +830,6 @@ export function InkPlayScreen({ state }: Props) {
                 type="button"
                 className="ink-combat-log-toggle"
                 onClick={() => {
-                  playInkTap();
                   setCombatFiltersOpen((v) => !v);
                 }}
               >
@@ -859,7 +845,6 @@ export function InkPlayScreen({ state }: Props) {
                       type="button"
                       className={`ink-combat-filter${combatRoleFilter === 'all' ? ' ink-combat-filter--on' : ''}`}
                       onClick={() => {
-                        playInkTap();
                         setCombatRoleFilter('all');
                       }}
                     >
@@ -871,7 +856,6 @@ export function InkPlayScreen({ state }: Props) {
                         type="button"
                         className={`ink-combat-filter${combatRoleFilter === role ? ' ink-combat-filter--on' : ''}`}
                         onClick={() => {
-                          playInkTap();
                           setCombatRoleFilter(role);
                         }}
                       >
@@ -902,7 +886,6 @@ export function InkPlayScreen({ state }: Props) {
                         disabled={combat.phase !== 'player' || short}
                         style={{ ['--i' as string]: i }}
                         onClick={() => {
-                          playInkTap();
                           combatMove(mv.id);
                         }}
                       >
@@ -921,7 +904,6 @@ export function InkPlayScreen({ state }: Props) {
                         className="ink-combat-detail-btn"
                         aria-expanded={expanded}
                         onClick={() => {
-                          playInkTap();
                           setExpandedMoveId(expanded ? null : mv.id);
                         }}
                       >
@@ -959,7 +941,6 @@ export function InkPlayScreen({ state }: Props) {
                         disabled={combat.phase !== 'player' || short}
                         title={mv.description}
                         onClick={() => {
-                          playInkTap();
                           combatMove(mv.id);
                         }}
                       >
@@ -1021,7 +1002,6 @@ export function InkPlayScreen({ state }: Props) {
                 type="button"
                 className="ink-btn ink-btn--primary ink-btn--ack"
                 onClick={() => {
-                  playInkTap();
                   clearResult();
                 }}
               >
@@ -1053,7 +1033,7 @@ export function InkPlayScreen({ state }: Props) {
           <div className="ink-seal-static ink-seal-static--end" aria-hidden>
             終
           </div>
-          <button type="button" className="ink-btn ink-btn--primary" onClick={() => { playInkTap(); newLife(); }}>
+          <button type="button" className="ink-btn ink-btn--primary" onClick={() => newLife()}>
             轉世再入江湖
           </button>
         </section>
@@ -1072,7 +1052,6 @@ export function InkPlayScreen({ state }: Props) {
             type="button"
             className="ink-chronicle-toggle"
             onClick={() => {
-              playInkTap();
               setChronicleOpen((v) => !v);
             }}
             aria-expanded={chronicleOpen}

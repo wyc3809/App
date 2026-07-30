@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
 import { useLifeStore } from '../../store/lifeStore';
-import { playInkTap } from '../../audio/inkAudio';
 
 export function InkCreateScreen() {
   const newLife = useLifeStore((s) => s.newLife);
@@ -45,7 +44,6 @@ export function InkCreateScreen() {
           type="button"
           className="ink-btn ink-btn--primary"
           onClick={() => {
-            playInkTap();
             newLife({
               name: name.trim() || undefined,
               gender,
@@ -59,7 +57,6 @@ export function InkCreateScreen() {
           type="button"
           className="ink-btn ink-btn--ghost"
           onClick={() => {
-            playInkTap();
             cancelCreate();
           }}
         >
