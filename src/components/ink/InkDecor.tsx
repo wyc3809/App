@@ -1,7 +1,17 @@
 /** 宣紙遠山 + 墨漬 + 水墨微動（純裝飾） */
-export function InkScrollBackdrop({ variant = 'play' }: { variant?: 'hero' | 'play' }) {
+export function InkScrollBackdrop({
+  variant = 'play',
+  quiet = false,
+}: {
+  variant?: 'hero' | 'play';
+  /** 交手時暫停 mist／spark 等無限動畫 */
+  quiet?: boolean;
+}) {
   return (
-    <div className={`ink-backdrop ink-backdrop--${variant}`} aria-hidden>
+    <div
+      className={`ink-backdrop ink-backdrop--${variant}${quiet ? ' ink-backdrop--quiet' : ''}`}
+      aria-hidden
+    >
       <svg className="ink-mountains" viewBox="0 0 420 200" preserveAspectRatio="xMidYMax slice">
         <defs>
           <linearGradient id="washFar" x1="0" y1="0" x2="0" y2="1">

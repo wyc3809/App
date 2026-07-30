@@ -99,6 +99,9 @@ export function InkPlayScreen({ state }: Props) {
   const [practiceView, setPracticeView] = useState<PracticeView>('main');
   const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
   const [combatLogOpen, setCombatLogOpen] = useState(false);
+  const [combatFiltersOpen, setCombatFiltersOpen] = useState(false);
+  const [chronicleOpen, setChronicleOpen] = useState(false);
+  const [hintsOpen, setHintsOpen] = useState(false);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
   const combatBeatRef = useRef<HTMLDivElement | null>(null);
 
@@ -118,6 +121,7 @@ export function InkPlayScreen({ state }: Props) {
   useEffect(() => {
     setCombatRoleFilter('all');
     setCombatLogOpen(false);
+    setCombatFiltersOpen(false);
     setExpandedMoveId(null);
   }, [state.pendingCombat?.id]);
 
@@ -194,7 +198,10 @@ export function InkPlayScreen({ state }: Props) {
     onHomeTab;
   const nature = ensureNature(c);
   const dominant = dominantNature(c);
-  const showVitalsBars = tab === 'home' || tab === 'person' || Boolean(combat);
+  /** 交手中隱藏全局氣血條，避免與戰鬥血條重複 */
+  const showVitalsBars = !combat && (tab === 'home' || tab === 'person');
+  const showStatStrip = !combat;
+  const homeHints = onHomeTab ? jianghuHints(state) : [];
   const resultKind = lastResult?.title === '修煉' ? 'practice' : 'month';
 
   useEffect(() => {
@@ -207,8 +214,8 @@ export function InkPlayScreen({ state }: Props) {
   }, [showResult]);
 
   return (
-    <div className="scroll-shell scroll-shell--play ink-enter">
-      <InkScrollBackdrop variant="play" />
+    <div className={`scroll-shell scroll-shell--play ink-enter${combat ? ' scroll-shell--combat' : ''}`}>
+      <InkScrollBackdrop variant="play" quiet={Boolean(combat)} />
       {sealText && <InkSealStamp text={sealText} onDone={clearSeal} />}
 
       <header className="ink-status">
@@ -231,39 +238,150 @@ export function InkPlayScreen({ state }: Props) {
 
       {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
 
-      <nav className="ink-tabs" aria-label="分卷">
-        {(
-          [
-            ['home', '鎮居'],
-            ['person', '人物'],
-            ['jianghu', '江湖'],
-            ['practice', '修煉'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={tab === id ? 'ink-tab ink-tab--active' : 'ink-tab'}
-            onClick={() => setTab(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      <div key={`${state.year}-${month}`} className="ink-scroll-flip ink-play-body">
-
-      {onHomeTab && (
-        <section className="ink-world" aria-label="近日傳聞">
-          {jianghuHints(state).map((h) => (
-            <p key={h} className="ink-note">
-              {h}
-            </p>
+      {!combat && (
+        <nav className="ink-tabs" aria-label="分卷">
+          {(
+            [
+              ['home', '鎮居'],
+              ['person', '人物'],
+              ['jianghu', '江湖'],
+              ['practice', '修煉'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={tab === id ? 'ink-tab ink-tab--active' : 'ink-tab'}
+              onClick={() => setTab(id)}
+            >
+              {label}
+            </button>
           ))}
+        </nav>
+      )}
+
+      <div className="ink-play-body">
+
+      {/* 鎮居首屏：事件／翻頁優先於儀表與年譜 */}
+      {onHomeTab && !combat && (
+        <div key={`${state.year}-${month}`} className="ink-home-focus ink-scroll-flip">
+          {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && (
+            <section className="ink-flash" aria-live="polite">
+              {flashLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </section>
+          )}
+
+          {state.phase === 'playing' && pendingEvent && !showResult && (
+            <section className="ink-panel ink-event">
+              <p className="ink-event-year">
+                {state.year}年{month}月 · {c.age}歲
+                {state.pending?.kind === 'special' ? ' · 奇遇' : ''}
+              </p>
+              <h3>{displayTitle}</h3>
+              {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
+              <div className="ink-choice-list">
+                {pendingEvent.choices
+                  .filter((ch) => meetsRequirements(state, ch.requirements))
+                  .slice(0, 3)
+                  .map((ch, i) => (
+                    <button
+                      key={ch.id}
+                      type="button"
+                      className="ink-choice"
+                      style={{ ['--i' as string]: i }}
+                      onClick={() => {
+                        playInkTap();
+                        choose(ch.id);
+                      }}
+                    >
+                      <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
+                      {displayChoiceText(ch.text, ch.id)}
+                    </button>
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {canAdvanceMonth && (
+            <button
+              type="button"
+              className="ink-btn ink-btn--primary ink-btn--year ink-btn--pulse"
+              onClick={advanceMonth}
+            >
+              翻過一頁 · 過一月
+            </button>
+          )}
+
+          {homeHints.length > 0 && (
+            <section className="ink-world" aria-label="近日傳聞">
+              <p className="ink-note">{homeHints[0]}</p>
+              {homeHints.length > 1 && (
+                <button
+                  type="button"
+                  className="ink-btn ink-btn--quiet ink-toggle-quiet"
+                  onClick={() => setHintsOpen((v) => !v)}
+                >
+                  {hintsOpen ? '收起傳聞' : `更多傳聞（${homeHints.length - 1}）`}
+                </button>
+              )}
+              {hintsOpen &&
+                homeHints.slice(1).map((h) => (
+                  <p key={h} className="ink-note">
+                    {h}
+                  </p>
+                ))}
+            </section>
+          )}
+        </div>
+      )}
+
+      {showStatStrip && (
+        <section className="ink-vitals" aria-label={showVitalsBars ? '氣血內力' : '江湖概況'}>
+          {showVitalsBars && (
+            <>
+              <div className="ink-vitals-label">
+                <span>氣血</span>
+                <span>
+                  {Math.round(c.health)}/{c.maxHealth}
+                </span>
+              </div>
+              <div className="ink-bar">
+                <div className="ink-bar-fill ink-bar-fill--live" style={{ width: `${hpPct}%` }} />
+              </div>
+              <div className="ink-vitals-label">
+                <span>內力</span>
+                <span>
+                  {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
+                </span>
+              </div>
+              <div className="ink-bar ink-bar--qi">
+                <div className="ink-bar-fill ink-bar-fill--qi ink-bar-fill--live" style={{ width: `${qiPct}%` }} />
+              </div>
+            </>
+          )}
+          <div className="ink-stat-row">
+            <span>銀兩 {c.money}</span>
+            <span>名望 {c.reputation}</span>
+            <span>
+              武學 {c.martial}·{overallMartialLabel(c)}
+            </span>
+            <span>疲勞 {c.fatigue ?? 0}</span>
+          </div>
+          {(c.conditions?.length ?? 0) > 0 && (
+            <div className="ink-chips">
+              {c.conditions.map((cond) => (
+                <span key={cond.id} className="ink-chip">
+                  {cond.name}·{cond.monthsLeft}月
+                </span>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      {tab === 'jianghu' && (
+      {tab === 'jianghu' && !combat && (
         <section key="jianghu" className="ink-panel ink-world-panel ink-tab-pane" aria-label="心性">
           <h3>心性</h3>
           <p className="ink-note ink-nature-line">
@@ -283,7 +401,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {tab === 'jianghu' && (
+      {tab === 'jianghu' && !combat && (
         <InkHuashanPanel
           state={state}
           onStart={huashanStart}
@@ -292,46 +410,6 @@ export function InkPlayScreen({ state }: Props) {
           onCloseTournament={huashanClose}
         />
       )}
-
-      <section className="ink-vitals" aria-label={showVitalsBars ? '氣血內力' : '江湖概況'}>
-        {showVitalsBars && (
-          <>
-            <div className="ink-vitals-label">
-              <span>氣血</span>
-              <span>
-                {Math.round(c.health)}/{c.maxHealth}
-              </span>
-            </div>
-            <div className="ink-bar">
-              <div className="ink-bar-fill" style={{ width: `${hpPct}%` }} />
-            </div>
-            <div className="ink-vitals-label">
-              <span>內力</span>
-              <span>
-                {Math.round(c.qi ?? 0)}/{c.maxQi ?? 0}
-              </span>
-            </div>
-            <div className="ink-bar ink-bar--qi">
-              <div className="ink-bar-fill ink-bar-fill--qi" style={{ width: `${qiPct}%` }} />
-            </div>
-          </>
-        )}
-        <div className="ink-stat-row">
-          <span>銀兩 {c.money}</span>
-          <span>名望 {c.reputation}</span>
-          <span>武學 {c.martial}·{overallMartialLabel(c)}</span>
-          <span>疲勞 {c.fatigue ?? 0}</span>
-        </div>
-        {(c.conditions?.length ?? 0) > 0 && (
-          <div className="ink-chips">
-            {c.conditions.map((cond) => (
-              <span key={cond.id} className="ink-chip">
-                {cond.name}·{cond.monthsLeft}月
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
 
       {tab === 'person' && (
         <section key="person" className="ink-panel ink-attrs ink-tab-pane">
@@ -599,7 +677,7 @@ export function InkPlayScreen({ state }: Props) {
               </div>
               <div className="ink-bar">
                 <div
-                  className="ink-bar-fill ink-bar-fill--foe"
+                  className="ink-bar-fill ink-bar-fill--foe ink-bar-fill--live"
                   style={{
                     width: `${Math.max(0, Math.min(100, (combat.foe.hp / combat.foe.maxHp) * 100))}%`,
                   }}
@@ -616,7 +694,7 @@ export function InkPlayScreen({ state }: Props) {
               </div>
               <div className="ink-bar">
                 <div
-                  className="ink-bar-fill"
+                  className="ink-bar-fill ink-bar-fill--live"
                   style={{
                     width: `${Math.max(0, Math.min(100, (combat.player.hp / combat.player.maxHp) * 100))}%`,
                   }}
@@ -624,7 +702,7 @@ export function InkPlayScreen({ state }: Props) {
               </div>
               <div className="ink-bar ink-bar--qi">
                 <div
-                  className="ink-bar-fill ink-bar-fill--qi"
+                  className="ink-bar-fill ink-bar-fill--qi ink-bar-fill--live"
                   style={{
                     width: `${Math.max(0, Math.min(100, (combat.player.qi / Math.max(1, combat.player.maxQi)) * 100))}%`,
                   }}
@@ -697,28 +775,39 @@ export function InkPlayScreen({ state }: Props) {
             </>
           ) : (
             <>
-              <p className="ink-note">
-                以角色篩選招式（全部可選，不設數量上限）；兵刃契合與內力足夠者排前。行動在下方。
-              </p>
-              <div className="ink-combat-filters" role="tablist" aria-label="招式篩選">
-                <button
-                  type="button"
-                  className={`ink-combat-filter${combatRoleFilter === 'all' ? ' ink-combat-filter--on' : ''}`}
-                  onClick={() => setCombatRoleFilter('all')}
-                >
-                  全部 {techniqueMoves.length}
-                </button>
-                {COMBAT_TECHNIQUE_ROLES.filter((role) => (roleCounts[role] ?? 0) > 0).map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    className={`ink-combat-filter${combatRoleFilter === role ? ' ink-combat-filter--on' : ''}`}
-                    onClick={() => setCombatRoleFilter(role)}
-                  >
-                    {role} {roleCounts[role]}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                className="ink-combat-log-toggle"
+                onClick={() => setCombatFiltersOpen((v) => !v)}
+              >
+                {combatFiltersOpen ? '收起篩選' : '招式篩選'}
+              </button>
+              {combatFiltersOpen && (
+                <>
+                  <p className="ink-note">
+                    以角色篩選招式；兵刃契合與內力足夠者排前。行動在下方。
+                  </p>
+                  <div className="ink-combat-filters" role="tablist" aria-label="招式篩選">
+                    <button
+                      type="button"
+                      className={`ink-combat-filter${combatRoleFilter === 'all' ? ' ink-combat-filter--on' : ''}`}
+                      onClick={() => setCombatRoleFilter('all')}
+                    >
+                      全部 {techniqueMoves.length}
+                    </button>
+                    {COMBAT_TECHNIQUE_ROLES.filter((role) => (roleCounts[role] ?? 0) > 0).map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        className={`ink-combat-filter${combatRoleFilter === role ? ' ink-combat-filter--on' : ''}`}
+                        onClick={() => setCombatRoleFilter(role)}
+                      >
+                        {role} {roleCounts[role]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="ink-choice-list ink-combat-moves">
                 {visibleTechniques.map((mv, i) => {
@@ -864,6 +953,7 @@ export function InkPlayScreen({ state }: Props) {
         !pendingEvent &&
         !showResult &&
         !combat &&
+        !onHomeTab &&
         !onPracticeTab && (
         <section className="ink-flash" aria-live="polite">
           {flashLines.map((line) => (
@@ -885,47 +975,6 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {state.phase === 'playing' && pendingEvent && !showResult && !combat && (
-        <section className="ink-panel ink-event">
-          <p className="ink-event-year">
-            {state.year}年{month}月 · {c.age}歲
-            {state.pending?.kind === 'special' ? ' · 奇遇' : ''}
-          </p>
-          <h3>{displayTitle}</h3>
-          {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
-          <div className="ink-choice-list">
-            {pendingEvent.choices
-              .filter((ch) => meetsRequirements(state, ch.requirements))
-              .slice(0, 3)
-              .map((ch, i) => (
-              <button
-                key={ch.id}
-                type="button"
-                className="ink-choice"
-                style={{ ['--i' as string]: i }}
-                onClick={() => {
-                  playInkTap();
-                  choose(ch.id);
-                }}
-              >
-                <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
-                {displayChoiceText(ch.text, ch.id)}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {canAdvanceMonth && (
-        <button
-          type="button"
-          className="ink-btn ink-btn--primary ink-btn--year ink-btn--pulse"
-          onClick={advanceMonth}
-        >
-          翻過一頁 · 過一月
-        </button>
-      )}
-
       {onPracticeTab && !combat && !showResult && (
         <p className="ink-note ink-note--center">修煉頁不推月曆——請回「鎮居」翻過一頁。</p>
       )}
@@ -933,14 +982,24 @@ export function InkPlayScreen({ state }: Props) {
         <p className="ink-note ink-note--center">請回「鎮居」翻過一頁、查看年譜。</p>
       )}
 
-      {onHomeTab && (
+      {onHomeTab && !combat && (
         <section className="ink-panel ink-chronicle">
-          <h3>年譜</h3>
-          <ul className="ink-log">
-            {state.lifeLog.slice(0, 14).map((line, i) => (
-              <li key={`${i}-${line.slice(0, 16)}`}>{line}</li>
-            ))}
-          </ul>
+          <button
+            type="button"
+            className="ink-chronicle-toggle"
+            onClick={() => setChronicleOpen((v) => !v)}
+            aria-expanded={chronicleOpen}
+          >
+            <h3>年譜</h3>
+            <span>{chronicleOpen ? '收起' : `展開（${Math.min(14, state.lifeLog.length)}）`}</span>
+          </button>
+          {chronicleOpen && (
+            <ul className="ink-log">
+              {state.lifeLog.slice(0, 14).map((line, i) => (
+                <li key={`${i}-${line.slice(0, 16)}`}>{line}</li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
       </div>

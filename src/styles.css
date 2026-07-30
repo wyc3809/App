@@ -678,7 +678,15 @@ body::before {
   background: linear-gradient(90deg, rgba(26, 26, 26, 0.3), var(--ink));
   transform-origin: left center;
   transition: width 0.55s cubic-bezier(0.22, 0.7, 0.25, 1);
+}
+
+.ink-bar-fill--enter {
   animation: barInkFill 0.65s ease both;
+}
+
+/* 交手／數值更新：只平滑變寬，不重播入場 */
+.ink-bar-fill--live {
+  animation: none;
 }
 
 .ink-stat-row {
@@ -715,6 +723,65 @@ body::before {
 .ink-gear-totals {
   margin-bottom: 0.5rem;
   line-height: 1.5;
+}
+
+.ink-home-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ink-toggle-quiet {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 0.75rem;
+}
+
+.ink-chronicle-toggle {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ink-chronicle-toggle h3 {
+  margin: 0;
+}
+
+.ink-chronicle-toggle span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-mid);
+  flex-shrink: 0;
+}
+
+.ink-backdrop--quiet .ink-mist-layer,
+.ink-backdrop--quiet .ink-brush-sweep,
+.ink-backdrop--quiet .ink-blot,
+.ink-backdrop--quiet .ink-ridge,
+.ink-backdrop--quiet .ink-mist-orb,
+.ink-backdrop--quiet .ink-spark {
+  animation-play-state: paused !important;
+}
+
+.ink-backdrop--quiet .ink-mist-layer,
+.ink-backdrop--quiet .ink-brush-sweep {
+  opacity: 0.28;
+}
+
+.ink-backdrop--quiet .ink-spark {
+  opacity: 0.2;
+}
+
+.scroll-shell--combat .ink-status {
+  margin-bottom: 4px;
 }
 
 .ink-huashan-panel {
@@ -1844,10 +1911,16 @@ body::before {
   .ink-bar-fill,
   .ink-log li,
   .ink-tab--active::after,
-  .ink-nature-card.ink-nature--dominant {
+  .ink-nature-card.ink-nature--dominant,
+  .ink-combat-beat,
+  .ink-combat,
+  .ink-home-focus {
     animation: none !important;
     transition: none !important;
     filter: none !important;
+  }
+  .ink-bar-fill--live {
+    transition: none !important;
   }
 }
 
@@ -1911,7 +1984,8 @@ body::before {
 }
 
 .ink-combat {
-  animation: panelWashIn 0.5s ease both;
+  /* 交手期間不重播整面板 wash，避免每回合閃爍 */
+  animation: none;
 }
 
 .ink-hint-learn {

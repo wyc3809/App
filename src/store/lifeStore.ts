@@ -2,7 +2,13 @@ import { create } from 'zustand';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { createNewLife, migrateLifeState, syncRngFromState, type CreateLifeOptions } from '@core/life/gameState';
 import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/eventEngine';
-import { clearLifeSave, loadLifeSave, persistLife } from '@core/life/saveIndexedDb';
+import { clearLifeSave, loadLifeSave } from '@core/life/saveIndexedDb';
+import {
+  flushPersist,
+  installPersistLifecycle,
+  schedulePersist,
+  setPersistFlushHook,
+} from './persistSchedule';
 import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '@core/life/actions';
 import { buildLifeSummary } from '@core/life/summary';
 import { playerCombatTurn, getPlayerMoves, resolveCombatDisposition, type CombatFoeDisposition } from '@core/life/combat';
@@ -55,8 +61,8 @@ export interface LifeStore {
   huashanClose: () => void;
 }
 
-async function save(state: LifeGameState) {
-  await persistLife(state);
+async function save(state: LifeGameState, immediate = true) {
+  schedulePersist(state, { immediate });
 }
 
 export const useLifeStore = create<LifeStore>((set, get) => ({
@@ -71,6 +77,10 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
 
   bootstrap: async () => {
     if (get().bootstrapped) return;
+    setPersistFlushHook((savedAt) => {
+      set({ saveLabel: new Date(savedAt).toLocaleString('zh-TW') });
+    });
+    installPersistLifecycle();
     set({ bootstrapped: true });
   },
 
@@ -223,10 +233,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
             }
           : get().lastResult,
     });
-    // 存檔延後，先讓 UI 立刻回饋按鍵
-    window.setTimeout(() => {
-      void save(next);
-    }, 0);
+    // 交手中段 debounce 寫盤；戰畢／決勝立即落筆
+    schedulePersist(next, { immediate: ended || resolving || fled });
   },
 
   combatResolveFoe: (disposition: CombatFoeDisposition) => {
@@ -341,6 +349,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
 }));
 
 export async function resetLifeSave() {
+  flushPersist();
   await clearLifeSave();
 }
 
