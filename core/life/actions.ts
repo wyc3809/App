@@ -48,9 +48,9 @@ export interface PracticeAction {
 
 /** 修煉頁主選單（苦練／鑄兵／尋訪改為翻頁機緣） */
 export const PRACTICE_ACTIONS: PracticeAction[] = [
-  { id: 'inquire_rumors', label: '打聽傳聞', hint: '小幅提高翻頁後遇首領／奇遇的機率' },
-  { id: 'heal', label: '醫館調養', hint: '花費 15 兩，恢復並減傷勢' },
-  { id: 'equip_best', label: '整裝披掛', hint: '自動裝備庫中最佳器物' },
+  { id: 'inquire_rumors', label: '打聽傳聞', hint: '多聞風聲，翻頁易逢奇人' },
+  { id: 'heal', label: '醫館調養', hint: '費銀十五兩，療傷減疲' },
+  { id: 'equip_best', label: '整裝披掛', hint: '按庫中器物自行披掛妥當' },
 ];
 
 /** 已入門派後的門內事務 */

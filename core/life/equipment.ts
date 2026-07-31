@@ -192,9 +192,9 @@ export function previewEquipDelta(c: LifeCharacter, gearId: string): EquipPrevie
   const attackDelta = attackAfter - attackBefore;
   const defenseDelta = defenseAfter - defenseBefore;
   const bits: string[] = [];
-  if (attackDelta) bits.push(`攻${attackDelta > 0 ? '+' : ''}${attackDelta}`);
-  if (defenseDelta) bits.push(`防${defenseDelta > 0 ? '+' : ''}${defenseDelta}`);
-  bits.push(`戰力${powerDelta > 0 ? '+' : ''}${powerDelta}`);
+  if (attackDelta) bits.push(`威${attackDelta > 0 ? '＋' : ''}${attackDelta}`);
+  if (defenseDelta) bits.push(`禦${defenseDelta > 0 ? '＋' : ''}${defenseDelta}`);
+  bits.push(`戰意${powerDelta > 0 ? '＋' : ''}${powerDelta}`);
   return {
     gearId,
     name: def.name,

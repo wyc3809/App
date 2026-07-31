@@ -544,7 +544,7 @@ export function InkPlayScreen({ state }: Props) {
             <>
               <h3>修煉</h3>
               <p className="ink-note">
-                本月可修煉 {practiceLeft}/3 次。打聽傳聞可提高翻頁遇首領／奇遇的機率；苦練、鑄兵、尋訪會在翻頁時隨機遇上。
+                本月可煉 {practiceLeft}/3 次。多問風聲，翻頁易逢奇人；苦練、鑄兵、尋訪，亦在歲月裡。
               </p>
               {practiceLearningHints(state).map((h) => (
                 <p key={h} className="ink-note ink-hint-learn">
@@ -589,7 +589,7 @@ export function InkPlayScreen({ state }: Props) {
               <div className="ink-sect-head">
                 <h3>{sect ? sect.name : '擇門拜師'}</h3>
                 <button type="button" className="ink-btn ink-btn--quiet" onClick={() => setPracticeView('main')}>
-                  返回
+                  回門
                 </button>
               </div>
               {!sect ? (
@@ -657,24 +657,24 @@ export function InkPlayScreen({ state }: Props) {
             </>
           )}
 
-          <h3 className="ink-subhead">行囊裝備</h3>
+          <h3 className="ink-subhead">行囊披掛</h3>
           <p className="ink-note ink-gear-totals">
-            披掛合計：戰力 {combatPowerScore(c)} ·{' '}
+            披掛合計：戰意 {combatPowerScore(c)} ·{' '}
             {[
-              gearStatTotals.attack ? `攻+${gearStatTotals.attack}` : '',
-              gearStatTotals.defense ? `防+${gearStatTotals.defense}` : '',
-              gearStatTotals.maxHpBonus ? `氣血上限+${gearStatTotals.maxHpBonus}` : '',
-              gearStatTotals.maxQiBonus ? `內力上限+${gearStatTotals.maxQiBonus}` : '',
-              gearStatTotals.martialBonus ? `武學+${gearStatTotals.martialBonus}` : '',
-              gearFxTotals.hitBonus ? `命中+${Math.round(gearFxTotals.hitBonus * 100)}%` : '',
-              gearFxTotals.evasion ? `閃避+${Math.round(gearFxTotals.evasion * 100)}%` : '',
+              gearStatTotals.attack ? `威＋${gearStatTotals.attack}` : '',
+              gearStatTotals.defense ? `禦＋${gearStatTotals.defense}` : '',
+              gearStatTotals.maxHpBonus ? `氣血＋${gearStatTotals.maxHpBonus}` : '',
+              gearStatTotals.maxQiBonus ? `內息＋${gearStatTotals.maxQiBonus}` : '',
+              gearStatTotals.martialBonus ? `武學＋${gearStatTotals.martialBonus}` : '',
+              gearFxTotals.hitBonus ? `準＋${Math.round(gearFxTotals.hitBonus * 100)}%` : '',
+              gearFxTotals.evasion ? `身法＋${Math.round(gearFxTotals.evasion * 100)}%` : '',
               gearFxTotals.reflect ? `反震${Math.round(gearFxTotals.reflect * 100)}%` : '',
-              gearFxTotals.pierce ? `破防${Math.round(gearFxTotals.pierce * 100)}%` : '',
-              gearFxTotals.lifesteal ? `吸血${Math.round(gearFxTotals.lifesteal * 100)}%` : '',
-              gearFxTotals.bleedChance ? `流血${Math.round(gearFxTotals.bleedChance * 100)}%` : '',
+              gearFxTotals.pierce ? `破甲${Math.round(gearFxTotals.pierce * 100)}%` : '',
+              gearFxTotals.lifesteal ? `吸敵氣血${Math.round(gearFxTotals.lifesteal * 100)}%` : '',
+              gearFxTotals.bleedChance ? `見血${Math.round(gearFxTotals.bleedChance * 100)}%` : '',
             ]
               .filter(Boolean)
-              .join(' · ') || '無加成'}
+              .join(' · ') || '尚無加成'}
           </p>
           <div className="ink-gear-equipped">
             {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
@@ -728,7 +728,7 @@ export function InkPlayScreen({ state }: Props) {
                             setPreviewGearId(previewGearId === id ? null : id);
                           }}
                         >
-                          {previewGearId === id ? '收起對照' : '預覽'}
+                          {previewGearId === id ? '收起端詳' : '端詳'}
                         </button>
                       )}
                       <button
@@ -740,12 +740,12 @@ export function InkPlayScreen({ state }: Props) {
                           equipOwned(id);
                         }}
                       >
-                        {equipped ? '已裝備' : '裝備'}
+                        {equipped ? '已披' : '披上'}
                       </button>
                     </div>
                     {preview && !preview.alreadyEquipped && (
                       <p className={`ink-gear-preview${preview.powerDelta >= 0 ? ' ink-gear-preview--up' : ' ink-gear-preview--down'}`}>
-                        換上後：{preview.summary}
+                        若披上：{preview.summary}
                       </p>
                     )}
                   </li>
@@ -837,7 +837,7 @@ export function InkPlayScreen({ state }: Props) {
               setCombatLogOpen((v) => !v);
             }}
           >
-            {combatLogOpen ? '收起戰報' : `戰報（${combat.log.length}）`}
+            {combatLogOpen ? '收起紀要' : `交手紀要（${combat.log.length}）`}
           </button>
           {combatLogOpen && (
             <ul className="ink-combat-log">
@@ -888,14 +888,14 @@ export function InkPlayScreen({ state }: Props) {
                   setCombatFiltersOpen((v) => !v);
                 }}
               >
-                {combatFiltersOpen ? '收起篩選' : '招式篩選'}
+                {combatFiltersOpen ? '收起擇勢' : '擇勢觀招'}
               </button>
               {combatFiltersOpen && (
                 <>
                   <p className="ink-note">
-                    以角色篩選招式；兵刃契合與內力足夠者排前。行動在下方。
+                    按路數分覽；兵刃相合、內息充足者居前。行動在下。
                   </p>
-                  <div className="ink-combat-filters" role="tablist" aria-label="招式篩選">
+                  <div className="ink-combat-filters" role="tablist" aria-label="擇勢觀招">
                     <button
                       type="button"
                       className={`ink-combat-filter${combatRoleFilter === 'all' ? ' ink-combat-filter--on' : ''}`}
@@ -977,7 +977,7 @@ export function InkPlayScreen({ state }: Props) {
                   );
                 })}
                 {visibleTechniques.length === 0 && (
-                  <p className="ink-note">此類暫無招式，可切回「全部」。</p>
+                  <p className="ink-note">此路暫無招式，可回「全部」再觀。</p>
                 )}
               </div>
 
@@ -1045,7 +1045,7 @@ export function InkPlayScreen({ state }: Props) {
               </div>
               {lastResult.deltas.length > 0 && (
                 <div className="ink-result-deltas">
-                  <p className="ink-result-delta-label">此局得失</p>
+                  <p className="ink-result-delta-label">此番消長</p>
                   <ul className="ink-delta-list">
                     {lastResult.deltas.map((d) => (
                       <li key={d}>{d}</li>
@@ -1103,10 +1103,10 @@ export function InkPlayScreen({ state }: Props) {
       )}
 
       {onPracticeTab && !combat && !showResult && (
-        <p className="ink-note ink-note--center">修煉頁不推月曆——請回「鎮居」翻過一頁。</p>
+        <p className="ink-note ink-note--center">修煉不催歲月——請回「鎮居」翻過一頁。</p>
       )}
       {(tab === 'person' || tab === 'jianghu') && !combat && !showResult && !pendingEvent && (
-        <p className="ink-note ink-note--center">請回「鎮居」翻過一頁、查看年譜。</p>
+        <p className="ink-note ink-note--center">請回「鎮居」翻頁、覽年譜。</p>
       )}
 
       {onHomeTab && !combat && (
@@ -1120,7 +1120,7 @@ export function InkPlayScreen({ state }: Props) {
             aria-expanded={chronicleOpen}
           >
             <h3>年譜</h3>
-            <span>{chronicleOpen ? '收起' : `展開（${Math.min(14, state.lifeLog.length)}）`}</span>
+            <span>{chronicleOpen ? '掩上' : `展開（${Math.min(14, state.lifeLog.length)}）`}</span>
           </button>
           {chronicleOpen && (
             <ul className="ink-log">

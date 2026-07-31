@@ -23,9 +23,9 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
       </header>
 
       <section className="ink-verse">
-        <p>千燈鎮起步 · 按月推演</p>
-        <p>百則江湖奇遇 · 日常與特殊交織</p>
-        <p>水墨手卷 · 印章定奪</p>
+        <p>千燈一別，歲月如刀</p>
+        <p>奇遇路遇，皆在翻頁之間</p>
+        <p>落筆為生，蓋印為定</p>
       </section>
 
       <div className="ink-cta-stack">

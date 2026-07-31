@@ -25,7 +25,7 @@ export function InkCreateScreen() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="留空則隨機取名"
+            placeholder="不書則天賜一名"
             maxLength={8}
           />
         </label>
@@ -36,7 +36,7 @@ export function InkCreateScreen() {
             <option value="female">女</option>
           </select>
         </label>
-        <p className="ink-note">十六歲離家，屬性與福緣將於落筆時生成。</p>
+        <p className="ink-note">十六歲辭親出鎮。根骨福緣，落筆方見。</p>
       </section>
 
       <div className="ink-cta-stack">
@@ -60,7 +60,7 @@ export function InkCreateScreen() {
             cancelCreate();
           }}
         >
-          返回
+          回卷
         </button>
       </div>
     </div>

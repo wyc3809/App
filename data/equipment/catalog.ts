@@ -253,28 +253,28 @@ export function getGearDef(id: string): GearDef | undefined {
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
-/** 裝備基礎數值一行（攻防、氣血內力、武學） */
+/** 披掛基礎一行（威／禦／氣血／內息／武學） */
 export function formatGearStatLine(def: GearDef): string {
   const parts: string[] = [];
-  if (def.attack) parts.push(`攻+${def.attack}`);
-  if (def.defense) parts.push(`防+${def.defense}`);
-  if (def.maxHpBonus) parts.push(`氣血上限+${def.maxHpBonus}`);
-  if (def.maxQiBonus) parts.push(`內力上限+${def.maxQiBonus}`);
-  if (def.martialBonus) parts.push(`武學+${def.martialBonus}`);
+  if (def.attack) parts.push(`威＋${def.attack}`);
+  if (def.defense) parts.push(`禦＋${def.defense}`);
+  if (def.maxHpBonus) parts.push(`氣血＋${def.maxHpBonus}`);
+  if (def.maxQiBonus) parts.push(`內息＋${def.maxQiBonus}`);
+  if (def.martialBonus) parts.push(`武學＋${def.martialBonus}`);
   return parts.join(' · ');
 }
 
-/** 裝備戰鬥特效一行 */
+/** 披掛交手特效一行 */
 export function formatGearCombatLine(def: GearDef): string {
   const c = def.combat;
   if (!c) return '';
   const parts: string[] = [];
-  if (c.hitBonus) parts.push(`命中+${pct(c.hitBonus)}`);
-  if (c.evasion) parts.push(`閃避+${pct(c.evasion)}`);
+  if (c.hitBonus) parts.push(`準＋${pct(c.hitBonus)}`);
+  if (c.evasion) parts.push(`身法＋${pct(c.evasion)}`);
   if (c.reflect) parts.push(`反震${pct(c.reflect)}`);
-  if (c.pierce) parts.push(`破防${pct(c.pierce)}`);
-  if (c.lifesteal) parts.push(`吸血${pct(c.lifesteal)}`);
-  if (c.bleedChance) parts.push(`流血${pct(c.bleedChance)}`);
+  if (c.pierce) parts.push(`破甲${pct(c.pierce)}`);
+  if (c.lifesteal) parts.push(`吸敵氣血${pct(c.lifesteal)}`);
+  if (c.bleedChance) parts.push(`見血${pct(c.bleedChance)}`);
   return parts.length ? `特效：${parts.join('、')}` : '';
 }
 

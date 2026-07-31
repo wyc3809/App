@@ -69,9 +69,9 @@ export function InkHuashanPanel({
     <section className="ink-panel ink-huashan-panel ink-tab-pane" aria-label="華山論劍">
       <h3>華山論劍</h3>
       <p className="ink-note">
-        每週一次，八強單淘汰。非即時比武，依雙方武功與招式自動推演戰報；其餘名額為江湖名手幻象。
+        每週一會，八強論劍。不即時交手，依雙方武功與招式推演勝負；其餘席位為江湖名手幻影。
       </p>
-      <p className="ink-note ink-huashan-season">本週賽季：{huashanSeasonLabel(season)}</p>
+      <p className="ink-note ink-huashan-season">本期論劍：{huashanSeasonLabel(season)}</p>
 
       {!bracket && (
         <button
@@ -115,7 +115,7 @@ export function InkHuashanPanel({
 
           {lastLog && lastLog.length > 0 && (
             <div className="ink-huashan-log">
-              <h4 className="ink-subhead">戰報</h4>
+              <h4 className="ink-subhead">交手紀要</h4>
               <pre className="ink-epitaph-text ink-huashan-pre">{lastLog.join('\n')}</pre>
               <button
                 type="button"
@@ -124,7 +124,7 @@ export function InkHuashanPanel({
                   onDismissReport();
                 }}
               >
-                收起戰報
+                掩上紀要
               </button>
             </div>
           )}

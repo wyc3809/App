@@ -22,7 +22,11 @@ export function jianghuHints(state: LifeGameState): string[] {
 
   const boost = Number(f.rumor_boost ?? 0);
   if (boost > 0) {
-    hints.push(`你近日打聽過江湖風聲（傳聞層數 ${boost}），翻頁時較易撞上首領或奇遇。`);
+    hints.push(
+      boost >= 3
+        ? '你連日打聽風聲，江湖上已有人留意你的腳步——翻頁時較易逢奇人異事。'
+        : '你近日多問風聲，路遇稍稠，奇緣或近。',
+    );
   }
 
   if (Number(f.aftermath_mercy_months ?? 0) > 0) {
@@ -42,20 +46,20 @@ export function jianghuHints(state: LifeGameState): string[] {
     const match = c.skills.some((id) => getSkillDef(id)?.weaponKind === weapon.weaponKind);
     if (!match) {
       hints.push(
-        `你持「${weapon.name}」（${WEAPON_KIND_LABEL[weapon.weaponKind]}），若習對應江湖武學，交手更順。`,
+        `你持「${weapon.name}」（${WEAPON_KIND_LABEL[weapon.weaponKind]}），宜習對路功夫，方能人器相合。`,
       );
     }
   }
 
   const hasQg = c.skills.some((id) => getSkillDef(id)?.kind === 'qinggong');
   if (!hasQg) {
-    hints.push('尚未習得輕功；翻頁奇遇、尋訪機緣或首領戰或可遇身法殘篇。');
+    hints.push('尚未習得輕功；奇遇、尋訪機緣或強敵交手，或可得身法殘篇。');
   }
 
   const nature = ensureNature(c);
   const dom = dominantNature(c);
   if (nature[dom] >= 40) {
-    hints.push(`心性以「${natureLabels[dom]}」獨顯，門派與奇遇的門檻會隨之開合。`);
+    hints.push(`心性以「${natureLabels[dom]}」獨顯，門牆與奇遇或開或闔。`);
   }
 
   // 去重、最多 4 條
@@ -83,18 +87,18 @@ export function practiceLearningHints(state: LifeGameState): string[] {
   const tips: string[] = [];
 
   const pools: { id: string; how: string }[] = [
-    { id: 'art_spear_cloud', how: '翻頁尋訪或奇遇可學「穿雲槍」（持槍加威）' },
-    { id: 'art_staff_iron', how: '翻頁尋訪可學「鐵杖訣」（持杖加威）' },
-    { id: 'art_whip_silk', how: '首領或翻頁尋訪可學「柔絲鞭法」' },
-    { id: 'art_bow_star', how: '翻頁尋訪可學「逐星箭意」（持弓加準）' },
-    { id: 'art_sand_palm', how: '沙道傳聞或翻頁尋訪可學「流沙掌」' },
-    { id: 'art_mirror_breath', how: '鏡湖隱士或翻頁尋訪可傳「澄心鏡息」' },
-    { id: 'art_heavy_halberd', how: '翻頁尋訪或可習「開山戟意」（持槍／長兵加威）' },
-    { id: 'qg_snow_track', how: '翻頁尋訪高人或可傳「踏雪無痕」輕功' },
-    { id: 'qg_reed_drift', how: '放走對手後的報恩，或可傳「蘆花身法」' },
-    { id: 'qg_wall_cat', how: '危牆夜影奇遇可習「壁虎遊牆」' },
-    { id: 'qg_lotus_steps', how: '荷塘奇遇或翻頁尋訪可習「踏蓮步」輕功' },
-    { id: 'art_shadow_needle', how: '戰勝赤練娘可奪「無影針訣」' },
+    { id: 'art_spear_cloud', how: '聞穿雲槍散佚民間，尋訪或可得（持槍加威）' },
+    { id: 'art_staff_iron', how: '鐵杖訣傳於行腳僧道，訪之或可習' },
+    { id: 'art_whip_silk', how: '柔絲鞭法多藏於高手袖中，戰勝或尋訪可學' },
+    { id: 'art_bow_star', how: '逐星箭意在獵戶與遊俠間流傳，訪之或可得' },
+    { id: 'art_sand_palm', how: '沙道人言流沙掌，西行或可遇' },
+    { id: 'art_mirror_breath', how: '鏡湖隱士或以澄心鏡息會友' },
+    { id: 'art_heavy_halberd', how: '開山戟意沉雄，尋訪長兵高手或可習' },
+    { id: 'qg_snow_track', how: '高人或傳「踏雪無痕」輕功' },
+    { id: 'qg_reed_drift', how: '放走過對手後，或有人以「蘆花身法」報恩' },
+    { id: 'qg_wall_cat', how: '危牆夜影之中，或可習「壁虎遊牆」' },
+    { id: 'qg_lotus_steps', how: '荷塘奇遇，或得「踏蓮步」' },
+    { id: 'art_shadow_needle', how: '戰勝赤練娘，或可奪「無影針訣」' },
   ];
   for (const p of pools) {
     if (!known.has(p.id)) tips.push(p.how);
@@ -105,7 +109,7 @@ export function practiceLearningHints(state: LifeGameState): string[] {
   if (weapon?.weaponKind) {
     const hasMatch = c.skills.some((id) => getSkillDef(id)?.weaponKind === weapon.weaponKind);
     if (!hasMatch) {
-      tips.unshift(`當前兵刃「${weapon.name}」尚無對應江湖武學，尋訪／奇遇可補。`);
+      tips.unshift(`兵刃「${weapon.name}」尚無對路武學，尋訪奇緣可補。`);
     }
   }
 
