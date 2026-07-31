@@ -780,6 +780,21 @@ describe('life event engine', () => {
     expect(stageWeightBias(22, ['romance'])).toBeGreaterThan(stageWeightBias(70, ['romance']));
   });
 
+  it('story chapters do not advance over months', async () => {
+    const { startMonth } = await import('../core/life/eventEngine');
+    initRng(3);
+    const state = createNewLife(3);
+    expect(state.story.chapter).toBe(0);
+    for (let i = 0; i < 12; i++) {
+      state.pending = null;
+      state.pendingCombat = null;
+      if (!state.character.alive) break;
+      startMonth(state);
+    }
+    expect(state.story.chapter).toBe(0);
+    expect(state.story.title).toBe('');
+  });
+
   it('health drain death writes a cause into summary', async () => {
     const { startMonth } = await import('../core/life/eventEngine');
     const { recordDeath } = await import('../core/life/death');

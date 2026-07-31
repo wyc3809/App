@@ -284,13 +284,6 @@ export function InkPlayScreen({ state }: Props) {
 
       {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
 
-      {!combat && state.phase === 'playing' && state.story && (
-        <p className="ink-story-strip" aria-label="心志">
-          <span className="ink-story-chapter">第{state.story.chapter}章 · {state.story.title}</span>
-          <span className="ink-story-goal">{state.story.goal}</span>
-        </p>
-      )}
-
       {!combat && (
         <nav className="ink-tabs" aria-label="分卷">
           {(

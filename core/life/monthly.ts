@@ -1,9 +1,7 @@
 import type { LifeGameState, WorldState, StoryState, LifeCondition } from '@interfaces/lifeEngine';
 import { getRng } from '@core/random';
-import { STORY_CHAPTERS } from '@data/content/packs';
 import { tryMonthlyBirth } from './family';
 import { tickAftermath } from './aftermath';
-import { pushChronicle } from './chronicle';
 import { recordDeath } from './death';
 
 export function makeWorldState(): WorldState {
@@ -18,14 +16,14 @@ export function makeWorldState(): WorldState {
   };
 }
 
+/** 章節已取消；僅保留存檔相容用空殼 */
 export function makeStoryState(): StoryState {
-  const first = STORY_CHAPTERS[0];
   return {
-    chapter: first?.chapter ?? 1,
-    title: first?.title ?? '千燈初醒',
-    goal: first?.goal ?? '在千燈鎮立足，認識江湖的第一批人。',
+    chapter: 0,
+    title: '',
+    goal: '',
     progress: 0,
-    nextMilestone: first?.nextMilestone ?? 6,
+    nextMilestone: 9999,
   };
 }
 
@@ -116,34 +114,9 @@ export function simulateWorldMonth(state: LifeGameState): void {
   }
 }
 
-export function advanceStoryMonth(state: LifeGameState): void {
-  const s = state.story;
-  const prevChapter = s.chapter;
-  s.progress += 1;
-  if (s.progress >= s.nextMilestone) {
-    s.chapter += 1;
-    s.progress = 0;
-    const def = STORY_CHAPTERS.find((ch) => ch.chapter === s.chapter);
-    if (def) {
-      s.title = def.title;
-      s.goal = def.goal;
-      s.nextMilestone = def.nextMilestone;
-    } else {
-      s.nextMilestone = Math.min(18, s.nextMilestone + 2);
-      s.title = '江湖遠志';
-      s.goal = '讓這一生留下可被傳頌的痕跡。';
-    }
-  }
-  if (s.chapter > prevChapter) {
-    const poetic = [
-      '歲月無聲翻過一頁，你覺得腳下的路又長了一寸。',
-      '燈火依舊，心事卻換了顏色。',
-      '有些約定淡了，有些刀痕卻更深。',
-      '你把一段日子折進袖裡，繼續趕路。',
-    ];
-    const rng = getRng();
-    pushChronicle(state, [rng.pick(poetic)]);
-  }
+/** 章節系統已取消；保留 no-op 以免舊呼叫／存檔遷移出錯 */
+export function advanceStoryMonth(_state: LifeGameState): void {
+  /* intentionally empty — no chapter progression */
 }
 
 export function simulateMonthBody(state: LifeGameState): void {
@@ -155,7 +128,6 @@ export function simulateMonthBody(state: LifeGameState): void {
   c.stamina = clamp(c.stamina + rng.nextInt(4, 12), 0, c.maxStamina);
   tickConditions(state);
   simulateWorldMonth(state);
-  advanceStoryMonth(state);
   tryMonthlyBirth(state);
   tickAftermath(state);
 

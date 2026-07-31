@@ -21,7 +21,7 @@ Scanning project artifacts...
 
 1. **P0 player loop honesty** — death cause, legacy carry, empty-choice escape, stage weight bias  
 2. **P0 accessibility** — viewport zoom, mute, modal Esc/focus, hide debug in prod  
-3. **P1 session clarity** — story strip, first-run coach, chronicle open on first entries  
+3. **P1 session clarity** — first-run coach, chronicle open on first entries（**no story chapters**）  
 4. **P2 docs** — reverse-document combat / events GDDs when touching those systems  
 
 ## This sprint (implemented with adopt)
@@ -29,6 +29,7 @@ Scanning project artifacts...
 - Pillars + stage  
 - Legacy reincarnation  
 - Death cause in epitaph  
-- Coach + story strip + a11y + audio mute  
+- Coach + a11y + audio mute  
 - `stageWeightBias` wired  
 - Telemetry stubs for funnel  
+- **Chapter/story progression cancelled**（UI removed, monthly advance no-op）  

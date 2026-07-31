@@ -10,6 +10,7 @@
 | Effects | `core/life/effects.ts` | enhance |
 | Event Engine | `core/life/eventEngine.ts` | stage-weighted pick |
 | Life stages | `core/life/stages.ts` | wired into pick |
+| Story chapters | — | **cancelled**（存檔空殼 only） |
 | Presentation / chronicle | `core/life/chronicle.ts` | stable |
 | Event catalog | `data/events/*` | keep 50+ / pack / bosses |
 | Combat | `core/life/combat.ts` + `combatCore.ts` | stable |

@@ -18,7 +18,7 @@
 
 | Rank | Aesthetic | How Our Game Delivers It |
 | ---- | ---- | ---- |
-| 1 | Narrative | 按月事件、墓誌、年譜與章節心志 |
+| 1 | Narrative | 按月事件、墓誌與年譜 |
 | 2 | Fantasy | 武俠身份、門派、武學、華山論劍 |
 | 3 | Discovery | 奇遇池、傳聞、首領、裝備效果 |
 | 4 | Challenge | 回合交手、路遇節奏、老年生死 |
@@ -66,19 +66,19 @@
 
 ### Pillar 3: 江湖有節奏
 
-**One-Sentence Definition**: 日常翻頁、路遇、奇遇、首領、論劍各有可預期的時間節奏；老年與章節推進可被玩家感覺到。
+**One-Sentence Definition**: 日常翻頁、路遇、奇遇、首領、論劍各有可預期的時間節奏；老年生死可被玩家感覺到。
 
 **Target Aesthetics Served**: Challenge, Discovery
 
-**Design Test**: 事件權重必須隨人生階段偏置；玩家應能在鎮居看到當前章節心志。
+**Design Test**: 事件權重必須隨人生階段偏置；不做主線章節條／心志任務。
 
 #### Serving This Pillar
 - `stageWeightBias` 接入抽選
-- 故事章節條常駐鎮居
+- 路遇／奇遇倒數各自獨立
 
 #### Violating This Pillar
 - 童年標籤事件永遠抽不到卻仍佔目錄門面
-- 章節只在後端加數、UI 完全隱形
+- 強加主線章節進度條
 
 ---
 
