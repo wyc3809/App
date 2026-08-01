@@ -819,4 +819,72 @@ describe('life event engine', () => {
       expect(s2.character.flags.death_cause).toBeTruthy();
     }
   });
+
+  it('seeds town NPCs and can run a life arc beat', async () => {
+    const { tickLifeArc } = await import('../core/life/arcs');
+    initRng(21);
+    const state = createNewLife(21);
+    expect(state.npcs.npc_lu_yansheng?.name).toBe('陸硯生');
+    expect(state.npcs.npc_shen_muqing?.name).toBe('沈暮晴');
+    expect(Object.keys(state.npcs).length).toBeGreaterThanOrEqual(5);
+    state.lifeArc = {
+      id: 'arc_lu_ink',
+      title: '硯生授字',
+      beat: 0,
+      maxBeats: 3,
+      npcId: 'npc_lu_yansheng',
+      monthsLeft: 0,
+    };
+    const before = state.npcs.npc_lu_yansheng!.memories.length;
+    const lines = tickLifeArc(state);
+    expect(lines.some((l) => l.length > 8)).toBe(true);
+    expect(state.npcs.npc_lu_yansheng!.memories.length).toBeGreaterThan(before);
+  });
+
+  it('narrate overrides replace catalog templates', async () => {
+    const { lookupNarrateOverride, isTemplateNarrate } = await import('../data/events/narrateOverrides');
+    const { applyChoice, getEventById, fullCatalog } = await import('../core/life/eventEngine');
+    const text = lookupNarrateOverride('find_coin', 'keep');
+    expect(text).toBeTruthy();
+    expect(isTemplateNarrate(text!)).toBe(false);
+    initRng(3);
+    const state = createNewLife(3);
+    const ev = getEventById(fullCatalog(), 'find_coin')!;
+    const result = applyChoice(state, ev, 'keep');
+    expect(result.feedback).toContain('銅錢');
+    expect(result.feedback).not.toMatch(/就「路拾銅錢」一事/);
+  });
+
+  it('foe AI styles differ by name and runtime view marks pack', async () => {
+    const { inferFoeAiStyle, chooseFoeMove } = await import('../core/life/foeAi');
+    const { toRuntimeView } = await import('../interfaces/eventRuntime');
+    const { RANDOM_PACK_EVENTS } = await import('../core/life/packAdapter');
+    expect(inferFoeAiStyle('蒙面殺手', 'normal')).toBe('trickster');
+    expect(inferFoeAiStyle('山賊', 'normal')).toBe('brute');
+    const foe = {
+      name: '山賊',
+      hp: 100,
+      maxHp: 100,
+      qi: 80,
+      maxQi: 80,
+      attack: 20,
+      defense: 10,
+      hitBonus: 0,
+      evasion: 0,
+      qiRegen: 5,
+      blind: 0,
+      isPlayer: false,
+      stun: 0,
+      bleedDamage: 0,
+      bleedTurns: 0,
+      defenseMod: 0,
+      reflect: 0,
+      chargeBonus: 0,
+    };
+    const rng = { nextFloat: () => 0.1, pick: <T,>(a: T[]) => a[0]!, chance: () => true };
+    const move = chooseFoeMove(foe, rng, 'brute', false);
+    expect(move.id).toMatch(/heavy|basic/);
+    const pack = RANDOM_PACK_EVENTS[0];
+    if (pack) expect(toRuntimeView(pack).resolveMode).toBe('pack');
+  });
 });

@@ -29,6 +29,8 @@ import {
   resolveStrike,
 } from './combatCore';
 import { recordDeath } from './death';
+import { chooseFoeMove, inferFoeAiStyle } from './foeAi';
+import { combatOpeningLines, dispositionBlurb } from './combatPresentation';
 
 export type CombatFoeDisposition = 'kill' | 'release' | 'stun';
 
@@ -114,22 +116,27 @@ export function startCombat(
   },
 ): string[] {
   syncRngFromState(state);
+  const foePower = opts.foePower ?? 'normal';
+  const style = inferFoeAiStyle(opts.foeName, foePower);
+  const player = buildPlayerFighter(state);
+  const foe = buildFoe(opts.foeName, opts.foePower);
   const combat: PendingCombat = {
     id: `cbt_${state.year}_${state.month}_${state.character.stats.combats}`,
     source: opts.source,
     title: opts.title,
     turn: 1,
     phase: 'player',
-    player: buildPlayerFighter(state),
-    foe: buildFoe(opts.foeName, opts.foePower),
-    log: [`【${opts.title}】對上${opts.foeName}，戰端已開。`],
+    player,
+    foe,
+    log: [],
     usedExternalSkillIds: [],
     rewardOnWin: opts.rewardOnWin,
     rewardOnLose: opts.rewardOnLose,
     eventId: opts.eventId,
-    foePower: opts.foePower ?? 'normal',
+    foePower,
     bossPhase2: false,
   };
+  combat.log = combatOpeningLines(combat, style);
   combat.player.hp = clamp(combat.player.hp, 1, combat.player.maxHp);
   combat.player.qi = clamp(combat.player.qi, 0, combat.player.maxQi);
   state.pendingCombat = combat;
@@ -177,42 +184,13 @@ function weaponMatchBoost(state: LifeGameState, skillId: string | null): { power
 }
 
 function enemyChooseMove(
-  foe: CombatFighter,
+  combat: PendingCombat,
   rng: ReturnType<typeof getRng>,
   bossEnraged = false,
 ): CombatMoveDef {
-  const pool: CombatMoveDef[] = [
-    BASIC_STRIKE,
-    {
-      id: 'enemy_heavy',
-      name: '猛攻',
-      qiCost: 12,
-      power: bossEnraged ? 1.7 : 1.4,
-      description: '',
-    },
-    {
-      id: 'enemy_feint',
-      name: '虛晃',
-      qiCost: 8,
-      power: 0.9,
-      hitBonus: bossEnraged ? 0.22 : 0.15,
-      description: '',
-    },
-  ];
-  if (bossEnraged) {
-    pool.push({
-      id: 'enemy_burst',
-      name: '絕境反撲',
-      qiCost: 18,
-      power: 1.95,
-      pierce: 0.2,
-      description: '',
-    });
-  }
-  const affordable = pool.filter((m) => foe.qi >= m.qiCost);
-  return rng.pick(affordable.length ? affordable : [BASIC_STRIKE]);
+  const style = inferFoeAiStyle(combat.foe.name, combat.foePower ?? 'normal');
+  return chooseFoeMove(combat.foe, rng, style, bossEnraged);
 }
-
 
 function needsFoeDisposition(combat: PendingCombat): boolean {
   return combat.source !== 'spar';
@@ -258,7 +236,10 @@ export function resolveCombatDisposition(
 
   syncRngFromState(state);
   const c = state.character;
-  const lines: string[] = [DISPOSITION_NARRATE[disposition]];
+  const lines: string[] = [
+    dispositionBlurb(disposition, combat.foe.name),
+    DISPOSITION_NARRATE[disposition],
+  ];
 
   // 俠心過重仍選殺：額外損俠
   if (disposition === 'kill' && (c.nature?.xia ?? 0) >= 35) {
@@ -540,7 +521,7 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
       lines.push(roar);
       combat.log.push(roar);
     }
-    const enemyMove = enemyChooseMove(combat.foe, rng, Boolean(combat.bossPhase2));
+    const enemyMove = enemyChooseMove(combat, rng, Boolean(combat.bossPhase2));
     const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng);
     combat.log.push(...enemyLines);
     lines.push(...enemyLines);

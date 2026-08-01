@@ -34,7 +34,12 @@ import {
 import { rankPowerMult } from '@core/life/martialRanks';
 import { displayChoiceText } from '@core/life/playerText';
 import { coachCopy, nextCoachStep } from '@core/life/tutorial';
+import { lifeArcStatusLine } from '@core/life/arcs';
+import { listKnownNpcLines } from '@core/life/npcCatalog';
+import { getAftermathStatus, styleForCombat } from '@core/life/combatPresentation';
+import { foeStyleLabel } from '@core/life/foeAi';
 import { track } from '../../telemetry/events';
+import { seasonToInk, placeToInk } from './sceneVariants';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
 import { InkHuashanPanel } from './InkHuashanPanel';
 import { LifeDebugPanel } from '../LifeDebugPanel';
@@ -239,9 +244,21 @@ export function InkPlayScreen({ state }: Props) {
     Boolean(coach) &&
     !c.flags.coach_done;
 
+  const aftermath = getAftermathStatus(state);
+  const arcLine = lifeArcStatusLine(state);
+  const inkSeason = seasonToInk(month);
+  const inkPlace = placeToInk(c.location);
+  const combatStyle = combat ? styleForCombat(combat) : null;
+
   return (
-    <div className={`scroll-shell scroll-shell--play ink-enter${combat ? ' scroll-shell--combat' : ''}`}>
-      <InkScrollBackdrop variant="play" quiet={Boolean(combat)} />
+    <div className={`scroll-shell scroll-shell--play ink-enter ink-scene--${inkSeason} ink-scene--${inkPlace}${combat ? ' scroll-shell--combat' : ''}`}>
+      <InkScrollBackdrop
+        variant="play"
+        quiet={Boolean(combat)}
+        season={inkSeason}
+        place={inkPlace}
+        omen={Boolean(state.pending?.kind === 'special')}
+      />
       {sealText && <InkSealStamp text={sealText} onDone={clearSeal} />}
 
       <header className="ink-status">
@@ -249,6 +266,7 @@ export function InkPlayScreen({ state }: Props) {
           <h2 className="ink-name">{c.name}</h2>
           <p className="ink-meta">
             {c.age} 歲 · {stage} · {state.year}年{month}月（{seasonLabel(month)}）
+            {c.location ? ` · ${c.location}` : ''}
             {sect ? ` · ${sect.name}` : ''}
           </p>
         </div>
@@ -283,6 +301,14 @@ export function InkPlayScreen({ state }: Props) {
       </header>
 
       {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
+      {arcLine && state.phase === 'playing' && !combat && (
+        <p className="ink-arc-chip" aria-label="因緣">{arcLine}</p>
+      )}
+      {aftermath && state.phase === 'playing' && !combat && (
+        <p className={`ink-aftermath-chip ink-aftermath-chip--${aftermath.kind}`} aria-label="餘波">
+          {aftermath.text}
+        </p>
+      )}
 
       {!combat && (
         <nav className="ink-tabs" aria-label="分卷">
@@ -507,6 +533,16 @@ export function InkPlayScreen({ state }: Props) {
           </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
+          <h3 className="ink-subhead">鎮中故人</h3>
+          {listKnownNpcLines(state).length === 0 ? (
+            <p className="ink-note">尚未結識江湖人物。</p>
+          ) : (
+            listKnownNpcLines(state).map((line) => (
+              <p key={line} className="ink-note">
+                {line}
+              </p>
+            ))
+          )}
           <p className="ink-note">
             子女 · {c.childrenCount ?? 0}/{c.childrenMax ?? 0}
             {c.family?.childrenNames?.length
@@ -770,6 +806,7 @@ export function InkPlayScreen({ state }: Props) {
         <section className="ink-panel ink-combat" aria-live="polite">
           <p className="ink-event-year">
             第 {combat.turn} 回合 · {combat.title}
+            {combatStyle ? ` · ${foeStyleLabel(combatStyle)}` : ''}
           </p>
           <h3>交手 · {combat.foe.name}</h3>
           <div className="ink-combat-bars">

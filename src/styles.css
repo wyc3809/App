@@ -2345,6 +2345,76 @@ button.is-pressed,
   line-height: 1.45;
 }
 
+/* —— 水墨舞台：季節／地點 —— */
+.ink-backdrop--spring {
+  filter: saturate(1.05) hue-rotate(-6deg);
+}
+.ink-backdrop--summer {
+  filter: contrast(1.04) saturate(1.08);
+}
+.ink-backdrop--autumn {
+  filter: sepia(0.18) saturate(0.95);
+}
+.ink-backdrop--winter {
+  filter: grayscale(0.2) brightness(1.04);
+}
+.ink-backdrop--hall .ink-ridge--near {
+  opacity: 0.85;
+}
+.ink-backdrop--mountain .ink-ridge--far {
+  transform: translateY(-6px) scale(1.04);
+  transform-origin: bottom center;
+}
+.ink-backdrop--river .ink-mist-layer {
+  opacity: 0.85;
+}
+.ink-backdrop--wild .ink-brush-sweep {
+  opacity: 0.55;
+}
+.ink-backdrop--omen {
+  box-shadow: inset 0 -40px 60px rgba(163, 58, 50, 0.08);
+}
+.scroll-shell.ink-scene--spring {
+  background:
+    linear-gradient(90deg, rgba(26, 26, 26, 0.04), transparent 14px),
+    linear-gradient(168deg, #f7f3e8 0%, var(--paper) 50%, #e8e0cc 100%);
+}
+.scroll-shell.ink-scene--summer {
+  background:
+    linear-gradient(90deg, rgba(26, 26, 26, 0.04), transparent 14px),
+    linear-gradient(168deg, #faf6ee 0%, #f0e6c8 52%, var(--paper-aged) 100%);
+}
+.scroll-shell.ink-scene--autumn {
+  background:
+    linear-gradient(90deg, rgba(26, 26, 26, 0.05), transparent 14px),
+    linear-gradient(168deg, #f3e8d4 0%, #e8d5b5 48%, #dcc4a0 100%);
+}
+.scroll-shell.ink-scene--winter {
+  background:
+    linear-gradient(90deg, rgba(26, 26, 26, 0.05), transparent 14px),
+    linear-gradient(168deg, #f2f0ea 0%, #e6e2d8 50%, #d5d0c6 100%);
+}
+.ink-arc-chip,
+.ink-aftermath-chip {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-ui);
+  letter-spacing: 0.06em;
+  border-left: 2px solid var(--ink-soft);
+  background: rgba(255, 252, 245, 0.65);
+  color: var(--ink-mid);
+}
+.ink-aftermath-chip--blood,
+.ink-aftermath-chip--hunt {
+  border-left-color: var(--cinnabar);
+  color: var(--cinnabar);
+}
+.ink-aftermath-chip--mercy,
+.ink-aftermath-chip--revenge {
+  border-left-color: #4a7fa8;
+}
+
 /* —— 江湖字體統一加固（壓過殘餘細灰字） —— */
 .ink-choice,
 .ink-practice-btn,

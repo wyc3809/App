@@ -29,6 +29,8 @@ import { resolvePackOutcomes, applyPackFortuneTwist } from './outcomeResolver';
 import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
 import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
+import { applyNarrateOverrideToEffects, lookupNarrateOverride } from '@data/events/narrateOverrides';
+import { listArcBonusEvents } from './arcs';
 
 /** 把數值行與故事行分開，故事作主文 */
 function isStatLine(line: string): boolean {
@@ -268,11 +270,17 @@ export function applyChoice(
   } else {
     const outcome = pickOutcomeForChoice(state, choice.outcomes);
     const rng = getRng();
-    const jittered = jitterEffectsForRoll(outcome.effects, rng.nextFloat());
+    const overridden = applyNarrateOverrideToEffects(event.id, choiceId, outcome.effects);
+    const jittered = jitterEffectsForRoll(overridden, rng.nextFloat());
     const applied = applyEffects(state, jittered);
     logs = applied.logs;
     deltas = applied.deltas;
     died = applied.died;
+    // 若原效果無 narrate，仍注入覆蓋主文
+    const ov = lookupNarrateOverride(event.id, choiceId);
+    if (ov && !logs.some((l) => l === ov)) {
+      logs = [ov, ...logs];
+    }
     const isIll = outcome.id?.endsWith('_ill') || outcome.label === '事與願違';
     if (!isIll && (tags.includes('secret') || tags.includes('special'))) {
       if (rng.chance(0.22)) {
@@ -286,7 +294,7 @@ export function applyChoice(
         }
       }
     }
-    feedback = buildStoryFeedback(logs, '事已了結。');
+    feedback = buildStoryFeedback(logs, ov ?? '事已了結。');
   }
 
   const natureLines = applyChoiceNature(state, choice.text);
@@ -417,6 +425,14 @@ export function startMonth(state: LifeGameState): LifeGameState {
   }
 
   if (!event) {
+    const arcPool = listArcBonusEvents(state);
+    if (arcPool.length && rng.chance(0.4)) {
+      event = weightedPick(state, arcPool);
+      kind = 'story';
+    }
+  }
+
+  if (!event) {
     // 修煉機緣略降：0.34 → 0.28，讓江湖百事更多露出
     const wanderPool = listEligibleEvents(PRACTICE_WANDER_EVENTS, state);
     if (wanderPool.length && rng.chance(0.28)) {
@@ -431,11 +447,12 @@ export function startMonth(state: LifeGameState): LifeGameState {
         ...ORDINARY_EVENTS,
         ...JIANGHU_EXTRA_EVENTS,
         ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth'),
+        ...listArcBonusEvents(state),
       ],
       state,
     ).filter((e) => !(e.tags ?? []).includes('pack'));
     event = weightedPick(state, pool);
-    kind = 'ordinary';
+    kind = (event?.tags ?? []).includes('arc') ? 'story' : 'ordinary';
   }
 
   if (rumorBoost > 0) {

@@ -1,15 +1,31 @@
 /** 宣紙遠山 + 墨漬 + 水墨微動（純裝飾） */
+import type { InkPlace, InkSeason } from './sceneVariants';
+
 export function InkScrollBackdrop({
   variant = 'play',
   quiet = false,
+  season,
+  place,
+  omen = false,
 }: {
   variant?: 'hero' | 'play';
   /** 交手時暫停 mist／spark 等無限動畫 */
   quiet?: boolean;
+  season?: InkSeason;
+  place?: InkPlace;
+  omen?: boolean;
 }) {
+  const scene = [
+    season ? `ink-backdrop--${season}` : '',
+    place ? `ink-backdrop--${place}` : '',
+    omen ? 'ink-backdrop--omen' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
-      className={`ink-backdrop ink-backdrop--${variant}${quiet ? ' ink-backdrop--quiet' : ''}`}
+      className={`ink-backdrop ink-backdrop--${variant}${quiet ? ' ink-backdrop--quiet' : ''}${scene ? ` ${scene}` : ''}`}
       aria-hidden
     >
       <svg className="ink-mountains" viewBox="0 0 420 200" preserveAspectRatio="xMidYMax slice">

@@ -1,29 +1,24 @@
-# Systems Index — 江湖一生 V1（重構後）
+# Systems Index — 江湖一生（Leap 1–5）
 
 | System | Owner module | Status |
 |--------|----------------|--------|
-| Seeded RNG | `core/random.ts` | stable |
-| Life GameState | `core/life/gameState.ts` | stable |
-| Legacy / reincarnation | `core/life/legacy.ts` | new |
-| Death cause | `core/life/death.ts` | new |
-| Requirements | `core/life/requirements.ts` | stable |
-| Effects | `core/life/effects.ts` | enhance |
-| Event Engine | `core/life/eventEngine.ts` | stage-weighted pick |
-| Life stages | `core/life/stages.ts` | wired into pick |
-| Story chapters | — | **cancelled**（存檔空殼 only） |
-| Presentation / chronicle | `core/life/chronicle.ts` | stable |
-| Event catalog | `data/events/*` | keep 50+ / pack / bosses |
-| Combat | `core/life/combat.ts` + `combatCore.ts` | stable |
-| Huashan contest | `core/life/huashan.ts` | stable |
-| Tutorial coach | `core/life/tutorial.ts` | new |
-| Telemetry stubs | `src/telemetry/events.ts` | new |
-| Save | `core/life/saveIndexedDb.ts` | stable |
-| UI shell | `src/components/ink/*` | polish |
+| Unified event runtime | `interfaces/eventRuntime.ts`, `core/life/resolveChoice.ts` | ADR-001 |
+| Event engine | `core/life/eventEngine.ts` | stage-weighted + arcs |
+| Narrate overrides | `data/events/narrateOverrides.ts` | high-traffic rewrite |
+| Short life arcs | `core/life/arcs.ts` | active |
+| Town NPCs | `core/life/npcCatalog.ts` + `content/npcs/` | wired |
+| Foe AI styles | `core/life/foeAi.ts` | active |
+| Combat presentation | `core/life/combatPresentation.ts` | opening / aftermath UI |
+| Ink scene variants | `src/components/ink/sceneVariants.ts` | season + place |
+| Legacy / death / coach | `legacy.ts` / `death.ts` / `tutorial.ts` | stable |
+| Story chapters | — | **cancelled** |
 
-## Core fantasy
+## Leap packages
 
-玩家不是打關卡，而是在水墨手卷上寫下一篇可重玩的江湖人生。
+1. 統一運行時視圖（不改寫 Pack JSON）
+2. 短弧 + 鎮中故人記憶
+3. 高頻敘事覆蓋 + `scripts/auditNarrate.mjs`
+4. 敵人路數 AI + 餘波提示
+5. 季節／地點水墨舞台
 
-## Pillars
-
-見 `design/gdd/game-pillars.md`。
+見 `docs/architecture/adr-001-unified-event-runtime.md`。

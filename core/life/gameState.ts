@@ -8,6 +8,7 @@ import { defaultNature } from './nature';
 import { makeStoryState, makeWorldState } from './monthly';
 import { recomputeCapBonuses } from './equipment';
 import { applyLegacyToCharacter, type LegacyCarry } from './legacy';
+import { ensureStarterNpcs } from './npcCatalog';
 
 export const SECT_DEFS = SECT_CONTENT.map((s) => ({
   id: s.id,
@@ -173,6 +174,11 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     recomputeCapBonuses(state.character);
   }
 
+  ensureStarterNpcs(state);
+  state.lifeLog.push(
+    '鎮裡有幾張熟面孔：陸硯生執教、沈暮晴坐堂、岳長風把武館——因緣或自他們而起。',
+  );
+
   return state;
 }
 
@@ -283,5 +289,6 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
     raw.combatEncounterCountdown = 10;
   }
   recomputeCapBonuses(raw.character);
+  ensureStarterNpcs(raw);
   return raw;
 }

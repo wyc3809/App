@@ -331,6 +331,15 @@ export interface LifeGameState {
   tab?: 'home' | 'person' | 'jianghu' | 'practice';
   /** 華山論劍淘汰賽（幽靈對手 P0） */
   huashan?: HuashanBracketState;
+  /** 短弧因緣（非章節） */
+  lifeArc?: {
+    id: string;
+    title: string;
+    beat: number;
+    maxBeats: number;
+    npcId: string;
+    monthsLeft: number;
+  };
 }
 
 export interface CombatFighterState {
@@ -531,4 +540,14 @@ export const lifeGameStateSchema = z.object({
   summaryText: z.string().optional(),
   tab: z.enum(['home', 'person', 'jianghu', 'practice']).optional(),
   huashan: huashanBracketSchema,
+  lifeArc: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      beat: z.number(),
+      maxBeats: z.number(),
+      npcId: z.string(),
+      monthsLeft: z.number(),
+    })
+    .optional(),
 });

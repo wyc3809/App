@@ -3,6 +3,7 @@ import { getRng } from '@core/random';
 import { tryMonthlyBirth } from './family';
 import { tickAftermath } from './aftermath';
 import { recordDeath } from './death';
+import { tickLifeArc } from './arcs';
 
 export function makeWorldState(): WorldState {
   const rng = getRng();
@@ -130,6 +131,7 @@ export function simulateMonthBody(state: LifeGameState): void {
   simulateWorldMonth(state);
   tryMonthlyBirth(state);
   tickAftermath(state);
+  tickLifeArc(state);
 
   if (c.health <= 0) {
     c.health = 0;
