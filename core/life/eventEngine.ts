@@ -30,7 +30,7 @@ import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
 import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
 import { applyNarrateOverrideToEffects, lookupNarrateOverride } from '@data/events/narrateOverrides';
-import { listArcBonusEvents } from './arcs';
+import { listArcBonusEvents, lookupArcEvent } from './arcs';
 
 /** 把數值行與故事行分開，故事作主文 */
 function isStatLine(line: string): boolean {
@@ -112,6 +112,26 @@ export function fullCatalog(): GameEvent[] {
 export function lookupEvent(id: string): GameEvent | undefined {
   fullCatalog();
   return catalogById?.get(id);
+}
+
+/**
+ * 解析當前 pending 事件（含動態短弧 arc_visit_*，不在靜態目錄內）
+ * 若 pending 指向已失效 id，回傳 null（呼叫端可清掉卡死）
+ */
+export function resolvePendingEvent(state: LifeGameState): GameEvent | null {
+  if (!state.pending) return null;
+  const id = state.pending.eventId;
+  const fromCat = lookupEvent(id) ?? getEventById(fullCatalog(), id);
+  if (fromCat) return fromCat;
+  return lookupArcEvent(state, id);
+}
+
+/** 清除無法解析的 pending，避免「有按鈕卻翻唔到頁」 */
+export function clearDanglingPending(state: LifeGameState): boolean {
+  if (!state.pending) return false;
+  if (resolvePendingEvent(state)) return false;
+  state.pending = null;
+  return true;
 }
 
 export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): GameEvent[] {

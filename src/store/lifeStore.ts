@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { createNewLife, migrateLifeState, syncRngFromState, type CreateLifeOptions } from '@core/life/gameState';
-import { applyChoice, fullCatalog, getEventById, startMonth } from '@core/life/eventEngine';
+import {
+  applyChoice,
+  clearDanglingPending,
+  fullCatalog,
+  getEventById,
+  resolvePendingEvent,
+  startMonth,
+} from '@core/life/eventEngine';
 import { clearLifeSave, loadLifeSave } from '@core/life/saveIndexedDb';
 import {
   flushPersist,
@@ -149,10 +156,18 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
 
   advanceMonth: () => {
     const { state } = get();
-    if (!state || state.pending || state.pendingCombat || state.phase !== 'playing' || !state.character.alive)
-      return;
+    if (!state || state.pendingCombat || state.phase !== 'playing' || !state.character.alive) return;
+    // 失效 pending（如舊版動態短弧）先清掉，否則按鈕可見卻永遠翻唔到
+    if (state.pending && !resolvePendingEvent(state)) {
+      const fixed = structuredClone(state);
+      clearDanglingPending(fixed);
+      void save(fixed);
+      set({ state: fixed });
+    }
+    const current = get().state;
+    if (!current || current.pending || current.pendingCombat) return;
     if (get().lastResult) set({ lastResult: null });
-    const next = structuredClone(state);
+    const next = structuredClone(current);
     if (!next.character.flags.coach_flipped) next.character.flags.coach_flipped = true;
     startMonth(next);
     if (next.phase === 'summary') {
@@ -173,8 +188,15 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   choose: (choiceId: string) => {
     const { state } = get();
     if (!state?.pending || state.pendingCombat) return;
-    const event = getEventById(CATALOG, state.pending.eventId);
-    if (!event) return;
+    const event = resolvePendingEvent(state) ?? getEventById(CATALOG, state.pending.eventId);
+    if (!event) {
+      // 死 pending：清掉讓玩家可繼續
+      const next = structuredClone(state);
+      clearDanglingPending(next);
+      void save(next);
+      set({ state: next });
+      return;
+    }
     const choice = event.choices.find((c) => c.id === choiceId);
     const next = structuredClone(state);
     if (!next.character.flags.coach_chose) next.character.flags.coach_chose = true;
@@ -205,7 +227,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const { state } = get();
     if (!state?.pending || state.pendingCombat) return;
     const next = structuredClone(state);
-    const title = getEventById(CATALOG, next.pending!.eventId)?.title ?? '機緣';
+    const title = resolvePendingEvent(next)?.title ?? getEventById(CATALOG, next.pending!.eventId)?.title ?? '機緣';
     next.pending = null;
     pushChronicle(next, [`「${title}」`, '你選擇暫避鋒芒，此事輕輕揭過。']);
     void save(next);

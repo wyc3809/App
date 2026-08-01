@@ -7,8 +7,8 @@ import {
   wuxiaAttributeKeys,
   wuxiaAttributeLabels,
 } from '@interfaces/lifeEngine';
-import { LIFE_CATALOG, useLifeStore } from '../../store/lifeStore';
-import { getEventById } from '@core/life/eventEngine';
+import { useLifeStore } from '../../store/lifeStore';
+import { resolvePendingEvent } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
@@ -147,7 +147,7 @@ export function InkPlayScreen({ state }: Props) {
 
   const c = state.character;
   const month = state.month ?? 1;
-  const pendingEvent = state.pending ? getEventById(LIFE_CATALOG, state.pending.eventId) : null;
+  const pendingEvent = resolvePendingEvent(state);
   const sect = c.sectId ? state.sects[c.sectId] : null;
   const lover = c.loverId ? state.npcs[c.loverId] : null;
   const stage = getLifeStageLabel(state);
@@ -204,7 +204,7 @@ export function InkPlayScreen({ state }: Props) {
   const onHomeTab = tab === 'home';
   const canAdvanceMonth =
     state.phase === 'playing' &&
-    !pendingEvent &&
+    !state.pending &&
     !combat &&
     c.alive &&
     !showResult &&

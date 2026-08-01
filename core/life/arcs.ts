@@ -116,45 +116,78 @@ export function getArcDef(id: string): ArcDef | undefined {
   return ARC_DEFS.find((a) => a.id === id);
 }
 
+/** 由弧狀態重建「訪故人」事件（須可按 pending.eventId 反查） */
+export function buildArcVisitEvent(state: LifeGameState, beatOverride?: number): GameEvent | null {
+  const arc = state.lifeArc;
+  if (!arc) return null;
+  const def = getArcDef(arc.id);
+  if (!def) return null;
+  const beat = beatOverride ?? arc.beat;
+  return {
+    id: `arc_visit_${arc.id}_${beat}`,
+    title: `故人·${def.title}`,
+    body: `你想起${state.npcs[arc.npcId]?.name ?? '故人'}，腳步不由自主往那邊去。`,
+    weight: 28,
+    tags: ['arc', 'story'],
+    choices: [
+      {
+        id: 'go',
+        text: '前去相見',
+        outcomes: [
+          {
+            effects: [
+              { type: 'narrate', text: '你推門而入，舊人舊事，又翻過一頁。' },
+              { type: 'flag', key: `arc_visit_${arc.id}`, value: true },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'later',
+        text: '改日再說',
+        outcomes: [
+          {
+            effects: [{ type: 'narrate', text: '你站在巷口片刻，終究沒有邁步。有些緣，要等。' }],
+          },
+        ],
+      },
+    ],
+  };
+}
+
 /** 短弧相關事件（活躍弧時提高權重混入池） */
 export function listArcBonusEvents(state: LifeGameState): GameEvent[] {
-  const arc = state.lifeArc;
-  if (!arc) return [];
-  const def = getArcDef(arc.id);
-  if (!def) return [];
-  // 用輕量「訪故人」事件把玩家帶回弧線人物
-  return [
-    {
-      id: `arc_visit_${arc.id}_${arc.beat}`,
-      title: `故人·${def.title}`,
-      body: `你想起${state.npcs[arc.npcId]?.name ?? '故人'}，腳步不由自主往那邊去。`,
-      weight: 28,
-      tags: ['arc', 'story'],
-      choices: [
-        {
-          id: 'go',
-          text: '前去相見',
-          outcomes: [
-            {
-              effects: [
-                { type: 'narrate', text: '你推門而入，舊人舊事，又翻過一頁。' },
-                { type: 'flag', key: `arc_visit_${arc.id}`, value: true },
-              ],
-            },
-          ],
+  const ev = buildArcVisitEvent(state);
+  return ev ? [ev] : [];
+}
+
+/** 解析 pending 短弧事件（含 beat 已推進後仍掛舊 id 的存檔） */
+export function lookupArcEvent(state: LifeGameState, eventId: string): GameEvent | null {
+  if (!eventId.startsWith('arc_visit_')) return null;
+  const live = buildArcVisitEvent(state);
+  if (live && live.id === eventId) return live;
+  // 存檔／時序：id 內嵌 beat，按 id 重建
+  const m = /^arc_visit_(arc_[a-z_]+)_(\d+)$/.exec(eventId);
+  if (!m) return null;
+  const arcId = m[1]!;
+  const beat = Number(m[2]);
+  const def = getArcDef(arcId);
+  if (!def) return null;
+  // 臨時掛上弧資料以便 rebuild（不寫回 state）
+  const shadow: LifeGameState = {
+    ...state,
+    lifeArc: state.lifeArc?.id === arcId
+      ? state.lifeArc
+      : {
+          id: arcId,
+          title: def.title,
+          beat,
+          maxBeats: def.maxBeats,
+          npcId: def.npcId,
+          monthsLeft: 1,
         },
-        {
-          id: 'later',
-          text: '改日再說',
-          outcomes: [
-            {
-              effects: [{ type: 'narrate', text: '你站在巷口片刻，終究沒有邁步。有些緣，要等。' }],
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  };
+  return buildArcVisitEvent(shadow, beat);
 }
 
 export function maybeStartLifeArc(state: LifeGameState): string[] {

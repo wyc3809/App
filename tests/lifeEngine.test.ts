@@ -820,6 +820,37 @@ describe('life event engine', () => {
     }
   });
 
+  it('arc visit pending resolves and does not soft-lock advance', async () => {
+    const { resolvePendingEvent, clearDanglingPending, startMonth } = await import('../core/life/eventEngine');
+    const { applyChoice } = await import('../core/life/eventEngine');
+    initRng(5);
+    const state = createNewLife(5);
+    state.lifeArc = {
+      id: 'arc_lu_ink',
+      title: '硯生授字',
+      beat: 1,
+      maxBeats: 3,
+      npcId: 'npc_lu_yansheng',
+      monthsLeft: 2,
+    };
+    state.pending = { eventId: 'arc_visit_arc_lu_ink_1', year: state.year, month: state.month, kind: 'story' };
+    const ev = resolvePendingEvent(state);
+    expect(ev?.id).toBe('arc_visit_arc_lu_ink_1');
+    expect(ev?.choices.length).toBeGreaterThan(0);
+    const result = applyChoice(state, ev!, 'go');
+    expect(result.state.pending).toBeNull();
+    expect(result.feedback.length).toBeGreaterThan(4);
+
+    // dangling pending clears
+    const stuck = createNewLife(6);
+    stuck.pending = { eventId: 'arc_visit_missing_99', year: 1, month: 1 };
+    expect(resolvePendingEvent(stuck)).toBeNull();
+    expect(clearDanglingPending(stuck)).toBe(true);
+    expect(stuck.pending).toBeNull();
+    startMonth(stuck);
+    expect(stuck.character.stats.monthsLived).toBeGreaterThan(0);
+  });
+
   it('seeds town NPCs and can run a life arc beat', async () => {
     const { tickLifeArc } = await import('../core/life/arcs');
     initRng(21);
