@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="照影玉珮">
-  <rect width="160" height="160" rx="24" fill="#f2ead6"/>
-  <circle cx="80" cy="80" r="48" fill="#a9c4ad"/>
-  <circle cx="80" cy="80" r="18" fill="#f2ead6"/>
-  <path d="M80 28c12 18 24 34 42 48M38 92c18 8 40 12 84 4" stroke="#2e664f" stroke-width="6" fill="none" opacity=".58"/>
-  <path d="M80 14v22M68 128l-10 18M92 128l10 18" stroke="#8d251d" stroke-width="6" stroke-linecap="round"/>
-</svg>

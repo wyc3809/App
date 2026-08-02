@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f3f1ec;
+  --bg-elevated: #fffcf7;
+  --bg-muted: #e8e4db;
+  --fg: #141814;
+  --fg-muted: #5c645c;
+  --fg-subtle: #8a928a;
+  --border: rgba(20, 24, 20, 0.1);
+  --accent: #0f7a4c;
+  --accent-soft: rgba(15, 122, 76, 0.12);
+  --danger: #c23b3b;
+  --danger-soft: rgba(194, 59, 59, 0.12);
+  --positive: #0f7a4c;
+  --negative: #c23b3b;
+  --chart-grid: rgba(20, 24, 20, 0.06);
+  --nav-height: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --shadow-soft: 0 18px 40px rgba(20, 24, 20, 0.08);
+  --ring: rgba(15, 122, 76, 0.35);
+  --hero-glow: radial-gradient(120% 80% at 10% 0%, rgba(15, 122, 76, 0.14), transparent 55%),
+    radial-gradient(90% 70% at 100% 20%, rgba(36, 72, 110, 0.1), transparent 50%);
+}
+
+.dark {
+  --bg: #0d1110;
+  --bg-elevated: #161c1a;
+  --bg-muted: #1e2623;
+  --fg: #eef2ee;
+  --fg-muted: #9aa49c;
+  --fg-subtle: #6d7870;
+  --border: rgba(238, 242, 238, 0.1);
+  --accent: #3dcf8e;
+  --accent-soft: rgba(61, 207, 142, 0.14);
+  --danger: #f07171;
+  --danger-soft: rgba(240, 113, 113, 0.14);
+  --positive: #3dcf8e;
+  --negative: #f07171;
+  --chart-grid: rgba(238, 242, 238, 0.06);
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.35);
+  --ring: rgba(61, 207, 142, 0.4);
+  --hero-glow: radial-gradient(120% 80% at 10% 0%, rgba(61, 207, 142, 0.16), transparent 55%),
+    radial-gradient(90% 70% at 100% 10%, rgba(72, 120, 180, 0.12), transparent 50%);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--fg);
+  background: var(--bg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100dvh;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    var(--hero-glow),
+    linear-gradient(180deg, transparent, var(--bg) 80%),
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 18px,
+      rgba(127, 127, 127, 0.015) 18px,
+      rgba(127, 127, 127, 0.015) 19px
+    );
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  .app-shell {
+    @apply mx-auto w-full max-w-lg min-h-dvh relative;
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+  }
+
+  .card-surface {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition;
+    background: var(--accent);
+    color: #04140c;
+  }
+
+  .dark .btn-primary {
+    color: #04140c;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.05);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition;
+    background: var(--bg-muted);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition;
+    color: var(--fg-muted);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg-muted);
+    color: var(--fg);
+  }
+
+  .field {
+    @apply w-full rounded-xl px-3 py-3 text-sm outline-none transition;
+    background: var(--bg-muted);
+    border: 1px solid transparent;
+    color: var(--fg);
+  }
+
+  .field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide;
+    color: var(--fg-subtle);
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+    background: var(--bg-muted);
+    color: var(--fg-muted);
+  }
+
+  .chip-active {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease-out both;
+}
+
+.animate-fade-up-delay {
+  animation: fade-up 0.55s ease-out 0.08s both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.55s ease-out 0.16s both;
+}
+
+.privacy-blur {
+  filter: blur(6px);
+  user-select: none;
+}

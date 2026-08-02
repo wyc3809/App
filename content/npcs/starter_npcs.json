@@ -1,5 +1,0 @@
-[
-  {"id": "npc_lu_yansheng", "name": "陸硯生", "role": "塾師", "location_id": "loc_qiandeng_town"},
-  {"id": "npc_shen_muqing", "name": "沈暮晴", "role": "醫館學徒", "location_id": "loc_healing_hall"},
-  {"id": "npc_yue_changfeng", "name": "岳長風", "role": "武館教頭", "location_id": "loc_training_hall"}
-]

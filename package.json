@@ -1,29 +1,33 @@
 {
-  "name": "jianghu-engine",
-  "private": true,
+  "name": "worthtracker",
   "version": "1.0.0",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "build:pages": "VITE_BASE=/App/ npm run build",
-    "build:mobile": "VITE_BASE=/ npm run build",
-    "preview": "vite preview",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src --max-warnings=0",
     "test": "vitest run"
   },
   "dependencies": {
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.28.0",
+    "next": "^16.2.12",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zod": "^4.4.3",
+    "recharts": "^3.10.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "~5.7.2",
-    "vite": "^6.0.0",
-    "vitest": "^3.0.0"
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16.2.12",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

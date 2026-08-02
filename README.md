@@ -1,47 +1,32 @@
-# 江湖一生 Jianghu Life Engine V1.0
+# WorthTracker
 
-**BitLife × 武俠人生模擬** — 玩家體驗可重玩的武俠人生，內容由 **JSON 事件引擎** 驅動。
+Offline-first **net worth & wealth tracking** PWA. Track assets vs liabilities, historical trends, allocation, and multi-currency portfolios — data stays in your browser.
 
-## 核心循環
+Inspired by WorthTracker-style wealth apps (not expense tracking).
 
-出生 → 家庭 → 成長 → 拜師 → 江湖 → 戀愛 → 門派 → 戰鬥 → 財富 → 老年 → 死亡 → 人生總結 → 傳承
+## Stack
 
-## 技術棧
-
-| 層級 | 技術 |
+| Layer | Tech |
 |------|------|
-| UI | React + TypeScript + Vite |
-| 狀態 | Zustand |
-| 校驗 | Zod |
-| 存檔 | IndexedDB（localStorage 備援） |
-| 隨機 | 種子 PCG32（禁止 `Math.random()`） |
-| 測試 | Vitest |
+| Framework | Next.js (App Router) + TypeScript |
+| Styling | Tailwind CSS (light / dark / system) |
+| State | Zustand + `localStorage` persist |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Tests | Vitest |
 
-## Codex 模組順序
+## Features
 
-1. `interfaces/lifeEngine.ts` — GameState、GameEvent、Zod
-2. `core/random.ts` — Seeded RNG
-3. `core/life/eventEngine.ts` — 事件抽取與選擇結算
-4. `core/life/requirements.ts` / `effects.ts` — 條件與效果
-5. `core/life/saveIndexedDb.ts` — 存檔
-6. `src/components/LifeDebugPanel.tsx` — 除錯面板
-7. `data/events/catalog.ts` — **50** 個事件
-8. `src/components/LifeGameScreen.tsx` — 直版 UI
+- **Net worth dashboard** — assets, liabilities, and privacy-masked balances
+- **Accounts** — cash, investments, real estate, crypto, vehicles, mortgages, loans, credit cards
+- **Multi-currency** — per-account currency with editable FX rates vs base currency
+- **Trend chart** — historical snapshots with 1M / 3M / 6M / 1Y / ALL ranges
+- **Allocation** — pie breakdown for assets or liabilities
+- **Snapshots** — capture point-in-time portfolio history
+- **Settings** — theme, privacy mode, base currency, JSON export, demo data, reset
+- **PWA-ready** — installable web app manifest + mobile-first shell
 
-## 事件資料格式
-
-```ts
-GameEvent {
-  id,
-  title,
-  requirements?,
-  choices: [{ id, text, outcomes: [{ effects }] }]
-}
-```
-
-效果類型包含：`narrate`、`attr`、`money`、`health`、`martial`、`joinSect`、`learnSkill`、`lover`、`die` 等。
-
-## 本地開發
+## Local development
 
 ```bash
 npm install
@@ -50,24 +35,21 @@ npm test
 npm run build
 ```
 
-## 遺留引擎（2.x）
+Open [http://localhost:3000](http://localhost:3000).
 
-`core/world.ts`、`core/gameplay.ts` 等 tick 模擬引擎仍保留於倉庫，供後續與人生引擎合併或對照；目前 **預設入口為 V1 人生模式**（`src/App.tsx`）。
+## Data model
 
-## Claude Code Game Studios
+Core types live in `src/lib/types.ts`:
 
-本專案已安裝 [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios)
-（49 agents · 73 skills · hooks · rules）。
+- `Account` — asset or liability with category, currency, value
+- `HistoricalSnapshot` — dated net-worth checkpoint
+- `Currency` — code, symbol, `exchangeRateToBase`
+- `UserSettings` — base currency, privacy, biometric preference, theme
 
-```bash
-# 需安裝 Claude Code CLI
-npm install -g @anthropic-ai/claude-code
-claude
-# 然後執行 /start 或 /adopt
-```
+## Privacy
 
-主設定見根目錄 `CLAUDE.md`，代理與技能在 `.claude/`。
+WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under `worthtracker-v1`. Use **Export JSON backup** in Settings before clearing browser data.
 
-## 部署
+## Deploy
 
-與先前相同：GitHub Pages（`npm run build:pages`）、Vercel、Netlify、Cloudflare — 見 `vercel.json` / `netlify.toml`。
+Compatible with Vercel (`vercel.json`). Connect the repo and deploy — framework is Next.js.
