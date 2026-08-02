@@ -15,6 +15,21 @@
 
 亦可直接下載／上傳整包：`jianghu-ink-pack.zip`。
 
+## 手機下載
+
+1. **立刻可用（GitHub）**  
+   用手機瀏覽器打開：  
+   https://raw.githubusercontent.com/wyc3809/App/cursor/ink-wash-material-pack-fa39/assets/ink-pack/jianghu-ink-pack.zip  
+   → 應會直接下載 ZIP。
+
+2. **網頁按鈕頁**（部署後）  
+   `/downloads/` — 大按鈕「點此下載 ZIP」
+
+3. **GitHub 檔案頁**  
+   https://github.com/wyc3809/App/blob/cursor/ink-wash-material-pack-fa39/assets/ink-pack/jianghu-ink-pack.zip  
+   右上／選單選 Download。
+
+
 ## 目錄
 
 | 路徑 | 內容 |

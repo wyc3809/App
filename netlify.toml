@@ -5,6 +5,7 @@
 [build.environment]
   VITE_BASE = "/"
 
+# Existing files under /downloads/ are served as-is (force not set).
 [[redirects]]
   from = "/*"
   to = "/index.html"
