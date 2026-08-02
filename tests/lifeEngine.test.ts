@@ -303,6 +303,35 @@ describe('life event engine', () => {
     expect(state.character.gear).toContain('sleeve-darts');
   });
 
+  it('killing a foe grants cultivation (修為) scaled by power', async () => {
+    const { startCombat, playerCombatTurn, resolveCombatDisposition, killCultivationGain } =
+      await import('../core/life/combat');
+    expect(killCultivationGain('weak')).toBe(1);
+    expect(killCultivationGain('normal')).toBe(2);
+    expect(killCultivationGain('strong')).toBe(3);
+    expect(killCultivationGain('boss')).toBe(5);
+
+    initRng(11);
+    const state = createNewLife(11);
+    state.character.martial = 20;
+    startCombat(state, {
+      source: 'event',
+      title: '試殺',
+      foeName: '剪徑之徒',
+      foePower: 'strong',
+      rewardOnWin: { money: 5, martial: 1 },
+    });
+    state.pendingCombat!.foe.hp = 0;
+    playerCombatTurn(state, 'basic_strike');
+    expect(state.pendingCombat?.phase).toBe('resolve');
+    const before = state.character.martial;
+    const logs = resolveCombatDisposition(state, 'kill');
+    expect(logs.some((l) => /修為＋3/.test(l))).toBe(true);
+    expect(state.character.martial).toBe(before + 1 + 3);
+    expect(Number(state.character.flags.kills)).toBe(1);
+    expect(Number(state.character.flags.xiuwei_from_kills)).toBe(3);
+  });
+
   it('victory prompts foe disposition except spar', async () => {
     const { startCombat, playerCombatTurn, resolveCombatDisposition } = await import(
       '../core/life/combat'

@@ -890,7 +890,7 @@ export function InkPlayScreen({ state }: Props) {
               <div className="ink-choice-list ink-combat-resolve">
                 {(
                   [
-                    ['kill', '殺', '殺死', '永絕後患，戾氣難消', dominant === 'xia' ? '俠心較重，下手需自問' : ''],
+                    ['kill', '殺', '殺死', '永絕後患，得修為；戾氣難消', dominant === 'xia' ? '俠心較重，下手需自問' : ''],
                     ['release', '放', '放走', '留其一命，寬恕在胸', dominant === 'e' ? '惡念未消，放人亦是克制' : ''],
                     ['stun', '暈', '擊暈', '點穴制住，不傷性命', '戰利或略薄，心性較穩'],
                   ] as const

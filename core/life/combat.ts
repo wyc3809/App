@@ -268,6 +268,21 @@ export function resolveCombatDisposition(
   return lines;
 }
 
+/** 擊殺敵人所得修為（依對手強度） */
+export function killCultivationGain(foePower: PendingCombat['foePower'] | undefined): number {
+  switch (foePower) {
+    case 'weak':
+      return 1;
+    case 'strong':
+      return 3;
+    case 'boss':
+      return 5;
+    case 'normal':
+    default:
+      return 2;
+  }
+}
+
 function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDisposition): string[] {
   const combat = state.pendingCombat;
   if (!combat) return [];
@@ -302,6 +317,9 @@ function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDispo
     }
   } else if (dispositionLabel === 'kill') {
     if (r.money) r.money = Math.floor(r.money * 1.15) + 3;
+    // 殺敵得修為：疊加於原有武學獎勵之上
+    const xiuwei = killCultivationGain(combat.foePower);
+    r.martial = (r.martial ?? 0) + xiuwei;
   } else if (dispositionLabel === 'release') {
     if (r.money) r.money = Math.max(0, Math.floor(r.money * 0.7));
   }
@@ -316,7 +334,16 @@ function finishCombatWin(state: LifeGameState, dispositionLabel?: CombatFoeDispo
   }
   if (r.martial) {
     c.martial += r.martial;
-    lines.push(`武學＋${r.martial}`);
+    if (dispositionLabel === 'kill') {
+      const xiuwei = killCultivationGain(combat.foePower);
+      const base = r.martial - xiuwei;
+      if (base > 0) lines.push(`武學＋${base}`);
+      lines.push(`修為＋${xiuwei}（殺敵所得）`);
+      c.flags.kills = (Number(c.flags.kills ?? 0) || 0) + 1;
+      c.flags.xiuwei_from_kills = (Number(c.flags.xiuwei_from_kills ?? 0) || 0) + xiuwei;
+    } else {
+      lines.push(`武學＋${r.martial}`);
+    }
   }
   if (r.skillId && !c.skills.includes(r.skillId)) {
     lines.push(learnMartialArt(state, r.skillId, r.skillName));
