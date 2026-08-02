@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="墨雨龍泉">
-  <rect width="160" height="160" rx="24" fill="#efe7d0"/>
-  <path d="M122 14L48 106l14 14 84-80c6-6-16-34-24-26z" fill="#171716"/>
-  <path d="M54 102l14 14M38 118l28 28M32 142l30-30" stroke="#20140f" stroke-width="8" stroke-linecap="round"/>
-  <path d="M118 30C92 58 76 78 58 104" stroke="#2e664f" stroke-width="5" opacity=".76"/>
-  <path d="M98 22c8 12 18 20 30 24" stroke="#8d251d" stroke-width="4" fill="none" opacity=".8"/>
-</svg>
