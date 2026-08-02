@@ -9,6 +9,7 @@ import {
 } from "./currencies";
 import { createDemoAccounts, createDemoSnapshots } from "./demo-data";
 import { todayISO } from "./format";
+import type { WorthBackupPayload } from "./import-backup";
 import type {
   Account,
   Currency,
@@ -30,6 +31,7 @@ interface WorthState {
   setHydrated: (value: boolean) => void;
   loadDemoData: () => void;
   resetAll: () => void;
+  importBackup: (payload: WorthBackupPayload) => void;
 
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
@@ -108,25 +110,55 @@ export const useWorthStore = create<WorthState>()(
           settings: { ...defaultSettings },
         }),
 
+      importBackup: (payload) => {
+        set({
+          accounts: payload.accounts,
+          snapshots: payload.snapshots,
+          currencies: payload.currencies,
+          settings: payload.settings,
+        });
+      },
+
       addAccount: (input) => {
         const now = new Date().toISOString();
+        const asOfDate = input.asOfDate || todayISO();
         const account: Account = {
           ...input,
+          asOfDate,
           id: id(),
           createdAt: now,
           updatedAt: now,
         };
-        set((s) => ({ accounts: [...s.accounts, account] }));
+        set((s) => {
+          const accounts = [...s.accounts, account];
+          const next = buildSnapshot(accounts, s.currencies, asOfDate);
+          const snapshots = [...s.snapshots.filter((x) => x.date !== asOfDate), next].sort(
+            (a, b) => a.date.localeCompare(b.date),
+          );
+          return { accounts, snapshots };
+        });
       },
 
       updateAccount: (id, patch) => {
-        set((s) => ({
-          accounts: s.accounts.map((a) =>
+        set((s) => {
+          const accounts = s.accounts.map((a) =>
             a.id === id
-              ? { ...a, ...patch, updatedAt: new Date().toISOString() }
+              ? {
+                  ...a,
+                  ...patch,
+                  asOfDate: patch.asOfDate ?? a.asOfDate ?? todayISO(),
+                  updatedAt: new Date().toISOString(),
+                }
               : a,
-          ),
-        }));
+          );
+          const target = accounts.find((a) => a.id === id);
+          const asOfDate = target?.asOfDate ?? todayISO();
+          const next = buildSnapshot(accounts, s.currencies, asOfDate);
+          const snapshots = [...s.snapshots.filter((x) => x.date !== asOfDate), next].sort(
+            (a, b) => a.date.localeCompare(b.date),
+          );
+          return { accounts, snapshots };
+        });
       },
 
       deleteAccount: (id) => {
@@ -172,6 +204,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -179,6 +212,24 @@ export const useWorthStore = create<WorthState>()(
         currencies: state.currencies,
         settings: state.settings,
       }),
+      migrate: (persisted, version) => {
+        const state = persisted as {
+          accounts?: Account[];
+          snapshots?: HistoricalSnapshot[];
+          currencies?: Currency[];
+          settings?: UserSettings;
+        };
+        if (version < 2 && Array.isArray(state.accounts)) {
+          state.accounts = state.accounts.map((a) => ({
+            ...a,
+            asOfDate:
+              typeof a.asOfDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.asOfDate)
+                ? a.asOfDate
+                : (a.createdAt?.slice(0, 10) ?? todayISO()),
+          }));
+        }
+        return state as never;
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },
