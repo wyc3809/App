@@ -24,6 +24,8 @@ export interface Account {
   isLiability: boolean;
   currency: string;
   currentValue: number;
+  /** YYYY-MM-DD — date this balance applies to */
+  asOfDate: string;
   institutionName?: string;
   note?: string;
   updatedAt: string;

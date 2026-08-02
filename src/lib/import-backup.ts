@@ -64,6 +64,11 @@ function parseAccount(raw: unknown): Account | null {
     : ASSET_CATEGORIES.has(category);
   if (!okCategory) return null;
 
+  const asOfDate =
+    typeof raw.asOfDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.asOfDate)
+      ? raw.asOfDate
+      : raw.createdAt.slice(0, 10);
+
   return {
     id: raw.id,
     name: raw.name.trim(),
@@ -71,6 +76,7 @@ function parseAccount(raw: unknown): Account | null {
     isLiability: raw.isLiability,
     currency: raw.currency,
     currentValue: raw.currentValue,
+    asOfDate,
     institutionName:
       typeof raw.institutionName === "string" ? raw.institutionName : undefined,
     note: typeof raw.note === "string" ? raw.note : undefined,

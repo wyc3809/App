@@ -60,6 +60,7 @@ export function AccountList({ onEdit, filter = "all" }: AccountListProps) {
                   {categoryLabel(account.category)}
                   {account.institutionName ? ` · ${account.institutionName}` : ""}
                   {account.currency !== settings.baseCurrency ? ` · ${account.currency}` : ""}
+                  {account.asOfDate ? ` · ${account.asOfDate}` : ""}
                 </p>
               </div>
               <div className="text-right">
