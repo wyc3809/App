@@ -9,6 +9,7 @@ import {
 } from "./currencies";
 import { createDemoAccounts, createDemoSnapshots } from "./demo-data";
 import { todayISO } from "./format";
+import type { WorthBackupPayload } from "./import-backup";
 import type {
   Account,
   Currency,
@@ -30,6 +31,7 @@ interface WorthState {
   setHydrated: (value: boolean) => void;
   loadDemoData: () => void;
   resetAll: () => void;
+  importBackup: (payload: WorthBackupPayload) => void;
 
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
@@ -107,6 +109,15 @@ export const useWorthStore = create<WorthState>()(
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
         }),
+
+      importBackup: (payload) => {
+        set({
+          accounts: payload.accounts,
+          snapshots: payload.snapshots,
+          currencies: payload.currencies,
+          settings: payload.settings,
+        });
+      },
 
       addAccount: (input) => {
         const now = new Date().toISOString();
