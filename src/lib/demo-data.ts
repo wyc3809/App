@@ -1,4 +1,4 @@
-import type { Account, HistoricalSnapshot } from "./types";
+import type { Account, AccountValueEntry, HistoricalSnapshot } from "./types";
 
 function id(): string {
   return crypto.randomUUID();
@@ -12,6 +12,7 @@ function daysAgo(n: number): string {
 
 export function createDemoAccounts(): Account[] {
   const now = new Date().toISOString();
+  const today = now.slice(0, 10);
   return [
     {
       id: id(),
@@ -20,6 +21,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: false,
       currency: "HKD",
       currentValue: 285000,
+      asOfDate: today,
       institutionName: "HSBC",
       note: "Emergency fund",
       updatedAt: now,
@@ -32,6 +34,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: false,
       currency: "USD",
       currentValue: 42000,
+      asOfDate: today,
       institutionName: "Futu",
       updatedAt: now,
       createdAt: now,
@@ -43,6 +46,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: false,
       currency: "HKD",
       currentValue: 156000,
+      asOfDate: today,
       institutionName: "Interactive Brokers",
       updatedAt: now,
       createdAt: now,
@@ -54,6 +58,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: false,
       currency: "HKD",
       currentValue: 6800000,
+      asOfDate: today,
       institutionName: "Self",
       updatedAt: now,
       createdAt: now,
@@ -65,6 +70,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: false,
       currency: "USD",
       currentValue: 18500,
+      asOfDate: today,
       institutionName: "Binance",
       updatedAt: now,
       createdAt: now,
@@ -76,6 +82,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: false,
       currency: "HKD",
       currentValue: 220000,
+      asOfDate: today,
       updatedAt: now,
       createdAt: now,
     },
@@ -86,6 +93,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: true,
       currency: "HKD",
       currentValue: 4200000,
+      asOfDate: today,
       institutionName: "Bank of China",
       updatedAt: now,
       createdAt: now,
@@ -97,6 +105,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: true,
       currency: "HKD",
       currentValue: 85000,
+      asOfDate: today,
       institutionName: "HSBC",
       updatedAt: now,
       createdAt: now,
@@ -108,6 +117,7 @@ export function createDemoAccounts(): Account[] {
       isLiability: true,
       currency: "HKD",
       currentValue: 12400,
+      asOfDate: today,
       institutionName: "American Express",
       updatedAt: now,
       createdAt: now,
@@ -115,12 +125,38 @@ export function createDemoAccounts(): Account[] {
   ];
 }
 
+export function createDemoValueEntries(accounts: Account[]): AccountValueEntry[] {
+  const now = new Date().toISOString();
+  const entries: AccountValueEntry[] = [];
+  const months = [180, 150, 120, 90, 60, 30, 0];
+
+  for (const account of accounts) {
+    months.forEach((days, index) => {
+      const progress = index / (months.length - 1);
+      const drift = account.isLiability
+        ? 1.18 - progress * 0.18
+        : 0.82 + progress * 0.18;
+      const noise = 1 + Math.sin(index * 1.3 + account.name.length) * 0.015;
+      const value = Number((account.currentValue * drift * noise).toFixed(2));
+      entries.push({
+        id: id(),
+        accountId: account.id,
+        date: daysAgo(days),
+        value,
+        markOnGraph: true,
+        note: index === months.length - 1 ? "Latest" : undefined,
+        createdAt: now,
+      });
+    });
+  }
+  return entries;
+}
+
 /** Generate ~6 months of weekly snapshots with a gentle upward drift. */
 export function createDemoSnapshots(accounts: Account[]): HistoricalSnapshot[] {
   const weeks = 26;
   const snapshots: HistoricalSnapshot[] = [];
 
-  // Approximate starting net worth ~15% lower
   for (let i = weeks; i >= 0; i--) {
     const progress = (weeks - i) / weeks;
     const drift = 0.85 + progress * 0.15;
@@ -130,7 +166,6 @@ export function createDemoSnapshots(accounts: Account[]): HistoricalSnapshot[] {
     let totalLiabilities = 0;
     const accountBalances = accounts.map((a) => {
       const scaled = a.currentValue * drift * noise;
-      // Rough HKD conversion for demo history (matches default rates)
       const rate =
         a.currency === "USD" ? 7.8 : a.currency === "EUR" ? 8.45 : 1;
       const base = scaled * rate;

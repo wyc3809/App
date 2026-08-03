@@ -7,10 +7,16 @@ import {
   rebaseCurrencyRates,
   toBaseCurrency,
 } from "./currencies";
-import { createDemoAccounts, createDemoSnapshots } from "./demo-data";
+import {
+  createDemoAccounts,
+  createDemoSnapshots,
+  createDemoValueEntries,
+} from "./demo-data";
 import { todayISO } from "./format";
+import type { WorthBackupPayload } from "./import-backup";
 import type {
   Account,
+  AccountValueEntry,
   Currency,
   HistoricalSnapshot,
   UserSettings,
@@ -22,6 +28,7 @@ function id(): string {
 
 interface WorthState {
   accounts: Account[];
+  valueEntries: AccountValueEntry[];
   snapshots: HistoricalSnapshot[];
   currencies: Currency[];
   settings: UserSettings;
@@ -30,10 +37,21 @@ interface WorthState {
   setHydrated: (value: boolean) => void;
   loadDemoData: () => void;
   resetAll: () => void;
+  importBackup: (payload: WorthBackupPayload) => void;
 
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
+
+  upsertValueEntry: (input: {
+    entryId?: string;
+    accountId: string;
+    date: string;
+    value: number;
+    note?: string;
+    markOnGraph?: boolean;
+  }) => void;
+  deleteValueEntry: (entryId: string) => void;
 
   takeSnapshot: (date?: string) => void;
   deleteSnapshot: (id: string) => void;
@@ -71,6 +89,47 @@ function buildSnapshot(
   };
 }
 
+function upsertSnapshot(
+  snapshots: HistoricalSnapshot[],
+  accounts: Account[],
+  currencies: Currency[],
+  date: string,
+): HistoricalSnapshot[] {
+  const next = buildSnapshot(accounts, currencies, date);
+  return [...snapshots.filter((s) => s.date !== date), next].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+}
+
+function syncAccountFromEntries(
+  account: Account,
+  entries: AccountValueEntry[],
+): Account {
+  const mine = entries
+    .filter((e) => e.accountId === account.id)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (mine.length === 0) return account;
+  const latest = mine[0];
+  return {
+    ...account,
+    currentValue: latest.value,
+    asOfDate: latest.date,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function seedEntryForAccount(account: Account): AccountValueEntry {
+  return {
+    id: id(),
+    accountId: account.id,
+    date: account.asOfDate || todayISO(),
+    value: account.currentValue,
+    note: account.note,
+    markOnGraph: true,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 const defaultSettings: UserSettings = {
   baseCurrency: "HKD",
   isPrivacyMode: false,
@@ -82,6 +141,7 @@ export const useWorthStore = create<WorthState>()(
   persist(
     (set, get) => ({
       accounts: [],
+      valueEntries: [],
       snapshots: [],
       currencies: DEFAULT_CURRENCIES,
       settings: defaultSettings,
@@ -91,9 +151,11 @@ export const useWorthStore = create<WorthState>()(
 
       loadDemoData: () => {
         const accounts = createDemoAccounts();
+        const valueEntries = createDemoValueEntries(accounts);
         const snapshots = createDemoSnapshots(accounts);
         set({
           accounts,
+          valueEntries,
           snapshots,
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
@@ -103,49 +165,206 @@ export const useWorthStore = create<WorthState>()(
       resetAll: () =>
         set({
           accounts: [],
+          valueEntries: [],
           snapshots: [],
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
         }),
 
+      importBackup: (payload) => {
+        const valueEntries =
+          payload.valueEntries && payload.valueEntries.length > 0
+            ? payload.valueEntries
+            : payload.accounts.map(seedEntryForAccount);
+        set({
+          accounts: payload.accounts,
+          valueEntries,
+          snapshots: payload.snapshots,
+          currencies: payload.currencies,
+          settings: payload.settings,
+        });
+      },
+
       addAccount: (input) => {
         const now = new Date().toISOString();
+        const asOfDate = input.asOfDate || todayISO();
         const account: Account = {
           ...input,
+          asOfDate,
           id: id(),
           createdAt: now,
           updatedAt: now,
         };
-        set((s) => ({ accounts: [...s.accounts, account] }));
+        const entry = seedEntryForAccount(account);
+        set((s) => {
+          const accounts = [...s.accounts, account];
+          const valueEntries = [...s.valueEntries, entry];
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(s.snapshots, accounts, s.currencies, asOfDate),
+          };
+        });
       },
 
-      updateAccount: (id, patch) => {
-        set((s) => ({
-          accounts: s.accounts.map((a) =>
-            a.id === id
-              ? { ...a, ...patch, updatedAt: new Date().toISOString() }
+      updateAccount: (accountId, patch) => {
+        set((s) => {
+          const accounts = s.accounts.map((a) =>
+            a.id === accountId
+              ? {
+                  ...a,
+                  ...patch,
+                  asOfDate: patch.asOfDate ?? a.asOfDate ?? todayISO(),
+                  updatedAt: new Date().toISOString(),
+                }
               : a,
-          ),
+          );
+          const target = accounts.find((a) => a.id === accountId);
+          if (!target) return { accounts };
+
+          let valueEntries = s.valueEntries;
+          if (patch.currentValue !== undefined || patch.asOfDate) {
+            const date = target.asOfDate;
+            const value = target.currentValue;
+            const existing = valueEntries.find(
+              (e) => e.accountId === accountId && e.date === date,
+            );
+            if (existing) {
+              valueEntries = valueEntries.map((e) =>
+                e.id === existing.id ? { ...e, value, note: patch.note ?? e.note } : e,
+              );
+            } else {
+              valueEntries = [
+                ...valueEntries,
+                {
+                  id: id(),
+                  accountId,
+                  date,
+                  value,
+                  note: patch.note,
+                  markOnGraph: true,
+                  createdAt: new Date().toISOString(),
+                },
+              ];
+            }
+          }
+
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              accounts,
+              s.currencies,
+              target.asOfDate,
+            ),
+          };
+        });
+      },
+
+      deleteAccount: (accountId) => {
+        set((s) => ({
+          accounts: s.accounts.filter((a) => a.id !== accountId),
+          valueEntries: s.valueEntries.filter((e) => e.accountId !== accountId),
         }));
       },
 
-      deleteAccount: (id) => {
-        set((s) => ({ accounts: s.accounts.filter((a) => a.id !== id) }));
+      upsertValueEntry: ({
+        entryId,
+        accountId,
+        date,
+        value,
+        note,
+        markOnGraph = true,
+      }) => {
+        set((s) => {
+          const account = s.accounts.find((a) => a.id === accountId);
+          if (!account) return s;
+
+          let valueEntries = [...s.valueEntries];
+          const noteValue = note?.trim() || undefined;
+
+          if (entryId) {
+            // Editing an existing row — drop any other entry on the new date.
+            valueEntries = valueEntries.filter(
+              (e) => e.id === entryId || !(e.accountId === accountId && e.date === date),
+            );
+            valueEntries = valueEntries.map((e) =>
+              e.id === entryId
+                ? { ...e, date, value, note: noteValue, markOnGraph }
+                : e,
+            );
+          } else {
+            const existing = valueEntries.find(
+              (e) => e.accountId === accountId && e.date === date,
+            );
+            valueEntries = existing
+              ? valueEntries.map((e) =>
+                  e.id === existing.id
+                    ? { ...e, value, note: noteValue, markOnGraph }
+                    : e,
+                )
+              : [
+                  ...valueEntries,
+                  {
+                    id: id(),
+                    accountId,
+                    date,
+                    value,
+                    note: noteValue,
+                    markOnGraph,
+                    createdAt: new Date().toISOString(),
+                  },
+                ];
+          }
+
+          const synced = syncAccountFromEntries(account, valueEntries);
+          const accounts = s.accounts.map((a) =>
+            a.id === accountId ? synced : a,
+          );
+
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(s.snapshots, accounts, s.currencies, date),
+          };
+        });
+      },
+
+      deleteValueEntry: (entryId) => {
+        set((s) => {
+          const entry = s.valueEntries.find((e) => e.id === entryId);
+          if (!entry) return s;
+          const valueEntries = s.valueEntries.filter((e) => e.id !== entryId);
+          const account = s.accounts.find((a) => a.id === entry.accountId);
+          if (!account) return { valueEntries };
+          const synced = syncAccountFromEntries(account, valueEntries);
+          const accounts = s.accounts.map((a) =>
+            a.id === account.id ? synced : a,
+          );
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              accounts,
+              s.currencies,
+              synced.asOfDate || todayISO(),
+            ),
+          };
+        });
       },
 
       takeSnapshot: (date) => {
         const { accounts, currencies, snapshots } = get();
         const snapDate = date ?? todayISO();
-        const next = buildSnapshot(accounts, currencies, snapDate);
-        const withoutSameDay = snapshots.filter((s) => s.date !== snapDate);
-        const merged = [...withoutSameDay, next].sort((a, b) =>
-          a.date.localeCompare(b.date),
-        );
-        set({ snapshots: merged });
+        set({
+          snapshots: upsertSnapshot(snapshots, accounts, currencies, snapDate),
+        });
       },
 
-      deleteSnapshot: (id) => {
-        set((s) => ({ snapshots: s.snapshots.filter((x) => x.id !== id) }));
+      deleteSnapshot: (snapId) => {
+        set((s) => ({ snapshots: s.snapshots.filter((x) => x.id !== snapId) }));
       },
 
       updateSettings: (patch) => {
@@ -172,13 +391,51 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
+        valueEntries: state.valueEntries,
         snapshots: state.snapshots,
         currencies: state.currencies,
         settings: state.settings,
       }),
+      migrate: (persisted, version) => {
+        const state = persisted as {
+          accounts?: Account[];
+          valueEntries?: AccountValueEntry[];
+          snapshots?: HistoricalSnapshot[];
+          currencies?: Currency[];
+          settings?: UserSettings;
+        };
+
+        if (version < 2 && Array.isArray(state.accounts)) {
+          state.accounts = state.accounts.map((a) => ({
+            ...a,
+            asOfDate:
+              typeof a.asOfDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.asOfDate)
+                ? a.asOfDate
+                : (a.createdAt?.slice(0, 10) ?? todayISO()),
+          }));
+        }
+
+        if (version < 3) {
+          const accounts = state.accounts ?? [];
+          if (!Array.isArray(state.valueEntries) || state.valueEntries.length === 0) {
+            state.valueEntries = accounts.map((a) => ({
+              id: crypto.randomUUID(),
+              accountId: a.id,
+              date: a.asOfDate || a.createdAt?.slice(0, 10) || todayISO(),
+              value: a.currentValue,
+              note: a.note,
+              markOnGraph: true,
+              createdAt: a.updatedAt || new Date().toISOString(),
+            }));
+          }
+        }
+
+        return state as never;
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

@@ -5,25 +5,61 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Legend,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { filterSnapshotsByRange } from "@/lib/calculations";
+import {
+  buildMonthlyGrowthSeries,
+  filterMonthlySeriesByRange,
+} from "@/lib/growth";
 import { formatDateLabel, formatMoney } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
 import type { TimeRange } from "@/lib/types";
 
 const RANGES: TimeRange[] = ["1M", "3M", "6M", "1Y", "ALL"];
+type Metric = "netWorth" | "assets" | "liabilities" | "all";
+type Granularity = "snapshots" | "monthly";
+
+const METRIC_META: Record<
+  Exclude<Metric, "all">,
+  { label: string; color: string; dataKey: string }
+> = {
+  netWorth: { label: "Net Worth", color: "var(--accent)", dataKey: "netWorth" },
+  assets: { label: "Assets", color: "var(--positive)", dataKey: "assets" },
+  liabilities: {
+    label: "Liabilities",
+    color: "var(--negative)",
+    dataKey: "liabilities",
+  },
+};
 
 export function TrendChart() {
   const snapshots = useWorthStore((s) => s.snapshots);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
   const [range, setRange] = useState<TimeRange>("6M");
+  const [metric, setMetric] = useState<Metric>("netWorth");
+  const [granularity, setGranularity] = useState<Granularity>("snapshots");
 
   const data = useMemo(() => {
+    if (granularity === "monthly") {
+      return filterMonthlySeriesByRange(
+        buildMonthlyGrowthSeries(snapshots),
+        range,
+      ).map((p) => ({
+        date: p.snapshotDate,
+        label: p.label,
+        netWorth: p.netWorth,
+        assets: p.assets,
+        liabilities: p.liabilities,
+      }));
+    }
+
     return filterSnapshotsByRange(snapshots, range).map((s) => ({
       date: s.date,
       label: formatDateLabel(s.date),
@@ -31,11 +67,16 @@ export function TrendChart() {
       assets: s.totalAssetsBaseCurrency,
       liabilities: s.totalLiabilitiesBaseCurrency,
     }));
-  }, [snapshots, range]);
+  }, [snapshots, range, granularity]);
+
+  const activeKeys =
+    metric === "all"
+      ? (["netWorth", "assets", "liabilities"] as const)
+      : ([metric] as const);
 
   return (
     <section className="card-surface animate-fade-up-delay p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg">Trend</h2>
         <div className="flex flex-wrap gap-1">
           {RANGES.map((r) => (
@@ -51,17 +92,65 @@ export function TrendChart() {
         </div>
       </div>
 
+      <div className="mb-3 flex flex-wrap gap-1">
+        {(
+          [
+            ["snapshots", "Snapshots"],
+            ["monthly", "Monthly"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`chip ${granularity === key ? "chip-active" : ""}`}
+            onClick={() => setGranularity(key)}
+          >
+            {label}
+          </button>
+        ))}
+        <span className="mx-1 self-center text-xs" style={{ color: "var(--fg-subtle)" }}>
+          ·
+        </span>
+        {(
+          [
+            ["netWorth", "Net Worth"],
+            ["assets", "Assets"],
+            ["liabilities", "Liabilities"],
+            ["all", "All"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`chip ${metric === key ? "chip-active" : ""}`}
+            onClick={() => setMetric(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {data.length === 0 ? (
         <EmptyChart message="Take a snapshot to start your net worth history." />
       ) : (
-        <div className="h-56 w-full">
+        <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.02} />
-                </linearGradient>
+                {activeKeys.map((key) => (
+                  <linearGradient key={key} id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="0%"
+                      stopColor={METRIC_META[key].color}
+                      stopOpacity={0.35}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={METRIC_META[key].color}
+                      stopOpacity={0.02}
+                    />
+                  </linearGradient>
+                ))}
               </defs>
               <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
               <XAxis
@@ -91,22 +180,45 @@ export function TrendChart() {
                   borderRadius: 12,
                   color: "var(--fg)",
                 }}
-                formatter={(value) => [
+                formatter={(value, name) => [
                   settings.isPrivacyMode
                     ? "••••••"
                     : formatMoney(Number(value), settings.baseCurrency, currencies),
-                  "Net Worth",
+                  String(name),
                 ]}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
               />
-              <Area
-                type="monotone"
-                dataKey="netWorth"
-                stroke="var(--accent)"
-                strokeWidth={2.5}
-                fill="url(#nwFill)"
-                animationDuration={700}
-              />
+              {metric === "all" && (
+                <Legend
+                  wrapperStyle={{ fontSize: 12, color: "var(--fg-muted)" }}
+                  iconType="circle"
+                />
+              )}
+              {activeKeys.map((key) =>
+                metric === "all" && key !== "netWorth" ? (
+                  <Line
+                    key={key}
+                    type="monotone"
+                    dataKey={METRIC_META[key].dataKey}
+                    name={METRIC_META[key].label}
+                    stroke={METRIC_META[key].color}
+                    strokeWidth={2}
+                    dot={false}
+                    animationDuration={700}
+                  />
+                ) : (
+                  <Area
+                    key={key}
+                    type="monotone"
+                    dataKey={METRIC_META[key].dataKey}
+                    name={METRIC_META[key].label}
+                    stroke={METRIC_META[key].color}
+                    strokeWidth={2.5}
+                    fill={`url(#fill-${key})`}
+                    animationDuration={700}
+                  />
+                ),
+              )}
             </AreaChart>
           </ResponsiveContainer>
         </div>
