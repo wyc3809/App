@@ -45,6 +45,13 @@ export interface AccountValueEntry {
   transactionId?: string;
   /** Signed change vs previous balance (ledger rows); used when reversing. */
   delta?: number;
+  /** When this ledger row crossed zero and flipped asset ↔ liability. */
+  typeFlip?: {
+    fromIsLiability: boolean;
+    fromCategory: AccountCategory;
+    toIsLiability: boolean;
+    toCategory: AccountCategory;
+  };
 }
 
 export interface AccountBalanceSnapshot {

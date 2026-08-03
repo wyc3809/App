@@ -62,21 +62,45 @@ export function computeLedgerTotals(
  * How a ledger entry changes an account balance.
  * Assets: income +, expense −
  * Liabilities: expense + (more debt), income − (payment)
+ * Crossing below zero flips asset ↔ liability and keeps the absolute surplus.
  */
+export interface LedgerBalanceResult {
+  /** Absolute balance after the change (>= 0). */
+  value: number;
+  isLiability: boolean;
+  flipped: boolean;
+  /** Raw signed delta applied to the pre-change balance (can drive below zero). */
+  signedDelta: number;
+}
+
 export function applyLedgerDeltaToBalance(
   currentValue: number,
   isLiability: boolean,
   type: TransactionType,
   amountInAccountCurrency: number,
-): number {
-  const signed = isLiability
+): LedgerBalanceResult {
+  const signedDelta = isLiability
     ? type === "expense"
       ? amountInAccountCurrency
       : -amountInAccountCurrency
     : type === "income"
       ? amountInAccountCurrency
       : -amountInAccountCurrency;
-  return Math.max(0, Number((currentValue + signed).toFixed(2)));
+  const raw = Number((currentValue + signedDelta).toFixed(2));
+  if (raw >= 0) {
+    return {
+      value: raw,
+      isLiability,
+      flipped: false,
+      signedDelta,
+    };
+  }
+  return {
+    value: Math.abs(raw),
+    isLiability: !isLiability,
+    flipped: true,
+    signedDelta,
+  };
 }
 
 export function groupTransactionsByDate(

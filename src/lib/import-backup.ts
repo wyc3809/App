@@ -131,6 +131,28 @@ function parseValueEntry(raw: unknown): AccountValueEntry | null {
   if (typeof raw.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) return null;
   if (!isFiniteNumber(raw.value) || raw.value < 0) return null;
   if (typeof raw.createdAt !== "string") return null;
+
+  let typeFlip: AccountValueEntry["typeFlip"];
+  if (isRecord(raw.typeFlip)) {
+    const fromIsLiability = raw.typeFlip.fromIsLiability;
+    const toIsLiability = raw.typeFlip.toIsLiability;
+    const fromCategory = raw.typeFlip.fromCategory;
+    const toCategory = raw.typeFlip.toCategory;
+    if (
+      typeof fromIsLiability === "boolean" &&
+      typeof toIsLiability === "boolean" &&
+      typeof fromCategory === "string" &&
+      typeof toCategory === "string"
+    ) {
+      typeFlip = {
+        fromIsLiability,
+        toIsLiability,
+        fromCategory: fromCategory as AccountCategory,
+        toCategory: toCategory as AccountCategory,
+      };
+    }
+  }
+
   return {
     id: raw.id,
     accountId: raw.accountId,
@@ -144,6 +166,7 @@ function parseValueEntry(raw: unknown): AccountValueEntry | null {
         ? raw.transactionId
         : undefined,
     delta: isFiniteNumber(raw.delta) ? raw.delta : undefined,
+    typeFlip,
   };
 }
 

@@ -9,18 +9,51 @@ import type { AccountValueEntry, Transaction } from "./types";
 
 describe("ledger account linking", () => {
   it("increases asset on income and decreases on expense", () => {
-    expect(applyLedgerDeltaToBalance(1000, false, "income", 200)).toBe(1200);
-    expect(applyLedgerDeltaToBalance(1000, false, "expense", 150)).toBe(850);
+    expect(applyLedgerDeltaToBalance(1000, false, "income", 200)).toEqual({
+      value: 1200,
+      isLiability: false,
+      flipped: false,
+      signedDelta: 200,
+    });
+    expect(applyLedgerDeltaToBalance(1000, false, "expense", 150)).toEqual({
+      value: 850,
+      isLiability: false,
+      flipped: false,
+      signedDelta: -150,
+    });
   });
 
   it("increases liability on expense and decreases on income/payment", () => {
-    expect(applyLedgerDeltaToBalance(500, true, "expense", 80)).toBe(580);
-    expect(applyLedgerDeltaToBalance(500, true, "income", 100)).toBe(400);
+    expect(applyLedgerDeltaToBalance(500, true, "expense", 80)).toEqual({
+      value: 580,
+      isLiability: true,
+      flipped: false,
+      signedDelta: 80,
+    });
+    expect(applyLedgerDeltaToBalance(500, true, "income", 100)).toEqual({
+      value: 400,
+      isLiability: true,
+      flipped: false,
+      signedDelta: -100,
+    });
   });
 
-  it("does not go below zero", () => {
-    expect(applyLedgerDeltaToBalance(50, false, "expense", 80)).toBe(0);
-    expect(applyLedgerDeltaToBalance(50, true, "income", 80)).toBe(0);
+  it("flips asset to liability when expense crosses zero", () => {
+    expect(applyLedgerDeltaToBalance(50, false, "expense", 80)).toEqual({
+      value: 30,
+      isLiability: true,
+      flipped: true,
+      signedDelta: -80,
+    });
+  });
+
+  it("flips liability to asset when payment crosses zero", () => {
+    expect(applyLedgerDeltaToBalance(50, true, "income", 80)).toEqual({
+      value: 30,
+      isLiability: false,
+      flipped: true,
+      signedDelta: -80,
+    });
   });
 
   it("flips type for reverse", () => {

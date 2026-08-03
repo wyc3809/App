@@ -22,6 +22,7 @@ import {
   isEntryAfter,
   oppositeTransactionType,
 } from "./ledger";
+import { categoryAfterTypeFlip } from "./categories";
 import type {
   Account,
   AccountValueEntry,
@@ -212,6 +213,7 @@ function cascadeAdjustAfterRemoval(
 /**
  * Apply or reverse a ledger entry against a linked account's value history.
  * Each linked ledger creates its own Value History row (not merged by date).
+ * Crossing zero flips the account between asset and liability.
  */
 function applyTransactionLink(
   accounts: Account[],
@@ -238,13 +240,20 @@ function applyTransactionLink(
   }
 
   let nextEntries = valueEntries;
+  let workingAccount = account;
 
   if (mode === "reverse") {
     const linked = valueEntries.find((e) => e.transactionId === tx.id);
     if (linked) {
       nextEntries = cascadeAdjustAfterRemoval(valueEntries, linked);
+      if (linked.typeFlip) {
+        workingAccount = {
+          ...account,
+          isLiability: linked.typeFlip.fromIsLiability,
+          category: linked.typeFlip.fromCategory,
+        };
+      }
     } else {
-      // Legacy rows without transactionId — reverse by opposite delta on that date.
       const amountInAccount = convertAmount(
         tx.amount,
         tx.currency,
@@ -257,7 +266,7 @@ function applyTransactionLink(
         tx.date,
         account.currentValue,
       );
-      const nextValue = applyLedgerDeltaToBalance(
+      const result = applyLedgerDeltaToBalance(
         base,
         account.isLiability,
         oppositeTransactionType(tx.type),
@@ -267,12 +276,18 @@ function applyTransactionLink(
         valueEntries,
         account.id,
         tx.date,
-        nextValue,
+        result.value,
         undefined,
       );
+      if (result.flipped) {
+        workingAccount = {
+          ...account,
+          isLiability: result.isLiability,
+          category: categoryAfterTypeFlip(result.isLiability),
+        };
+      }
     }
   } else {
-    // Drop any previous row for this transaction (idempotent re-apply).
     const withoutSelf = valueEntries.filter((e) => e.transactionId !== tx.id);
     const amountInAccount = convertAmount(
       tx.amount,
@@ -286,27 +301,42 @@ function applyTransactionLink(
       tx.date,
       account.currentValue,
     );
-    const nextValue = applyLedgerDeltaToBalance(
+    const result = applyLedgerDeltaToBalance(
       base,
       account.isLiability,
       tx.type,
       amountInAccount,
     );
-    const delta = Number((nextValue - base).toFixed(2));
+    const delta = result.signedDelta;
     const kind = tx.type === "income" ? "Income" : "Expense";
+    const flipNote = result.flipped
+      ? result.isLiability
+        ? " · became liability"
+        : " · became asset"
+      : "";
     const createdAt = new Date().toISOString();
+    const toCategory = result.flipped
+      ? categoryAfterTypeFlip(result.isLiability)
+      : account.category;
     const newEntry: AccountValueEntry = {
       id: id(),
       accountId: account.id,
       date: tx.date,
-      value: nextValue,
-      note: `${kind} · ${tx.title}`,
+      value: result.value,
+      note: `${kind} · ${tx.title}${flipNote}`,
       markOnGraph: true,
       createdAt,
       transactionId: tx.id,
       delta,
+      typeFlip: result.flipped
+        ? {
+            fromIsLiability: account.isLiability,
+            fromCategory: account.category,
+            toIsLiability: result.isLiability,
+            toCategory,
+          }
+        : undefined,
     };
-    // Later-dated absolute balances must include this delta.
     nextEntries = [
       ...withoutSelf.map((e) => {
         if (e.accountId !== account.id) return e;
@@ -318,9 +348,16 @@ function applyTransactionLink(
       }),
       newEntry,
     ];
+    if (result.flipped) {
+      workingAccount = {
+        ...account,
+        isLiability: result.isLiability,
+        category: toCategory,
+      };
+    }
   }
 
-  const synced = syncAccountFromEntries(account, nextEntries);
+  const synced = syncAccountFromEntries(workingAccount, nextEntries);
   const nextAccounts = accounts.map((a) =>
     a.id === account.id ? synced : a,
   );

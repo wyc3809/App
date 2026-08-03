@@ -266,11 +266,11 @@ function TransactionDialog({
               <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
                 {linkedAccount.isLiability
                   ? type === "expense"
-                    ? "Expense increases this debt balance."
-                    : "Income / payment reduces this debt balance."
+                    ? "Expense increases this debt. Overshoot stays a larger liability."
+                    : "Payment reduces debt. Paying past zero turns this into an asset."
                   : type === "income"
                     ? "Income increases this account balance."
-                    : "Expense decreases this account balance."}
+                    : "Expense decreases balance. Going past zero turns this into a liability."}
               </p>
             )}
           </div>
