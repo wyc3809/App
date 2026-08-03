@@ -760,20 +760,41 @@ describe('life event engine', () => {
     expect(result.feedback).not.toMatch(/^銀兩/);
   });
 
-  it('pack choices have unique result stories', async () => {
+  it('pack choices have unique concrete result stories', async () => {
     const { getPackLibrary } = await import('../core/life/jianghuEventRepository');
     const lib = getPackLibrary();
-    const texts = new Set<string>();
+    const successes = new Set<string>();
+    const failures = new Set<string>();
     for (const e of lib.events) {
       for (const c of e.choices ?? []) {
         const rt = c.result_text;
         const s = typeof rt === 'string' ? rt : rt?.success ?? '';
+        const f = typeof rt === 'string' ? '' : rt?.failure ?? '';
         expect(s.length).toBeGreaterThan(40);
         expect(s).not.toBe('你的選擇改變了事情的走向。');
-        texts.add(s);
+        expect(s).not.toMatch(/像棋盤上多落了一子/);
+        expect(f.length).toBeGreaterThan(40);
+        expect(f).not.toMatch(/銀錢、氣血或顏面|改日再圖/);
+        expect(f).toMatch(/功敗垂成|卻/);
+        successes.add(s);
+        failures.add(f);
       }
     }
-    expect(texts.size).toBeGreaterThan(200);
+    expect(successes.size).toBe(300);
+    expect(failures.size).toBe(300);
+  });
+
+  it('risk branches narrate the chosen action, not vague platitudes', async () => {
+    const { enrichChoiceWithRisk } = await import('../core/life/choiceEnrich');
+    const enriched = enrichChoiceWithRisk({
+      id: 'probe',
+      text: '暗中相助',
+      outcomes: [{ effects: [{ type: 'money', amount: 5 }] }],
+    });
+    const mixed = enriched.outcomes.find((o) => o.label === '波折')!;
+    const narr = mixed.effects.find((e) => e.type === 'narrate');
+    expect(narr && narr.type === 'narrate' && narr.text).toContain('暗中相助');
+    expect(narr && narr.type === 'narrate' && narr.text).not.toMatch(/^有得有失/);
   });
 
   it('legacy carry soft-buffs next life and records generation', async () => {

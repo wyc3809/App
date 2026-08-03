@@ -96,85 +96,126 @@ function narrateOnly(effects: GameEffect[]): GameEffect | undefined {
   return effects.find((e) => e.type === 'narrate');
 }
 
-function fairCost(stance: ChoiceStance): GameEffect[] {
+function fairCost(stance: ChoiceStance, choiceText: string): GameEffect[] {
+  const act = choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
   switch (stance) {
     case 'aggressive':
       return [
         { type: 'health', amount: -3 },
-        { type: 'narrate', text: '雖大體順遂，皮肉仍擦破了一點——江湖事，很難全無代價。' },
+        {
+          type: 'narrate',
+          text: `「${act}」大致得手：對方退了半步，你也擦破了皮肉。傷口不深，卻提醒你——贏，也要留力氣走夜路。`,
+        },
       ];
     case 'virtuous':
       return [
         { type: 'money', amount: -3 },
-        { type: 'narrate', text: '事辦成了，口袋卻輕了些。好人常要先付一點銀兩與力氣。' },
+        {
+          type: 'narrate',
+          text: `你堅持「${act}」，事辦成了。櫃上少了幾兩銀作押／藥錢，換來的是對方親口吐出的關鍵一句。`,
+        },
       ];
     case 'cunning':
       return [
         { type: 'reputation', amount: -1 },
-        { type: 'narrate', text: '便宜是佔到了，風評卻微微發澀。牆有耳，街有眼。' },
+        {
+          type: 'narrate',
+          text: `靠「${act}」你摸到了實利。巷口卻有人咬耳朵——便宜進袋，閒話也跟了一程。`,
+        },
       ];
     case 'cautious':
       return [
         { type: 'martial', amount: 1 },
-        { type: 'narrate', text: '你沒有深陷，只把利害看清。安全換來的，是慢半步的見識。' },
+        {
+          type: 'narrate',
+          text: `你以「${act}」觀變，沒深陷局中。記下暗號與來去方向後抽身，拳腳雖未大進，眼力卻長了一寸。`,
+        },
       ];
     default:
-      return [{ type: 'narrate', text: '事情大致如你所願，只是過程並非全無波瀾。' }];
+      return [
+        {
+          type: 'narrate',
+          text: `「${act}」之後局面鬆動：你袖裡多了一紙可核對的抄件，過程雖有小波折，終究沒空手。`,
+        },
+      ];
   }
 }
 
-function mixedExtras(stance: ChoiceStance): GameEffect[] {
+function mixedExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
+  const act = choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
   switch (stance) {
     case 'aggressive':
       return [
         { type: 'health', amount: -8 },
         { type: 'martial', amount: 1 },
-        { type: 'narrate', text: '你佔了上風，也挨了實打。贏是贏了，氣息卻亂了半晌。' },
+        {
+          type: 'narrate',
+          text: `硬來「${act}」：你逼出半句真話，肩頭也挨了實打。血滲衣襟，情報卻夠你跟到下一條巷。`,
+        },
       ];
     case 'virtuous':
       return [
         { type: 'money', amount: -8 },
         { type: 'reputation', amount: 1 },
         { type: 'health', amount: -3 },
-        { type: 'narrate', text: '你幫到了人，自己卻貼了銀兩與力氣。善名在外，內裏有點發空。' },
+        {
+          type: 'narrate',
+          text: `你為「${act}」貼了銀兩與力氣，人是護住了，自己卻空了一截。街坊開始記得你的面孔。`,
+        },
       ];
     case 'cunning':
       return [
         { type: 'money', amount: 6 },
         { type: 'reputation', amount: -2 },
         { type: 'nature', delta: { xie: 1 } },
-        { type: 'narrate', text: '銀子進袋，閒話也跟進了巷口。得與失，往往同一夜抵達。' },
+        {
+          type: 'narrate',
+          text: `「${act}」讓銀子進袋，也讓一名跑堂盯上了你。天亮前你換了客棧，枕下仍壓着那半頁密帳。`,
+        },
       ];
     case 'cautious':
       return [
         { type: 'attr', delta: { wuXing: 1 } },
         { type: 'money', amount: -2 },
-        { type: 'narrate', text: '你避開鋒芒，也錯過一截機緣。人是安穩了，故事卻薄了。' },
+        {
+          type: 'narrate',
+          text: `你以「${act}」避開鋒芒，也眼睜睜看機緣被捷足者取走。人安穩了，袖裡只多了兩句旁聽來的風聲。`,
+        },
       ];
     default:
       return [
         { type: 'health', amount: -4 },
         { type: 'money', amount: 3 },
-        { type: 'narrate', text: '有得有失：銀錢或名望動了一寸，氣血也換了一寸。' },
+        {
+          type: 'narrate',
+          text: `「${act}」有得有失寫得很具體：你撿回三兩銀角，膝蓋卻青了一塊；名冊抄全了，最末一行卻被人撕走。`,
+        },
       ];
   }
 }
 
-function illExtras(stance: ChoiceStance): GameEffect[] {
+function illExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
+  const act = choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
   switch (stance) {
     case 'aggressive':
       return [
         { type: 'health', amount: -12 },
         { type: 'money', amount: -6 },
         { type: 'martial', amount: 1 },
-        { type: 'narrate', text: '這回踢到鐵板。銀錢與氣血都捱了打，卻也記牢對方路數——疼，也算學費。' },
+        {
+          type: 'narrate',
+          text: `「${act}」踢到鐵板：後援從門後湧出，短棍砸肩，線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
+        },
       ];
     case 'virtuous':
       return [
         { type: 'money', amount: -10 },
         { type: 'health', amount: -5 },
         { type: 'reputation', amount: 1 },
-        { type: 'narrate', text: '好心沒換來圓滿，還貼了本。仍有人記得你伸過手——這點，算薄薄的回甘。' },
+        {
+          type: 'narrate',
+          text: `你執意「${act}」，人卻被劫走，差役還收了你一筆「滋事」銀。仍有街坊記得你伸過手——這點薄回甘，換不回失蹤的人。`,
+        },
       ];
     case 'cunning':
       return [
@@ -182,42 +223,51 @@ function illExtras(stance: ChoiceStance): GameEffect[] {
         { type: 'reputation', amount: -3 },
         { type: 'nature', delta: { e: 1 } },
         { type: 'attr', delta: { danShi: 1 } },
-        { type: 'narrate', text: '算計落空，顏面與銀兩兩傷。唯一收穫，是往後出手更謹慎半分。' },
+        {
+          type: 'narrate',
+          text: `「${act}」的局被看穿。密信落入敵手，你還被記上一筆欠債。唯一收穫：下次再不會信那名兩邊收錢的跑堂。`,
+        },
       ];
     case 'cautious':
       return [
         { type: 'reputation', amount: -1 },
         { type: 'attr', delta: { fuYuan: 1 } },
-        { type: 'narrate', text: '你縮得太後，機緣從眼前走掉，有人笑你膽怯。你只當把命留下了。' },
+        {
+          type: 'narrate',
+          text: `你把「${act}」做得太乾淨，關鍵時刻無人作證。事主被拖走時丟下一句：「早知不該信你。」你保住了命，也少了一截線。`,
+        },
       ];
     default:
       return [
         { type: 'health', amount: -9 },
         { type: 'money', amount: -5 },
         { type: 'martial', amount: 1 },
-        { type: 'narrate', text: '事與願違：計畫散了，皮肉與錢袋都輕了。你嚥下教訓，再上路。' },
+        {
+          type: 'narrate',
+          text: `「${act}」功敗垂成：談判破裂，茶杯砸碎，名單缺了最關鍵一頁。你貼了醫藥錢出門，立誓下回先看清門後有沒有第二個人。`,
+        },
       ];
   }
 }
 
-function buildFairEffects(base: GameEffect[], stance: ChoiceStance): GameEffect[] {
+function buildFairEffects(base: GameEffect[], stance: ChoiceStance, choiceText: string): GameEffect[] {
   const core = scaleEffects(cloneEffects(base), 1);
-  const costs = fairCost(stance);
+  const costs = fairCost(stance, choiceText);
   // 避免雙 narrate 疊太亂：若已有敘事，成本敘事仍保留（一主一輔）
   return [...core, ...costs.filter((e) => e.type !== 'narrate' || !narrateOnly(core))];
 }
 
-function buildMixedEffects(base: GameEffect[], stance: ChoiceStance): GameEffect[] {
+function buildMixedEffects(base: GameEffect[], stance: ChoiceStance, choiceText: string): GameEffect[] {
   const safe = stripIrreversible(base);
   const gains = scaleEffects(
     safe.filter((e) => e.type === 'narrate' || isNumericGain(e) || e.type === 'nature' || e.type === 'attr' || e.type === 'world'),
     0.55,
   );
   const losses = scaleEffects(safe.filter(isNumericLoss), 1.1);
-  return [...gains.filter((e) => e.type !== 'narrate'), ...losses, ...mixedExtras(stance)];
+  return [...gains.filter((e) => e.type !== 'narrate'), ...losses, ...mixedExtras(stance, choiceText)];
 }
 
-function buildIllEffects(base: GameEffect[], stance: ChoiceStance): GameEffect[] {
+function buildIllEffects(base: GameEffect[], stance: ChoiceStance, choiceText: string): GameEffect[] {
   const safe = stripIrreversible(base);
   // 把原本收益壓成代價感，並帶一點安慰獎
   const inverted = safe
@@ -235,7 +285,7 @@ function buildIllEffects(base: GameEffect[], stance: ChoiceStance): GameEffect[]
       }
       return eff;
     });
-  return [...inverted, ...illExtras(stance)];
+  return [...inverted, ...illExtras(stance, choiceText)];
 }
 
 /**
@@ -256,19 +306,19 @@ export function enrichChoiceWithRisk(
       id: `${choice.id}_fair`,
       label: '順遂',
       weight: weights.fair,
-      effects: buildFairEffects(base, stance),
+      effects: buildFairEffects(base, stance, choice.text),
     },
     {
       id: `${choice.id}_mixed`,
       label: '波折',
       weight: weights.mixed,
-      effects: buildMixedEffects(base, stance),
+      effects: buildMixedEffects(base, stance, choice.text),
     },
     {
       id: `${choice.id}_ill`,
       label: '事與願違',
       weight: weights.ill,
-      effects: buildIllEffects(base, stance),
+      effects: buildIllEffects(base, stance, choice.text),
     },
   ];
 

@@ -60,8 +60,11 @@ function enrichLegacyEvent(event: GameEvent): GameEvent {
   }
   return withRiskAndThree(
     event,
-    () => [
-      { type: 'narrate', text: '事與願違：你失了分寸，場面翻轉，銀錢與氣血都捱了一記。你把這場教訓嚥進肚裡，改日再走。' },
+    (_id, choiceText) => [
+      {
+        type: 'narrate',
+        text: `「${choiceText ?? '此舉'}」功敗垂成：門後湧出後援，短棍砸肩，袖裡線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
+      },
       { type: 'health', amount: -12 },
       { type: 'money', amount: -5 },
     ],

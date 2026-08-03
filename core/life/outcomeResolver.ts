@@ -245,22 +245,37 @@ export function applyPackFortuneTwist(state: LifeGameState): string[] {
     const dmg = rng.nextInt(6, 14);
     c.health = clamp(c.health - dmg, 0, c.maxHealth);
     addCondition(state, 'bleeding');
-    logs.push('此局仍有餘波，你帶傷收場。', '氣血受損', '傷勢');
+    logs.push(
+      `餘波未平：暗處又射出一枝短矢／飛石，擦傷你的脅下。你帶傷收場，衣襟滲血。`,
+      '氣血受損',
+      '傷勢',
+    );
   } else if (roll < 0.55) {
     const loss = rng.nextInt(4, 12);
     c.money = Math.max(0, c.money - loss);
     c.martial = Math.min(100, c.martial + 1);
-    logs.push('銀錢散了些，卻也換來一點實戰體會。', `銀兩－${loss}`, '武學＋1');
+    logs.push(
+      `餘波索價：有人攔路「談和解」，你丟出錢袋才脫身；肩頭的疼痛卻讓你記住了對方步法。`,
+      `銀兩－${loss}`,
+      '武學＋1',
+    );
   } else if (roll < 0.72) {
     const gain = rng.nextInt(4, 11);
     c.money += gain;
     c.health = clamp(c.health - rng.nextInt(2, 5), 0, c.maxHealth);
-    logs.push('意外撿回一點好處，過程卻磕碰了皮肉。', `銀兩＋${gain}`, '氣血微損');
+    logs.push(
+      `餘波裡竟撿回好處：牆根錢袋被人丟下，你撿起時膝蓋磕破——銀兩入手，皮肉也付了學費。`,
+      `銀兩＋${gain}`,
+      '氣血微損',
+    );
   } else if (roll < 0.86) {
     c.reputation += 1;
-    logs.push('旁人把你的處置傳了開去，名望微升。', '名望＋1');
+    logs.push(
+      `餘波成了街談：茶攤把你今晚的處置添油加醋傳開，名望微升，也多了盯梢的眼睛。`,
+      '名望＋1',
+    );
   } else {
-    logs.push('餘波平平，你把經過嚥進肚裡，繼續趕路。');
+    logs.push('餘波只剩檐水聲。你把刀穗重新繫緊，確認袖裡物證還在，才繼續趕路。');
   }
 
   snapshotRng(state);

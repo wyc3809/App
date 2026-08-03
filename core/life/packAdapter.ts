@@ -55,7 +55,8 @@ function convertPackChoice(item: PackChoiceRaw, index: number): EventChoice {
   const feedback =
     (typeof item.result_text === 'string'
       ? item.result_text
-      : item.result_text?.success) || '你的選擇改變了事情的走向。';
+      : item.result_text?.success) ||
+    `你選擇「${item.text}」之後，現場留下了可追的痕跡——一枚腰牌、半句地名，或一縷未散的藥香。`;
   return {
     id: item.id || `choice_${index + 1}`,
     text: item.text,
@@ -72,8 +73,11 @@ function ensureThreeOnly(event: GameEvent): GameEvent {
   if (event.choices.length >= 3) return { ...event, choices: event.choices.slice(0, 3) };
   return withRiskAndThree(
     event,
-    () => [
-      { type: 'narrate', text: '此局兇險，你付出了代價。' },
+    (choiceId, choiceText) => [
+      {
+        type: 'narrate',
+        text: `「${choiceText ?? choiceId}」這條路走不通：門後湧出後援，你帶傷退出，袖裡的線索也被抽走。`,
+      },
       { type: 'health', amount: -12 },
     ],
     0.12,
