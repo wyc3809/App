@@ -118,7 +118,7 @@ export function HomeDashboard() {
 
   return (
     <div className="space-y-4 pb-4">
-      <header className="flex items-center justify-between animate-fade-up">
+      <header className="relative z-30 flex items-center justify-between animate-fade-up">
         <div className="flex items-center gap-3">
           <div
             className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
@@ -133,39 +133,48 @@ export function HomeDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="relative z-30 flex items-center gap-1">
           <div className="relative">
             <button
               type="button"
               className="btn-ghost"
               aria-label="More"
+              aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
               <MoreHorizontal size={18} />
             </button>
             {menuOpen && (
-              <div
-                className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border shadow-lg"
-                style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
-              >
+              <>
                 <button
                   type="button"
-                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    if (confirm("Replace with demo portfolio?")) loadDemoData();
-                  }}
-                >
-                  Load demo data
-                </button>
-                <Link
-                  href="/settings/"
-                  className="block w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                  className="fixed inset-0 z-40 cursor-default"
+                  aria-label="Close menu"
                   onClick={() => setMenuOpen(false)}
+                />
+                <div
+                  className="absolute right-0 z-50 mt-1 w-44 overflow-hidden rounded-xl border shadow-lg"
+                  style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
                 >
-                  Settings
-                </Link>
-              </div>
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (confirm("Replace with demo portfolio?")) loadDemoData();
+                    }}
+                  >
+                    Load demo data
+                  </button>
+                  <Link
+                    href="/settings/"
+                    className="block w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                </div>
+              </>
             )}
           </div>
           <button
@@ -188,7 +197,7 @@ export function HomeDashboard() {
         </div>
       </header>
 
-      <section className="animate-fade-up-delay">
+      <section className="relative z-0 animate-fade-up-delay">
         {chartData.length < 2 ? (
           <div
             className="flex h-48 items-center justify-center rounded-2xl text-sm"
