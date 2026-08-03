@@ -5,8 +5,11 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  Link2,
   MoreHorizontal,
   Pencil,
+  Plus,
+  Receipt,
   Trash2,
   TrendingDown,
   TrendingUp,
@@ -22,18 +25,47 @@ import {
 } from "recharts";
 import { AddValueModal } from "@/components/AddValueModal";
 import { AccountForm } from "@/components/AccountForm";
+import { TransactionModal } from "@/components/TransactionModal";
 import { categoryLabel } from "@/lib/categories";
 import {
   buildAccountHistoryPoints,
   filterHistoryByRange,
   getAccountEntries,
   relativeUpdateLabel,
+  type ValueHistoryPoint,
 } from "@/lib/account-history";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
-import type { AccountValueEntry } from "@/lib/types";
+import type { AccountValueEntry, Transaction } from "@/lib/types";
 
 const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "4Y", "8Y"] as const;
+
+/** Resolve the ledger transaction for a Value History row. */
+function resolveLedgerTransaction(
+  transactions: Transaction[],
+  accountId: string,
+  point: ValueHistoryPoint,
+): Transaction | undefined {
+  if (point.transactionId) {
+    return transactions.find((t) => t.id === point.transactionId);
+  }
+  const onDay = transactions.filter(
+    (t) => t.accountId === accountId && t.date === point.date,
+  );
+  if (onDay.length === 0) return undefined;
+  if (point.note) {
+    const byNote = onDay.find(
+      (t) =>
+        point.note === `Income · ${t.title}` ||
+        point.note === `Expense · ${t.title}` ||
+        point.note === `Ledger: ${t.title}` ||
+        point.note === `Expense: ${t.title}` ||
+        point.note?.includes(t.title),
+    );
+    if (byNote) return byNote;
+  }
+  return onDay.length === 1 ? onDay[0] : undefined;
+}
 
 export function AccountDetailContent() {
   const searchParams = useSearchParams();
@@ -42,15 +74,19 @@ export function AccountDetailContent() {
 
   const accounts = useWorthStore((s) => s.accounts);
   const valueEntries = useWorthStore((s) => s.valueEntries);
+  const transactions = useWorthStore((s) => s.transactions);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
   const deleteAccount = useWorthStore((s) => s.deleteAccount);
   const deleteValueEntry = useWorthStore((s) => s.deleteValueEntry);
+  const deleteTransaction = useWorthStore((s) => s.deleteTransaction);
 
   const account = accounts.find((a) => a.id === accountId) ?? null;
   const [range, setRange] = useState<(typeof RANGES)[number]>("ALL");
   const [addOpen, setAddOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<AccountValueEntry | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -93,7 +129,6 @@ export function AccountDetailContent() {
     : account.currentValue;
   const latestChange = history[0];
   const changePositive = (latestChange?.changeAbsolute ?? 0) >= 0;
-  // For liabilities, a decrease in absolute debt is "good" / green in the reference
   const changeGood = account.isLiability
     ? (latestChange?.changeAbsolute ?? 0) <= 0
     : changePositive;
@@ -108,8 +143,8 @@ export function AccountDetailContent() {
   }, null);
 
   return (
-    <div className="space-y-4 pb-24">
-      <header className="flex items-center justify-between animate-fade-up">
+    <div className="space-y-4 pb-28">
+      <header className="relative z-30 flex items-center justify-between animate-fade-up">
         <Link href="/accounts/" className="btn-ghost" aria-label="Back">
           <ArrowLeft size={18} />
         </Link>
@@ -124,7 +159,7 @@ export function AccountDetailContent() {
           </button>
           {menuOpen && (
             <div
-              className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border shadow-lg"
+              className="absolute right-0 z-50 mt-1 w-40 overflow-hidden rounded-xl border shadow-lg"
               style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
             >
               <button
@@ -190,7 +225,7 @@ export function AccountDetailContent() {
         </div>
       </section>
 
-      <section className="card-surface animate-fade-up-delay p-3">
+      <section className="relative z-0 card-surface animate-fade-up-delay p-3">
         {chartPoints.length < 2 ? (
           <div
             className="flex h-40 items-center justify-center rounded-xl text-sm"
@@ -299,7 +334,7 @@ export function AccountDetailContent() {
             className="rounded-2xl px-4 py-8 text-center text-sm"
             style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
           >
-            No value entries yet. Tap Update to add one.
+            No value entries yet. Tap Update or Ledger to add one.
           </div>
         ) : (
           <ul className="card-surface divide-y overflow-hidden" style={{ borderColor: "var(--border)" }}>
@@ -310,12 +345,29 @@ export function AccountDetailContent() {
               const good = account.isLiability
                 ? (point.changeAbsolute ?? 0) <= 0
                 : (point.changeAbsolute ?? 0) >= 0;
-              const entry = entries.find((e) => e.date === point.date);
+              const entry = entries.find((e) => e.id === point.entryId);
+              const linkedTx = resolveLedgerTransaction(
+                transactions,
+                account.id,
+                point,
+              );
+              const isLedger = Boolean(linkedTx || point.transactionId);
+
               return (
-                <li key={`${point.date}-${point.value}`} className="px-4 py-3">
+                <li key={point.entryId} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-semibold">{point.label}</p>
+                      {isLedger && (
+                        <p
+                          className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          <Link2 size={11} />
+                          Ledger
+                          {linkedTx ? ` · ${linkedTx.type}` : ""}
+                        </p>
+                      )}
                       {point.note && (
                         <p className="mt-0.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
                           {point.note}
@@ -334,7 +386,7 @@ export function AccountDetailContent() {
                           showSign: account.isLiability,
                         })}
                       </p>
-                      {point.changeAbsolute != null && point.changePercent != null && (
+                      {point.changeAbsolute != null && (
                         <p
                           className="mt-0.5 text-xs font-semibold tabular-nums"
                           style={{
@@ -343,20 +395,31 @@ export function AccountDetailContent() {
                         >
                           {settings.isPrivacyMode
                             ? "••••"
-                            : `${formatPercent(Math.abs(point.changePercent)).replace("+", "")} ${
-                                good ? "↑" : "↓"
-                              } ${formatMoney(Math.abs(point.changeAbsolute), account.currency, currencies, {
-                                compact: true,
-                              })}`}
+                            : `${
+                                point.changePercent != null
+                                  ? `${formatPercent(Math.abs(point.changePercent)).replace("+", "")} `
+                                  : ""
+                              }${good ? "↑" : "↓"} ${formatMoney(
+                                Math.abs(point.changeAbsolute),
+                                account.currency,
+                                currencies,
+                                { compact: true },
+                              )}`}
                         </p>
                       )}
-                      {entry && (
+                      {(entry || linkedTx) && (
                         <div className="mt-1.5 flex justify-end gap-2">
                           <button
                             type="button"
                             className="inline-flex items-center gap-1 text-xs font-semibold"
                             style={{ color: "var(--accent)" }}
-                            onClick={() => setEditingEntry(entry)}
+                            onClick={() => {
+                              if (linkedTx) {
+                                setEditingTx(linkedTx);
+                                return;
+                              }
+                              if (entry) setEditingEntry(entry);
+                            }}
                           >
                             <Pencil size={12} />
                             Edit
@@ -367,7 +430,16 @@ export function AccountDetailContent() {
                               className="inline-flex items-center gap-1 text-xs font-semibold"
                               style={{ color: "var(--danger)" }}
                               onClick={() => {
-                                if (confirm(`Delete entry on ${point.date}?`)) {
+                                if (linkedTx) {
+                                  if (confirm(`Delete ledger “${linkedTx.title}”?`)) {
+                                    deleteTransaction(linkedTx.id);
+                                  }
+                                  return;
+                                }
+                                if (
+                                  entry &&
+                                  confirm(`Delete entry on ${point.date}?`)
+                                ) {
                                   deleteValueEntry(entry.id);
                                 }
                               }}
@@ -388,13 +460,29 @@ export function AccountDetailContent() {
       </section>
 
       <div
-        className="fixed bottom-0 left-1/2 z-30 w-full max-w-lg -translate-x-1/2 px-4 pt-2"
+        className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-lg -translate-x-1/2 gap-2 px-4 pt-2"
         style={{
           paddingBottom: "calc(var(--nav-height) + var(--safe-bottom) + 8px)",
           background: "linear-gradient(transparent, var(--bg) 30%)",
         }}
       >
-        <button type="button" className="btn-primary w-full" onClick={() => setAddOpen(true)}>
+        <button
+          type="button"
+          className="btn-secondary flex-1"
+          onClick={() => {
+            setEditingTx(null);
+            setLedgerOpen(true);
+          }}
+        >
+          <Receipt size={18} />
+          Ledger
+        </button>
+        <button
+          type="button"
+          className="btn-primary flex-1"
+          onClick={() => setAddOpen(true)}
+        >
+          <Plus size={18} />
           Update
         </button>
       </div>
@@ -406,6 +494,15 @@ export function AccountDetailContent() {
         onClose={() => {
           setAddOpen(false);
           setEditingEntry(null);
+        }}
+      />
+      <TransactionModal
+        open={ledgerOpen || Boolean(editingTx)}
+        initial={editingTx}
+        defaultAccountId={account.id}
+        onClose={() => {
+          setLedgerOpen(false);
+          setEditingTx(null);
         }}
       />
       <AccountForm open={editOpen} initial={account} onClose={() => setEditOpen(false)} />

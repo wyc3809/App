@@ -10,20 +10,24 @@ import type { LedgerCategory, Transaction, TransactionType } from "@/lib/types";
 interface TransactionModalProps {
   open: boolean;
   initial?: Transaction | null;
+  /** Pre-select this account when creating a new entry. */
+  defaultAccountId?: string;
   onClose: () => void;
 }
 
 export function TransactionModal({
   open,
   initial = null,
+  defaultAccountId,
   onClose,
 }: TransactionModalProps) {
   if (!open) return null;
 
   return (
     <TransactionDialog
-      key={initial?.id ?? "new-tx"}
+      key={initial?.id ?? `new-tx-${defaultAccountId ?? "none"}`}
       initial={initial}
+      defaultAccountId={defaultAccountId}
       onClose={onClose}
     />
   );
@@ -31,9 +35,11 @@ export function TransactionModal({
 
 function TransactionDialog({
   initial,
+  defaultAccountId,
   onClose,
 }: {
   initial: Transaction | null;
+  defaultAccountId?: string;
   onClose: () => void;
 }) {
   const accounts = useWorthStore((s) => s.accounts);
@@ -42,19 +48,22 @@ function TransactionDialog({
   const addTransaction = useWorthStore((s) => s.addTransaction);
   const updateTransaction = useWorthStore((s) => s.updateTransaction);
 
+  const presetAccountId = initial?.accountId ?? defaultAccountId ?? "";
+  const presetAccount = accounts.find((a) => a.id === presetAccountId);
+
   const [type, setType] = useState<TransactionType>(initial?.type ?? "expense");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [amount, setAmount] = useState(
     initial ? String(initial.amount) : "",
   );
   const [currency, setCurrency] = useState(
-    initial?.currency ?? settings.baseCurrency,
+    initial?.currency ?? presetAccount?.currency ?? settings.baseCurrency,
   );
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [category, setCategory] = useState<LedgerCategory>(
     initial?.category ?? (initial?.type === "income" ? "salary" : "food"),
   );
-  const [accountId, setAccountId] = useState(initial?.accountId ?? "");
+  const [accountId, setAccountId] = useState(presetAccountId);
   const [note, setNote] = useState(initial?.note ?? "");
 
   const categories = ledgerCategoriesFor(type);
