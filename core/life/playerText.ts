@@ -121,6 +121,81 @@ export function sanitizePlayerLine(line: string): string {
   return s;
 }
 
+const NATURE_MARK = /^([俠邪狂惡])([+＋\-－]+)$/;
+const NUMERIC_DELTA = /^(.+?)([＋+]|[－-])(\d+)$/;
+
+function formatMergedNumeric(label: string, total: number): string {
+  if (!total) return '';
+  if (total > 0) return `${label}＋${total}`;
+  return `${label}${total}`; // 自帶負號，如 氣血-27
+}
+
+function formatMergedNature(attr: string, total: number): string {
+  if (!total) return '';
+  const mark = (total > 0 ? '+' : '-').repeat(Math.abs(total));
+  return `${attr}${mark}`;
+}
+
+/**
+ * 合併結果匣消長：同標籤數值加總、心性符號合併，完全相同字串去重。
+ * 例：氣血-11、氣血-5、氣血-11 → 氣血-27；俠+++、俠++ → 俠+++++
+ */
+export function mergeDeltaLines(lines: string[]): string[] {
+  const numeric = new Map<string, number>();
+  const nature = new Map<string, number>();
+  const other: string[] = [];
+  const seenOther = new Set<string>();
+  const labelOrder: string[] = [];
+  const natureOrder: string[] = [];
+
+  for (const raw of lines) {
+    const line = String(raw ?? '').trim();
+    if (!line) continue;
+
+    const nat = NATURE_MARK.exec(line);
+    if (nat) {
+      const attr = nat[1]!;
+      const marks = nat[2]!;
+      let delta = 0;
+      for (const ch of marks) {
+        if (ch === '+' || ch === '＋') delta += 1;
+        else delta -= 1;
+      }
+      if (!nature.has(attr)) natureOrder.push(attr);
+      nature.set(attr, (nature.get(attr) ?? 0) + delta);
+      continue;
+    }
+
+    const num = NUMERIC_DELTA.exec(line);
+    if (num) {
+      const label = num[1]!;
+      const sign = num[2]!;
+      const amount = Number(num[3]);
+      const signed = sign === '＋' || sign === '+' ? amount : -amount;
+      if (!numeric.has(label)) labelOrder.push(label);
+      numeric.set(label, (numeric.get(label) ?? 0) + signed);
+      continue;
+    }
+
+    if (!seenOther.has(line)) {
+      seenOther.add(line);
+      other.push(line);
+    }
+  }
+
+  const out: string[] = [];
+  for (const label of labelOrder) {
+    const formatted = formatMergedNumeric(label, numeric.get(label) ?? 0);
+    if (formatted) out.push(formatted);
+  }
+  for (const attr of natureOrder) {
+    const formatted = formatMergedNature(attr, nature.get(attr) ?? 0);
+    if (formatted) out.push(formatted);
+  }
+  out.push(...other);
+  return out;
+}
+
 export function sanitizePlayerLines(lines: string[]): string[] {
-  return lines.map(sanitizePlayerLine).filter((l) => l && l !== '……');
+  return mergeDeltaLines(lines.map(sanitizePlayerLine).filter((l) => l && l !== '……'));
 }

@@ -1096,8 +1096,8 @@ export function InkPlayScreen({ state }: Props) {
                 <div className="ink-result-deltas">
                   <p className="ink-result-delta-label">此番消長</p>
                   <ul className="ink-delta-list">
-                    {lastResult.deltas.map((d) => (
-                      <li key={d}>{d}</li>
+                    {lastResult.deltas.map((d, i) => (
+                      <li key={`${i}-${d}`}>{d}</li>
                     ))}
                   </ul>
                 </div>

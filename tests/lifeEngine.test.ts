@@ -502,13 +502,21 @@ describe('life event engine', () => {
   });
 
   it('displayChoiceText hides placeholder English', async () => {
-    const { displayChoiceText, sanitizePlayerLine } = await import('../core/life/playerText');
+    const { displayChoiceText, sanitizePlayerLine, mergeDeltaLines, sanitizePlayerLines } =
+      await import('../core/life/playerText');
     expect(displayChoiceText('None', 'accept')).toBe('應允');
     expect(displayChoiceText('拱手請教', 'accept')).toBe('拱手請教');
     expect(sanitizePlayerLine('習得 skill_foo 與 None')).toMatch(/習得/);
     expect(sanitizePlayerLine('習得 skill_foo 與 None')).not.toMatch(/skill_foo|None/i);
     expect(sanitizePlayerLine('閱歷加深（courage）[object Object]')).not.toMatch(/courage|object Object/i);
     expect(sanitizePlayerLine('閱歷加深（courage）')).toMatch(/膽識|閱歷/);
+    expect(mergeDeltaLines(['氣血-11', '氣血-5', '氣血-11', '名望-2', '名望＋5', '俠+++', '俠++', '傷勢', '傷勢'])).toEqual([
+      '氣血-27',
+      '名望＋3',
+      '俠+++++',
+      '傷勢',
+    ]);
+    expect(sanitizePlayerLines(['銀兩－11', '銀兩-3', '武學＋2', '武學-2'])).toEqual(['銀兩-14']);
   });
 
   it('pack outcomes never leak English paths or [object Object]', async () => {
