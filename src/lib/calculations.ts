@@ -91,8 +91,9 @@ export function netWorthChange(
   snapshots: HistoricalSnapshot[],
 ): { absolute: number; percent: number } | null {
   if (snapshots.length < 2) return null;
-  const first = snapshots[0].netWorthBaseCurrency;
-  const last = snapshots[snapshots.length - 1].netWorthBaseCurrency;
+  const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  const first = sorted[0].netWorthBaseCurrency;
+  const last = sorted[sorted.length - 1].netWorthBaseCurrency;
   const absolute = last - first;
   const percent = first === 0 ? 0 : (absolute / Math.abs(first)) * 100;
   return { absolute, percent };
