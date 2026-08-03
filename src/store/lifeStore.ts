@@ -30,6 +30,7 @@ import {
 } from '@core/life/huashan';
 import { extractLegacy } from '@core/life/legacy';
 import { pushChronicle } from '@core/life/chronicle';
+import { resolveArcVisitLater } from '@core/life/arcs';
 import { track } from '../telemetry/events';
 
 const CATALOG = fullCatalog();
@@ -227,9 +228,17 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     const { state } = get();
     if (!state?.pending || state.pendingCombat) return;
     const next = structuredClone(state);
-    const title = resolvePendingEvent(next)?.title ?? getEventById(CATALOG, next.pending!.eventId)?.title ?? '機緣';
+    const eventId = next.pending!.eventId;
+    const title = resolvePendingEvent(next)?.title ?? getEventById(CATALOG, eventId)?.title ?? '機緣';
+    // 故人訪卡：暫避等同「改日再說」，延遲 monthsLeft，否則下月又掛同一張
+    const arcDelay =
+      eventId.startsWith('arc_visit_') && next.lifeArc
+        ? resolveArcVisitLater(next)
+        : [];
     next.pending = null;
-    pushChronicle(next, [`「${title}」`, '你選擇暫避鋒芒，此事輕輕揭過。']);
+    const feedback =
+      arcDelay[0] ?? '你選擇暫避鋒芒，此事輕輕揭過。';
+    pushChronicle(next, [`「${title}」`, feedback]);
     void save(next);
     set({
       state: next,
@@ -237,7 +246,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       lastResult: {
         title,
         choiceText: '暫避鋒芒',
-        feedback: '你選擇暫避鋒芒，此事輕輕揭過。',
+        feedback,
         deltas: [],
       },
     });

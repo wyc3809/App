@@ -30,7 +30,7 @@ import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
 import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
 import { applyNarrateOverrideToEffects, lookupNarrateOverride } from '@data/events/narrateOverrides';
-import { listArcBonusEvents, lookupArcEvent } from './arcs';
+import { lookupArcEvent, isArcVisitReady, buildArcVisitEvent, resolveArcVisitGo, resolveArcVisitLater } from './arcs';
 
 /** 把數值行與故事行分開，故事作主文 */
 function isStatLine(line: string): boolean {
@@ -325,6 +325,20 @@ export function applyChoice(
     deltas.push(...natureLines);
   }
 
+  // 故人短弧：前去相見才落拍；改日只延遲，避免每月重出同一卡
+  if (tags.includes('arc') || event.id.startsWith('arc_visit_')) {
+    const arcLines =
+      choiceId === 'later' || /改日|他日|稍後|離開|不往/.test(choice.text)
+        ? resolveArcVisitLater(state)
+        : resolveArcVisitGo(state);
+    if (arcLines.length) {
+      logs.push(...arcLines);
+      for (const line of arcLines) {
+        if (/武學|氣血|悟性|情誼/.test(line)) deltas.push(line);
+      }
+    }
+  }
+
   // 故事主文不含純數值／心性記號
   feedback = buildStoryFeedback(
     logs.filter((l) => !l.startsWith('心性有變') && !/^[俠邪狂惡][+\-]+$/.test(l)),
@@ -415,8 +429,17 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let event: GameEvent | null = null;
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
+  // 故人拍數到期：本月優先掛訪故人，唔同其他事件搶池、亦唔在冷卻期重抽
+  if (isArcVisitReady(state)) {
+    const arcEv = buildArcVisitEvent(state);
+    if (arcEv) {
+      event = arcEv;
+      kind = 'story';
+    }
+  }
+
   // 路遇遇敵節奏：約 7–15 月一次（可重複池）
-  if (shouldTriggerRoadCombat(state)) {
+  if (!event && shouldTriggerRoadCombat(state)) {
     const roadPool = listEligibleEvents(ROAD_ENCOUNTER_EVENTS, state);
     event = weightedPick(state, roadPool.length ? roadPool : ROAD_ENCOUNTER_EVENTS);
     kind = 'ordinary';
@@ -448,14 +471,6 @@ export function startMonth(state: LifeGameState): LifeGameState {
   }
 
   if (!event) {
-    const arcPool = listArcBonusEvents(state);
-    if (arcPool.length && rng.chance(0.4)) {
-      event = weightedPick(state, arcPool);
-      kind = 'story';
-    }
-  }
-
-  if (!event) {
     // 修煉機緣略降：0.34 → 0.28，讓江湖百事更多露出
     const wanderPool = listEligibleEvents(PRACTICE_WANDER_EVENTS, state);
     if (wanderPool.length && rng.chance(0.28)) {
@@ -470,12 +485,11 @@ export function startMonth(state: LifeGameState): LifeGameState {
         ...ORDINARY_EVENTS,
         ...JIANGHU_EXTRA_EVENTS,
         ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth'),
-        ...listArcBonusEvents(state),
       ],
       state,
-    ).filter((e) => !(e.tags ?? []).includes('pack'));
+    ).filter((e) => !(e.tags ?? []).includes('pack') && !(e.tags ?? []).includes('arc'));
     event = weightedPick(state, pool);
-    kind = (event?.tags ?? []).includes('arc') ? 'story' : 'ordinary';
+    kind = 'ordinary';
   }
 
   if (rumorBoost > 0) {

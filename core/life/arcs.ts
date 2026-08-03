@@ -116,6 +116,11 @@ export function getArcDef(id: string): ArcDef | undefined {
   return ARC_DEFS.find((a) => a.id === id);
 }
 
+/** 當前拍是否已到期、等玩家回應訪故人 */
+export function isArcVisitReady(state: LifeGameState): boolean {
+  return Boolean(state.lifeArc && state.lifeArc.monthsLeft <= 0);
+}
+
 /** 由弧狀態重建「訪故人」事件（須可按 pending.eventId 反查） */
 export function buildArcVisitEvent(state: LifeGameState, beatOverride?: number): GameEvent | null {
   const arc = state.lifeArc;
@@ -123,11 +128,14 @@ export function buildArcVisitEvent(state: LifeGameState, beatOverride?: number):
   const def = getArcDef(arc.id);
   if (!def) return null;
   const beat = beatOverride ?? arc.beat;
+  const beatDef = def.beats[beat];
+  if (!beatDef) return null;
+  const npcName = state.npcs[arc.npcId]?.name ?? '故人';
   return {
     id: `arc_visit_${arc.id}_${beat}`,
     title: `故人·${def.title}`,
-    body: `你想起${state.npcs[arc.npcId]?.name ?? '故人'}，腳步不由自主往那邊去。`,
-    weight: 28,
+    body: beatDef.chronicle,
+    weight: 40,
     tags: ['arc', 'story'],
     choices: [
       {
@@ -136,8 +144,10 @@ export function buildArcVisitEvent(state: LifeGameState, beatOverride?: number):
         outcomes: [
           {
             effects: [
-              { type: 'narrate', text: '你推門而入，舊人舊事，又翻過一頁。' },
-              { type: 'flag', key: `arc_visit_${arc.id}`, value: true },
+              {
+                type: 'narrate',
+                text: `你推門而入，與${npcName}相對。${beatDef.chronicle}`,
+              },
             ],
           },
         ],
@@ -147,7 +157,12 @@ export function buildArcVisitEvent(state: LifeGameState, beatOverride?: number):
         text: '改日再說',
         outcomes: [
           {
-            effects: [{ type: 'narrate', text: '你站在巷口片刻，終究沒有邁步。有些緣，要等。' }],
+            effects: [
+              {
+                type: 'narrate',
+                text: `你在巷口停了停，終究沒有邁步。${npcName}那邊的燈火仍在——這段緣，再等一兩個日子。`,
+              },
+            ],
           },
         ],
       },
@@ -155,8 +170,11 @@ export function buildArcVisitEvent(state: LifeGameState, beatOverride?: number):
   };
 }
 
-/** 短弧相關事件（活躍弧時提高權重混入池） */
+/**
+ * 僅在拍數到期時混入訪故人卡，避免冷卻期間每月重出同一張。
+ */
 export function listArcBonusEvents(state: LifeGameState): GameEvent[] {
+  if (!isArcVisitReady(state)) return [];
   const ev = buildArcVisitEvent(state);
   return ev ? [ev] : [];
 }
@@ -173,19 +191,19 @@ export function lookupArcEvent(state: LifeGameState, eventId: string): GameEvent
   const beat = Number(m[2]);
   const def = getArcDef(arcId);
   if (!def) return null;
-  // 臨時掛上弧資料以便 rebuild（不寫回 state）
   const shadow: LifeGameState = {
     ...state,
-    lifeArc: state.lifeArc?.id === arcId
-      ? state.lifeArc
-      : {
-          id: arcId,
-          title: def.title,
-          beat,
-          maxBeats: def.maxBeats,
-          npcId: def.npcId,
-          monthsLeft: 1,
-        },
+    lifeArc:
+      state.lifeArc?.id === arcId
+        ? { ...state.lifeArc, beat, monthsLeft: 0 }
+        : {
+            id: arcId,
+            title: def.title,
+            beat,
+            maxBeats: def.maxBeats,
+            npcId: def.npcId,
+            monthsLeft: 0,
+          },
   };
   return buildArcVisitEvent(shadow, beat);
 }
@@ -204,14 +222,17 @@ export function maybeStartLifeArc(state: LifeGameState): string[] {
     beat: 0,
     maxBeats: def.maxBeats,
     npcId: def.npcId,
-    monthsLeft: rng.nextInt(2, 4),
+    // 開弧後先冷靜一兩月，再出第一張訪故人
+    monthsLeft: rng.nextInt(1, 3),
   };
   const line = `一段因緣悄悄起了頭——「${def.title}」。`;
   pushChronicle(state, [line]);
   return [line];
 }
 
-/** 每月推進短弧；到期則落下一拍 */
+/**
+ * 每月只倒數；真正落拍改由玩家「前去相見」觸發，避免自動落拍後仍反覆抽同一張訪卡。
+ */
 export function tickLifeArc(state: LifeGameState): string[] {
   ensureStarterNpcs(state);
   const lines: string[] = [];
@@ -220,24 +241,33 @@ export function tickLifeArc(state: LifeGameState): string[] {
     return lines;
   }
   const arc = state.lifeArc;
-  arc.monthsLeft -= 1;
-  if (arc.monthsLeft > 0) return lines;
+  if (arc.monthsLeft > 0) {
+    arc.monthsLeft -= 1;
+  }
+  // monthsLeft === 0：等待 startMonth 優先掛訪故人事件
+  return lines;
+}
 
+/** 「前去相見」：寫入本拍、推進下一拍或落幕 */
+export function resolveArcVisitGo(state: LifeGameState): string[] {
+  ensureStarterNpcs(state);
+  const arc = state.lifeArc;
+  if (!arc) return [];
   const def = getArcDef(arc.id);
   if (!def) {
     state.lifeArc = undefined;
-    return lines;
+    return [];
   }
   const beat = def.beats[arc.beat];
   if (!beat) {
     state.lifeArc = undefined;
-    return lines;
+    return [];
   }
 
+  const lines: string[] = [];
   if (beat.location) state.character.location = beat.location;
-  lines.push(beat.chronicle);
   lines.push(...rememberNpc(state, arc.npcId, beat.memory, beat.affinity));
-  // 小幅修養／武學回報
+
   if (def.id === 'arc_yue_spar') {
     state.character.martial += 1;
     lines.push('武學＋1');
@@ -249,7 +279,6 @@ export function tickLifeArc(state: LifeGameState): string[] {
     lines.push('悟性＋1');
   }
 
-  pushChronicle(state, [beat.chronicle]);
   arc.beat += 1;
   if (arc.beat >= arc.maxBeats) {
     if (def.id === 'arc_lu_ink') state.character.flags.arc_done_lu = true;
@@ -260,13 +289,24 @@ export function tickLifeArc(state: LifeGameState): string[] {
   } else {
     const rng = getRng();
     arc.monthsLeft = rng.nextInt(2, 5);
+    lines.push(`下一段與故人的會面，約在 ${arc.monthsLeft} 個月後。`);
   }
   return lines;
+}
+
+/** 「改日再說」：延遲本拍，唔推進劇情 */
+export function resolveArcVisitLater(state: LifeGameState): string[] {
+  const arc = state.lifeArc;
+  if (!arc) return [];
+  const rng = getRng();
+  arc.monthsLeft = rng.nextInt(1, 2);
+  return [`你改日再訪。這段因緣暫緩 ${arc.monthsLeft} 個月。`];
 }
 
 export function lifeArcStatusLine(state: LifeGameState): string | null {
   const arc = state.lifeArc;
   if (!arc) return null;
   const npc = state.npcs[arc.npcId]?.name ?? '故人';
-  return `因緣「${arc.title}」· 與${npc}（${arc.beat + 1}/${arc.maxBeats}）`;
+  const ready = arc.monthsLeft <= 0 ? '· 可往一見' : `· ${arc.monthsLeft}月後可再訪`;
+  return `因緣「${arc.title}」· 與${npc}（${Math.min(arc.beat + 1, arc.maxBeats)}/${arc.maxBeats}）${ready}`;
 }

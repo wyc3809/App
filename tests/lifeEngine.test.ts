@@ -879,8 +879,9 @@ describe('life event engine', () => {
   });
 
   it('arc visit pending resolves and does not soft-lock advance', async () => {
-    const { resolvePendingEvent, clearDanglingPending, startMonth } = await import('../core/life/eventEngine');
-    const { applyChoice } = await import('../core/life/eventEngine');
+    const { resolvePendingEvent, clearDanglingPending, startMonth, applyChoice } = await import(
+      '../core/life/eventEngine'
+    );
     initRng(5);
     const state = createNewLife(5);
     state.lifeArc = {
@@ -889,15 +890,18 @@ describe('life event engine', () => {
       beat: 1,
       maxBeats: 3,
       npcId: 'npc_lu_yansheng',
-      monthsLeft: 2,
+      monthsLeft: 0,
     };
     state.pending = { eventId: 'arc_visit_arc_lu_ink_1', year: state.year, month: state.month, kind: 'story' };
     const ev = resolvePendingEvent(state);
     expect(ev?.id).toBe('arc_visit_arc_lu_ink_1');
+    expect(ev?.body).toMatch(/夜雨|敗筆|留白/);
     expect(ev?.choices.length).toBeGreaterThan(0);
     const result = applyChoice(state, ev!, 'go');
     expect(result.state.pending).toBeNull();
     expect(result.feedback.length).toBeGreaterThan(4);
+    expect(result.state.lifeArc?.beat).toBe(2);
+    expect(result.state.lifeArc!.monthsLeft).toBeGreaterThan(0);
 
     // dangling pending clears
     const stuck = createNewLife(6);
@@ -909,8 +913,60 @@ describe('life event engine', () => {
     expect(stuck.character.stats.monthsLived).toBeGreaterThan(0);
   });
 
+  it('arc visit does not repeat every month while on cooldown', async () => {
+    const { startMonth, applyChoice, resolvePendingEvent } = await import('../core/life/eventEngine');
+    const { listArcBonusEvents, resolveArcVisitLater, buildArcVisitEvent } = await import('../core/life/arcs');
+    initRng(9);
+    const state = createNewLife(9);
+    state.lifeArc = {
+      id: 'arc_shen_heal',
+      title: '暮晴診脈',
+      beat: 0,
+      maxBeats: 3,
+      npcId: 'npc_shen_muqing',
+      monthsLeft: 0,
+    };
+    expect(listArcBonusEvents(state)).toHaveLength(1);
+    expect(buildArcVisitEvent(state)?.id).toBe('arc_visit_arc_shen_heal_0');
+
+    // 「改日再說」進入冷卻後，翻頁不再掛同一拍
+    resolveArcVisitLater(state);
+    expect(state.lifeArc!.monthsLeft).toBeGreaterThan(0);
+    expect(listArcBonusEvents(state)).toHaveLength(0);
+
+    for (let i = 0; i < 3; i++) {
+      state.pending = null;
+      state.pendingCombat = null;
+      if ((state.lifeArc?.monthsLeft ?? 0) <= 0) break;
+      startMonth(state);
+      if (state.pending?.eventId?.startsWith('arc_visit_')) {
+        expect(state.lifeArc!.monthsLeft).toBeLessThanOrEqual(0);
+      } else {
+        expect(state.pending?.eventId ?? '').not.toMatch(/^arc_visit_arc_shen_heal_0$/);
+      }
+    }
+
+    // 「前去相見」推進拍數；冷卻期間不會再出第 0 拍
+    state.lifeArc = {
+      id: 'arc_shen_heal',
+      title: '暮晴診脈',
+      beat: 0,
+      maxBeats: 3,
+      npcId: 'npc_shen_muqing',
+      monthsLeft: 0,
+    };
+    state.pending = null;
+    startMonth(state);
+    expect(state.pending?.eventId).toBe('arc_visit_arc_shen_heal_0');
+    const ev = resolvePendingEvent(state)!;
+    applyChoice(state, ev, 'go');
+    expect(state.lifeArc?.beat).toBe(1);
+    expect(state.lifeArc!.monthsLeft).toBeGreaterThan(0);
+    expect(listArcBonusEvents(state)).toHaveLength(0);
+  });
+
   it('seeds town NPCs and can run a life arc beat', async () => {
-    const { tickLifeArc } = await import('../core/life/arcs');
+    const { resolveArcVisitGo, tickLifeArc } = await import('../core/life/arcs');
     initRng(21);
     const state = createNewLife(21);
     expect(state.npcs.npc_lu_yansheng?.name).toBe('陸硯生');
@@ -925,9 +981,12 @@ describe('life event engine', () => {
       monthsLeft: 0,
     };
     const before = state.npcs.npc_lu_yansheng!.memories.length;
-    const lines = tickLifeArc(state);
+    expect(tickLifeArc(state)).toEqual([]);
+    expect(state.lifeArc!.monthsLeft).toBe(0);
+    const lines = resolveArcVisitGo(state);
     expect(lines.some((l) => l.length > 8)).toBe(true);
     expect(state.npcs.npc_lu_yansheng!.memories.length).toBeGreaterThan(before);
+    expect(state.lifeArc?.beat).toBe(1);
   });
 
   it('narrate overrides replace catalog templates', async () => {
