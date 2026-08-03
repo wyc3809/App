@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const currencies = useWorthStore((s) => s.currencies);
   const accounts = useWorthStore((s) => s.accounts);
   const snapshots = useWorthStore((s) => s.snapshots);
+  const valueEntries = useWorthStore((s) => s.valueEntries);
   const updateSettings = useWorthStore((s) => s.updateSettings);
   const updateCurrencyRate = useWorthStore((s) => s.updateCurrencyRate);
   const setBaseCurrency = useWorthStore((s) => s.setBaseCurrency);
@@ -40,6 +41,7 @@ export default function SettingsPage() {
       currencies,
       accounts,
       snapshots,
+      valueEntries,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json",

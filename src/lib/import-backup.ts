@@ -2,6 +2,7 @@ import { DEFAULT_CURRENCIES } from "./currencies";
 import type {
   Account,
   AccountCategory,
+  AccountValueEntry,
   Currency,
   HistoricalSnapshot,
   UserSettings,
@@ -13,6 +14,7 @@ export interface WorthBackupPayload {
   currencies: Currency[];
   accounts: Account[];
   snapshots: HistoricalSnapshot[];
+  valueEntries?: AccountValueEntry[];
 }
 
 const ASSET_CATEGORIES = new Set([
@@ -118,6 +120,24 @@ function parseSnapshot(raw: unknown): HistoricalSnapshot | null {
   };
 }
 
+function parseValueEntry(raw: unknown): AccountValueEntry | null {
+  if (!isRecord(raw)) return null;
+  if (typeof raw.id !== "string" || !raw.id) return null;
+  if (typeof raw.accountId !== "string" || !raw.accountId) return null;
+  if (typeof raw.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) return null;
+  if (!isFiniteNumber(raw.value) || raw.value < 0) return null;
+  if (typeof raw.createdAt !== "string") return null;
+  return {
+    id: raw.id,
+    accountId: raw.accountId,
+    date: raw.date,
+    value: raw.value,
+    note: typeof raw.note === "string" ? raw.note : undefined,
+    markOnGraph: typeof raw.markOnGraph === "boolean" ? raw.markOnGraph : true,
+    createdAt: raw.createdAt,
+  };
+}
+
 function parseSettings(raw: unknown): UserSettings | null {
   if (!isRecord(raw)) return null;
   if (typeof raw.baseCurrency !== "string" || !raw.baseCurrency) return null;
@@ -181,6 +201,15 @@ export function parseWorthBackup(input: unknown): ImportResult {
     };
   }
 
+  let valueEntries: AccountValueEntry[] | undefined;
+  if (Array.isArray(input.valueEntries)) {
+    const parsed = input.valueEntries.map(parseValueEntry);
+    if (parsed.some((e) => e === null)) {
+      return { ok: false, error: "One or more value entries in the backup are invalid." };
+    }
+    valueEntries = parsed as AccountValueEntry[];
+  }
+
   return {
     ok: true,
     data: {
@@ -191,6 +220,7 @@ export function parseWorthBackup(input: unknown): ImportResult {
       snapshots: (snapshots as HistoricalSnapshot[]).sort((a, b) =>
         a.date.localeCompare(b.date),
       ),
+      valueEntries,
     },
   };
 }

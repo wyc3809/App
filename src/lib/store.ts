@@ -7,11 +7,16 @@ import {
   rebaseCurrencyRates,
   toBaseCurrency,
 } from "./currencies";
-import { createDemoAccounts, createDemoSnapshots } from "./demo-data";
+import {
+  createDemoAccounts,
+  createDemoSnapshots,
+  createDemoValueEntries,
+} from "./demo-data";
 import { todayISO } from "./format";
 import type { WorthBackupPayload } from "./import-backup";
 import type {
   Account,
+  AccountValueEntry,
   Currency,
   HistoricalSnapshot,
   UserSettings,
@@ -23,6 +28,7 @@ function id(): string {
 
 interface WorthState {
   accounts: Account[];
+  valueEntries: AccountValueEntry[];
   snapshots: HistoricalSnapshot[];
   currencies: Currency[];
   settings: UserSettings;
@@ -36,6 +42,15 @@ interface WorthState {
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
+
+  upsertValueEntry: (input: {
+    accountId: string;
+    date: string;
+    value: number;
+    note?: string;
+    markOnGraph?: boolean;
+  }) => void;
+  deleteValueEntry: (entryId: string) => void;
 
   takeSnapshot: (date?: string) => void;
   deleteSnapshot: (id: string) => void;
@@ -73,6 +88,47 @@ function buildSnapshot(
   };
 }
 
+function upsertSnapshot(
+  snapshots: HistoricalSnapshot[],
+  accounts: Account[],
+  currencies: Currency[],
+  date: string,
+): HistoricalSnapshot[] {
+  const next = buildSnapshot(accounts, currencies, date);
+  return [...snapshots.filter((s) => s.date !== date), next].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+}
+
+function syncAccountFromEntries(
+  account: Account,
+  entries: AccountValueEntry[],
+): Account {
+  const mine = entries
+    .filter((e) => e.accountId === account.id)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (mine.length === 0) return account;
+  const latest = mine[0];
+  return {
+    ...account,
+    currentValue: latest.value,
+    asOfDate: latest.date,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function seedEntryForAccount(account: Account): AccountValueEntry {
+  return {
+    id: id(),
+    accountId: account.id,
+    date: account.asOfDate || todayISO(),
+    value: account.currentValue,
+    note: account.note,
+    markOnGraph: true,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 const defaultSettings: UserSettings = {
   baseCurrency: "HKD",
   isPrivacyMode: false,
@@ -84,6 +140,7 @@ export const useWorthStore = create<WorthState>()(
   persist(
     (set, get) => ({
       accounts: [],
+      valueEntries: [],
       snapshots: [],
       currencies: DEFAULT_CURRENCIES,
       settings: defaultSettings,
@@ -93,9 +150,11 @@ export const useWorthStore = create<WorthState>()(
 
       loadDemoData: () => {
         const accounts = createDemoAccounts();
+        const valueEntries = createDemoValueEntries(accounts);
         const snapshots = createDemoSnapshots(accounts);
         set({
           accounts,
+          valueEntries,
           snapshots,
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
@@ -105,14 +164,20 @@ export const useWorthStore = create<WorthState>()(
       resetAll: () =>
         set({
           accounts: [],
+          valueEntries: [],
           snapshots: [],
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
         }),
 
       importBackup: (payload) => {
+        const valueEntries =
+          payload.valueEntries && payload.valueEntries.length > 0
+            ? payload.valueEntries
+            : payload.accounts.map(seedEntryForAccount);
         set({
           accounts: payload.accounts,
+          valueEntries,
           snapshots: payload.snapshots,
           currencies: payload.currencies,
           settings: payload.settings,
@@ -129,20 +194,22 @@ export const useWorthStore = create<WorthState>()(
           createdAt: now,
           updatedAt: now,
         };
+        const entry = seedEntryForAccount(account);
         set((s) => {
           const accounts = [...s.accounts, account];
-          const next = buildSnapshot(accounts, s.currencies, asOfDate);
-          const snapshots = [...s.snapshots.filter((x) => x.date !== asOfDate), next].sort(
-            (a, b) => a.date.localeCompare(b.date),
-          );
-          return { accounts, snapshots };
+          const valueEntries = [...s.valueEntries, entry];
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(s.snapshots, accounts, s.currencies, asOfDate),
+          };
         });
       },
 
-      updateAccount: (id, patch) => {
+      updateAccount: (accountId, patch) => {
         set((s) => {
           const accounts = s.accounts.map((a) =>
-            a.id === id
+            a.id === accountId
               ? {
                   ...a,
                   ...patch,
@@ -151,33 +218,135 @@ export const useWorthStore = create<WorthState>()(
                 }
               : a,
           );
-          const target = accounts.find((a) => a.id === id);
-          const asOfDate = target?.asOfDate ?? todayISO();
-          const next = buildSnapshot(accounts, s.currencies, asOfDate);
-          const snapshots = [...s.snapshots.filter((x) => x.date !== asOfDate), next].sort(
-            (a, b) => a.date.localeCompare(b.date),
-          );
-          return { accounts, snapshots };
+          const target = accounts.find((a) => a.id === accountId);
+          if (!target) return { accounts };
+
+          let valueEntries = s.valueEntries;
+          if (patch.currentValue !== undefined || patch.asOfDate) {
+            const date = target.asOfDate;
+            const value = target.currentValue;
+            const existing = valueEntries.find(
+              (e) => e.accountId === accountId && e.date === date,
+            );
+            if (existing) {
+              valueEntries = valueEntries.map((e) =>
+                e.id === existing.id ? { ...e, value, note: patch.note ?? e.note } : e,
+              );
+            } else {
+              valueEntries = [
+                ...valueEntries,
+                {
+                  id: id(),
+                  accountId,
+                  date,
+                  value,
+                  note: patch.note,
+                  markOnGraph: true,
+                  createdAt: new Date().toISOString(),
+                },
+              ];
+            }
+          }
+
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              accounts,
+              s.currencies,
+              target.asOfDate,
+            ),
+          };
         });
       },
 
-      deleteAccount: (id) => {
-        set((s) => ({ accounts: s.accounts.filter((a) => a.id !== id) }));
+      deleteAccount: (accountId) => {
+        set((s) => ({
+          accounts: s.accounts.filter((a) => a.id !== accountId),
+          valueEntries: s.valueEntries.filter((e) => e.accountId !== accountId),
+        }));
+      },
+
+      upsertValueEntry: ({ accountId, date, value, note, markOnGraph = true }) => {
+        set((s) => {
+          const account = s.accounts.find((a) => a.id === accountId);
+          if (!account) return s;
+
+          const existing = s.valueEntries.find(
+            (e) => e.accountId === accountId && e.date === date,
+          );
+          const valueEntries = existing
+            ? s.valueEntries.map((e) =>
+                e.id === existing.id
+                  ? {
+                      ...e,
+                      value,
+                      note: note?.trim() || undefined,
+                      markOnGraph,
+                    }
+                  : e,
+              )
+            : [
+                ...s.valueEntries,
+                {
+                  id: id(),
+                  accountId,
+                  date,
+                  value,
+                  note: note?.trim() || undefined,
+                  markOnGraph,
+                  createdAt: new Date().toISOString(),
+                },
+              ];
+
+          const synced = syncAccountFromEntries(account, valueEntries);
+          const accounts = s.accounts.map((a) =>
+            a.id === accountId ? synced : a,
+          );
+
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(s.snapshots, accounts, s.currencies, date),
+          };
+        });
+      },
+
+      deleteValueEntry: (entryId) => {
+        set((s) => {
+          const entry = s.valueEntries.find((e) => e.id === entryId);
+          if (!entry) return s;
+          const valueEntries = s.valueEntries.filter((e) => e.id !== entryId);
+          const account = s.accounts.find((a) => a.id === entry.accountId);
+          if (!account) return { valueEntries };
+          const synced = syncAccountFromEntries(account, valueEntries);
+          const accounts = s.accounts.map((a) =>
+            a.id === account.id ? synced : a,
+          );
+          return {
+            accounts,
+            valueEntries,
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              accounts,
+              s.currencies,
+              synced.asOfDate || todayISO(),
+            ),
+          };
+        });
       },
 
       takeSnapshot: (date) => {
         const { accounts, currencies, snapshots } = get();
         const snapDate = date ?? todayISO();
-        const next = buildSnapshot(accounts, currencies, snapDate);
-        const withoutSameDay = snapshots.filter((s) => s.date !== snapDate);
-        const merged = [...withoutSameDay, next].sort((a, b) =>
-          a.date.localeCompare(b.date),
-        );
-        set({ snapshots: merged });
+        set({
+          snapshots: upsertSnapshot(snapshots, accounts, currencies, snapDate),
+        });
       },
 
-      deleteSnapshot: (id) => {
-        set((s) => ({ snapshots: s.snapshots.filter((x) => x.id !== id) }));
+      deleteSnapshot: (snapId) => {
+        set((s) => ({ snapshots: s.snapshots.filter((x) => x.id !== snapId) }));
       },
 
       updateSettings: (patch) => {
@@ -204,10 +373,11 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
+        valueEntries: state.valueEntries,
         snapshots: state.snapshots,
         currencies: state.currencies,
         settings: state.settings,
@@ -215,10 +385,12 @@ export const useWorthStore = create<WorthState>()(
       migrate: (persisted, version) => {
         const state = persisted as {
           accounts?: Account[];
+          valueEntries?: AccountValueEntry[];
           snapshots?: HistoricalSnapshot[];
           currencies?: Currency[];
           settings?: UserSettings;
         };
+
         if (version < 2 && Array.isArray(state.accounts)) {
           state.accounts = state.accounts.map((a) => ({
             ...a,
@@ -228,6 +400,22 @@ export const useWorthStore = create<WorthState>()(
                 : (a.createdAt?.slice(0, 10) ?? todayISO()),
           }));
         }
+
+        if (version < 3) {
+          const accounts = state.accounts ?? [];
+          if (!Array.isArray(state.valueEntries) || state.valueEntries.length === 0) {
+            state.valueEntries = accounts.map((a) => ({
+              id: crypto.randomUUID(),
+              accountId: a.id,
+              date: a.asOfDate || a.createdAt?.slice(0, 10) || todayISO(),
+              value: a.currentValue,
+              note: a.note,
+              markOnGraph: true,
+              createdAt: a.updatedAt || new Date().toISOString(),
+            }));
+          }
+        }
+
         return state as never;
       },
       onRehydrateStorage: () => (state) => {

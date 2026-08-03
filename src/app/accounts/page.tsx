@@ -8,7 +8,6 @@ import { AccountList } from "@/components/AccountList";
 import { computeTotals } from "@/lib/calculations";
 import { formatMoney } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
-import type { Account } from "@/lib/types";
 
 function AccountsContent() {
   const searchParams = useSearchParams();
@@ -19,15 +18,13 @@ function AccountsContent() {
 
   const [filter, setFilter] = useState<"all" | "assets" | "liabilities">("all");
   const [manualOpen, setManualOpen] = useState(false);
-  const [editing, setEditing] = useState<Account | null>(null);
 
   const openFromQuery = searchParams.get("new") === "1";
   const formOpen = manualOpen || openFromQuery;
 
   const closeForm = () => {
     setManualOpen(false);
-    setEditing(null);
-    if (openFromQuery) router.replace("/accounts");
+    if (openFromQuery) router.replace("/accounts/");
   };
 
   const totals = computeTotals(accounts, currencies);
@@ -48,10 +45,7 @@ function AccountsContent() {
           <button
             type="button"
             className="btn-primary"
-            onClick={() => {
-              setEditing(null);
-              setManualOpen(true);
-            }}
+            onClick={() => setManualOpen(true)}
           >
             <Plus size={18} />
             Add
@@ -86,16 +80,10 @@ function AccountsContent() {
       </div>
 
       <div className="animate-fade-up-delay">
-        <AccountList
-          filter={filter}
-          onEdit={(account) => {
-            setEditing(account);
-            setManualOpen(true);
-          }}
-        />
+        <AccountList filter={filter} />
       </div>
 
-      <AccountForm open={formOpen} initial={editing} onClose={closeForm} />
+      <AccountForm open={formOpen} onClose={closeForm} />
     </div>
   );
 }

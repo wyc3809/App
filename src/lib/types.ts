@@ -32,6 +32,17 @@ export interface Account {
   createdAt: string;
 }
 
+/** Per-account dated balance entry (Value History). */
+export interface AccountValueEntry {
+  id: string;
+  accountId: string;
+  date: string; // YYYY-MM-DD
+  value: number;
+  note?: string;
+  markOnGraph: boolean;
+  createdAt: string;
+}
+
 export interface AccountBalanceSnapshot {
   accountId: string;
   balance: number;
