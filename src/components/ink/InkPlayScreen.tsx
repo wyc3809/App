@@ -1159,7 +1159,7 @@ export function InkPlayScreen({ state }: Props) {
       )}
 
       {onHomeTab && !combat && (
-        <section className="ink-panel ink-chronicle">
+        <section className={`ink-panel ink-chronicle${chronicleOpen ? ' ink-chronicle--open' : ''}`}>
           <button
             type="button"
             className="ink-chronicle-toggle"

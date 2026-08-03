@@ -1514,12 +1514,38 @@ body::before {
 }
 
 .ink-chronicle {
-  flex: 1;
-  min-height: 120px;
-  max-height: 220px;
+  /* 收合時唔好撑滿剩餘視窗，否則會變大片空白框；隨內容排在儀表之下 */
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: none;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  gap: 8px;
+}
+
+.ink-chronicle:not(.ink-chronicle--open) {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+}
+
+.ink-chronicle:not(.ink-chronicle--open)::before,
+.ink-chronicle:not(.ink-chronicle--open)::after {
+  content: none;
+}
+
+.ink-chronicle--open {
+  max-height: min(42vh, 280px);
+}
+
+.ink-chronicle--open .ink-log {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .ink-log {
@@ -1527,6 +1553,7 @@ body::before {
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   font-size: 0.82rem;
   line-height: 1.55;
   color: var(--ink-mid);
