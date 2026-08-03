@@ -52,4 +52,19 @@ WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under
 
 ## Deploy
 
-Compatible with Vercel (`vercel.json`). Connect the repo and deploy — framework is Next.js.
+### GitHub Pages (separate from the game)
+
+WorthTracker is published under a **dedicated subpath** so it does not overwrite the game at `/App/`:
+
+**https://wyc3809.github.io/App/worthtracker/**
+
+```bash
+npm run build:pages   # static export → ./out (basePath /App/worthtracker)
+```
+
+The Actions workflow deploys only into `gh-pages/worthtracker/` with `keep_files: true`.
+
+### Other hosts
+
+- Vercel / local static: `npm run build` → `./out` (no base path)
+- Cloudflare Pages: manual `workflow_dispatch` (optional secrets)

@@ -1,5 +1,6 @@
-name: Deploy to GitHub Pages
+name: Deploy WorthTracker to GitHub Pages
 
+# Publishes to /worthtracker/ only — does not wipe the game at repo Pages root.
 on:
   push:
     branches: [main]
@@ -9,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: pages
+  group: worthtracker-pages
   cancel-in-progress: true
 
 jobs:
@@ -22,12 +23,12 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - run: npm run build
-        env:
-          VITE_BASE: /App/
-      - name: Deploy to gh-pages branch
+      - run: npm test
+      - run: npm run build:pages
+      - name: Deploy WorthTracker to /worthtracker on gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          # 勿設 cname: false（會寫入錯誤 CNAME 檔）
+          publish_dir: ./out
+          destination_dir: worthtracker
+          keep_files: true
