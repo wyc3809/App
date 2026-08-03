@@ -1,6 +1,16 @@
-/** 宣紙遠山 + 墨漬 + 竹角（素材包 SVG） */
+/** 宣紙遠山 + 墨漬 + 竹角（內嵌 SVG，避免外連圖失敗） */
 import type { InkPlace, InkSeason } from './sceneVariants';
-import { INK_DECOR } from '../../ui/inkAssets';
+import { INK_SVG } from '../../ui/inkAssets';
+
+function InkInlineSvg({ className, markup }: { className?: string; markup: string }) {
+  return (
+    <span
+      className={className}
+      aria-hidden
+      dangerouslySetInnerHTML={{ __html: markup }}
+    />
+  );
+}
 
 export function InkScrollBackdrop({
   variant = 'play',
@@ -28,12 +38,10 @@ export function InkScrollBackdrop({
       className={`ink-backdrop ink-backdrop--${variant}${quiet ? ' ink-backdrop--quiet' : ''}${scene ? ` ${scene}` : ''}`}
       aria-hidden
     >
-      <img className="ink-mountains-img" src={INK_DECOR.mountains()} alt="" draggable={false} />
-      {variant === 'hero' && (
-        <img className="ink-boat-img" src={INK_DECOR.boat()} alt="" draggable={false} />
-      )}
-      <img className="ink-blots-img" src={INK_DECOR.blots()} alt="" draggable={false} />
-      <img className="ink-bamboo-img" src={INK_DECOR.bamboo()} alt="" draggable={false} />
+      <InkInlineSvg className="ink-mountains-img" markup={INK_SVG.mountains} />
+      {variant === 'hero' && <InkInlineSvg className="ink-boat-img" markup={INK_SVG.boat} />}
+      <InkInlineSvg className="ink-blots-img" markup={INK_SVG.blots} />
+      <InkInlineSvg className="ink-bamboo-img" markup={INK_SVG.bamboo} />
       <div className="ink-mist-layer" />
       <div className="ink-mist-layer ink-mist-layer--soft" />
       <div className="ink-brush-sweep" />
@@ -65,11 +73,11 @@ export function InkResultSeal({ text = '定' }: { text?: string }) {
   );
 }
 
-/** 事件橫幅（水墨 900×260） */
-export function InkEventBanner({ src, alt = '' }: { src: string; alt?: string }) {
+/** 事件橫幅（水墨 900×260）— 內嵌 SVG */
+export function InkEventBanner({ markup, alt = '' }: { markup: string; alt?: string }) {
   return (
-    <div className="ink-event-banner">
-      <img src={src} alt={alt} draggable={false} />
+    <div className="ink-event-banner" role={alt ? 'img' : undefined} aria-label={alt || undefined}>
+      <InkInlineSvg className="ink-event-banner-svg" markup={markup} />
     </div>
   );
 }

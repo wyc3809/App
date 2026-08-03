@@ -128,18 +128,45 @@ body::before {
   display: block;
 }
 
-/* 素材包遠山／孤舟／墨漬／竹角 */
+/* 素材包遠山／孤舟／墨漬／竹角（內嵌 span>svg） */
+.ink-mountains-img,
+.ink-boat-img,
+.ink-blots-img,
+.ink-bamboo-img,
+.ink-fade-line,
+.ink-stages-strip,
+.ink-event-banner-svg,
+.ink-title-slip {
+  display: block;
+  line-height: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ink-mountains-img svg,
+.ink-boat-img svg,
+.ink-blots-img svg,
+.ink-bamboo-img svg,
+.ink-fade-line svg,
+.ink-stages-strip svg,
+.ink-title-slip svg,
+.ink-event-banner-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .ink-mountains-img {
   position: absolute;
   inset: auto 0 0 0;
   width: 100%;
   height: 88%;
-  object-fit: cover;
-  object-position: center bottom;
   opacity: 0.92;
   animation: inkBreathe 14s ease-in-out infinite;
-  pointer-events: none;
-  user-select: none;
+}
+
+.ink-mountains-img svg {
+  height: 100%;
 }
 
 .ink-boat-img {
@@ -150,8 +177,6 @@ body::before {
   max-width: 180px;
   opacity: 0.78;
   animation: inkDrift 22s ease-in-out infinite;
-  pointer-events: none;
-  user-select: none;
 }
 
 .ink-blots-img {
@@ -159,11 +184,12 @@ body::before {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   opacity: 0.55;
   animation: inkBreathe 18s ease-in-out infinite reverse;
-  pointer-events: none;
-  user-select: none;
+}
+
+.ink-blots-img svg {
+  height: 100%;
 }
 
 .ink-bamboo-img {
@@ -173,8 +199,6 @@ body::before {
   width: 38%;
   max-width: 140px;
   opacity: 0.42;
-  pointer-events: none;
-  user-select: none;
 }
 
 .ink-blot {
@@ -217,25 +241,15 @@ body::before {
   animation: inkFadeUp 0.55s ease both 0.04s;
 }
 
-.ink-title-slip img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 .ink-fade-line {
-  display: block;
   width: min(200px, 70%);
-  height: auto;
   margin: 14px auto 12px;
   opacity: 0.7;
   animation: inkFadeUp 0.55s ease both 0.16s;
 }
 
 .ink-stages-strip {
-  display: block;
   width: min(340px, 92%);
-  height: auto;
   margin: 4px auto 8px;
   opacity: 0.72;
   animation: inkFadeUp 0.6s ease both 0.48s;
@@ -248,14 +262,20 @@ body::before {
   background: rgba(250, 246, 238, 0.45);
 }
 
-.ink-event-banner img {
-  display: block;
+.ink-event-banner-svg {
   width: 100%;
-  height: auto;
   max-height: 120px;
-  object-fit: cover;
-  object-position: center;
   opacity: 0.92;
+}
+
+.ink-event-banner-svg svg {
+  max-height: 120px;
+}
+
+/* 分卷啟用態：紙字於墨底，避免看起來像空白黑塊 */
+.ink-tab--active {
+  color: var(--paper-bright);
+  font-weight: var(--fw-strong);
 }
 
 .ink-mist-layer {

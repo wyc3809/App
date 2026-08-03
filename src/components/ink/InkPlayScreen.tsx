@@ -41,7 +41,7 @@ import { foeStyleLabel } from '@core/life/foeAi';
 import { track } from '../../telemetry/events';
 import { seasonToInk, placeToInk } from './sceneVariants';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal, InkEventBanner } from './InkDecor';
-import { pickEventBanner, eventBannerUrl } from '../../ui/inkAssets';
+import { pickEventBanner, eventBannerSvg } from '../../ui/inkAssets';
 import { InkHuashanPanel } from './InkHuashanPanel';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -159,7 +159,7 @@ export function InkPlayScreen({ state }: Props) {
   const displayTitle = isPack ? '江湖偶遇' : pendingEvent?.title;
   const eventBanner =
     pendingEvent != null
-      ? eventBannerUrl(
+      ? eventBannerSvg(
           pickEventBanner({
             title: pendingEvent.title,
             body: pendingEvent.body,
@@ -370,7 +370,7 @@ export function InkPlayScreen({ state }: Props) {
 
           {state.phase === 'playing' && pendingEvent && !showResult && (
             <section className="ink-panel ink-event">
-              {eventBanner && <InkEventBanner src={eventBanner} />}
+              {eventBanner && <InkEventBanner markup={eventBanner} />}
               <p className="ink-event-year">
                 {state.year}年{month}月 · {c.age}歲
                 {state.pending?.kind === 'special' ? ' · 奇遇' : ''}

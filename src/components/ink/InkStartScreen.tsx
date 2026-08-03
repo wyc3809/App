@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
-import { INK_DECOR } from '../../ui/inkAssets';
+import { INK_SVG } from '../../ui/inkAssets';
 
 type Props = {
   onStart: () => void;
@@ -8,6 +8,10 @@ type Props = {
   resumeHint?: string;
   onSeedDebug?: () => void;
 };
+
+function InkInlineSvg({ className, markup }: { className?: string; markup: string }) {
+  return <span className={className} aria-hidden dangerouslySetInnerHTML={{ __html: markup }} />;
+}
 
 export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }: Props) {
   return (
@@ -18,11 +22,11 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
           生
         </span>
         <div className="ink-title-slip" aria-hidden>
-          <img src={INK_DECOR.titleSlip()} alt="" draggable={false} />
+          <InkInlineSvg markup={INK_SVG.titleSlip} />
         </div>
         <p className="ink-eyebrow">水墨江湖 · 一生一卷</p>
         <h1 className="ink-brand">江湖一生</h1>
-        <img className="ink-fade-line" src={INK_DECOR.fadeLine()} alt="" draggable={false} aria-hidden />
+        <InkInlineSvg className="ink-fade-line" markup={INK_SVG.fadeLine} />
         <p className="ink-tagline">一筆成江湖，留白即命運</p>
       </header>
 
@@ -32,7 +36,7 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <p>落筆為生，蓋印為定</p>
       </section>
 
-      <img className="ink-stages-strip" src={INK_DECOR.stagesStrip()} alt="" draggable={false} aria-hidden />
+      <InkInlineSvg className="ink-stages-strip" markup={INK_SVG.stagesStrip} />
 
       <div className="ink-cta-stack">
         {resumeHint && (
