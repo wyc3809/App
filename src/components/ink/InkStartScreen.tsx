@@ -13,6 +13,10 @@ function InkInlineSvg({ className, markup }: { className?: string; markup: strin
   return <span className={className} aria-hidden dangerouslySetInnerHTML={{ __html: markup }} />;
 }
 
+/**
+ * 開卷首屏：印章 + 品牌 + 一句副句 + CTA + 遠山滿底。
+ * 不放題簽框／十階 icon 列（易似輸入框與現代 App 圖示列）。
+ */
 export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }: Props) {
   return (
     <div className="scroll-shell ink-enter ink-start">
@@ -21,28 +25,23 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <span className="ink-seal-static" aria-hidden>
           生
         </span>
-        <div className="ink-title-slip" aria-hidden>
-          <InkInlineSvg markup={INK_SVG.titleSlip} />
-        </div>
         <p className="ink-eyebrow">水墨江湖 · 一生一卷</p>
         <h1 className="ink-brand">江湖一生</h1>
-        <InkInlineSvg className="ink-fade-line" markup={INK_SVG.fadeLine} />
+        <InkInlineSvg className="ink-brush-divider" markup={INK_SVG.brushStroke} />
         <p className="ink-tagline">一筆成江湖，留白即命運</p>
       </header>
 
-      <section className="ink-verse">
+      <section className="ink-verse" aria-label="卷首">
         <p>千燈一別，歲月如刀</p>
         <p>奇遇路遇，皆在翻頁之間</p>
         <p>落筆為生，蓋印為定</p>
       </section>
 
-      <InkInlineSvg className="ink-stages-strip" markup={INK_SVG.stagesStrip} />
-
       <div className="ink-cta-stack">
         {resumeHint && (
           <button
             type="button"
-            className="ink-btn ink-btn--primary"
+            className="ink-btn ink-btn--primary ink-btn--scroll"
             onClick={() => {
               onContinue();
             }}
@@ -53,7 +52,9 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         )}
         <button
           type="button"
-          className={resumeHint ? 'ink-btn ink-btn--ghost' : 'ink-btn ink-btn--primary'}
+          className={
+            resumeHint ? 'ink-btn ink-btn--ghost ink-btn--scroll' : 'ink-btn ink-btn--primary ink-btn--scroll'
+          }
           onClick={() => {
             onStart();
           }}

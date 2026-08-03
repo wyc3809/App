@@ -5,8 +5,9 @@ import bambooSvg from '../../public/ink/decor/bamboo-corner.svg?raw';
 import blotsSvg from '../../public/ink/decor/ink-blots.svg?raw';
 import bannerBridgeSvg from '../../public/ink/decor/event-banner-bridge.svg?raw';
 import bannerRainInnSvg from '../../public/ink/decor/event-banner-rain-inn.svg?raw';
-import titleSlipSvg from '../../public/ink/frames/title-slip.svg?raw';
 import fadeLineSvg from '../../public/ink/frames/ink-fade-line.svg?raw';
+import brushStrokeSvg from '../../public/ink/frames/brush-stroke.svg?raw';
+import titleSlipSvg from '../../public/ink/frames/title-slip.svg?raw';
 import stagesStripSvg from '../../public/ink/icons/stages-strip.svg?raw';
 
 /** Strip XML/doctype noise; keep inner svg element */
@@ -48,6 +49,7 @@ export const INK_SVG = {
   bannerRainInn: prepare(bannerRainInnSvg, 'bnr'),
   titleSlip: prepare(titleSlipSvg, 'slip'),
   fadeLine: prepare(fadeLineSvg, 'fade'),
+  brushStroke: prepare(brushStrokeSvg, 'brush'),
   stagesStrip: prepare(stagesStripSvg, 'stg'),
 } as const;
 

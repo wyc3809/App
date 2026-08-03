@@ -2,17 +2,24 @@
   <defs>
     <linearGradient id="washA" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1a1a1a" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#1a1a1a" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#1a1a1a" stop-opacity="0.22"/>
     </linearGradient>
     <linearGradient id="washB" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1a1a1a" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#1a1a1a" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#1a1a1a" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="washC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a3530" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#2a3530" stop-opacity="0.1"/>
     </linearGradient>
     <filter id="softInk" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.4"/>
+      <feGaussianBlur stdDeviation="1.6"/>
     </filter>
   </defs>
-  <circle cx="340" cy="42" r="36" fill="#1a1a1a" fill-opacity="0.05" filter="url(#softInk)"/>
+  <circle cx="348" cy="38" r="40" fill="#1a1a1a" fill-opacity="0.04" filter="url(#softInk)"/>
+  <circle cx="60" cy="70" r="28" fill="#1a1a1a" fill-opacity="0.035" filter="url(#softInk)"/>
+  <path fill="url(#washC)" filter="url(#softInk)" d="M-40,180 L-40,128 Q50,78 130,108 Q210,138 300,88 Q360,58 450,92 L450,180 Z"/>
   <path fill="url(#washB)" filter="url(#softInk)" d="M-30,180 L-30,110 Q70,58 150,88 Q240,118 330,70 L450,100 L450,180 Z"/>
   <path fill="url(#washA)" filter="url(#softInk)" d="M0,180 L0,95 Q90,40 200,72 Q290,98 420,55 L420,180 Z"/>
+  <path stroke="#1a1a1a" stroke-opacity="0.18" stroke-width="1.2" stroke-linecap="round" fill="none" d="M40 132c28-18 52-10 78-22M210 118c36-16 70-8 110-24"/>
 </svg>

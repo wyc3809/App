@@ -129,8 +129,33 @@ body::before {
 }
 
 .ink-backdrop--hero {
-  height: 62%;
-  mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 100%);
+  height: 68%;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 100%);
+}
+
+.ink-backdrop--hero .ink-mountains-img {
+  opacity: 1;
+  height: 92%;
+}
+
+.ink-backdrop--hero .ink-boat-img {
+  opacity: 0.85;
+}
+
+.ink-backdrop--hero .ink-bamboo-img {
+  opacity: 0.5;
+}
+
+.ink-start .ink-hero {
+  padding-top: 40px;
+}
+
+.ink-start .ink-brand {
+  margin-top: 4px;
+}
+
+.ink-start .ink-verse {
+  margin-top: 6px;
 }
 
 .ink-mountains {
@@ -145,6 +170,7 @@ body::before {
 .ink-blots-img,
 .ink-bamboo-img,
 .ink-fade-line,
+.ink-brush-divider,
 .ink-stages-strip,
 .ink-event-banner-svg,
 .ink-title-slip {
@@ -159,6 +185,7 @@ body::before {
 .ink-blots-img svg,
 .ink-bamboo-img svg,
 .ink-fade-line svg,
+.ink-brush-divider svg,
 .ink-stages-strip svg,
 .ink-title-slip svg,
 .ink-event-banner-svg svg {
@@ -252,35 +279,37 @@ body::before {
   animation: inkFadeUp 0.55s ease both 0.04s;
 }
 
-.ink-fade-line {
-  width: min(200px, 70%);
-  margin: 14px auto 12px;
-  opacity: 0.7;
+.ink-fade-line,
+.ink-brush-divider {
+  width: min(220px, 72%);
+  margin: 16px auto 14px;
+  opacity: 0.78;
   animation: inkFadeUp 0.55s ease both 0.16s;
 }
 
 .ink-stages-strip {
   width: min(340px, 92%);
   margin: 4px auto 8px;
-  opacity: 0.72;
+  opacity: 0.55;
   animation: inkFadeUp 0.6s ease both 0.48s;
 }
 
 .ink-event-banner {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   overflow: hidden;
-  border: 1px solid var(--ink-faint);
-  background: rgba(250, 246, 238, 0.45);
+  border: none;
+  border-bottom: 1px solid var(--ink-faint);
+  background: transparent;
 }
 
 .ink-event-banner-svg {
   width: 100%;
-  max-height: 120px;
-  opacity: 0.92;
+  max-height: 132px;
+  opacity: 0.95;
 }
 
 .ink-event-banner-svg svg {
-  max-height: 120px;
+  max-height: 132px;
 }
 
 /* 分卷啟用態：紙字於墨底，避免看起來像空白黑塊 */
@@ -655,16 +684,21 @@ body::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin-bottom: 12px;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 14px;
   font-family: var(--font-display);
-  font-size: 1.55rem;
+  font-size: 1.6rem;
   color: var(--cinnabar);
-  border: 2px solid var(--cinnabar);
-  box-shadow: inset 0 0 0 2px var(--paper);
-  transform: rotate(-5deg);
+  border: 2.5px solid var(--cinnabar);
+  box-shadow:
+    inset 0 0 0 3px var(--paper),
+    inset 0 0 0 5px rgba(163, 58, 50, 0.35),
+    0 0 0 1px rgba(163, 58, 50, 0.18);
+  transform: rotate(-6deg);
   animation: sealBreath 5.5s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(163, 58, 50, 0.08), transparent 55%);
 }
 
 .ink-seal-static--end {
@@ -708,13 +742,14 @@ body::before {
 
 .ink-btn {
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: var(--fw-ui);
-  letter-spacing: 0.14em;
-  padding: 14px 16px;
-  min-height: 48px;
+  letter-spacing: 0.18em;
+  padding: 15px 16px;
+  min-height: 50px;
   cursor: pointer;
   border: 1px solid var(--ink);
+  border-radius: 1px;
   background: transparent;
   color: var(--ink);
   touch-action: manipulation;
@@ -723,33 +758,58 @@ body::before {
     background 0.08s ease,
     color 0.08s ease,
     transform 0.06s ease,
-    box-shadow 0.08s ease,
-    border-color 0.08s ease;
+    border-color 0.08s ease,
+    opacity 0.08s ease;
 }
 
 .ink-btn--primary {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--paper-bright);
   display: flex;
   flex-direction: column;
   gap: 4px;
   justify-content: center;
-  box-shadow: 0 5px 16px rgba(26, 26, 26, 0.16);
+  box-shadow: none;
 }
 
 .ink-btn--primary:hover {
-  background: #2c2c2c;
-  box-shadow: 0 8px 22px rgba(26, 26, 26, 0.2);
+  background: #2a2a2a;
+  box-shadow: none;
 }
 
 .ink-btn--primary:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.97);
   background: #151515;
-  box-shadow: 0 2px 8px rgba(26, 26, 26, 0.18);
+  box-shadow: none;
+}
+
+.ink-btn--scroll {
+  position: relative;
+}
+
+.ink-btn--scroll::before,
+.ink-btn--scroll::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.ink-btn--scroll::before {
+  left: 10px;
+}
+
+.ink-btn--scroll::after {
+  right: 10px;
 }
 
 .ink-btn--ghost {
-  background: transparent;
+  background: rgba(250, 246, 238, 0.35);
+  border-color: rgba(26, 26, 26, 0.45);
 }
 
 .ink-btn--ghost:hover,
@@ -2297,6 +2357,7 @@ body::before {
   .ink-blots-img,
   .ink-title-slip,
   .ink-fade-line,
+  .ink-brush-divider,
   .ink-stages-strip,
   .ink-mist-layer,
   .ink-brush-sweep,
