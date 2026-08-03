@@ -6,7 +6,7 @@ import { artForStanding } from '@data/content/packs';
 import { grantGear, raiseBaseMaxHp, raiseBaseMaxQi, ensureGear } from './equipment';
 import { addCondition } from './monthly';
 import { learnMartialArt } from './flavor';
-import { displaySkillName } from './playerText';
+import { displaySkillName, isStatDeltaLine } from './playerText';
 import { applyNatureDelta, ensureNature } from './nature';
 import { applyPracticeOutcome, type WanderPracticeActionId } from './actions';
 import { recordDeath } from './death';
@@ -217,9 +217,7 @@ export function applyEffects(state: LifeGameState, effects: GameEffect[]): Effec
         const outcomeLogs = applyPracticeOutcome(state, eff.action as WanderPracticeActionId);
         logs.push(...outcomeLogs);
         for (const line of outcomeLogs) {
-          if (/^(銀兩|氣血|名望|武學)/.test(line) || /上限 \+|內息 \+|武學 \+/.test(line)) {
-            deltas.push(line);
-          }
+          if (isStatDeltaLine(line)) deltas.push(line);
         }
         break;
       }

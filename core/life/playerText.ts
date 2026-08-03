@@ -199,3 +199,67 @@ export function mergeDeltaLines(lines: string[]): string[] {
 export function sanitizePlayerLines(lines: string[]): string[] {
   return mergeDeltaLines(lines.map(sanitizePlayerLine).filter((l) => l && l !== '……'));
 }
+
+/** 行首即為消長芯片（不含敘事前綴） */
+export function isStatDeltaLine(line: string): boolean {
+  return /^(銀兩|氣血上限|氣血|名望|武學|內息|內力上限|內力|裝備|心性|天下|疲勞|閱事|膽識|悟性|魅力|根骨|福緣|人情|記下|獲得|後續|傷勢|餘波|屬性|[俠邪狂惡][+\-＋－]+)/.test(
+    line.trim(),
+  );
+}
+
+/** 句中嵌著的數值消長，如「內息 +16」「氣血上限＋8（現 300）」 */
+const EMBEDDED_STAT_CLAUSE =
+  /(銀兩|氣血上限|氣血|名望|武學|內息|內力上限|內力)\s*([＋+\-－])\s*(\d+)(?:\s*（現\s*\d+）)?/g;
+
+function normalizeDeltaChip(label: string, sign: string, amount: string): string {
+  const n = Number(amount);
+  if (!n) return '';
+  if (sign === '＋' || sign === '+') return `${label}＋${n}`;
+  return `${label}-${n}`;
+}
+
+/**
+ * 把敘事與數值消長拆開：正文不重複顯示「內息＋N」等，只留下面消長區。
+ */
+export function partitionStoryAndDeltas(lines: string[]): { story: string; deltas: string[] } {
+  const storyParts: string[] = [];
+  const deltas: string[] = [];
+  const seenStory = new Set<string>();
+
+  for (const raw of lines) {
+    const line = sanitizePlayerLine(String(raw ?? ''));
+    if (!line || line === '……') continue;
+
+    if (isStatDeltaLine(line)) {
+      deltas.push(line);
+      continue;
+    }
+
+    const chips: string[] = [];
+    let story = line.replace(EMBEDDED_STAT_CLAUSE, (_m, label: string, sign: string, amount: string) => {
+      const chip = normalizeDeltaChip(label, sign, amount);
+      if (chip) chips.push(chip);
+      return '';
+    });
+    if (chips.length) deltas.push(...chips);
+
+    story = story
+      .replace(/[，、]\s*[，、]/g, '，')
+      .replace(/([。．！？!?])\s*[，、]+/g, '$1')
+      .replace(/[，、]+\s*([。．！？!?])/g, '$1')
+      .replace(/^[，、\s]+|[，、\s]+$/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/，+/g, '，')
+      .trim();
+    // 剝完數值後若只剩空殼標點，丟棄
+    if (!story || !/[\u4e00-\u9fff]/.test(story)) continue;
+    if (seenStory.has(story)) continue;
+    seenStory.add(story);
+    storyParts.push(story);
+  }
+
+  return {
+    story: storyParts.join('\n\n'),
+    deltas: sanitizePlayerLines(deltas),
+  };
+}

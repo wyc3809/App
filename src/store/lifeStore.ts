@@ -20,7 +20,7 @@ import { performPracticeAction, PRACTICE_ACTIONS, type PracticeActionId } from '
 import { equipGear } from '@core/life/equipment';
 import { buildLifeSummary } from '@core/life/summary';
 import { playerCombatTurn, getPlayerMoves, resolveCombatDisposition, type CombatFoeDisposition } from '@core/life/combat';
-import { displayChoiceText, sanitizePlayerLine, sanitizePlayerLines } from '@core/life/playerText';
+import { displayChoiceText, sanitizePlayerLine, sanitizePlayerLines, partitionStoryAndDeltas } from '@core/life/playerText';
 import { BASIC_STRIKE } from '@data/skills/catalog';
 import {
   startHuashanBracket,
@@ -292,6 +292,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
       } as Record<string, string>)[actionId] ??
       actionId;
     const startedCombat = Boolean(next.pendingCombat);
+    const parted = partitionStoryAndDeltas(logs);
     set({
       state: next,
       sealText: next.phase === 'summary' ? '終' : startedCombat ? '戰' : '煉',
@@ -301,8 +302,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         : {
             title: '修煉',
             choiceText: label,
-            feedback: sanitizePlayerLine(logs[0] ?? '事畢。'),
-            deltas: sanitizePlayerLines(logs.slice(1)),
+            feedback: parted.story || sanitizePlayerLine(logs[0] ?? '事畢。'),
+            deltas: parted.deltas,
           },
     });
   },

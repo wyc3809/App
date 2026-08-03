@@ -517,6 +517,33 @@ describe('life event engine', () => {
       '傷勢',
     ]);
     expect(sanitizePlayerLines(['銀兩－11', '銀兩-3', '武學＋2', '武學-2'])).toEqual(['銀兩-14']);
+
+    const { partitionStoryAndDeltas } = await import('../core/life/playerText');
+    const parted = partitionStoryAndDeltas([
+      '你打坐運功，內息 +16，內力上限 +5（現 271）。',
+      '「閉目運功」之後局面鬆動：你袖裡多了一紙可核對的抄件。',
+      '氣血-4',
+    ]);
+    expect(parted.story).toContain('你打坐運功');
+    expect(parted.story).toContain('抄件');
+    expect(parted.story).not.toMatch(/內息|內力上限|\+16|\+5|271|氣血/);
+    expect(parted.deltas).toEqual(expect.arrayContaining(['內息＋16', '內力上限＋5', '氣血-4']));
+  });
+
+  it('practice wander feedback keeps numbers only in deltas', async () => {
+    const { applyEffects } = await import('../core/life/effects');
+    const { partitionStoryAndDeltas } = await import('../core/life/playerText');
+    const { getEventById, fullCatalog } = await import('../core/life/eventEngine');
+    initRng(11);
+    const state = createNewLife(11);
+    const ev = getEventById(fullCatalog(), 'wander_train_internal')!;
+    const fair = ev.choices.find((c) => c.id === 'do')!.outcomes.find((o) => o.id === 'do_fair')!;
+    const applied = applyEffects(state, fair.effects);
+    const parted = partitionStoryAndDeltas(applied.logs);
+    expect(parted.story).toMatch(/打坐|運功|調息/);
+    expect(parted.story).not.toMatch(/內息\s*[＋+]?\s*\d|內力上限\s*[＋+]?\s*\d/);
+    expect(parted.deltas.some((d) => /內息＋\d+/.test(d))).toBe(true);
+    expect(parted.deltas.some((d) => /內力上限＋\d+/.test(d))).toBe(true);
   });
 
   it('pack outcomes never leak English paths or [object Object]', async () => {

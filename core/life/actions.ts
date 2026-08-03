@@ -95,7 +95,8 @@ export function applyPracticeOutcome(
       c.health = clamp(c.health - rng.nextInt(0, 6), 1, c.maxHealth);
       c.fatigue = clamp(c.fatigue + rng.nextInt(4, 10), 0, 100);
       c.martial += gain;
-      logs.push(`你苦練外功，武學 +${gain}。`);
+      logs.push('你苦練外功，拳腳往復，汗透衣背。');
+      logs.push(`武學＋${gain}`);
       const externals = c.skills.filter((id) => getSkillDef(id)?.kind === 'external');
       const pool = externals.length ? externals : c.skills;
       if (pool.length) {
@@ -114,7 +115,9 @@ export function applyPracticeOutcome(
       const cap = rng.nextInt(3, 8);
       raiseBaseMaxQi(c, cap);
       c.qi = clamp(c.qi + qiGain, 0, c.maxQi);
-      logs.push(`你打坐運功，內息 +${qiGain}，內力上限 +${cap}（現 ${c.maxQi}）。`);
+      logs.push('你打坐運功，調息入定，真氣在經脈裡緩緩周轉。');
+      logs.push(`內息＋${qiGain}`);
+      logs.push(`內力上限＋${cap}`);
       const internals = c.skills.filter((id) => getSkillDef(id)?.kind === 'internal');
       const breath = internals[0] ?? c.skills.find((s) => /breath|吐納/i.test(s));
       if (breath) {
@@ -131,7 +134,8 @@ export function applyPracticeOutcome(
       const up = rng.nextInt(8, 20);
       raiseBaseMaxHp(c, up);
       c.fatigue = clamp(c.fatigue + rng.nextInt(6, 14), 0, 100);
-      logs.push(`你以藥浴與樁功淬體，氣血上限 +${up}（現 ${c.maxHealth}）。`);
+      logs.push('你以藥浴與樁功淬體，筋骨隱隱發沉，像是又厚了一層。');
+      logs.push(`氣血上限＋${up}`);
       break;
     }
     case 'inquire_rumors': {
