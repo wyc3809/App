@@ -939,10 +939,11 @@ describe('life event engine', () => {
       state.pendingCombat = null;
       if ((state.lifeArc?.monthsLeft ?? 0) <= 0) break;
       startMonth(state);
-      if (state.pending?.eventId?.startsWith('arc_visit_')) {
+      const pendingId = String((state as { pending?: { eventId?: string } | null }).pending?.eventId ?? '');
+      if (pendingId.startsWith('arc_visit_')) {
         expect(state.lifeArc!.monthsLeft).toBeLessThanOrEqual(0);
       } else {
-        expect(state.pending?.eventId ?? '').not.toMatch(/^arc_visit_arc_shen_heal_0$/);
+        expect(pendingId).not.toMatch(/^arc_visit_arc_shen_heal_0$/);
       }
     }
 
@@ -957,7 +958,8 @@ describe('life event engine', () => {
     };
     state.pending = null;
     startMonth(state);
-    expect(state.pending?.eventId).toBe('arc_visit_arc_shen_heal_0');
+    const visitId = String((state as { pending?: { eventId?: string } | null }).pending?.eventId ?? '');
+    expect(visitId).toBe('arc_visit_arc_shen_heal_0');
     const ev = resolvePendingEvent(state)!;
     applyChoice(state, ev, 'go');
     expect(state.lifeArc?.beat).toBe(1);
