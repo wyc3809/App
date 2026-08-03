@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ChevronRight,
   Link2,
   MoreHorizontal,
   Pencil,
@@ -25,6 +26,7 @@ import {
 } from "recharts";
 import { AddValueModal } from "@/components/AddValueModal";
 import { AccountForm } from "@/components/AccountForm";
+import { HistoryEntrySheet } from "@/components/HistoryEntrySheet";
 import { TransactionModal } from "@/components/TransactionModal";
 import { categoryLabel } from "@/lib/categories";
 import {
@@ -87,6 +89,7 @@ export function AccountDetailContent() {
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<AccountValueEntry | null>(null);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<ValueHistoryPoint | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -328,13 +331,16 @@ export function AccountDetailContent() {
       </div>
 
       <section className="animate-fade-up-delay-2">
-        <h2 className="mb-2 font-display text-xl">Value History</h2>
+        <h2 className="mb-1 font-display text-xl">Value History</h2>
+        <p className="mb-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
+          Tap a row to see the linked ledger and edit or delete it.
+        </p>
         {history.length === 0 ? (
           <div
             className="rounded-2xl px-4 py-8 text-center text-sm"
             style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
           >
-            No value entries yet. Tap Update or Ledger to add one.
+            No value entries yet. Tap Update value or Add ledger.
           </div>
         ) : (
           <ul className="card-surface divide-y overflow-hidden" style={{ borderColor: "var(--border)" }}>
@@ -345,7 +351,6 @@ export function AccountDetailContent() {
               const good = account.isLiability
                 ? (point.changeAbsolute ?? 0) <= 0
                 : (point.changeAbsolute ?? 0) >= 0;
-              const entry = entries.find((e) => e.id === point.entryId);
               const linkedTx = resolveLedgerTransaction(
                 transactions,
                 account.id,
@@ -354,104 +359,67 @@ export function AccountDetailContent() {
               const isLedger = Boolean(linkedTx || point.transactionId);
 
               return (
-                <li key={point.entryId} className="px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
+                <li key={point.entryId}>
+                  <button
+                    type="button"
+                    className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-[var(--bg-muted)]"
+                    onClick={() => setSelectedPoint(point)}
+                  >
                     <div className="min-w-0">
                       <p className="font-semibold">{point.label}</p>
-                      {isLedger && (
+                      {isLedger ? (
                         <p
                           className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide"
                           style={{ color: "var(--accent)" }}
                         >
                           <Link2 size={11} />
-                          Ledger
-                          {linkedTx ? ` · ${linkedTx.type}` : ""}
+                          Linked ledger
+                          {linkedTx ? ` · ${linkedTx.title}` : ""}
                         </p>
-                      )}
-                      {point.note && (
+                      ) : (
                         <p className="mt-0.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
-                          {point.note}
+                          {point.note || "Manual value update"}
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p
-                        className="font-semibold tabular-nums"
-                        style={{
-                          color: account.isLiability ? "var(--negative)" : "var(--fg)",
-                        }}
-                      >
-                        {formatMoney(pointSigned, account.currency, currencies, {
-                          privacy: settings.isPrivacyMode,
-                          showSign: account.isLiability,
-                        })}
-                      </p>
-                      {point.changeAbsolute != null && (
+                    <div className="flex shrink-0 items-start gap-1">
+                      <div className="text-right">
                         <p
-                          className="mt-0.5 text-xs font-semibold tabular-nums"
+                          className="font-semibold tabular-nums"
                           style={{
-                            color: good ? "var(--positive)" : "var(--negative)",
+                            color: account.isLiability ? "var(--negative)" : "var(--fg)",
                           }}
                         >
-                          {settings.isPrivacyMode
-                            ? "••••"
-                            : `${
-                                point.changePercent != null
-                                  ? `${formatPercent(Math.abs(point.changePercent)).replace("+", "")} `
-                                  : ""
-                              }${good ? "↑" : "↓"} ${formatMoney(
-                                Math.abs(point.changeAbsolute),
-                                account.currency,
-                                currencies,
-                                { compact: true },
-                              )}`}
+                          {formatMoney(pointSigned, account.currency, currencies, {
+                            privacy: settings.isPrivacyMode,
+                            showSign: account.isLiability,
+                          })}
                         </p>
-                      )}
-                      {(entry || linkedTx) && (
-                        <div className="mt-1.5 flex justify-end gap-2">
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 text-xs font-semibold"
-                            style={{ color: "var(--accent)" }}
-                            onClick={() => {
-                              if (linkedTx) {
-                                setEditingTx(linkedTx);
-                                return;
-                              }
-                              if (entry) setEditingEntry(entry);
+                        {point.changeAbsolute != null && (
+                          <p
+                            className="mt-0.5 text-xs font-semibold tabular-nums"
+                            style={{
+                              color: good ? "var(--positive)" : "var(--negative)",
                             }}
                           >
-                            <Pencil size={12} />
-                            {linkedTx ? "Edit ledger" : "Edit"}
-                          </button>
-                          {history.length > 1 && (
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-1 text-xs font-semibold"
-                              style={{ color: "var(--danger)" }}
-                              onClick={() => {
-                                if (linkedTx) {
-                                  if (confirm(`Delete ledger “${linkedTx.title}”?`)) {
-                                    deleteTransaction(linkedTx.id);
-                                  }
-                                  return;
-                                }
-                                if (
-                                  entry &&
-                                  confirm(`Delete entry on ${point.date}?`)
-                                ) {
-                                  deleteValueEntry(entry.id);
-                                }
-                              }}
-                            >
-                              <Trash2 size={12} />
-                              {linkedTx ? "Delete ledger" : "Delete"}
-                            </button>
-                          )}
-                        </div>
-                      )}
+                            {settings.isPrivacyMode
+                              ? "••••"
+                              : `${good ? "↑" : "↓"} ${formatMoney(
+                                  Math.abs(point.changeAbsolute),
+                                  account.currency,
+                                  currencies,
+                                  { compact: true },
+                                )}`}
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight
+                        size={18}
+                        className="mt-0.5"
+                        style={{ color: "var(--fg-subtle)" }}
+                      />
                     </div>
-                  </div>
+                  </button>
                 </li>
               );
             })}
@@ -505,6 +473,43 @@ export function AccountDetailContent() {
           setEditingTx(null);
         }}
       />
+      {selectedPoint && (
+        <HistoryEntrySheet
+          open
+          account={account}
+          point={selectedPoint}
+          linkedTx={
+            resolveLedgerTransaction(transactions, account.id, selectedPoint) ??
+            null
+          }
+          currencies={currencies}
+          settings={settings}
+          canDelete={history.length > 1}
+          onClose={() => setSelectedPoint(null)}
+          onEditLedger={(tx) => {
+            setSelectedPoint(null);
+            setEditingTx(tx);
+          }}
+          onDeleteLedger={(tx) => {
+            if (confirm(`Delete ledger “${tx.title}”?`)) {
+              deleteTransaction(tx.id);
+              setSelectedPoint(null);
+            }
+          }}
+          onEditValue={() => {
+            const entry = entries.find((e) => e.id === selectedPoint.entryId);
+            setSelectedPoint(null);
+            if (entry) setEditingEntry(entry);
+          }}
+          onDeleteValue={() => {
+            const entry = entries.find((e) => e.id === selectedPoint.entryId);
+            if (entry && confirm(`Delete entry on ${selectedPoint.date}?`)) {
+              deleteValueEntry(entry.id);
+              setSelectedPoint(null);
+            }
+          }}
+        />
+      )}
       <AccountForm open={editOpen} initial={account} onClose={() => setEditOpen(false)} />
     </div>
   );
