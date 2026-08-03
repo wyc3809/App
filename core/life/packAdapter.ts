@@ -78,9 +78,9 @@ function ensureThreeOnly(event: GameEvent): GameEvent {
         type: 'narrate',
         text: `「${choiceText ?? choiceId}」這條路走不通：門後湧出後援，你帶傷退出，袖裡的線索也被抽走。`,
       },
-      { type: 'health', amount: -12 },
+      { type: 'health', amount: -6 },
     ],
-    0.12,
+    0.1,
   );
 }
 

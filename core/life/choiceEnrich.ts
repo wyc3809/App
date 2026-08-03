@@ -3,13 +3,16 @@ import type { EventChoice, EventOutcome, GameEffect, GameEvent } from '@interfac
 /** 選擇姿態：影響三分支權重（順遂／波折／事與願違） */
 export type ChoiceStance = 'aggressive' | 'virtuous' | 'cunning' | 'cautious' | 'neutral';
 
+/** 場景調性：決定風險分支敘事與傷害量級，避免打坐寫成抄件談判 */
+export type SceneTone = 'practice' | 'combat' | 'social';
+
 const STANCE_WEIGHTS: Record<ChoiceStance, { fair: number; mixed: number; ill: number }> = {
   // 越衝動，好壞越難預料——背不出「標準答案」
-  aggressive: { fair: 32, mixed: 33, ill: 35 },
-  virtuous: { fair: 38, mixed: 37, ill: 25 },
-  cunning: { fair: 36, mixed: 32, ill: 32 },
-  cautious: { fair: 42, mixed: 38, ill: 20 },
-  neutral: { fair: 38, mixed: 36, ill: 26 },
+  aggressive: { fair: 34, mixed: 36, ill: 30 },
+  virtuous: { fair: 40, mixed: 38, ill: 22 },
+  cunning: { fair: 38, mixed: 34, ill: 28 },
+  cautious: { fair: 44, mixed: 38, ill: 18 },
+  neutral: { fair: 40, mixed: 38, ill: 22 },
 };
 
 export function inferChoiceStance(text: string): ChoiceStance {
@@ -23,10 +26,29 @@ export function inferChoiceStance(text: string): ChoiceStance {
   if (/暗|偷|騙|賣|撈|佔|訛|私下|趁亂|易服|拆讀|假裝沒|封口|黑譜收下|邪/.test(t)) {
     return 'cunning';
   }
-  if (/避|觀望|退去|不介入|離開|繞道|另尋|等待|默默|冷眼|婉拒|保持|抽身|只看|遠觀/.test(t)) {
+  if (/避|觀望|退去|不介入|離開|繞道|另尋|等待|默默|冷眼|婉拒|保持|抽身|只看|遠觀|改日|歇手|休息/.test(t)) {
     return 'cautious';
   }
   return 'neutral';
+}
+
+export function inferSceneTone(base: GameEffect[], choiceText: string, eventTags: string[] = []): SceneTone {
+  if (
+    eventTags.includes('practice_wander') ||
+    base.some((e) => e.type === 'practice') ||
+    /運功|打坐|苦練|淬體|鍛造|尋訪|修煉|調息|樁功|藥浴|開爐|靜室/.test(choiceText)
+  ) {
+    return 'practice';
+  }
+  if (
+    eventTags.includes('combat') ||
+    eventTags.includes('boss') ||
+    eventTags.includes('road') ||
+    /戰|刀|殺|對決|比武|拔刀|動手|應戰|突襲/.test(choiceText)
+  ) {
+    return 'combat';
+  }
+  return 'social';
 }
 
 function cloneEffects(effects: GameEffect[]): GameEffect[] {
@@ -92,27 +114,91 @@ function stripIrreversible(effects: GameEffect[]): GameEffect[] {
   );
 }
 
+function hasPractice(effects: GameEffect[]): boolean {
+  return effects.some((e) => e.type === 'practice');
+}
+
 function narrateOnly(effects: GameEffect[]): GameEffect | undefined {
   return effects.find((e) => e.type === 'narrate');
 }
 
-function fairCost(stance: ChoiceStance, choiceText: string): GameEffect[] {
-  const act = choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
+function actLabel(choiceText: string): string {
+  return choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
+}
+
+/** 修煉／鍛造／尋訪：敘事貼合本業，氣血代價遠低於江湖衝突 */
+function practiceFair(act: string): GameEffect[] {
+  return [
+    {
+      type: 'narrate',
+      text: `「${act}」時氣息漸穩：窗外風聲遠了，你把心神收回丹田，這一輪總算沒白費。`,
+    },
+  ];
+}
+
+function practiceMixed(act: string): GameEffect[] {
+  return [
+    { type: 'qi', amount: -4 },
+    {
+      type: 'narrate',
+      text: `「${act}」做到半途，雜念一閃，內息略滯。你及時收功，進境打了折扣，卻未傷到根本。`,
+    },
+  ];
+}
+
+function practiceIll(act: string): GameEffect[] {
+  return [
+    { type: 'health', amount: -3 },
+    { type: 'qi', amount: -8 },
+    {
+      type: 'narrate',
+      text: `「${act}」岔了半步：氣機逆湧，胸口發悶。你連忙散功躺平，今日修為未進，倒先討了場虛驚。`,
+    },
+  ];
+}
+
+function combatFair(act: string): GameEffect[] {
+  return [
+    { type: 'health', amount: -2 },
+    {
+      type: 'narrate',
+      text: `「${act}」大致得手：對方退了半步，你也擦破了皮肉。傷口不深，卻提醒你——贏，也要留力氣走夜路。`,
+    },
+  ];
+}
+
+function combatMixed(act: string): GameEffect[] {
+  return [
+    { type: 'health', amount: -5 },
+    { type: 'martial', amount: 1 },
+    {
+      type: 'narrate',
+      text: `硬來「${act}」：你逼出半句真話，肩頭也挨了實打。血滲衣襟，情報卻夠你跟到下一條巷。`,
+    },
+  ];
+}
+
+function combatIll(act: string): GameEffect[] {
+  return [
+    { type: 'health', amount: -8 },
+    { type: 'money', amount: -4 },
+    {
+      type: 'narrate',
+      text: `「${act}」踢到鐵板：後援從門後湧出，短棍砸肩，線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
+    },
+  ];
+}
+
+function socialFair(stance: ChoiceStance, act: string): GameEffect[] {
   switch (stance) {
     case 'aggressive':
-      return [
-        { type: 'health', amount: -3 },
-        {
-          type: 'narrate',
-          text: `「${act}」大致得手：對方退了半步，你也擦破了皮肉。傷口不深，卻提醒你——贏，也要留力氣走夜路。`,
-        },
-      ];
+      return combatFair(act);
     case 'virtuous':
       return [
-        { type: 'money', amount: -3 },
+        { type: 'money', amount: -2 },
         {
           type: 'narrate',
-          text: `你堅持「${act}」，事辦成了。櫃上少了幾兩銀作押／藥錢，換來的是對方親口吐出的關鍵一句。`,
+          text: `你堅持「${act}」，事辦成了。櫃上少了兩許銀作押，換來對方親口吐出的關鍵一句。`,
         },
       ];
     case 'cunning':
@@ -125,39 +211,29 @@ function fairCost(stance: ChoiceStance, choiceText: string): GameEffect[] {
       ];
     case 'cautious':
       return [
-        { type: 'martial', amount: 1 },
         {
           type: 'narrate',
-          text: `你以「${act}」觀變，沒深陷局中。記下暗號與來去方向後抽身，拳腳雖未大進，眼力卻長了一寸。`,
+          text: `你以「${act}」觀變，沒深陷局中。記下來去方向後抽身，眼力長了一寸。`,
         },
       ];
     default:
       return [
         {
           type: 'narrate',
-          text: `「${act}」之後局面鬆動：你袖裡多了一紙可核對的抄件，過程雖有小波折，終究沒空手。`,
+          text: `「${act}」之後局面鬆動：你把該問的問清、該記的記下，過程雖有小波折，終究沒空手。`,
         },
       ];
   }
 }
 
-function mixedExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
-  const act = choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
+function socialMixed(stance: ChoiceStance, act: string): GameEffect[] {
   switch (stance) {
     case 'aggressive':
-      return [
-        { type: 'health', amount: -8 },
-        { type: 'martial', amount: 1 },
-        {
-          type: 'narrate',
-          text: `硬來「${act}」：你逼出半句真話，肩頭也挨了實打。血滲衣襟，情報卻夠你跟到下一條巷。`,
-        },
-      ];
+      return combatMixed(act);
     case 'virtuous':
       return [
-        { type: 'money', amount: -8 },
+        { type: 'money', amount: -5 },
         { type: 'reputation', amount: 1 },
-        { type: 'health', amount: -3 },
         {
           type: 'narrate',
           text: `你為「${act}」貼了銀兩與力氣，人是護住了，自己卻空了一截。街坊開始記得你的面孔。`,
@@ -165,9 +241,8 @@ function mixedExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
       ];
     case 'cunning':
       return [
-        { type: 'money', amount: 6 },
-        { type: 'reputation', amount: -2 },
-        { type: 'nature', delta: { xie: 1 } },
+        { type: 'money', amount: 4 },
+        { type: 'reputation', amount: -1 },
         {
           type: 'narrate',
           text: `「${act}」讓銀子進袋，也讓一名跑堂盯上了你。天亮前你換了客棧，枕下仍壓着那半頁密帳。`,
@@ -176,7 +251,6 @@ function mixedExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
     case 'cautious':
       return [
         { type: 'attr', delta: { wuXing: 1 } },
-        { type: 'money', amount: -2 },
         {
           type: 'narrate',
           text: `你以「${act}」避開鋒芒，也眼睜睜看機緣被捷足者取走。人安穩了，袖裡只多了兩句旁聽來的風聲。`,
@@ -184,33 +258,22 @@ function mixedExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
       ];
     default:
       return [
-        { type: 'health', amount: -4 },
-        { type: 'money', amount: 3 },
+        { type: 'money', amount: 2 },
         {
           type: 'narrate',
-          text: `「${act}」有得有失寫得很具體：你撿回三兩銀角，膝蓋卻青了一塊；名冊抄全了，最末一行卻被人撕走。`,
+          text: `「${act}」有得有失：你問到半截真話，關鍵一句卻被人岔開；銀錢未怎麼動，心神倒費了不少。`,
         },
       ];
   }
 }
 
-function illExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
-  const act = choiceText.replace(/[。．！？!?、，,\s]/g, '') || '此舉';
+function socialIll(stance: ChoiceStance, act: string): GameEffect[] {
   switch (stance) {
     case 'aggressive':
-      return [
-        { type: 'health', amount: -12 },
-        { type: 'money', amount: -6 },
-        { type: 'martial', amount: 1 },
-        {
-          type: 'narrate',
-          text: `「${act}」踢到鐵板：後援從門後湧出，短棍砸肩，線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
-        },
-      ];
+      return combatIll(act);
     case 'virtuous':
       return [
-        { type: 'money', amount: -10 },
-        { type: 'health', amount: -5 },
+        { type: 'money', amount: -6 },
         { type: 'reputation', amount: 1 },
         {
           type: 'narrate',
@@ -219,9 +282,8 @@ function illExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
       ];
     case 'cunning':
       return [
-        { type: 'money', amount: -8 },
-        { type: 'reputation', amount: -3 },
-        { type: 'nature', delta: { e: 1 } },
+        { type: 'money', amount: -5 },
+        { type: 'reputation', amount: -2 },
         { type: 'attr', delta: { danShi: 1 } },
         {
           type: 'narrate',
@@ -231,7 +293,6 @@ function illExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
     case 'cautious':
       return [
         { type: 'reputation', amount: -1 },
-        { type: 'attr', delta: { fuYuan: 1 } },
         {
           type: 'narrate',
           text: `你把「${act}」做得太乾淨，關鍵時刻無人作證。事主被拖走時丟下一句：「早知不該信你。」你保住了命，也少了一截線。`,
@@ -239,37 +300,82 @@ function illExtras(stance: ChoiceStance, choiceText: string): GameEffect[] {
       ];
     default:
       return [
-        { type: 'health', amount: -9 },
-        { type: 'money', amount: -5 },
-        { type: 'martial', amount: 1 },
+        { type: 'health', amount: -4 },
+        { type: 'money', amount: -3 },
         {
           type: 'narrate',
-          text: `「${act}」功敗垂成：談判破裂，茶杯砸碎，名單缺了最關鍵一頁。你貼了醫藥錢出門，立誓下回先看清門後有沒有第二個人。`,
+          text: `「${act}」功敗垂成：話不投機，場面冷了，你想要的消息也沒問着。貼了點醫藥與腳力錢出門，立誓下回先看清門後有沒有第二個人。`,
         },
       ];
   }
 }
 
-function buildFairEffects(base: GameEffect[], stance: ChoiceStance, choiceText: string): GameEffect[] {
-  const core = scaleEffects(cloneEffects(base), 1);
-  const costs = fairCost(stance, choiceText);
-  // 避免雙 narrate 疊太亂：若已有敘事，成本敘事仍保留（一主一輔）
-  return [...core, ...costs.filter((e) => e.type !== 'narrate' || !narrateOnly(core))];
+function fairCost(stance: ChoiceStance, choiceText: string, tone: SceneTone): GameEffect[] {
+  const act = actLabel(choiceText);
+  if (tone === 'practice') return practiceFair(act);
+  if (tone === 'combat') return combatFair(act);
+  return socialFair(stance, act);
 }
 
-function buildMixedEffects(base: GameEffect[], stance: ChoiceStance, choiceText: string): GameEffect[] {
+function mixedExtras(stance: ChoiceStance, choiceText: string, tone: SceneTone): GameEffect[] {
+  const act = actLabel(choiceText);
+  if (tone === 'practice') return practiceMixed(act);
+  if (tone === 'combat') return combatMixed(act);
+  return socialMixed(stance, act);
+}
+
+function illExtras(stance: ChoiceStance, choiceText: string, tone: SceneTone): GameEffect[] {
+  const act = actLabel(choiceText);
+  if (tone === 'practice') return practiceIll(act);
+  if (tone === 'combat') return combatIll(act);
+  return socialIll(stance, act);
+}
+
+function buildFairEffects(
+  base: GameEffect[],
+  stance: ChoiceStance,
+  choiceText: string,
+  tone: SceneTone,
+): GameEffect[] {
+  const core = scaleEffects(cloneEffects(base), 1);
+  const costs = fairCost(stance, choiceText, tone);
+  // 已有敘事／修煉效果時，只疊數值代價，唔再硬塞第二段跑題正文
+  const skipNarrate = Boolean(narrateOnly(core) || hasPractice(core));
+  return [...core, ...costs.filter((e) => e.type !== 'narrate' || !skipNarrate)];
+}
+
+function buildMixedEffects(
+  base: GameEffect[],
+  stance: ChoiceStance,
+  choiceText: string,
+  tone: SceneTone,
+): GameEffect[] {
+  // 修煉機緣：保留半成修煉效果，另加貼題小波折，唔改寫成市井衝突
+  if (tone === 'practice' && hasPractice(base)) {
+    const practice = base.filter((e) => e.type === 'practice');
+    const extras = mixedExtras(stance, choiceText, tone);
+    return [...practice, ...extras];
+  }
   const safe = stripIrreversible(base);
   const gains = scaleEffects(
     safe.filter((e) => e.type === 'narrate' || isNumericGain(e) || e.type === 'nature' || e.type === 'attr' || e.type === 'world'),
     0.55,
   );
-  const losses = scaleEffects(safe.filter(isNumericLoss), 1.1);
-  return [...gains.filter((e) => e.type !== 'narrate'), ...losses, ...mixedExtras(stance, choiceText)];
+  const losses = scaleEffects(safe.filter(isNumericLoss), 1.05);
+  return [...gains.filter((e) => e.type !== 'narrate'), ...losses, ...mixedExtras(stance, choiceText, tone)];
 }
 
-function buildIllEffects(base: GameEffect[], stance: ChoiceStance, choiceText: string): GameEffect[] {
+function buildIllEffects(
+  base: GameEffect[],
+  stance: ChoiceStance,
+  choiceText: string,
+  tone: SceneTone,
+): GameEffect[] {
+  // 修煉事與願違：唔執行本次修煉，只留岔氣代價（貼題）
+  if (tone === 'practice' && hasPractice(base)) {
+    return illExtras(stance, choiceText, tone);
+  }
   const safe = stripIrreversible(base);
-  // 把原本收益壓成代價感，並帶一點安慰獎
   const inverted = safe
     .filter((e) => e.type !== 'narrate')
     .map((eff) => {
@@ -280,12 +386,12 @@ function buildIllEffects(base: GameEffect[], stance: ChoiceStance, choiceText: s
         eff.type === 'martial' ||
         eff.type === 'qi'
       ) {
-        if (eff.amount > 0) return { ...eff, amount: -Math.max(2, Math.round(eff.amount * 0.6)) };
-        if (eff.amount < 0) return { ...eff, amount: Math.round(eff.amount * 1.25) };
+        if (eff.amount > 0) return { ...eff, amount: -Math.max(1, Math.round(eff.amount * 0.45)) };
+        if (eff.amount < 0) return { ...eff, amount: Math.round(eff.amount * 1.1) };
       }
       return eff;
     });
-  return [...inverted, ...illExtras(stance, choiceText)];
+  return [...inverted, ...illExtras(stance, choiceText, tone)];
 }
 
 /**
@@ -296,29 +402,31 @@ export function enrichChoiceWithRisk(
   choice: EventChoice,
   _negative?: EventChoice['outcomes'][number]['effects'],
   _badChance = 0.18,
+  eventTags: string[] = [],
 ): EventChoice {
   const stance = inferChoiceStance(choice.text);
   const weights = STANCE_WEIGHTS[stance];
   const base = choice.outcomes[0]?.effects ?? [{ type: 'narrate' as const, text: '事畢。' }];
+  const tone = inferSceneTone(base, choice.text, eventTags);
 
   const outcomes: EventOutcome[] = [
     {
       id: `${choice.id}_fair`,
       label: '順遂',
       weight: weights.fair,
-      effects: buildFairEffects(base, stance, choice.text),
+      effects: buildFairEffects(base, stance, choice.text, tone),
     },
     {
       id: `${choice.id}_mixed`,
       label: '波折',
       weight: weights.mixed,
-      effects: buildMixedEffects(base, stance, choice.text),
+      effects: buildMixedEffects(base, stance, choice.text, tone),
     },
     {
       id: `${choice.id}_ill`,
       label: '事與願違',
       weight: weights.ill,
-      effects: buildIllEffects(base, stance, choice.text),
+      effects: buildIllEffects(base, stance, choice.text, tone),
     },
   ];
 
@@ -350,17 +458,40 @@ export function withRiskAndThree(
   badChance = 0.18,
 ): GameEvent {
   const base = ensureThreeChoices(event);
+  const tags = event.tags ?? [];
   return {
     ...base,
     choices: base.choices.map((ch) => {
-      // 若呼叫端仍傳 negativeFactory，將其併入 ill 兜底敘事（相容舊 API）
-      const enriched = enrichChoiceWithRisk(ch, undefined, badChance);
+      const enriched = enrichChoiceWithRisk(ch, undefined, badChance, tags);
       if (!negativeFactory) return enriched;
       const extra = negativeFactory(ch.id, ch.text);
       const ill = enriched.outcomes.find((o) => o.id?.endsWith('_ill'));
       if (ill && extra?.length) {
+        const tone = inferSceneTone(ch.outcomes[0]?.effects ?? [], ch.text, tags);
+        // 修煉事件：negativeFactory 常帶市井打架敘事，改用貼題 ill，只吸收其非敘事數值並壓低
+        if (tone === 'practice') {
+          const softNums = extra
+            .filter((e) => e.type !== 'narrate')
+            .map((e) => {
+              if (e.type === 'health' && e.amount < 0) {
+                return { ...e, amount: Math.max(e.amount, -4) };
+              }
+              if (e.type === 'money' && e.amount < 0) {
+                return { ...e, amount: Math.max(e.amount, -3) };
+              }
+              return e;
+            });
+          ill.effects = [...illExtras(inferChoiceStance(ch.text), ch.text, tone), ...softNums];
+          return enriched;
+        }
         const narr = extra.find((e) => e.type === 'narrate');
-        if (narr) ill.effects = [...ill.effects.filter((e) => e.type !== 'narrate'), narr, ...extra.filter((e) => e.type !== 'narrate')];
+        if (narr) {
+          ill.effects = [
+            ...ill.effects.filter((e) => e.type !== 'narrate'),
+            narr,
+            ...extra.filter((e) => e.type !== 'narrate'),
+          ];
+        }
       }
       return enriched;
     }),
@@ -369,10 +500,14 @@ export function withRiskAndThree(
 
 /** 結算時微抖數值，進一步避免「同一選擇永遠同一數字」 */
 export function jitterEffectsForRoll(effects: GameEffect[], roll01: number): GameEffect[] {
-  const factor = 0.82 + roll01 * 0.36; // ~0.82–1.18
+  const factor = 0.88 + roll01 * 0.24; // ~0.88–1.12（比舊 0.82–1.18 溫和）
   return scaleEffects(effects, factor).map((eff) => {
     if (eff.type === 'learnSkill' || eff.type === 'joinSect' || eff.type === 'die' || eff.type === 'flag') {
       return eff;
+    }
+    // 氣血傷害額外封頂，避免微抖把小傷打成致命
+    if (eff.type === 'health' && eff.amount < 0) {
+      return { ...eff, amount: Math.max(eff.amount, -12) };
     }
     return eff;
   });

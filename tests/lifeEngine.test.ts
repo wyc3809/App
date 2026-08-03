@@ -832,6 +832,51 @@ describe('life event engine', () => {
     expect(narr && narr.type === 'narrate' && narr.text).not.toMatch(/^有得有失/);
   });
 
+  it('practice risk branches stay on-theme and avoid street intrigue', async () => {
+    const { enrichChoiceWithRisk, inferSceneTone } = await import('../core/life/choiceEnrich');
+    const base = [{ type: 'practice' as const, action: 'train_internal' as const }];
+    expect(inferSceneTone(base, '閉目運功', ['practice_wander'])).toBe('practice');
+    const enriched = enrichChoiceWithRisk(
+      {
+        id: 'do',
+        text: '閉目運功',
+        outcomes: [{ effects: base }],
+      },
+      undefined,
+      0.1,
+      ['practice_wander'],
+    );
+    const fair = enriched.outcomes.find((o) => o.label === '順遂')!;
+    expect(fair.effects.some((e) => e.type === 'practice')).toBe(true);
+    // 順遂靠修煉本身出文，唔再疊市井抄件敘事
+    expect(fair.effects.some((e) => e.type === 'narrate')).toBe(false);
+
+    for (const label of ['波折', '事與願違'] as const) {
+      const o = enriched.outcomes.find((x) => x.label === label)!;
+      const narr = o.effects.find((e) => e.type === 'narrate');
+      const blob = narr && narr.type === 'narrate' ? narr.text : '';
+      expect(blob).toContain('閉目運功');
+      expect(blob).not.toMatch(/抄件|銀角|名冊|談判|跑堂|密帳/);
+      const hpHits = o.effects.filter((e) => e.type === 'health' && e.amount < 0);
+      for (const h of hpHits) {
+        if (h.type === 'health') expect(h.amount).toBeGreaterThanOrEqual(-4);
+      }
+    }
+    const mixed = enriched.outcomes.find((o) => o.label === '波折')!;
+    expect(mixed.effects.some((e) => e.type === 'practice')).toBe(true);
+  });
+
+  it('monthly body soft-regens and does not spike-kill on fatigue alone', async () => {
+    const { simulateMonthBody } = await import('../core/life/monthly');
+    initRng(3);
+    const state = createNewLife(3);
+    state.character.health = 40;
+    state.character.fatigue = 85;
+    simulateMonthBody(state);
+    expect(state.character.alive).toBe(true);
+    expect(state.character.health).toBeGreaterThan(0);
+  });
+
   it('legacy carry soft-buffs next life and records generation', async () => {
     const { extractLegacy } = await import('../core/life/legacy');
     const { buildLifeSummary } = await import('../core/life/summary');

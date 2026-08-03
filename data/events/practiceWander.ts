@@ -200,11 +200,11 @@ export const PRACTICE_WANDER_EVENTS: GameEvent[] = RAW.map((ev) =>
     (_id, text = '此舉') => [
       {
         type: 'narrate',
-        text: `你欲「${text}」，卻事與願違：一時分神，氣力與銀錢都捱了一記。`,
+        text: `你欲「${text}」，一時分神，氣息逆湧，只好散功躺平。今日修為未進，先討了場虛驚。`,
       },
-      { type: 'health', amount: -8 },
-      { type: 'money', amount: -5 },
+      { type: 'health', amount: -3 },
+      { type: 'qi', amount: -6 },
     ],
-    0.12,
+    0.1,
   ),
 );

@@ -63,10 +63,10 @@ function enrichLegacyEvent(event: GameEvent): GameEvent {
         type: 'narrate',
         text: `「${choiceText ?? '此舉'}」功敗垂成：門後湧出後援，短棍砸肩，袖裡線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
       },
-      { type: 'health', amount: -12 },
-      { type: 'money', amount: -5 },
+      { type: 'health', amount: -6 },
+      { type: 'money', amount: -3 },
     ],
-    0.16,
+    0.14,
   );
 }
 
