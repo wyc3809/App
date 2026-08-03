@@ -422,7 +422,7 @@ export function AccountDetailContent() {
                             }}
                           >
                             <Pencil size={12} />
-                            Edit
+                            {linkedTx ? "Edit ledger" : "Edit"}
                           </button>
                           {history.length > 1 && (
                             <button
@@ -445,7 +445,7 @@ export function AccountDetailContent() {
                               }}
                             >
                               <Trash2 size={12} />
-                              Delete
+                              {linkedTx ? "Delete ledger" : "Delete"}
                             </button>
                           )}
                         </div>
@@ -475,7 +475,7 @@ export function AccountDetailContent() {
           }}
         >
           <Receipt size={18} />
-          Ledger
+          Add ledger
         </button>
         <button
           type="button"
@@ -483,7 +483,7 @@ export function AccountDetailContent() {
           onClick={() => setAddOpen(true)}
         >
           <Plus size={18} />
-          Update
+          Update value
         </button>
       </div>
 
