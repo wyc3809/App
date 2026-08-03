@@ -4,26 +4,53 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { todayISO } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
-import type { Account } from "@/lib/types";
+import type { Account, AccountValueEntry } from "@/lib/types";
 
 interface AddValueModalProps {
   open: boolean;
   account: Account;
+  initial?: AccountValueEntry | null;
   onClose: () => void;
 }
 
-export function AddValueModal({ open, account, onClose }: AddValueModalProps) {
+export function AddValueModal({
+  open,
+  account,
+  initial = null,
+  onClose,
+}: AddValueModalProps) {
+  if (!open) return null;
+
+  return (
+    <AddValueDialog
+      key={initial?.id ?? `new-${account.id}-${account.asOfDate}`}
+      account={account}
+      initial={initial}
+      onClose={onClose}
+    />
+  );
+}
+
+function AddValueDialog({
+  account,
+  initial,
+  onClose,
+}: {
+  account: Account;
+  initial: AccountValueEntry | null;
+  onClose: () => void;
+}) {
   const upsertValueEntry = useWorthStore((s) => s.upsertValueEntry);
   const currencies = useWorthStore((s) => s.currencies);
   const currency = currencies.find((c) => c.code === account.currency);
 
-  const [value, setValue] = useState(String(account.currentValue));
-  const [asOfDate, setAsOfDate] = useState(todayISO());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [note, setNote] = useState("");
-  const [markOnGraph, setMarkOnGraph] = useState(true);
-
-  if (!open) return null;
+  const [value, setValue] = useState(String(initial?.value ?? account.currentValue));
+  const [asOfDate, setAsOfDate] = useState(initial?.date ?? todayISO());
+  const [showDatePicker, setShowDatePicker] = useState(
+    Boolean(initial && initial.date !== todayISO()),
+  );
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [markOnGraph, setMarkOnGraph] = useState(initial?.markOnGraph ?? true);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +59,7 @@ export function AddValueModal({ open, account, onClose }: AddValueModalProps) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) return;
 
     upsertValueEntry({
+      entryId: initial?.id,
       accountId: account.id,
       date: asOfDate,
       value: amount,
@@ -70,7 +98,7 @@ export function AddValueModal({ open, account, onClose }: AddValueModalProps) {
             Cancel
           </button>
           <h2 id="add-value-title" className="font-display text-lg">
-            Add Value
+            {initial ? "Edit Value" : "Add Value"}
           </h2>
           <button type="button" className="btn-ghost" onClick={onClose} aria-label="Close">
             <X size={18} />
@@ -111,7 +139,10 @@ export function AddValueModal({ open, account, onClose }: AddValueModalProps) {
             style={{ background: "var(--bg-muted)" }}
           >
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--fg-subtle)" }}>
+              <p
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--fg-subtle)" }}
+              >
                 As of
               </p>
               <p className="mt-0.5 font-semibold">{dateLabel}</p>

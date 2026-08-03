@@ -31,6 +31,7 @@ import {
 } from "@/lib/account-history";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
+import type { AccountValueEntry } from "@/lib/types";
 
 const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "4Y", "8Y"] as const;
 
@@ -49,6 +50,7 @@ export function AccountDetailContent() {
   const account = accounts.find((a) => a.id === accountId) ?? null;
   const [range, setRange] = useState<(typeof RANGES)[number]>("ALL");
   const [addOpen, setAddOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<AccountValueEntry | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -348,19 +350,33 @@ export function AccountDetailContent() {
                               })}`}
                         </p>
                       )}
-                      {entry && history.length > 1 && (
-                        <button
-                          type="button"
-                          className="mt-1 text-xs"
-                          style={{ color: "var(--danger)" }}
-                          onClick={() => {
-                            if (confirm(`Delete entry on ${point.date}?`)) {
-                              deleteValueEntry(entry.id);
-                            }
-                          }}
-                        >
-                          Delete
-                        </button>
+                      {entry && (
+                        <div className="mt-1.5 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 text-xs font-semibold"
+                            style={{ color: "var(--accent)" }}
+                            onClick={() => setEditingEntry(entry)}
+                          >
+                            <Pencil size={12} />
+                            Edit
+                          </button>
+                          {history.length > 1 && (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 text-xs font-semibold"
+                              style={{ color: "var(--danger)" }}
+                              onClick={() => {
+                                if (confirm(`Delete entry on ${point.date}?`)) {
+                                  deleteValueEntry(entry.id);
+                                }
+                              }}
+                            >
+                              <Trash2 size={12} />
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -383,7 +399,15 @@ export function AccountDetailContent() {
         </button>
       </div>
 
-      <AddValueModal open={addOpen} account={account} onClose={() => setAddOpen(false)} />
+      <AddValueModal
+        open={addOpen || Boolean(editingEntry)}
+        account={account}
+        initial={editingEntry}
+        onClose={() => {
+          setAddOpen(false);
+          setEditingEntry(null);
+        }}
+      />
       <AccountForm open={editOpen} initial={account} onClose={() => setEditOpen(false)} />
     </div>
   );

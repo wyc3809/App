@@ -44,6 +44,7 @@ interface WorthState {
   deleteAccount: (id: string) => void;
 
   upsertValueEntry: (input: {
+    entryId?: string;
     accountId: string;
     date: string;
     value: number;
@@ -268,37 +269,54 @@ export const useWorthStore = create<WorthState>()(
         }));
       },
 
-      upsertValueEntry: ({ accountId, date, value, note, markOnGraph = true }) => {
+      upsertValueEntry: ({
+        entryId,
+        accountId,
+        date,
+        value,
+        note,
+        markOnGraph = true,
+      }) => {
         set((s) => {
           const account = s.accounts.find((a) => a.id === accountId);
           if (!account) return s;
 
-          const existing = s.valueEntries.find(
-            (e) => e.accountId === accountId && e.date === date,
-          );
-          const valueEntries = existing
-            ? s.valueEntries.map((e) =>
-                e.id === existing.id
-                  ? {
-                      ...e,
-                      value,
-                      note: note?.trim() || undefined,
-                      markOnGraph,
-                    }
-                  : e,
-              )
-            : [
-                ...s.valueEntries,
-                {
-                  id: id(),
-                  accountId,
-                  date,
-                  value,
-                  note: note?.trim() || undefined,
-                  markOnGraph,
-                  createdAt: new Date().toISOString(),
-                },
-              ];
+          let valueEntries = [...s.valueEntries];
+          const noteValue = note?.trim() || undefined;
+
+          if (entryId) {
+            // Editing an existing row — drop any other entry on the new date.
+            valueEntries = valueEntries.filter(
+              (e) => e.id === entryId || !(e.accountId === accountId && e.date === date),
+            );
+            valueEntries = valueEntries.map((e) =>
+              e.id === entryId
+                ? { ...e, date, value, note: noteValue, markOnGraph }
+                : e,
+            );
+          } else {
+            const existing = valueEntries.find(
+              (e) => e.accountId === accountId && e.date === date,
+            );
+            valueEntries = existing
+              ? valueEntries.map((e) =>
+                  e.id === existing.id
+                    ? { ...e, value, note: noteValue, markOnGraph }
+                    : e,
+                )
+              : [
+                  ...valueEntries,
+                  {
+                    id: id(),
+                    accountId,
+                    date,
+                    value,
+                    note: noteValue,
+                    markOnGraph,
+                    createdAt: new Date().toISOString(),
+                  },
+                ];
+          }
 
           const synced = syncAccountFromEntries(account, valueEntries);
           const accounts = s.accounts.map((a) =>

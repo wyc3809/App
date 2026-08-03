@@ -11,9 +11,10 @@ import type { Account, AccountCategory } from "@/lib/types";
 
 interface AccountListProps {
   filter?: "all" | "assets" | "liabilities";
+  categories?: import("@/lib/types").AccountCategory[];
 }
 
-export function AccountList({ filter = "all" }: AccountListProps) {
+export function AccountList({ filter = "all", categories = [] }: AccountListProps) {
   const accounts = useWorthStore((s) => s.accounts);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
@@ -23,7 +24,7 @@ export function AccountList({ filter = "all" }: AccountListProps) {
       if (filter === "assets") return !a.isLiability;
       if (filter === "liabilities") return a.isLiability;
       return true;
-    });
+    }).filter((a) => (categories.length === 0 ? true : categories.includes(a.category)));
 
     const order: AccountCategory[] = [
       ...ASSET_TYPES.map((t) => t.value),
@@ -59,7 +60,7 @@ export function AccountList({ filter = "all" }: AccountListProps) {
           total,
         };
       });
-  }, [accounts, currencies, filter]);
+  }, [accounts, currencies, filter, categories]);
 
   if (groups.length === 0) {
     return (
