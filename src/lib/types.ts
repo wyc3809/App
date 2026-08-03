@@ -24,9 +24,22 @@ export interface Account {
   isLiability: boolean;
   currency: string;
   currentValue: number;
+  /** YYYY-MM-DD — date this balance applies to */
+  asOfDate: string;
   institutionName?: string;
   note?: string;
   updatedAt: string;
+  createdAt: string;
+}
+
+/** Per-account dated balance entry (Value History). */
+export interface AccountValueEntry {
+  id: string;
+  accountId: string;
+  date: string; // YYYY-MM-DD
+  value: number;
+  note?: string;
+  markOnGraph: boolean;
   createdAt: string;
 }
 

@@ -58,6 +58,9 @@ function AccountFormDialog({
   const [currentValue, setCurrentValue] = useState(
     initial ? String(initial.currentValue) : "",
   );
+  const [asOfDate, setAsOfDate] = useState(
+    initial?.asOfDate ?? new Date().toISOString().slice(0, 10),
+  );
   const [institutionName, setInstitutionName] = useState(
     initial?.institutionName ?? "",
   );
@@ -80,6 +83,7 @@ function AccountFormDialog({
     e.preventDefault();
     const value = Number(currentValue);
     if (!name.trim() || Number.isNaN(value) || value < 0) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) return;
 
     const payload = {
       name: name.trim(),
@@ -87,6 +91,7 @@ function AccountFormDialog({
       isLiability,
       currency,
       currentValue: value,
+      asOfDate,
       institutionName: institutionName.trim() || undefined,
       note: note.trim() || undefined,
     };
@@ -197,22 +202,41 @@ function AccountFormDialog({
             </div>
           </div>
 
-          <div>
-            <label className="label" htmlFor="account-value">
-              Current Value
-            </label>
-            <input
-              id="account-value"
-              className="field"
-              type="number"
-              min="0"
-              step="any"
-              value={currentValue}
-              onChange={(e) => setCurrentValue(e.target.value)}
-              placeholder="0"
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="account-value">
+                Current Value
+              </label>
+              <input
+                id="account-value"
+                className="field"
+                type="number"
+                min="0"
+                step="any"
+                value={currentValue}
+                onChange={(e) => setCurrentValue(e.target.value)}
+                placeholder="0"
+                required
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="account-asof">
+                日期 / As of
+              </label>
+              <input
+                id="account-asof"
+                className="field"
+                type="date"
+                value={asOfDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                required
+              />
+            </div>
           </div>
+          <p className="-mt-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
+            此金額對應的日期；儲存後會更新該日淨資產紀錄。
+          </p>
 
           <div>
             <label className="label" htmlFor="account-institution">

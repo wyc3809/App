@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Camera, Plus, Sparkles } from "lucide-react";
 import { AllocationChart } from "@/components/AllocationChart";
+import { MonthlyGrowthCard } from "@/components/MonthlyGrowthCard";
 import { NetWorthHero } from "@/components/NetWorthHero";
 import { TrendChart } from "@/components/TrendChart";
 import { useWorthStore } from "@/lib/store";
@@ -56,6 +57,7 @@ export default function DashboardPage() {
       )}
 
       <TrendChart />
+      <MonthlyGrowthCard />
       <AllocationChart />
     </div>
   );

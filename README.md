@@ -52,4 +52,17 @@ WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under
 
 ## Deploy
 
-Compatible with Vercel (`vercel.json`). Connect the repo and deploy — framework is Next.js.
+### GitHub Pages
+
+Pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds a static export with base path `/App` and publishes to the `gh-pages` branch.
+
+Live URL: **https://wyc3809.github.io/App/**
+
+```bash
+npm run build:pages   # static export → ./out (basePath /App)
+```
+
+### Other hosts
+
+- Vercel / local static: `npm run build` → `./out` (no base path)
+- Cloudflare Pages: manual `workflow_dispatch` (optional secrets)

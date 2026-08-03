@@ -22,12 +22,10 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - run: npm run build
-        env:
-          VITE_BASE: /App/
+      - run: npm test
+      - run: npm run build:pages
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          # 勿設 cname: false（會寫入錯誤 CNAME 檔）
+          publish_dir: ./out

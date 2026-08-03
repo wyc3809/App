@@ -15,6 +15,8 @@ const display = Newsreader({
   display: "swap",
 });
 
+const assetBase = process.env.GITHUB_PAGES === "true" ? "/App" : "";
+
 export const metadata: Metadata = {
   title: "WorthTracker — Net Worth & Wealth Tracking",
   description:
@@ -25,10 +27,10 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "WorthTracker",
   },
-  manifest: "/manifest.webmanifest",
+  manifest: `${assetBase}/manifest.webmanifest`,
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icon.svg" }],
+    icon: [{ url: `${assetBase}/icon.svg`, type: "image/svg+xml" }],
+    apple: [{ url: `${assetBase}/icon.svg` }],
   },
 };
 

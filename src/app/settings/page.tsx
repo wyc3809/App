@@ -1,6 +1,18 @@
 "use client";
 
-import { Download, Eraser, Fingerprint, Moon, Shield, Sparkles, Sun, Monitor } from "lucide-react";
+import { useRef, useState } from "react";
+import {
+  Download,
+  Eraser,
+  Fingerprint,
+  Moon,
+  Monitor,
+  Shield,
+  Sparkles,
+  Sun,
+  Upload,
+} from "lucide-react";
+import { readBackupFile } from "@/lib/import-backup";
 import { useWorthStore } from "@/lib/store";
 import type { UserSettings } from "@/lib/types";
 
@@ -9,11 +21,18 @@ export default function SettingsPage() {
   const currencies = useWorthStore((s) => s.currencies);
   const accounts = useWorthStore((s) => s.accounts);
   const snapshots = useWorthStore((s) => s.snapshots);
+  const valueEntries = useWorthStore((s) => s.valueEntries);
   const updateSettings = useWorthStore((s) => s.updateSettings);
   const updateCurrencyRate = useWorthStore((s) => s.updateCurrencyRate);
   const setBaseCurrency = useWorthStore((s) => s.setBaseCurrency);
   const loadDemoData = useWorthStore((s) => s.loadDemoData);
   const resetAll = useWorthStore((s) => s.resetAll);
+  const importBackup = useWorthStore((s) => s.importBackup);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const exportJson = () => {
     const payload = {
@@ -22,6 +41,7 @@ export default function SettingsPage() {
       currencies,
       accounts,
       snapshots,
+      valueEntries,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json",
@@ -34,6 +54,35 @@ export default function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const onImportFile = async (file: File | null) => {
+    if (!file) return;
+    setImporting(true);
+    setImportMessage(null);
+    setImportError(null);
+
+    const result = await readBackupFile(file);
+    if (!result.ok) {
+      setImportError(result.error);
+      setImporting(false);
+      return;
+    }
+
+    const replace = confirm(
+      `Import ${result.data.accounts.length} accounts and ${result.data.snapshots.length} snapshots?\n\nThis replaces your current local data.`,
+    );
+    if (!replace) {
+      setImporting(false);
+      return;
+    }
+
+    importBackup(result.data);
+    setImportMessage(
+      `Imported ${result.data.accounts.length} accounts and ${result.data.snapshots.length} snapshots.`,
+    );
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const themes: { value: UserSettings["theme"]; label: string; icon: typeof Sun }[] = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
@@ -43,7 +92,10 @@ export default function SettingsPage() {
   return (
     <div className="space-y-4 pb-4">
       <header className="animate-fade-up">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--fg-subtle)" }}>
+        <p
+          className="text-xs font-semibold uppercase tracking-[0.14em]"
+          style={{ color: "var(--fg-subtle)" }}
+        >
           Preferences
         </p>
         <h1 className="mt-1 font-display text-3xl">Settings</h1>
@@ -151,6 +203,35 @@ export default function SettingsPage() {
           <Download size={18} />
           Export JSON backup
         </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => void onImportFile(e.target.files?.[0] ?? null)}
+        />
+
+        <button
+          type="button"
+          className="btn-secondary w-full"
+          disabled={importing}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload size={18} />
+          {importing ? "Importing…" : "Import JSON backup"}
+        </button>
+
+        {importMessage && (
+          <p className="text-sm font-medium" style={{ color: "var(--positive)" }}>
+            {importMessage}
+          </p>
+        )}
+        {importError && (
+          <p className="text-sm font-medium" style={{ color: "var(--danger)" }}>
+            {importError}
+          </p>
+        )}
 
         <button
           type="button"
