@@ -127,10 +127,19 @@ export default function LedgerPage() {
 
       {groups.length === 0 ? (
         <div
-          className="rounded-2xl px-4 py-10 text-center text-sm"
+          className="rounded-2xl px-4 py-10 text-center"
           style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
         >
-          No ledger entries yet. Add income or expense to start tracking.
+          <p className="text-sm">
+            No ledger entries yet. Add income or expense to start tracking.
+          </p>
+          <p className="mt-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
+            Tip: link an entry to an account so Value History and balances update.
+          </p>
+          <button type="button" className="btn-primary mt-4" onClick={openNew}>
+            <Plus size={18} />
+            Add first entry
+          </button>
         </div>
       ) : (
         <div className="space-y-4 animate-fade-up-delay">

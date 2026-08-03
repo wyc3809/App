@@ -17,14 +17,14 @@ Inspired by WorthTracker-style wealth apps (not expense tracking).
 
 ## Features
 
-- **Net worth dashboard** — assets, liabilities, and privacy-masked balances
+- **Net worth dashboard** — assets, liabilities, privacy-masked balances, multi-year trend ranges
 - **Accounts** — cash, investments, real estate, crypto, vehicles, mortgages, loans, credit cards
+- **Ledger** — income / expense bookkeeping with optional account linking (auto balance + type flip)
+- **Value history** — per-account dated balances; tap a row to edit linked ledger entries
 - **Multi-currency** — per-account currency with editable FX rates vs base currency
-- **Trend chart** — historical snapshots with 1M / 3M / 6M / 1Y / ALL ranges
-- **Allocation** — pie breakdown for assets or liabilities
-- **Snapshots** — capture point-in-time portfolio history
-- **Settings** — theme, privacy mode, base currency, JSON export, demo data, reset
-- **PWA-ready** — installable web app manifest + mobile-first shell
+- **Backup** — JSON export / import, demo portfolio, reset
+- **Privacy** — local-only storage + in-app privacy policy
+- **PWA** — installable manifest, icons, offline static cache, mobile safe areas
 
 ## Local development
 
@@ -42,13 +42,15 @@ Open [http://localhost:3000](http://localhost:3000).
 Core types live in `src/lib/types.ts`:
 
 - `Account` — asset or liability with category, currency, value
+- `AccountValueEntry` — dated balance / ledger-linked history row
+- `Transaction` — income or expense ledger entry
 - `HistoricalSnapshot` — dated net-worth checkpoint
 - `Currency` — code, symbol, `exchangeRateToBase`
 - `UserSettings` — base currency, privacy, biometric preference, theme
 
 ## Privacy
 
-WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under `worthtracker-v1`. Use **Export JSON backup** in Settings before clearing browser data.
+WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under `worthtracker-v1`. See **Settings → Privacy policy**. Use **Export JSON backup** before clearing browser data.
 
 ## Deploy
 

@@ -18,6 +18,7 @@
   --negative: #c23b3b;
   --chart-grid: rgba(20, 24, 20, 0.06);
   --nav-height: 72px;
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow-soft: 0 18px 40px rgba(20, 24, 20, 0.08);
   --ring: rgba(15, 122, 76, 0.35);
@@ -91,6 +92,7 @@ h3,
 @layer components {
   .app-shell {
     @apply mx-auto w-full max-w-lg min-h-dvh relative;
+    padding-top: var(--safe-top);
     padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
   }
 

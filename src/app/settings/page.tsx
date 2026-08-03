@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   Download,
   Eraser,
   Fingerprint,
+  Info,
   Moon,
   Monitor,
   Shield,
@@ -142,7 +144,7 @@ export default function SettingsPage() {
         <ToggleRow
           icon={<Fingerprint size={18} />}
           title="Biometric lock"
-          description="Preference stored locally (device unlock when available)"
+          description="Saved as a preference only — device Face ID / Touch ID unlock ships with the iOS app build"
           checked={settings.isBiometricEnabled}
           onChange={(v) => updateSettings({ isBiometricEnabled: v })}
         />
@@ -199,7 +201,19 @@ export default function SettingsPage() {
       </section>
 
       <section className="card-surface animate-fade-up-delay-2 space-y-3 p-4">
-        <h2 className="font-display text-lg">Data</h2>
+        <h2 className="font-display text-lg">Privacy & data</h2>
+        <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+          Portfolio data stays in this browser. Use export before clearing site
+          data or switching devices.
+        </p>
+        <Link href="/privacy/" className="btn-secondary w-full">
+          <Info size={18} />
+          Privacy policy
+        </Link>
+      </section>
+
+      <section className="card-surface animate-fade-up-delay-2 space-y-3 p-4">
+        <h2 className="font-display text-lg">Backup</h2>
 
         <button type="button" className="btn-secondary w-full" onClick={exportJson}>
           <Download size={18} />
@@ -260,7 +274,7 @@ export default function SettingsPage() {
       </section>
 
       <p className="px-1 pb-2 text-center text-xs" style={{ color: "var(--fg-subtle)" }}>
-        WorthTracker v1.0 · Local-only wealth tracking
+        WorthTracker v1.1 · Local-only wealth tracking
       </p>
     </div>
   );

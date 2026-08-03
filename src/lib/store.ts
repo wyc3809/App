@@ -410,6 +410,7 @@ export const useWorthStore = create<WorthState>()(
         for (const input of createDemoTransactions(accounts)) {
           get().addTransaction(input);
         }
+        get().resyncAccounts();
       },
 
       resetAll: () =>
@@ -427,8 +428,9 @@ export const useWorthStore = create<WorthState>()(
           payload.valueEntries && payload.valueEntries.length > 0
             ? payload.valueEntries
             : payload.accounts.map(seedEntryForAccount);
+        const accounts = resyncAllAccounts(payload.accounts, valueEntries);
         set({
-          accounts: payload.accounts,
+          accounts,
           valueEntries,
           transactions: payload.transactions ?? [],
           snapshots: payload.snapshots,
