@@ -8,13 +8,17 @@ import { useWorthStore } from "@/lib/store";
 export function Providers({ children }: { children: React.ReactNode }) {
   const hydrated = useWorthStore((s) => s.hydrated);
   const setHydrated = useWorthStore((s) => s.setHydrated);
+  const resyncAccounts = useWorthStore((s) => s.resyncAccounts);
 
   useEffect(() => {
-    // Fallback if persist rehydration callback already fired
-    const unsub = useWorthStore.persist.onFinishHydration(() => setHydrated(true));
-    if (useWorthStore.persist.hasHydrated()) setHydrated(true);
+    const finish = () => {
+      resyncAccounts();
+      setHydrated(true);
+    };
+    const unsub = useWorthStore.persist.onFinishHydration(finish);
+    if (useWorthStore.persist.hasHydrated()) finish();
     return unsub;
-  }, [setHydrated]);
+  }, [setHydrated, resyncAccounts]);
 
   if (!hydrated) {
     return (

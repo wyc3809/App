@@ -42,7 +42,7 @@ import type { AccountValueEntry, Transaction } from "@/lib/types";
 
 const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "4Y", "8Y"] as const;
 
-/** Resolve the ledger transaction for a Value History row. */
+/** Resolve the ledger transaction for a Value History row (strict link only). */
 function resolveLedgerTransaction(
   transactions: Transaction[],
   accountId: string,
@@ -51,22 +51,17 @@ function resolveLedgerTransaction(
   if (point.transactionId) {
     return transactions.find((t) => t.id === point.transactionId);
   }
+  // Legacy rows: exact note match only — never guess from same-day leftovers.
+  if (!point.note) return undefined;
   const onDay = transactions.filter(
     (t) => t.accountId === accountId && t.date === point.date,
   );
-  if (onDay.length === 0) return undefined;
-  if (point.note) {
-    const byNote = onDay.find(
-      (t) =>
-        point.note === `Income · ${t.title}` ||
-        point.note === `Expense · ${t.title}` ||
-        point.note === `Ledger: ${t.title}` ||
-        point.note === `Expense: ${t.title}` ||
-        point.note?.includes(t.title),
-    );
-    if (byNote) return byNote;
-  }
-  return onDay.length === 1 ? onDay[0] : undefined;
+  return onDay.find(
+    (t) =>
+      point.note === `Income · ${t.title}` ||
+      point.note === `Expense · ${t.title}` ||
+      point.note === `Ledger: ${t.title}`,
+  );
 }
 
 export function AccountDetailContent() {
@@ -128,8 +123,8 @@ export function AccountDetailContent() {
   }
 
   const signed = account.isLiability
-    ? -Math.abs(account.currentValue)
-    : account.currentValue;
+    ? -Math.abs(history[0]?.value ?? account.currentValue)
+    : (history[0]?.value ?? account.currentValue);
   const latestChange = history[0];
   const changePositive = (latestChange?.changeAbsolute ?? 0) >= 0;
   const changeGood = account.isLiability

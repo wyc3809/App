@@ -47,6 +47,7 @@ interface WorthState {
   hydrated: boolean;
 
   setHydrated: (value: boolean) => void;
+  resyncAccounts: () => void;
   loadDemoData: () => void;
   resetAll: () => void;
   importBackup: (payload: WorthBackupPayload) => void;
@@ -123,7 +124,10 @@ function syncAccountFromEntries(
 ): Account {
   const mine = entries
     .filter((e) => e.accountId === account.id)
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
   if (mine.length === 0) return account;
   const latest = mine[0];
   return {
@@ -132,6 +136,14 @@ function syncAccountFromEntries(
     asOfDate: latest.date,
     updatedAt: new Date().toISOString(),
   };
+}
+
+/** Keep account.currentValue aligned with the newest value-history row. */
+function resyncAllAccounts(
+  accounts: Account[],
+  valueEntries: AccountValueEntry[],
+): Account[] {
+  return accounts.map((a) => syncAccountFromEntries(a, valueEntries));
 }
 
 function seedEntryForAccount(account: Account): AccountValueEntry {
@@ -339,6 +351,12 @@ export const useWorthStore = create<WorthState>()(
       hydrated: false,
 
       setHydrated: (value) => set({ hydrated: value }),
+
+      resyncAccounts: () => {
+        set((s) => ({
+          accounts: resyncAllAccounts(s.accounts, s.valueEntries),
+        }));
+      },
 
       loadDemoData: () => {
         const accounts = createDemoAccounts();
@@ -700,7 +718,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -748,6 +766,13 @@ export const useWorthStore = create<WorthState>()(
         if (version < 4) {
           if (!Array.isArray(state.transactions)) {
             state.transactions = [];
+          }
+        }
+
+        if (version < 5) {
+          // Fix same-day history: currentValue must follow newest createdAt.
+          if (Array.isArray(state.accounts) && Array.isArray(state.valueEntries)) {
+            state.accounts = resyncAllAccounts(state.accounts, state.valueEntries);
           }
         }
 
