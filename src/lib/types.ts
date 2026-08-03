@@ -24,9 +24,22 @@ export interface Account {
   isLiability: boolean;
   currency: string;
   currentValue: number;
+  /** YYYY-MM-DD — date this balance applies to */
+  asOfDate: string;
   institutionName?: string;
   note?: string;
   updatedAt: string;
+  createdAt: string;
+}
+
+/** Per-account dated balance entry (Value History). */
+export interface AccountValueEntry {
+  id: string;
+  accountId: string;
+  date: string; // YYYY-MM-DD
+  value: number;
+  note?: string;
+  markOnGraph: boolean;
   createdAt: string;
 }
 
@@ -53,3 +66,35 @@ export interface UserSettings {
 }
 
 export type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";
+
+export type TransactionType = "income" | "expense";
+
+export type LedgerCategory =
+  | "salary"
+  | "bonus"
+  | "investment_return"
+  | "gift"
+  | "food"
+  | "transport"
+  | "housing"
+  | "shopping"
+  | "entertainment"
+  | "health"
+  | "utilities"
+  | "transfer"
+  | "other";
+
+/** Income / expense bookkeeping entry, optionally linked to an account. */
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  currency: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  note?: string;
+  category: LedgerCategory;
+  /** When set, this entry adjusts the linked account balance. */
+  accountId?: string;
+  createdAt: string;
+}

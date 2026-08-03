@@ -2,13 +2,17 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Filter, Plus } from "lucide-react";
 import { AccountForm } from "@/components/AccountForm";
 import { AccountList } from "@/components/AccountList";
+import {
+  DEFAULT_HOME_FILTER,
+  FilterSheet,
+  type HomeFilterState,
+} from "@/components/FilterSheet";
 import { computeTotals } from "@/lib/calculations";
 import { formatMoney } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
-import type { Account } from "@/lib/types";
 
 function AccountsContent() {
   const searchParams = useSearchParams();
@@ -17,22 +21,23 @@ function AccountsContent() {
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
 
-  const [filter, setFilter] = useState<"all" | "assets" | "liabilities">("all");
   const [manualOpen, setManualOpen] = useState(false);
-  const [editing, setEditing] = useState<Account | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState<HomeFilterState>(DEFAULT_HOME_FILTER);
 
   const openFromQuery = searchParams.get("new") === "1";
   const formOpen = manualOpen || openFromQuery;
 
   const closeForm = () => {
     setManualOpen(false);
-    setEditing(null);
-    if (openFromQuery) router.replace("/accounts");
+    if (openFromQuery) router.replace("/accounts/");
   };
 
   const totals = computeTotals(accounts, currencies);
   const assetCount = accounts.filter((a) => !a.isLiability).length;
   const liabilityCount = accounts.filter((a) => a.isLiability).length;
+  const activeFilterCount =
+    (filter.kind !== "all" ? 1 : 0) + (filter.categories.length > 0 ? 1 : 0);
 
   return (
     <div className="space-y-4 pb-4">
@@ -45,17 +50,30 @@ function AccountsContent() {
         </p>
         <div className="mt-1 flex items-end justify-between gap-3">
           <h1 className="font-display text-3xl">Accounts</h1>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => {
-              setEditing(null);
-              setManualOpen(true);
-            }}
-          >
-            <Plus size={18} />
-            Add
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="btn-ghost relative"
+              aria-label="Filter"
+              onClick={() => setFilterOpen(true)}
+            >
+              <Filter size={18} />
+              {activeFilterCount > 0 && (
+                <span
+                  className="absolute right-1 top-1 h-2 w-2 rounded-full"
+                  style={{ background: "var(--accent)" }}
+                />
+              )}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setManualOpen(true)}
+            >
+              <Plus size={18} />
+              Add
+            </button>
+          </div>
         </div>
         <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
           {assetCount} assets · {liabilityCount} liabilities · Net{" "}
@@ -77,8 +95,8 @@ function AccountsContent() {
           <button
             key={key}
             type="button"
-            className={`chip ${filter === key ? "chip-active" : ""}`}
-            onClick={() => setFilter(key)}
+            className={`chip ${filter.kind === key ? "chip-active" : ""}`}
+            onClick={() => setFilter((f) => ({ ...f, kind: key, categories: [] }))}
           >
             {label}
           </button>
@@ -86,16 +104,16 @@ function AccountsContent() {
       </div>
 
       <div className="animate-fade-up-delay">
-        <AccountList
-          filter={filter}
-          onEdit={(account) => {
-            setEditing(account);
-            setManualOpen(true);
-          }}
-        />
+        <AccountList filter={filter.kind} categories={filter.categories} />
       </div>
 
-      <AccountForm open={formOpen} initial={editing} onClose={closeForm} />
+      <AccountForm open={formOpen} onClose={closeForm} />
+      <FilterSheet
+        open={filterOpen}
+        value={filter}
+        onChange={setFilter}
+        onClose={() => setFilterOpen(false)}
+      />
     </div>
   );
 }
