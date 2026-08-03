@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Clock3,
   LayoutDashboard,
+  Receipt,
   Settings2,
   WalletCards,
 } from "lucide-react";
@@ -12,7 +12,7 @@ import {
 const NAV = [
   { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: WalletCards },
-  { href: "/history", label: "History", icon: Clock3 },
+  { href: "/history", label: "Ledger", icon: Receipt },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ] as const;
 

@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import {
+  convertAmount,
   DEFAULT_CURRENCIES,
   rebaseCurrencyRates,
   toBaseCurrency,
@@ -10,15 +11,22 @@ import {
 import {
   createDemoAccounts,
   createDemoSnapshots,
+  createDemoTransactions,
   createDemoValueEntries,
 } from "./demo-data";
 import { todayISO } from "./format";
 import type { WorthBackupPayload } from "./import-backup";
+import {
+  applyLedgerDeltaToBalance,
+  balanceOnDate,
+  oppositeTransactionType,
+} from "./ledger";
 import type {
   Account,
   AccountValueEntry,
   Currency,
   HistoricalSnapshot,
+  Transaction,
   UserSettings,
 } from "./types";
 
@@ -26,9 +34,12 @@ function id(): string {
   return crypto.randomUUID();
 }
 
+type TransactionInput = Omit<Transaction, "id" | "createdAt">;
+
 interface WorthState {
   accounts: Account[];
   valueEntries: AccountValueEntry[];
+  transactions: Transaction[];
   snapshots: HistoricalSnapshot[];
   currencies: Currency[];
   settings: UserSettings;
@@ -52,6 +63,10 @@ interface WorthState {
     markOnGraph?: boolean;
   }) => void;
   deleteValueEntry: (entryId: string) => void;
+
+  addTransaction: (input: TransactionInput) => void;
+  updateTransaction: (id: string, patch: Partial<TransactionInput>) => void;
+  deleteTransaction: (id: string) => void;
 
   takeSnapshot: (date?: string) => void;
   deleteSnapshot: (id: string) => void;
@@ -130,6 +145,105 @@ function seedEntryForAccount(account: Account): AccountValueEntry {
   };
 }
 
+function writeValueOnDate(
+  valueEntries: AccountValueEntry[],
+  accountId: string,
+  date: string,
+  value: number,
+  note?: string,
+): AccountValueEntry[] {
+  const existing = valueEntries.find(
+    (e) => e.accountId === accountId && e.date === date,
+  );
+  if (existing) {
+    return valueEntries.map((e) =>
+      e.id === existing.id
+        ? { ...e, value, note: note ?? e.note, markOnGraph: true }
+        : e,
+    );
+  }
+  return [
+    ...valueEntries,
+    {
+      id: id(),
+      accountId,
+      date,
+      value,
+      note,
+      markOnGraph: true,
+      createdAt: new Date().toISOString(),
+    },
+  ];
+}
+
+/**
+ * Apply or reverse a ledger entry against a linked account's value history.
+ */
+function applyTransactionLink(
+  accounts: Account[],
+  valueEntries: AccountValueEntry[],
+  snapshots: HistoricalSnapshot[],
+  currencies: Currency[],
+  tx: Pick<Transaction, "type" | "amount" | "currency" | "date" | "accountId" | "title">,
+  mode: "apply" | "reverse",
+): {
+  accounts: Account[];
+  valueEntries: AccountValueEntry[];
+  snapshots: HistoricalSnapshot[];
+} {
+  if (!tx.accountId) {
+    return { accounts, valueEntries, snapshots };
+  }
+
+  const account = accounts.find((a) => a.id === tx.accountId);
+  if (!account) {
+    return { accounts, valueEntries, snapshots };
+  }
+
+  const amountInAccount = convertAmount(
+    tx.amount,
+    tx.currency,
+    account.currency,
+    currencies,
+  );
+  const effectiveType =
+    mode === "apply" ? tx.type : oppositeTransactionType(tx.type);
+  const base = balanceOnDate(
+    valueEntries,
+    account.id,
+    tx.date,
+    account.currentValue,
+  );
+  const nextValue = applyLedgerDeltaToBalance(
+    base,
+    account.isLiability,
+    effectiveType,
+    amountInAccount,
+  );
+  const note =
+    mode === "apply"
+      ? `Ledger: ${tx.title}`
+      : undefined;
+
+  let nextEntries = writeValueOnDate(
+    valueEntries,
+    account.id,
+    tx.date,
+    nextValue,
+    note,
+  );
+  const synced = syncAccountFromEntries(account, nextEntries);
+  const nextAccounts = accounts.map((a) =>
+    a.id === account.id ? synced : a,
+  );
+
+  return {
+    accounts: nextAccounts,
+    valueEntries: nextEntries,
+    snapshots: upsertSnapshot(snapshots, nextAccounts, currencies, tx.date),
+  };
+}
+
 const defaultSettings: UserSettings = {
   baseCurrency: "HKD",
   isPrivacyMode: false,
@@ -142,6 +256,7 @@ export const useWorthStore = create<WorthState>()(
     (set, get) => ({
       accounts: [],
       valueEntries: [],
+      transactions: [],
       snapshots: [],
       currencies: DEFAULT_CURRENCIES,
       settings: defaultSettings,
@@ -156,16 +271,21 @@ export const useWorthStore = create<WorthState>()(
         set({
           accounts,
           valueEntries,
+          transactions: [],
           snapshots,
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
         });
+        for (const input of createDemoTransactions(accounts)) {
+          get().addTransaction(input);
+        }
       },
 
       resetAll: () =>
         set({
           accounts: [],
           valueEntries: [],
+          transactions: [],
           snapshots: [],
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
@@ -179,6 +299,7 @@ export const useWorthStore = create<WorthState>()(
         set({
           accounts: payload.accounts,
           valueEntries,
+          transactions: payload.transactions ?? [],
           snapshots: payload.snapshots,
           currencies: payload.currencies,
           settings: payload.settings,
@@ -266,6 +387,9 @@ export const useWorthStore = create<WorthState>()(
         set((s) => ({
           accounts: s.accounts.filter((a) => a.id !== accountId),
           valueEntries: s.valueEntries.filter((e) => e.accountId !== accountId),
+          transactions: s.transactions.map((t) =>
+            t.accountId === accountId ? { ...t, accountId: undefined } : t,
+          ),
         }));
       },
 
@@ -285,7 +409,6 @@ export const useWorthStore = create<WorthState>()(
           const noteValue = note?.trim() || undefined;
 
           if (entryId) {
-            // Editing an existing row — drop any other entry on the new date.
             valueEntries = valueEntries.filter(
               (e) => e.id === entryId || !(e.accountId === accountId && e.date === date),
             );
@@ -355,6 +478,111 @@ export const useWorthStore = create<WorthState>()(
         });
       },
 
+      addTransaction: (input) => {
+        const tx: Transaction = {
+          ...input,
+          amount: Math.abs(input.amount),
+          title: input.title.trim() || (input.type === "income" ? "Income" : "Expense"),
+          note: input.note?.trim() || undefined,
+          accountId: input.accountId || undefined,
+          id: id(),
+          createdAt: new Date().toISOString(),
+        };
+        set((s) => {
+          const linked = applyTransactionLink(
+            s.accounts,
+            s.valueEntries,
+            s.snapshots,
+            s.currencies,
+            tx,
+            "apply",
+          );
+          return {
+            ...linked,
+            transactions: [tx, ...s.transactions],
+          };
+        });
+      },
+
+      updateTransaction: (txId, patch) => {
+        set((s) => {
+          const existing = s.transactions.find((t) => t.id === txId);
+          if (!existing) return s;
+
+          const next: Transaction = {
+            ...existing,
+            ...patch,
+            amount:
+              patch.amount !== undefined
+                ? Math.abs(patch.amount)
+                : existing.amount,
+            title:
+              patch.title !== undefined
+                ? patch.title.trim() || existing.title
+                : existing.title,
+            note:
+              patch.note !== undefined
+                ? patch.note.trim() || undefined
+                : existing.note,
+            accountId:
+              patch.accountId !== undefined
+                ? patch.accountId || undefined
+                : existing.accountId,
+          };
+
+          let accounts = s.accounts;
+          let valueEntries = s.valueEntries;
+          let snapshots = s.snapshots;
+
+          const reversed = applyTransactionLink(
+            accounts,
+            valueEntries,
+            snapshots,
+            s.currencies,
+            existing,
+            "reverse",
+          );
+          accounts = reversed.accounts;
+          valueEntries = reversed.valueEntries;
+          snapshots = reversed.snapshots;
+
+          const applied = applyTransactionLink(
+            accounts,
+            valueEntries,
+            snapshots,
+            s.currencies,
+            next,
+            "apply",
+          );
+
+          return {
+            accounts: applied.accounts,
+            valueEntries: applied.valueEntries,
+            snapshots: applied.snapshots,
+            transactions: s.transactions.map((t) => (t.id === txId ? next : t)),
+          };
+        });
+      },
+
+      deleteTransaction: (txId) => {
+        set((s) => {
+          const existing = s.transactions.find((t) => t.id === txId);
+          if (!existing) return s;
+          const linked = applyTransactionLink(
+            s.accounts,
+            s.valueEntries,
+            s.snapshots,
+            s.currencies,
+            existing,
+            "reverse",
+          );
+          return {
+            ...linked,
+            transactions: s.transactions.filter((t) => t.id !== txId),
+          };
+        });
+      },
+
       takeSnapshot: (date) => {
         const { accounts, currencies, snapshots } = get();
         const snapDate = date ?? todayISO();
@@ -391,11 +619,12 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
         valueEntries: state.valueEntries,
+        transactions: state.transactions,
         snapshots: state.snapshots,
         currencies: state.currencies,
         settings: state.settings,
@@ -404,6 +633,7 @@ export const useWorthStore = create<WorthState>()(
         const state = persisted as {
           accounts?: Account[];
           valueEntries?: AccountValueEntry[];
+          transactions?: Transaction[];
           snapshots?: HistoricalSnapshot[];
           currencies?: Currency[];
           settings?: UserSettings;
@@ -431,6 +661,12 @@ export const useWorthStore = create<WorthState>()(
               markOnGraph: true,
               createdAt: a.updatedAt || new Date().toISOString(),
             }));
+          }
+        }
+
+        if (version < 4) {
+          if (!Array.isArray(state.transactions)) {
+            state.transactions = [];
           }
         }
 

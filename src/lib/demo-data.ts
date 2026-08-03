@@ -1,4 +1,9 @@
-import type { Account, AccountValueEntry, HistoricalSnapshot } from "./types";
+import type {
+  Account,
+  AccountValueEntry,
+  HistoricalSnapshot,
+  Transaction,
+} from "./types";
 
 function id(): string {
   return crypto.randomUUID();
@@ -150,6 +155,74 @@ export function createDemoValueEntries(accounts: Account[]): AccountValueEntry[]
     });
   }
   return entries;
+}
+
+/** Sample income/expense rows (applied via store so linked balances update). */
+export function createDemoTransactions(
+  accounts: Account[],
+): Omit<Transaction, "id" | "createdAt">[] {
+  const cash = accounts.find((a) => a.name === "HSBC Savings");
+  const card = accounts.find((a) => a.name === "Amex Platinum");
+  const brokerage = accounts.find((a) => a.name === "USD Brokerage");
+
+  return [
+    {
+      type: "income",
+      amount: 48000,
+      currency: "HKD",
+      date: daysAgo(3),
+      title: "Monthly salary",
+      category: "salary",
+      accountId: cash?.id,
+      note: "Payroll",
+    },
+    {
+      type: "expense",
+      amount: 286,
+      currency: "HKD",
+      date: daysAgo(2),
+      title: "Lunch near Central",
+      category: "food",
+      accountId: cash?.id,
+    },
+    {
+      type: "expense",
+      amount: 1200,
+      currency: "HKD",
+      date: daysAgo(1),
+      title: "Amex statement",
+      category: "shopping",
+      accountId: card?.id,
+      note: "Increases card balance",
+    },
+    {
+      type: "income",
+      amount: 350,
+      currency: "USD",
+      date: daysAgo(5),
+      title: "Dividend",
+      category: "investment_return",
+      accountId: brokerage?.id,
+    },
+    {
+      type: "expense",
+      amount: 88,
+      currency: "HKD",
+      date: daysAgo(0),
+      title: "MTR octopus",
+      category: "transport",
+      accountId: cash?.id,
+    },
+    {
+      type: "income",
+      amount: 2000,
+      currency: "HKD",
+      date: daysAgo(10),
+      title: "Freelance side job",
+      category: "other",
+      // unlinked — ledger only
+    },
+  ];
 }
 
 /** Generate ~6 months of weekly snapshots with a gentle upward drift. */

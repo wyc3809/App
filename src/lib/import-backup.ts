@@ -5,6 +5,9 @@ import type {
   AccountValueEntry,
   Currency,
   HistoricalSnapshot,
+  LedgerCategory,
+  Transaction,
+  TransactionType,
   UserSettings,
 } from "./types";
 
@@ -15,6 +18,7 @@ export interface WorthBackupPayload {
   accounts: Account[];
   snapshots: HistoricalSnapshot[];
   valueEntries?: AccountValueEntry[];
+  transactions?: Transaction[];
 }
 
 const ASSET_CATEGORIES = new Set([
@@ -138,6 +142,52 @@ function parseValueEntry(raw: unknown): AccountValueEntry | null {
   };
 }
 
+const LEDGER_CATEGORIES = new Set([
+  "salary",
+  "bonus",
+  "investment_return",
+  "gift",
+  "food",
+  "transport",
+  "housing",
+  "shopping",
+  "entertainment",
+  "health",
+  "utilities",
+  "transfer",
+  "other",
+]);
+
+function parseTransaction(raw: unknown): Transaction | null {
+  if (!isRecord(raw)) return null;
+  if (typeof raw.id !== "string" || !raw.id) return null;
+  if (raw.type !== "income" && raw.type !== "expense") return null;
+  if (!isFiniteNumber(raw.amount) || raw.amount < 0) return null;
+  if (typeof raw.currency !== "string" || !raw.currency) return null;
+  if (typeof raw.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) return null;
+  if (typeof raw.title !== "string" || !raw.title.trim()) return null;
+  if (typeof raw.category !== "string" || !LEDGER_CATEGORIES.has(raw.category)) {
+    return null;
+  }
+  if (typeof raw.createdAt !== "string") return null;
+
+  return {
+    id: raw.id,
+    type: raw.type as TransactionType,
+    amount: raw.amount,
+    currency: raw.currency,
+    date: raw.date,
+    title: raw.title.trim(),
+    note: typeof raw.note === "string" ? raw.note : undefined,
+    category: raw.category as LedgerCategory,
+    accountId:
+      typeof raw.accountId === "string" && raw.accountId
+        ? raw.accountId
+        : undefined,
+    createdAt: raw.createdAt,
+  };
+}
+
 function parseSettings(raw: unknown): UserSettings | null {
   if (!isRecord(raw)) return null;
   if (typeof raw.baseCurrency !== "string" || !raw.baseCurrency) return null;
@@ -210,6 +260,15 @@ export function parseWorthBackup(input: unknown): ImportResult {
     valueEntries = parsed as AccountValueEntry[];
   }
 
+  let transactions: Transaction[] | undefined;
+  if (Array.isArray(input.transactions)) {
+    const parsed = input.transactions.map(parseTransaction);
+    if (parsed.some((t) => t === null)) {
+      return { ok: false, error: "One or more transactions in the backup are invalid." };
+    }
+    transactions = parsed as Transaction[];
+  }
+
   return {
     ok: true,
     data: {
@@ -221,6 +280,7 @@ export function parseWorthBackup(input: unknown): ImportResult {
         a.date.localeCompare(b.date),
       ),
       valueEntries,
+      transactions,
     },
   };
 }

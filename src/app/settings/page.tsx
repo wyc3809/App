@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const accounts = useWorthStore((s) => s.accounts);
   const snapshots = useWorthStore((s) => s.snapshots);
   const valueEntries = useWorthStore((s) => s.valueEntries);
+  const transactions = useWorthStore((s) => s.transactions);
   const updateSettings = useWorthStore((s) => s.updateSettings);
   const updateCurrencyRate = useWorthStore((s) => s.updateCurrencyRate);
   const setBaseCurrency = useWorthStore((s) => s.setBaseCurrency);
@@ -42,6 +43,7 @@ export default function SettingsPage() {
       accounts,
       snapshots,
       valueEntries,
+      transactions,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json",
@@ -68,7 +70,7 @@ export default function SettingsPage() {
     }
 
     const replace = confirm(
-      `Import ${result.data.accounts.length} accounts and ${result.data.snapshots.length} snapshots?\n\nThis replaces your current local data.`,
+      `Import ${result.data.accounts.length} accounts, ${result.data.snapshots.length} snapshots, and ${result.data.transactions?.length ?? 0} ledger entries?\n\nThis replaces your current local data.`,
     );
     if (!replace) {
       setImporting(false);
@@ -77,7 +79,7 @@ export default function SettingsPage() {
 
     importBackup(result.data);
     setImportMessage(
-      `Imported ${result.data.accounts.length} accounts and ${result.data.snapshots.length} snapshots.`,
+      `Imported ${result.data.accounts.length} accounts, ${result.data.snapshots.length} snapshots, and ${result.data.transactions?.length ?? 0} ledger entries.`,
     );
     setImporting(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -249,7 +251,7 @@ export default function SettingsPage() {
           className="btn-secondary w-full"
           style={{ color: "var(--danger)" }}
           onClick={() => {
-            if (confirm("Delete all accounts, snapshots, and reset settings?")) resetAll();
+            if (confirm("Delete all accounts, ledger entries, snapshots, and reset settings?")) resetAll();
           }}
         >
           <Eraser size={18} />
