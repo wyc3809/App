@@ -60,6 +60,28 @@ describe("balanceOnDate", () => {
   it("falls back when no history", () => {
     expect(balanceOnDate([], "a", "2026-08-01", 42)).toBe(42);
   });
+
+  it("uses latest same-day entry", () => {
+    const sameDay: AccountValueEntry[] = [
+      {
+        id: "1",
+        accountId: "a",
+        date: "2026-08-01",
+        value: 100,
+        markOnGraph: true,
+        createdAt: "2026-08-01T10:00:00.000Z",
+      },
+      {
+        id: "2",
+        accountId: "a",
+        date: "2026-08-01",
+        value: 150,
+        markOnGraph: true,
+        createdAt: "2026-08-01T18:00:00.000Z",
+      },
+    ];
+    expect(balanceOnDate(sameDay, "a", "2026-08-01", 0)).toBe(150);
+  });
 });
 
 describe("ledger totals", () => {

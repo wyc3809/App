@@ -6,7 +6,10 @@ export function getAccountEntries(
 ): AccountValueEntry[] {
   return entries
     .filter((e) => e.accountId === accountId)
-    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
 }
 
 export function getLatestEntry(
@@ -18,6 +21,7 @@ export function getLatestEntry(
 }
 
 export interface ValueHistoryPoint {
+  entryId: string;
   date: string;
   label: string;
   value: number;
@@ -25,6 +29,9 @@ export interface ValueHistoryPoint {
   markOnGraph: boolean;
   changeAbsolute: number | null;
   changePercent: number | null;
+  /** Present when this row came from a linked ledger transaction. */
+  transactionId?: string;
+  delta?: number;
 }
 
 export function buildAccountHistoryPoints(
@@ -35,15 +42,21 @@ export function buildAccountHistoryPoints(
   return chronological
     .map((entry, index) => {
       const prev = index > 0 ? chronological[index - 1] : null;
-      const changeAbsolute = prev ? entry.value - prev.value : null;
+      const changeAbsolute =
+        entry.delta != null
+          ? entry.delta
+          : prev
+            ? entry.value - prev.value
+            : null;
       const changePercent =
-        prev == null || prev.value === 0
-          ? prev == null
-            ? null
-            : 0
-          : ((entry.value - prev.value) / Math.abs(prev.value)) * 100;
+        changeAbsolute == null || prev == null
+          ? null
+          : prev.value === 0
+            ? 0
+            : (changeAbsolute / Math.abs(prev.value)) * 100;
       const d = new Date(`${entry.date}T00:00:00`);
       return {
+        entryId: entry.id,
         date: entry.date,
         label: d.toLocaleDateString(undefined, {
           month: "short",
@@ -55,6 +68,8 @@ export function buildAccountHistoryPoints(
         markOnGraph: entry.markOnGraph,
         changeAbsolute,
         changePercent,
+        transactionId: entry.transactionId,
+        delta: entry.delta,
       };
     })
     .reverse();

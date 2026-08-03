@@ -102,7 +102,7 @@ export function oppositeTransactionType(type: TransactionType): TransactionType 
 }
 
 /**
- * Balance for an account on `date`: exact entry that day, else latest on/before,
+ * Latest balance for an account on/before `date` (same-day uses newest createdAt),
  * else the provided fallback (usually `account.currentValue`).
  */
 export function balanceOnDate(
@@ -111,10 +111,21 @@ export function balanceOnDate(
   date: string,
   fallback: number,
 ): number {
-  const onDay = entries.find((e) => e.accountId === accountId && e.date === date);
-  if (onDay) return onDay.value;
   const prior = entries
     .filter((e) => e.accountId === accountId && e.date <= date)
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
   return prior[0]?.value ?? fallback;
+}
+
+/** True if `a` is strictly after `b` in value-history order. */
+export function isEntryAfter(
+  a: Pick<AccountValueEntry, "date" | "createdAt">,
+  b: Pick<AccountValueEntry, "date" | "createdAt">,
+): boolean {
+  const d = a.date.localeCompare(b.date);
+  if (d !== 0) return d > 0;
+  return a.createdAt.localeCompare(b.createdAt) > 0;
 }

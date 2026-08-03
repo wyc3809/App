@@ -19,6 +19,7 @@ import type { WorthBackupPayload } from "./import-backup";
 import {
   applyLedgerDeltaToBalance,
   balanceOnDate,
+  isEntryAfter,
   oppositeTransactionType,
 } from "./ledger";
 import type {
@@ -153,7 +154,7 @@ function writeValueOnDate(
   note?: string,
 ): AccountValueEntry[] {
   const existing = valueEntries.find(
-    (e) => e.accountId === accountId && e.date === date,
+    (e) => e.accountId === accountId && e.date === date && !e.transactionId,
   );
   if (existing) {
     return valueEntries.map((e) =>
@@ -176,15 +177,39 @@ function writeValueOnDate(
   ];
 }
 
+function cascadeAdjustAfterRemoval(
+  entries: AccountValueEntry[],
+  removed: AccountValueEntry,
+): AccountValueEntry[] {
+  const delta = removed.delta ?? 0;
+  if (delta === 0) {
+    return entries.filter((e) => e.id !== removed.id);
+  }
+  return entries
+    .filter((e) => e.id !== removed.id)
+    .map((e) => {
+      if (e.accountId !== removed.accountId) return e;
+      if (!isEntryAfter(e, removed)) return e;
+      return {
+        ...e,
+        value: Math.max(0, Number((e.value - delta).toFixed(2))),
+      };
+    });
+}
+
 /**
  * Apply or reverse a ledger entry against a linked account's value history.
+ * Each linked ledger creates its own Value History row (not merged by date).
  */
 function applyTransactionLink(
   accounts: Account[],
   valueEntries: AccountValueEntry[],
   snapshots: HistoricalSnapshot[],
   currencies: Currency[],
-  tx: Pick<Transaction, "type" | "amount" | "currency" | "date" | "accountId" | "title">,
+  tx: Pick<
+    Transaction,
+    "id" | "type" | "amount" | "currency" | "date" | "accountId" | "title"
+  >,
   mode: "apply" | "reverse",
 ): {
   accounts: Account[];
@@ -200,38 +225,89 @@ function applyTransactionLink(
     return { accounts, valueEntries, snapshots };
   }
 
-  const amountInAccount = convertAmount(
-    tx.amount,
-    tx.currency,
-    account.currency,
-    currencies,
-  );
-  const effectiveType =
-    mode === "apply" ? tx.type : oppositeTransactionType(tx.type);
-  const base = balanceOnDate(
-    valueEntries,
-    account.id,
-    tx.date,
-    account.currentValue,
-  );
-  const nextValue = applyLedgerDeltaToBalance(
-    base,
-    account.isLiability,
-    effectiveType,
-    amountInAccount,
-  );
-  const note =
-    mode === "apply"
-      ? `Ledger: ${tx.title}`
-      : undefined;
+  let nextEntries = valueEntries;
 
-  let nextEntries = writeValueOnDate(
-    valueEntries,
-    account.id,
-    tx.date,
-    nextValue,
-    note,
-  );
+  if (mode === "reverse") {
+    const linked = valueEntries.find((e) => e.transactionId === tx.id);
+    if (linked) {
+      nextEntries = cascadeAdjustAfterRemoval(valueEntries, linked);
+    } else {
+      // Legacy rows without transactionId — reverse by opposite delta on that date.
+      const amountInAccount = convertAmount(
+        tx.amount,
+        tx.currency,
+        account.currency,
+        currencies,
+      );
+      const base = balanceOnDate(
+        valueEntries,
+        account.id,
+        tx.date,
+        account.currentValue,
+      );
+      const nextValue = applyLedgerDeltaToBalance(
+        base,
+        account.isLiability,
+        oppositeTransactionType(tx.type),
+        amountInAccount,
+      );
+      nextEntries = writeValueOnDate(
+        valueEntries,
+        account.id,
+        tx.date,
+        nextValue,
+        undefined,
+      );
+    }
+  } else {
+    // Drop any previous row for this transaction (idempotent re-apply).
+    const withoutSelf = valueEntries.filter((e) => e.transactionId !== tx.id);
+    const amountInAccount = convertAmount(
+      tx.amount,
+      tx.currency,
+      account.currency,
+      currencies,
+    );
+    const base = balanceOnDate(
+      withoutSelf,
+      account.id,
+      tx.date,
+      account.currentValue,
+    );
+    const nextValue = applyLedgerDeltaToBalance(
+      base,
+      account.isLiability,
+      tx.type,
+      amountInAccount,
+    );
+    const delta = Number((nextValue - base).toFixed(2));
+    const kind = tx.type === "income" ? "Income" : "Expense";
+    const createdAt = new Date().toISOString();
+    const newEntry: AccountValueEntry = {
+      id: id(),
+      accountId: account.id,
+      date: tx.date,
+      value: nextValue,
+      note: `${kind} · ${tx.title}`,
+      markOnGraph: true,
+      createdAt,
+      transactionId: tx.id,
+      delta,
+    };
+    // Later-dated absolute balances must include this delta.
+    nextEntries = [
+      ...withoutSelf.map((e) => {
+        if (e.accountId !== account.id) return e;
+        if (e.date <= tx.date) return e;
+        return {
+          ...e,
+          value: Math.max(0, Number((e.value + delta).toFixed(2))),
+        };
+      }),
+      newEntry,
+    ];
+  }
+
   const synced = syncAccountFromEntries(account, nextEntries);
   const nextAccounts = accounts.map((a) =>
     a.id === account.id ? synced : a,
@@ -455,9 +531,14 @@ export const useWorthStore = create<WorthState>()(
       },
 
       deleteValueEntry: (entryId) => {
+        const entry = get().valueEntries.find((e) => e.id === entryId);
+        if (!entry) return;
+        // Ledger-linked rows are owned by the transaction — reverse via ledger delete.
+        if (entry.transactionId) {
+          get().deleteTransaction(entry.transactionId);
+          return;
+        }
         set((s) => {
-          const entry = s.valueEntries.find((e) => e.id === entryId);
-          if (!entry) return s;
           const valueEntries = s.valueEntries.filter((e) => e.id !== entryId);
           const account = s.accounts.find((a) => a.id === entry.accountId);
           if (!account) return { valueEntries };

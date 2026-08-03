@@ -139,6 +139,11 @@ function parseValueEntry(raw: unknown): AccountValueEntry | null {
     note: typeof raw.note === "string" ? raw.note : undefined,
     markOnGraph: typeof raw.markOnGraph === "boolean" ? raw.markOnGraph : true,
     createdAt: raw.createdAt,
+    transactionId:
+      typeof raw.transactionId === "string" && raw.transactionId
+        ? raw.transactionId
+        : undefined,
+    delta: isFiniteNumber(raw.delta) ? raw.delta : undefined,
   };
 }
 
