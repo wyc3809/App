@@ -1,2 +1,2 @@
-:HL["/App/worthtracker/_next/static/chunks/0w5pkjpll0-9x.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"CWx4Oa6OTHOW0VhBW47aB"}
+:HL["/App/worthtracker/_next/static/chunks/0px6iyu_iblbc.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"plmG1W7GL0hS3S7Q-BTEI"}
