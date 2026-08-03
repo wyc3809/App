@@ -615,7 +615,7 @@ describe('life event engine', () => {
   it('content packs: each sect has four arts with combat-useful effects', async () => {
     const { SECT_CONTENT, FAMILY_RULES, STORY_CHAPTERS } = await import('../data/content/packs');
     const { getSkillDef } = await import('../data/skills/catalog');
-    expect(SECT_CONTENT).toHaveLength(5);
+    expect(SECT_CONTENT).toHaveLength(8);
     expect(STORY_CHAPTERS.length).toBeGreaterThanOrEqual(4);
     expect(FAMILY_RULES.lifetimeChildrenMax).toBe(5);
     expect(FAMILY_RULES.lifetimeChildrenMin).toBe(1);

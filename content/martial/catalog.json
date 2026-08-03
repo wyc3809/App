@@ -902,6 +902,226 @@
         "qiRegen": 6,
         "attack": 2
       }
+    },
+    {
+      "id": "tm_flying_needle",
+      "name": "唐門飛針",
+      "kind": "external",
+      "sectId": "sect_tangmen",
+      "unlockStanding": 0,
+      "flavor": "外門暗器：細針如雨，先求連發見血。",
+      "weaponKind": "hidden",
+      "move": {
+        "id": "mv_tm_needle",
+        "name": "飛針如雨",
+        "qiCost": 32,
+        "power": 0.72,
+        "hitBonus": 0.1,
+        "multiHit": 3,
+        "bleedChance": 0.28,
+        "bleedDamage": 6,
+        "bleedTurns": 2,
+        "description": "細針連發，專取見血。"
+      }
+    },
+    {
+      "id": "tm_shadow_step",
+      "name": "影步",
+      "kind": "qinggong",
+      "sectId": "sect_tangmen",
+      "unlockStanding": 1,
+      "flavor": "內門身法：步入陰影，閃避與準頭俱增。",
+      "passive": {
+        "evasionBonus": 0.1,
+        "hitBonus": 0.05
+      }
+    },
+    {
+      "id": "tm_poison_dart",
+      "name": "淬毒鏢",
+      "kind": "external",
+      "sectId": "sect_tangmen",
+      "unlockStanding": 2,
+      "flavor": "真傳暗器：鏢尖帶毒，透防擾脈。",
+      "weaponKind": "hidden",
+      "move": {
+        "id": "mv_tm_poison",
+        "name": "淬毒一鏢",
+        "qiCost": 44,
+        "power": 1.32,
+        "hitBonus": 0.08,
+        "pierce": 0.28,
+        "qiDrain": 10,
+        "bleedChance": 0.4,
+        "bleedDamage": 8,
+        "bleedTurns": 3,
+        "description": "毒鏢破空，脈息皆滯。"
+      }
+    },
+    {
+      "id": "tm_thousand_mech",
+      "name": "千機手",
+      "kind": "external",
+      "sectId": "sect_tangmen",
+      "unlockStanding": 3,
+      "flavor": "執事奇門：機關連射，可眩敵半息。",
+      "weaponKind": "hidden",
+      "move": {
+        "id": "mv_tm_mech",
+        "name": "千機連射",
+        "qiCost": 52,
+        "power": 0.7,
+        "hitBonus": 0.12,
+        "multiHit": 4,
+        "pierce": 0.15,
+        "stunChance": 0.22,
+        "bleedChance": 0.25,
+        "bleedDamage": 5,
+        "bleedTurns": 2,
+        "description": "機關齊發，敵勢一窒。"
+      }
+    },
+    {
+      "id": "mj_blood_palm",
+      "name": "血影掌",
+      "kind": "external",
+      "sectId": "sect_mojiao",
+      "unlockStanding": 0,
+      "flavor": "外門魔掌：掌勁帶血煞，傷敵自補。",
+      "move": {
+        "id": "mv_mj_palm",
+        "name": "血影一掌",
+        "qiCost": 34,
+        "power": 1.35,
+        "lifesteal": 0.22,
+        "description": "掌帶血煞，傷敵補己。"
+      }
+    },
+    {
+      "id": "mj_devil_breath",
+      "name": "魔息吐納",
+      "kind": "internal",
+      "sectId": "sect_mojiao",
+      "unlockStanding": 1,
+      "flavor": "內門吐納：魔息入體，攻勢更烈，亦能反震。",
+      "passive": {
+        "attack": 8,
+        "maxQi": 20,
+        "qiRegen": 4,
+        "reflect": 0.08
+      }
+    },
+    {
+      "id": "mj_soul_drain",
+      "name": "吸脈指",
+      "kind": "external",
+      "sectId": "sect_mojiao",
+      "unlockStanding": 2,
+      "flavor": "真傳魔指：透防抽脈，敵氣為我用。",
+      "move": {
+        "id": "mv_mj_drain",
+        "name": "吸脈一指",
+        "qiCost": 46,
+        "power": 1.25,
+        "pierce": 0.3,
+        "qiDrain": 18,
+        "lifesteal": 0.12,
+        "description": "一指抽脈，敵息歸我。"
+      }
+    },
+    {
+      "id": "mj_asura_slash",
+      "name": "修羅斬",
+      "kind": "external",
+      "sectId": "sect_mojiao",
+      "unlockStanding": 3,
+      "flavor": "執事魔刀：一斬定生死，流血兼吸血。",
+      "weaponKind": "blade",
+      "move": {
+        "id": "mv_mj_asura",
+        "name": "修羅一斬",
+        "qiCost": 55,
+        "power": 1.7,
+        "pierce": 0.18,
+        "lifesteal": 0.28,
+        "bleedChance": 0.45,
+        "bleedDamage": 10,
+        "bleedTurns": 3,
+        "stunChance": 0.15,
+        "description": "修羅刀意，血火齊吞。"
+      }
+    },
+    {
+      "id": "hs_pine_sword",
+      "name": "松風劍",
+      "kind": "external",
+      "sectId": "sect_huashan",
+      "unlockStanding": 0,
+      "flavor": "外門劍式：松風入劍，穩準清剛。",
+      "weaponKind": "sword",
+      "move": {
+        "id": "mv_hs_pine",
+        "name": "松風一刺",
+        "qiCost": 30,
+        "power": 1.3,
+        "hitBonus": 0.08,
+        "pierce": 0.12,
+        "description": "劍帶松風，點破敵招。"
+      }
+    },
+    {
+      "id": "hs_cloud_step",
+      "name": "雲臺步",
+      "kind": "external",
+      "sectId": "sect_huashan",
+      "unlockStanding": 1,
+      "flavor": "內門身法劍：步上雲臺，連刺取隙。",
+      "weaponKind": "sword",
+      "move": {
+        "id": "mv_hs_cloud",
+        "name": "雲臺連刺",
+        "qiCost": 38,
+        "power": 0.75,
+        "hitBonus": 0.12,
+        "multiHit": 2,
+        "pierce": 0.1,
+        "description": "步影如雲，連刺取隙。"
+      }
+    },
+    {
+      "id": "hs_split_peak",
+      "name": "劈岳劍",
+      "kind": "external",
+      "sectId": "sect_huashan",
+      "unlockStanding": 2,
+      "flavor": "真傳劍勢：一劍劈岳，破防震敵。",
+      "weaponKind": "sword",
+      "move": {
+        "id": "mv_hs_peak",
+        "name": "劈岳一劍",
+        "qiCost": 48,
+        "power": 1.55,
+        "hitBonus": 0.06,
+        "pierce": 0.22,
+        "defenseBreak": 5,
+        "stunChance": 0.18,
+        "description": "劍勢如岳，敵防一潰。"
+      }
+    },
+    {
+      "id": "hs_yue_breath",
+      "name": "華嶽吐納",
+      "kind": "internal",
+      "sectId": "sect_huashan",
+      "unlockStanding": 3,
+      "flavor": "執事吐納：氣接華嶽，劍勢與氣海同厚。",
+      "passive": {
+        "attack": 4,
+        "maxQi": 35,
+        "qiRegen": 8,
+        "hitBonus": 0.04,
+        "defense": 4
+      }
     }
   ]
 }

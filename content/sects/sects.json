@@ -70,6 +70,45 @@
         { "skillId": "wd_pure_yang", "standing": 2 },
         { "skillId": "wd_wuji_sword", "standing": 3 }
       ]
+    },
+    {
+      "id": "sect_tangmen",
+      "name": "唐門",
+      "hint": "暗器奇門，毒影無聲",
+      "trait": "暗器與毒勁並用，擅流血、連發與破防；心性偏邪者易入門。",
+      "natureGate": { "min": { "xie": 16 }, "max": { "xia": 58 } },
+      "arts": [
+        { "skillId": "tm_flying_needle", "standing": 0 },
+        { "skillId": "tm_shadow_step", "standing": 1 },
+        { "skillId": "tm_poison_dart", "standing": 2 },
+        { "skillId": "tm_thousand_mech", "standing": 3 }
+      ]
+    },
+    {
+      "id": "sect_mojiao",
+      "name": "魔教",
+      "hint": "血火魔息，以力吞人",
+      "trait": "攻勢兇厲，吸血耗脈；惡念深者易被接納，正氣太盛則拒。",
+      "natureGate": { "min": { "e": 14 }, "max": { "xia": 48 } },
+      "arts": [
+        { "skillId": "mj_blood_palm", "standing": 0 },
+        { "skillId": "mj_devil_breath", "standing": 1 },
+        { "skillId": "mj_soul_drain", "standing": 2 },
+        { "skillId": "mj_asura_slash", "standing": 3 }
+      ]
+    },
+    {
+      "id": "sect_huashan",
+      "name": "華山",
+      "hint": "劍氣松風，以劍問道",
+      "trait": "劍勢清剛，準頭與穿透並重；高階兼顧氣海與連刺，偏俠者易合門風。",
+      "natureGate": { "min": { "xia": 16 }, "max": { "e": 38, "xie": 45 } },
+      "arts": [
+        { "skillId": "hs_pine_sword", "standing": 0 },
+        { "skillId": "hs_cloud_step", "standing": 1 },
+        { "skillId": "hs_split_peak", "standing": 2 },
+        { "skillId": "hs_yue_breath", "standing": 3 }
+      ]
     }
   ],
   "standingGainHints": "差事、守山、請教、靜修、比武勝利可提升地位；每次升階傳授對應武學。心性不合門規則難以拜入。"

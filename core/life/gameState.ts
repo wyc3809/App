@@ -288,6 +288,14 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (raw.combatEncounterCountdown === undefined) {
     raw.combatEncounterCountdown = 10;
   }
+  if (!raw.sects) raw.sects = {};
+  for (const def of SECT_DEFS) {
+    if (!raw.sects[def.id]) {
+      raw.sects[def.id] = { id: def.id, name: def.name };
+    } else {
+      raw.sects[def.id].name = def.name;
+    }
+  }
   recomputeCapBonuses(raw.character);
   ensureStarterNpcs(raw);
   return raw;
