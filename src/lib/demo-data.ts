@@ -15,6 +15,12 @@ function daysAgo(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function monthsAgo(n: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 export function createDemoAccounts(): Account[] {
   const now = new Date().toISOString();
   const today = now.slice(0, 10);
@@ -133,23 +139,27 @@ export function createDemoAccounts(): Account[] {
 export function createDemoValueEntries(accounts: Account[]): AccountValueEntry[] {
   const now = new Date().toISOString();
   const entries: AccountValueEntry[] = [];
-  const months = [180, 150, 120, 90, 60, 30, 0];
+  // Quarterly points across ~8 years so year-range charts have real history.
+  const offsetsDays: number[] = [];
+  for (let q = 32; q >= 0; q--) {
+    offsetsDays.push(Math.round(q * (365.25 / 4)));
+  }
 
   for (const account of accounts) {
-    months.forEach((days, index) => {
-      const progress = index / (months.length - 1);
+    offsetsDays.forEach((days, index) => {
+      const progress = index / (offsetsDays.length - 1);
       const drift = account.isLiability
-        ? 1.18 - progress * 0.18
-        : 0.82 + progress * 0.18;
-      const noise = 1 + Math.sin(index * 1.3 + account.name.length) * 0.015;
+        ? 1.35 - progress * 0.35
+        : 0.55 + progress * 0.45;
+      const noise = 1 + Math.sin(index * 1.3 + account.name.length) * 0.02;
       const value = Number((account.currentValue * drift * noise).toFixed(2));
       entries.push({
         id: id(),
         accountId: account.id,
         date: daysAgo(days),
-        value,
+        value: Math.max(0, value),
         markOnGraph: true,
-        note: index === months.length - 1 ? "Latest" : undefined,
+        note: index === offsetsDays.length - 1 ? "Latest" : undefined,
         createdAt: now,
       });
     });
@@ -225,15 +235,15 @@ export function createDemoTransactions(
   ];
 }
 
-/** Generate ~6 months of weekly snapshots with a gentle upward drift. */
+/** Generate ~8 years of monthly snapshots for year-range trend charts. */
 export function createDemoSnapshots(accounts: Account[]): HistoricalSnapshot[] {
-  const weeks = 26;
+  const months = 8 * 12;
   const snapshots: HistoricalSnapshot[] = [];
 
-  for (let i = weeks; i >= 0; i--) {
-    const progress = (weeks - i) / weeks;
-    const drift = 0.85 + progress * 0.15;
-    const noise = 1 + Math.sin(i * 0.7) * 0.008;
+  for (let i = months; i >= 0; i--) {
+    const progress = (months - i) / months;
+    const drift = 0.55 + progress * 0.45;
+    const noise = 1 + Math.sin(i * 0.35) * 0.012;
 
     let totalAssets = 0;
     let totalLiabilities = 0;
@@ -246,14 +256,14 @@ export function createDemoSnapshots(accounts: Account[]): HistoricalSnapshot[] {
       else totalAssets += base;
       return {
         accountId: a.id,
-        balance: Number(scaled.toFixed(2)),
+        balance: Number(Math.max(0, scaled).toFixed(2)),
         currency: a.currency,
       };
     });
 
     snapshots.push({
       id: id(),
-      date: daysAgo(i * 7),
+      date: monthsAgo(i),
       totalAssetsBaseCurrency: Number(totalAssets.toFixed(2)),
       totalLiabilitiesBaseCurrency: Number(totalLiabilities.toFixed(2)),
       netWorthBaseCurrency: Number((totalAssets - totalLiabilities).toFixed(2)),

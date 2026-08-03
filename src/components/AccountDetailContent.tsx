@@ -40,7 +40,7 @@ import { formatMoney, formatPercent } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
 import type { AccountValueEntry, Transaction } from "@/lib/types";
 
-const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "4Y", "8Y"] as const;
+const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "5Y", "8Y"] as const;
 
 /** Resolve the ledger transaction for a Value History row (strict link only). */
 function resolveLedgerTransaction(

@@ -77,7 +77,7 @@ export function buildAccountHistoryPoints(
 
 export function filterHistoryByRange(
   points: ValueHistoryPoint[],
-  range: TimeRange | "YTD" | "2Y" | "4Y" | "8Y",
+  range: TimeRange | "YTD" | "2Y" | "4Y" | "5Y" | "8Y",
 ): ValueHistoryPoint[] {
   if (range === "ALL" || points.length === 0) return points;
   const now = new Date();
@@ -98,7 +98,9 @@ export function filterHistoryByRange(
                 ? 730
                 : range === "4Y"
                   ? 1460
-                  : 2920;
+                  : range === "5Y"
+                    ? 1825
+                    : 2920;
     cutoff.setDate(cutoff.getDate() - days);
   }
   const cutoffISO = cutoff.toISOString().slice(0, 10);
