@@ -72,4 +72,9 @@ describe("portfolio totals", () => {
     expect(totals.totalLiabilities).toBeCloseTo(500);
     expect(totals.netWorth).toBeCloseTo(1280);
   });
+
+  it("converts account amounts between currencies", () => {
+    expect(convertAmount(100, "USD", "HKD", DEFAULT_CURRENCIES)).toBeCloseTo(780);
+    expect(convertAmount(780, "HKD", "USD", DEFAULT_CURRENCIES)).toBeCloseTo(100);
+  });
 });

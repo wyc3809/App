@@ -56,6 +56,8 @@ interface WorthState {
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
+  /** Convert an account + its value history into another currency. */
+  changeAccountCurrency: (accountId: string, nextCurrency: string) => void;
 
   upsertValueEntry: (input: {
     entryId?: string;
@@ -524,6 +526,70 @@ export const useWorthStore = create<WorthState>()(
             t.accountId === accountId ? { ...t, accountId: undefined } : t,
           ),
         }));
+      },
+
+      changeAccountCurrency: (accountId, nextCurrency) => {
+        set((s) => {
+          const account = s.accounts.find((a) => a.id === accountId);
+          if (!account || account.currency === nextCurrency) return s;
+          if (!s.currencies.some((c) => c.code === nextCurrency)) return s;
+
+          const valueEntries = s.valueEntries.map((e) => {
+            if (e.accountId !== accountId) return e;
+            const value = Number(
+              convertAmount(
+                e.value,
+                account.currency,
+                nextCurrency,
+                s.currencies,
+              ).toFixed(2),
+            );
+            const delta =
+              e.delta == null
+                ? undefined
+                : Number(
+                    convertAmount(
+                      e.delta,
+                      account.currency,
+                      nextCurrency,
+                      s.currencies,
+                    ).toFixed(2),
+                  );
+            return { ...e, value, delta };
+          });
+
+          const currentValue = Number(
+            convertAmount(
+              account.currentValue,
+              account.currency,
+              nextCurrency,
+              s.currencies,
+            ).toFixed(2),
+          );
+
+          const accounts = s.accounts.map((a) =>
+            a.id === accountId
+              ? {
+                  ...a,
+                  currency: nextCurrency,
+                  currentValue,
+                  updatedAt: new Date().toISOString(),
+                }
+              : a,
+          );
+          const synced = resyncAllAccounts(accounts, valueEntries);
+
+          return {
+            accounts: synced,
+            valueEntries,
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              synced,
+              s.currencies,
+              todayISO(),
+            ),
+          };
+        });
       },
 
       upsertValueEntry: ({

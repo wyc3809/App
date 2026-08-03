@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { convertAmount } from "@/lib/currencies";
 import { todayISO } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
 import type { Account, AccountValueEntry } from "@/lib/types";
@@ -41,9 +42,10 @@ function AddValueDialog({
   onClose: () => void;
 }) {
   const upsertValueEntry = useWorthStore((s) => s.upsertValueEntry);
+  const changeAccountCurrency = useWorthStore((s) => s.changeAccountCurrency);
   const currencies = useWorthStore((s) => s.currencies);
-  const currency = currencies.find((c) => c.code === account.currency);
 
+  const [currency, setCurrency] = useState(account.currency);
   const [value, setValue] = useState(String(initial?.value ?? account.currentValue));
   const [asOfDate, setAsOfDate] = useState(initial?.date ?? todayISO());
   const [showDatePicker, setShowDatePicker] = useState(
@@ -52,11 +54,25 @@ function AddValueDialog({
   const [note, setNote] = useState(initial?.note ?? "");
   const [markOnGraph, setMarkOnGraph] = useState(initial?.markOnGraph ?? true);
 
+  const onCurrencyChange = (nextCode: string) => {
+    if (nextCode === currency) return;
+    const amount = Number(value);
+    if (!Number.isNaN(amount) && amount >= 0) {
+      const converted = convertAmount(amount, currency, nextCode, currencies);
+      setValue(String(Number(converted.toFixed(2))));
+    }
+    setCurrency(nextCode);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const amount = Number(value);
     if (Number.isNaN(amount) || amount < 0) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) return;
+
+    if (currency !== account.currency) {
+      changeAccountCurrency(account.id, currency);
+    }
 
     upsertValueEntry({
       entryId: initial?.id,
@@ -110,10 +126,10 @@ function AddValueDialog({
             <label className="label" htmlFor="entry-value">
               Value
             </label>
-            <div className="relative">
+            <div className="grid grid-cols-[1fr_6.5rem] gap-2">
               <input
                 id="entry-value"
-                className="field pr-16"
+                className="field"
                 type="number"
                 min="0"
                 step="any"
@@ -124,14 +140,30 @@ function AddValueDialog({
                 required
                 autoFocus
               />
-              <span
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold"
-                style={{ color: "var(--fg-muted)" }}
+              <label className="sr-only" htmlFor="entry-currency">
+                Currency
+              </label>
+              <select
+                id="entry-currency"
+                className="field px-2"
+                value={currency}
+                onChange={(e) => onCurrencyChange(e.target.value)}
+                aria-label="Currency"
               >
-                {currency?.symbol ?? ""}
-                {account.currency}
-              </span>
+                {currencies.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.symbol}
+                    {c.code}
+                  </option>
+                ))}
+              </select>
             </div>
+            {currency !== account.currency && (
+              <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
+                Saving sets this account to {currency} and converts existing
+                history with your FX rates.
+              </p>
+            )}
           </div>
 
           <div
