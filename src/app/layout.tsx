@@ -15,7 +15,10 @@ const display = Newsreader({
   display: "swap",
 });
 
-const assetBase = process.env.GITHUB_PAGES === "true" ? "/App" : "";
+const assetBase =
+  process.env.GITHUB_PAGES === "true"
+    ? process.env.PAGES_BASE_PATH || "/App/worthtracker"
+    : "";
 
 export const metadata: Metadata = {
   title: "WorthTracker — Net Worth & Wealth Tracking",

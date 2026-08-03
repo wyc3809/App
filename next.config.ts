@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const isGithubPages = process.env.GITHUB_PAGES === "true";
+/** Dedicated subpath so WorthTracker does not overwrite the game at /App/ */
+const pagesBasePath = process.env.PAGES_BASE_PATH || "/App/worthtracker";
 
 const nextConfig: NextConfig = {
   output: "export",
@@ -8,8 +10,8 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   ...(isGithubPages
     ? {
-        basePath: "/App",
-        assetPrefix: "/App",
+        basePath: pagesBasePath,
+        assetPrefix: pagesBasePath,
       }
     : {}),
 };

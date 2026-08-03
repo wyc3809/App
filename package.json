@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:pages": "GITHUB_PAGES=true next build",
+    "build:pages": "GITHUB_PAGES=true PAGES_BASE_PATH=/App/worthtracker next build",
+    "build:pages:root": "GITHUB_PAGES=true PAGES_BASE_PATH=/App next build",
     "start": "next start",
     "lint": "eslint src --max-warnings=0",
     "test": "vitest run"

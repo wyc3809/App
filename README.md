@@ -52,15 +52,17 @@ WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under
 
 ## Deploy
 
-### GitHub Pages
+### GitHub Pages (separate from the game)
 
-Pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds a static export with base path `/App` and publishes to the `gh-pages` branch.
+WorthTracker is published under a **dedicated subpath** so it does not overwrite the game at `/App/`:
 
-Live URL: **https://wyc3809.github.io/App/**
+**https://wyc3809.github.io/App/worthtracker/**
 
 ```bash
-npm run build:pages   # static export → ./out (basePath /App)
+npm run build:pages   # static export → ./out (basePath /App/worthtracker)
 ```
+
+The Actions workflow deploys only into `gh-pages/worthtracker/` with `keep_files: true`.
 
 ### Other hosts
 
