@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="踏雲履">
+  <rect width="160" height="160" rx="24" fill="#f2ead6"/>
+  <path d="M44 54c22 10 30 32 26 66H28c-2-26 2-50 16-66zM100 44c22 12 34 42 32 76H86c-4-30 0-58 14-76z" fill="#6f745d"/>
+  <path d="M26 122h48M84 122h54" stroke="#2b241d" stroke-width="8" stroke-linecap="round"/>
+  <path d="M42 72c10 12 16 26 16 42M102 66c10 16 16 32 16 48" stroke="#f4ecd6" stroke-width="5" opacity=".5"/>
+</svg>

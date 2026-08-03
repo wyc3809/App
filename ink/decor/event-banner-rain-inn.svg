@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="蕗kE">
+  <defs>
+    <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#f7efd9"/>
+      <stop offset="1" stop-color="#e0d0a8"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="1.2"/></filter>
+  </defs>
+  <rect width="900" height="260" fill="url(#paper)"/>
+  <path d="M0 170 C140 110 240 140 360 90 C480 40 580 130 700 80 C800 40 850 70 900 50 L900 260 L0 260Z" fill="#1a1a1a" opacity=".12" filter="url(#soft)"/>
+  <path d="M0 210 C160 170 280 200 420 150 C560 100 700 170 900 120 L900 260 L0 260Z" fill="#1a1a1a" opacity=".16"/>
+  <!-- rain -->
+  <path stroke="#1a1a1a" stroke-opacity=".2" stroke-width="2" stroke-linecap="round" d="M80 20l8 36M120 10l6 40M160 28l7 30M640 16l8 38M700 8l5 36M760 24l7 32"/>
+  <!-- inn roof -->
+  <path fill="#1a1a1a" fill-opacity=".7" d="M520 120l120-40 120 40v16H520z"/>
+  <path fill="#1a1a1a" fill-opacity=".45" d="M540 136h200v70H540z"/>
+  <!-- wine banner -->
+  <path stroke="#1a1a1a" stroke-width="4" d="M500 70v120"/>
+  <path fill="#1a1a1a" fill-opacity=".75" d="M504 78h48l-8 28 8 28h-48z"/>
+  <path fill="#f3ebdc" d="M520 96h14v6h-5v18h-4v-18h-5z"/>
+  <!-- cinnabar accent stroke -->
+  <path d="M120 70c50-24 100-20 150 8" stroke="#a33a32" stroke-opacity=".4" stroke-width="5" fill="none" stroke-linecap="round"/>
+</svg>

@@ -1,19 +1,26 @@
 {
-  "name": "WorthTracker",
-  "short_name": "WorthTracker",
-  "description": "Net worth and wealth tracking — assets, liabilities, trends, multi-currency.",
+  "name": "江湖一生",
+  "short_name": "江湖一生",
+  "description": "水墨風武俠人生模擬 — Jianghu Life",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0d1110",
-  "theme_color": "#0d1110",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "background_color": "#e8e0d2",
+  "theme_color": "#e8e0d2",
+  "lang": "zh-Hant",
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "any",
+      "src": "icon-192.svg",
+      "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
