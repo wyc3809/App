@@ -1,15 +1,19 @@
 :root {
+  /* STYLE-BIBLE / tokens-colors.json */
   --paper: #f3ebdc;
   --paper-aged: #e6d9c4;
   --paper-bright: #faf6ee;
-  --ink: #141210;
-  --ink-mid: #2f2a26;
-  --ink-soft: #3f3a35;
-  --ink-wash: #5c564f;
-  --ink-faint: rgba(20, 18, 16, 0.18);
+  --ink: #1a1a1a;
+  --ink-mid: #4a4540;
+  --ink-soft: #4a4540;
+  --ink-wash: #8a8278;
+  --ink-faint: rgba(26, 26, 26, 0.14);
   --cinnabar: #a33a32;
   --cinnabar-soft: rgba(163, 58, 50, 0.14);
   --mist: rgba(26, 26, 26, 0.06);
+  --antique-gold: #8a7355;
+  --jade: #3d5c4f;
+  --pine-smoke: #2a3530;
 
   --bg: var(--paper);
   --bg-panel: rgba(250, 246, 238, 0.78);
@@ -22,13 +26,13 @@
   /* 江湖手卷字階：題簽／正文／批註 */
   --font-display: 'Ma Shan Zheng', 'Noto Serif TC', 'Songti TC', serif;
   --font-body: 'Noto Serif TC', 'Songti TC', 'STSong', 'SimSun', serif;
-  --fs-body: 0.95rem;
+  --fs-body: 1rem;
   --fs-caption: 0.82rem;
   --fs-label: 0.8rem;
   --fw-body: 400;
   --fw-ui: 600;
   --fw-strong: 700;
-  --lh-body: 1.65;
+  --lh-body: 1.7;
   --tracking-body: 0.04em;
   --tracking-title: 0.18em;
 
@@ -124,6 +128,55 @@ body::before {
   display: block;
 }
 
+/* 素材包遠山／孤舟／墨漬／竹角 */
+.ink-mountains-img {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  height: 88%;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0.92;
+  animation: inkBreathe 14s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ink-boat-img {
+  position: absolute;
+  left: 8%;
+  bottom: 28%;
+  width: 42%;
+  max-width: 180px;
+  opacity: 0.78;
+  animation: inkDrift 22s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ink-blots-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+  animation: inkBreathe 18s ease-in-out infinite reverse;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ink-bamboo-img {
+  position: absolute;
+  right: -2%;
+  bottom: 6%;
+  width: 38%;
+  max-width: 140px;
+  opacity: 0.42;
+  pointer-events: none;
+  user-select: none;
+}
+
 .ink-blot {
   position: absolute;
   border-radius: 50%;
@@ -155,6 +208,54 @@ body::before {
   left: 40%;
   opacity: 0.32;
   animation: inkDrift 16s ease-in-out infinite;
+}
+
+.ink-title-slip {
+  width: min(220px, 72%);
+  margin: 0 auto 10px;
+  opacity: 0.9;
+  animation: inkFadeUp 0.55s ease both 0.04s;
+}
+
+.ink-title-slip img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ink-fade-line {
+  display: block;
+  width: min(200px, 70%);
+  height: auto;
+  margin: 14px auto 12px;
+  opacity: 0.7;
+  animation: inkFadeUp 0.55s ease both 0.16s;
+}
+
+.ink-stages-strip {
+  display: block;
+  width: min(340px, 92%);
+  height: auto;
+  margin: 4px auto 8px;
+  opacity: 0.72;
+  animation: inkFadeUp 0.6s ease both 0.48s;
+}
+
+.ink-event-banner {
+  margin: 0 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--ink-faint);
+  background: rgba(250, 246, 238, 0.45);
+}
+
+.ink-event-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.92;
 }
 
 .ink-mist-layer {
@@ -866,6 +967,9 @@ body::before {
 .ink-backdrop--quiet .ink-mist-layer,
 .ink-backdrop--quiet .ink-brush-sweep,
 .ink-backdrop--quiet .ink-blot,
+.ink-backdrop--quiet .ink-mountains-img,
+.ink-backdrop--quiet .ink-boat-img,
+.ink-backdrop--quiet .ink-blots-img,
 .ink-backdrop--quiet .ink-ridge,
 .ink-backdrop--quiet .ink-mist-orb,
 .ink-backdrop--quiet .ink-spark {
@@ -875,6 +979,12 @@ body::before {
 .ink-backdrop--quiet .ink-mist-layer,
 .ink-backdrop--quiet .ink-brush-sweep {
   opacity: 0.28;
+}
+
+.ink-backdrop--quiet .ink-mountains-img,
+.ink-backdrop--quiet .ink-blots-img,
+.ink-backdrop--quiet .ink-bamboo-img {
+  opacity: 0.35;
 }
 
 .ink-backdrop--quiet .ink-spark {
@@ -2141,6 +2251,12 @@ body::before {
   .ink-result,
   .ink-panel,
   .ink-blot,
+  .ink-mountains-img,
+  .ink-boat-img,
+  .ink-blots-img,
+  .ink-title-slip,
+  .ink-fade-line,
+  .ink-stages-strip,
   .ink-mist-layer,
   .ink-brush-sweep,
   .ink-ridge,
@@ -2358,21 +2474,36 @@ button.is-pressed,
 .ink-backdrop--winter {
   filter: grayscale(0.2) brightness(1.04);
 }
-.ink-backdrop--hall .ink-ridge--near {
-  opacity: 0.85;
+.ink-backdrop--hall .ink-mountains-img {
+  opacity: 0.72;
 }
-.ink-backdrop--mountain .ink-ridge--far {
-  transform: translateY(-6px) scale(1.04);
+.ink-backdrop--mountain .ink-mountains-img {
+  transform: translateY(-4px) scale(1.04);
   transform-origin: bottom center;
 }
 .ink-backdrop--river .ink-mist-layer {
   opacity: 0.85;
 }
+.ink-backdrop--river .ink-boat-img {
+  opacity: 0.9;
+}
 .ink-backdrop--wild .ink-brush-sweep {
+  opacity: 0.55;
+}
+.ink-backdrop--wild .ink-bamboo-img {
   opacity: 0.55;
 }
 .ink-backdrop--omen {
   box-shadow: inset 0 -40px 60px rgba(163, 58, 50, 0.08);
+}
+.ink-backdrop--winter .ink-mountains-img,
+.ink-backdrop--omen .ink-mountains-img {
+  filter: brightness(0.92);
+  opacity: 0.95;
+}
+.ink-backdrop--winter {
+  /* 松煙青加深夜雨遠山感 */
+  background: linear-gradient(180deg, transparent 40%, rgba(42, 53, 48, 0.08) 100%);
 }
 .scroll-shell.ink-scene--spring {
   background:

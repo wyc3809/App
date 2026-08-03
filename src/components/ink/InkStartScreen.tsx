@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
+import { INK_DECOR } from '../../ui/inkAssets';
 
 type Props = {
   onStart: () => void;
@@ -16,9 +17,12 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <span className="ink-seal-static" aria-hidden>
           生
         </span>
+        <div className="ink-title-slip" aria-hidden>
+          <img src={INK_DECOR.titleSlip()} alt="" draggable={false} />
+        </div>
         <p className="ink-eyebrow">水墨江湖 · 一生一卷</p>
         <h1 className="ink-brand">江湖一生</h1>
-        <p className="ink-rule" aria-hidden />
+        <img className="ink-fade-line" src={INK_DECOR.fadeLine()} alt="" draggable={false} aria-hidden />
         <p className="ink-tagline">一筆成江湖，留白即命運</p>
       </header>
 
@@ -27,6 +31,8 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <p>奇遇路遇，皆在翻頁之間</p>
         <p>落筆為生，蓋印為定</p>
       </section>
+
+      <img className="ink-stages-strip" src={INK_DECOR.stagesStrip()} alt="" draggable={false} aria-hidden />
 
       <div className="ink-cta-stack">
         {resumeHint && (

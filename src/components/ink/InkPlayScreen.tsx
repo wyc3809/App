@@ -40,7 +40,8 @@ import { getAftermathStatus, styleForCombat } from '@core/life/combatPresentatio
 import { foeStyleLabel } from '@core/life/foeAi';
 import { track } from '../../telemetry/events';
 import { seasonToInk, placeToInk } from './sceneVariants';
-import { InkScrollBackdrop, InkSealStamp, InkResultSeal } from './InkDecor';
+import { InkScrollBackdrop, InkSealStamp, InkResultSeal, InkEventBanner } from './InkDecor';
+import { pickEventBanner, eventBannerUrl } from '../../ui/inkAssets';
 import { InkHuashanPanel } from './InkHuashanPanel';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
@@ -156,6 +157,16 @@ export function InkPlayScreen({ state }: Props) {
   const tab = state.tab ?? 'home';
   const isPack = (pendingEvent?.tags ?? []).includes('pack');
   const displayTitle = isPack ? '江湖偶遇' : pendingEvent?.title;
+  const eventBanner =
+    pendingEvent != null
+      ? eventBannerUrl(
+          pickEventBanner({
+            title: pendingEvent.title,
+            body: pendingEvent.body,
+            tags: pendingEvent.tags,
+          }),
+        )
+      : null;
   const gearIds = c.gear ?? [];
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
   const showResult = Boolean(lastResult) && state.phase === 'playing' && !state.pendingCombat;
@@ -359,6 +370,7 @@ export function InkPlayScreen({ state }: Props) {
 
           {state.phase === 'playing' && pendingEvent && !showResult && (
             <section className="ink-panel ink-event">
+              {eventBanner && <InkEventBanner src={eventBanner} />}
               <p className="ink-event-year">
                 {state.year}年{month}月 · {c.age}歲
                 {state.pending?.kind === 'special' ? ' · 奇遇' : ''}

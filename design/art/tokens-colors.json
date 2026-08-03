@@ -1,0 +1,35 @@
+{
+  "name": "江湖一生 · Ink Wash Tokens",
+  "version": "1.0.0",
+  "colors": {
+    "paper": { "hex": "#F3EBDC", "role": "宣紙底" },
+    "paperAged": { "hex": "#E6D9C4", "role": "舊紙、卷邊" },
+    "paperBright": { "hex": "#FAF6EE", "role": "高光紙面" },
+    "ink": { "hex": "#1A1A1A", "role": "正文、標題" },
+    "inkMid": { "hex": "#4A4540", "role": "次要文字" },
+    "inkWash": { "hex": "#8A8278", "role": "註解、旁白" },
+    "inkFaint": { "hex": "rgba(26,26,26,0.14)", "role": "邊框、分隔" },
+    "cinnabar": { "hex": "#A33A32", "role": "印章、命運 CTA" },
+    "cinnabarSoft": { "hex": "rgba(163,58,50,0.14)", "role": "印底淡彩" },
+    "mist": { "hex": "rgba(26,26,26,0.06)", "role": "遠山暈染" },
+    "antiqueGold": { "hex": "#8A7355", "role": "稀有器物細線（克制）" },
+    "jade": { "hex": "#3D5C4F", "role": "玉佩點睛" },
+    "pineSmoke": { "hex": "#2A3530", "role": "夜雨遠山" }
+  },
+  "cssVariables": {
+    "--paper": "#f3ebdc",
+    "--paper-aged": "#e6d9c4",
+    "--paper-bright": "#faf6ee",
+    "--ink": "#1a1a1a",
+    "--ink-mid": "#4a4540",
+    "--ink-soft": "#4a4540",
+    "--ink-wash": "#8a8278",
+    "--ink-faint": "rgba(26, 26, 26, 0.14)",
+    "--cinnabar": "#a33a32",
+    "--cinnabar-soft": "rgba(163, 58, 50, 0.14)",
+    "--mist": "rgba(26, 26, 26, 0.06)",
+    "--antique-gold": "#8a7355",
+    "--jade": "#3d5c4f",
+    "--pine-smoke": "#2a3530"
+  }
+}
