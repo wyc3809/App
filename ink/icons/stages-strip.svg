@@ -1,43 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 80" role="img" aria-label="stages strip">
-  <rect width="640" height="80" fill="#f3ebdc"/>
-  <!-- birth lamp -->
-  <g transform="translate(8,12)" opacity=".85">
-    <path stroke="#1a1a1a" stroke-width="2" d="M24 8v6"/><path fill="#1a1a1a" d="M14 16h20c1 6 1 14 0 20H14c-1-6-1-14 0-20z"/>
-  </g>
-  <!-- child stream -->
-  <g transform="translate(72,28)" opacity=".75">
-    <path stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" d="M4 24c12-4 20 2 36-2"/><path stroke="#1a1a1a" stroke-width="2" d="M18 8l6 14"/>
-  </g>
-  <!-- gate -->
-  <g transform="translate(140,18)" opacity=".85">
-    <path fill="#1a1a1a" d="M8 20h40l-4-10H12z"/><path stroke="#1a1a1a" stroke-width="2" d="M14 40V20h28v20M28 40V26"/>
-  </g>
-  <!-- sword -->
-  <g transform="translate(212,16)" opacity=".85">
-    <path stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" d="M12 40L40 12M36 10l8 8M10 42l6-2"/>
-  </g>
-  <!-- umbrella love -->
-  <g transform="translate(280,14)" opacity=".85">
-    <path fill="#1a1a1a" d="M10 28c6-14 30-14 36 0H10z"/><path stroke="#1a1a1a" stroke-width="2" d="M28 28v22"/>
-  </g>
-  <!-- sect scroll -->
-  <g transform="translate(348,16)" opacity=".85">
-    <rect x="16" y="8" width="20" height="36" fill="none" stroke="#1a1a1a" stroke-width="2"/><rect x="12" y="6" width="5" height="40" fill="#e6d9c4" stroke="#1a1a1a"/>
-  </g>
-  <!-- clash -->
-  <g transform="translate(412,20)" opacity=".85">
-    <path stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" d="M12 36L36 12M16 12l24 24"/>
-  </g>
-  <!-- abacus wealth -->
-  <g transform="translate(476,22)" opacity=".8">
-    <rect x="10" y="8" width="36" height="28" fill="none" stroke="#1a1a1a" stroke-width="2"/><path stroke="#1a1a1a" stroke-width="2" d="M16 18h24M16 28h24"/>
-  </g>
-  <!-- brazier old -->
-  <g transform="translate(540,26)" opacity=".8">
-    <path stroke="#1a1a1a" stroke-width="2" d="M16 28h28l-4-16H20z"/><path stroke="#a33a32" stroke-opacity=".5" stroke-width="1.5" d="M28 6c2 4 2 8 0 12"/>
-  </g>
-  <!-- end seal mark -->
-  <g transform="translate(600,28)">
-    <rect x="4" y="4" width="28" height="28" fill="none" stroke="#a33a32" stroke-width="2"/><path fill="#a33a32" d="M12 12h12v3h-4v10h3v3H13v-3h3V15h-4z"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 48" fill="none" role="img" aria-label="stages strip">
+  <path stroke="#1a1a1a" stroke-opacity="0.2" stroke-width="1.5" stroke-linecap="round" d="M40 24h560"/>
+  <circle cx="80" cy="24" r="3.5" fill="#1a1a1a" fill-opacity="0.35"/>
+  <circle cx="180" cy="24" r="3.5" fill="#1a1a1a" fill-opacity="0.35"/>
+  <circle cx="280" cy="24" r="3.5" fill="#1a1a1a" fill-opacity="0.35"/>
+  <circle cx="380" cy="24" r="3.5" fill="#1a1a1a" fill-opacity="0.35"/>
+  <circle cx="480" cy="24" r="3.5" fill="#1a1a1a" fill-opacity="0.35"/>
+  <circle cx="560" cy="24" r="5" fill="none" stroke="#a33a32" stroke-opacity="0.55" stroke-width="1.5"/>
 </svg>

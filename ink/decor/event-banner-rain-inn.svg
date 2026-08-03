@@ -1,23 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="event banner rain inn">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none" role="img" aria-label="event banner rain inn">
   <defs>
-    <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1">
-      <stop stop-color="#f7efd9"/>
-      <stop offset="1" stop-color="#e0d0a8"/>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ebe2d0"/>
+      <stop offset="1" stop-color="#d8c9a8"/>
     </linearGradient>
-    <filter id="soft"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="1.4"/></filter>
   </defs>
-  <rect width="900" height="260" fill="url(#paper)"/>
-  <path d="M0 170 C140 110 240 140 360 90 C480 40 580 130 700 80 C800 40 850 70 900 50 L900 260 L0 260Z" fill="#1a1a1a" opacity=".12" filter="url(#soft)"/>
-  <path d="M0 210 C160 170 280 200 420 150 C560 100 700 170 900 120 L900 260 L0 260Z" fill="#1a1a1a" opacity=".16"/>
-  <!-- rain -->
-  <path stroke="#1a1a1a" stroke-opacity=".2" stroke-width="2" stroke-linecap="round" d="M80 20l8 36M120 10l6 40M160 28l7 30M640 16l8 38M700 8l5 36M760 24l7 32"/>
-  <!-- inn roof -->
-  <path fill="#1a1a1a" fill-opacity=".7" d="M520 120l120-40 120 40v16H520z"/>
-  <path fill="#1a1a1a" fill-opacity=".45" d="M540 136h200v70H540z"/>
-  <!-- wine banner -->
-  <path stroke="#1a1a1a" stroke-width="4" d="M500 70v120"/>
-  <path fill="#1a1a1a" fill-opacity=".75" d="M504 78h48l-8 28 8 28h-48z"/>
-  <path fill="#f3ebdc" d="M520 96h14v6h-5v18h-4v-18h-5z"/>
-  <!-- cinnabar accent stroke -->
-  <path d="M120 70c50-24 100-20 150 8" stroke="#a33a32" stroke-opacity=".4" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <rect width="900" height="260" fill="url(#sky)"/>
+  <!-- far wash -->
+  <path d="M0 150 C120 100 220 130 360 88 C500 46 600 120 740 78 C820 52 860 70 900 58 L900 260 L0 260Z" fill="#1a1a1a" opacity=".1" filter="url(#soft)"/>
+  <path d="M0 198 C160 160 280 190 430 148 C580 106 720 168 900 130 L900 260 L0 260Z" fill="#2a3530" opacity=".14"/>
+  <!-- rain slant -->
+  <g stroke="#1a1a1a" stroke-opacity=".18" stroke-width="1.6" stroke-linecap="round">
+    <path d="M70 12l14 48M110 4l12 52M150 20l13 42M190 8l11 46M620 10l14 50M680 4l11 48M740 18l13 44M800 6l10 46"/>
+  </g>
+  <!-- mist blot -->
+  <ellipse cx="200" cy="90" rx="90" ry="36" fill="#1a1a1a" fill-opacity=".04" filter="url(#soft)"/>
+  <!-- inn silhouette -->
+  <path fill="#1a1a1a" fill-opacity=".55" d="M510 128l130-46 130 46v12H510z"/>
+  <path fill="#1a1a1a" fill-opacity=".38" d="M532 140h216v78H532z"/>
+  <path fill="#1a1a1a" fill-opacity=".5" d="M620 160h40v58h-40z"/>
+  <!-- wine banner pole -->
+  <path stroke="#1a1a1a" stroke-width="3.5" stroke-linecap="round" d="M488 68v128"/>
+  <path fill="#1a1a1a" fill-opacity=".7" d="M492 76h52l-10 30 10 30H492z"/>
+  <path fill="#f3ebdc" fill-opacity=".85" d="M510 98h16v5h-6v20h-4v-20h-6z"/>
+  <!-- cinnabar brush accent -->
+  <path d="M100 64c70-28 130-22 190 12" stroke="#a33a32" stroke-opacity=".38" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M120 78c40-10 80-8 118 6" stroke="#a33a32" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 </svg>

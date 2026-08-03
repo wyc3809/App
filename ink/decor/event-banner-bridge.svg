@@ -1,13 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="event banner bridge">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none" role="img" aria-label="event banner bridge">
   <defs>
-    <linearGradient id="p" x1="0" x2="1"><stop stop-color="#f4ecd6"/><stop offset="1" stop-color="#d8c89a"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f2e8d4"/>
+      <stop offset="1" stop-color="#dcc9a0"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="1.5"/></filter>
   </defs>
-  <rect width="900" height="260" fill="url(#p)"/>
-  <path d="M0 156 C150 86 224 118 342 72 C456 28 584 116 690 70 C782 32 832 58 900 40 L900 260 L0 260Z" fill="#1b1a16" opacity=".14"/>
-  <path d="M0 214 C188 178 254 214 392 160 C514 112 660 180 900 124 L900 260 L0 260Z" fill="#11100d" opacity=".16"/>
-  <path d="M302 212c80-84 220-84 300 0" fill="none" stroke="#2b241d" stroke-width="14" opacity=".72"/>
-  <path d="M282 216h340M320 190h244" stroke="#2b241d" stroke-width="6" opacity=".54" stroke-linecap="round"/>
-  <path d="M416 88c-18 22-22 60-12 102M408 116c-34 32-58 62-74 94M412 116c52 26 84 58 104 92" stroke="#17130f" stroke-width="8" fill="none" stroke-linecap="round"/>
-  <circle cx="414" cy="82" r="14" fill="#17130f" opacity=".86"/>
-  <path d="M120 76c44-26 88-30 140-10M108 108c50-20 104-18 164 8" stroke="#8d251d" stroke-width="5" opacity=".45" stroke-linecap="round"/>
+  <rect width="900" height="260" fill="url(#sky)"/>
+  <path d="M0 148 C140 84 230 118 350 72 C470 28 590 110 700 68 C790 36 840 58 900 42 L900 260 L0 260Z" fill="#1a1a1a" opacity=".11" filter="url(#soft)"/>
+  <path d="M0 208 C180 172 260 206 400 158 C530 114 670 178 900 128 L900 260 L0 260Z" fill="#1a1a1a" opacity=".15"/>
+  <!-- river suggestion -->
+  <path d="M40 230c80-10 160 8 250-6 90-14 180 10 280-4 100-14 180 6 290 0" stroke="#1a1a1a" stroke-opacity=".12" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- bridge arch -->
+  <path d="M290 218c90-92 240-92 330 0" fill="none" stroke="#1a1a1a" stroke-width="13" stroke-opacity=".55" stroke-linecap="round"/>
+  <path d="M270 222h370M318 196h258" stroke="#1a1a1a" stroke-width="5" stroke-opacity=".4" stroke-linecap="round"/>
+  <!-- lone figure -->
+  <path d="M430 96c-16 20-20 58-10 98M422 124c-32 30-54 58-70 88M426 124c48 24 78 54 98 86" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round" stroke-opacity=".72"/>
+  <circle cx="428" cy="90" r="12" fill="#1a1a1a" fill-opacity=".78"/>
+  <!-- brush accents -->
+  <path d="M110 70c50-24 96-28 150-8M98 100c54-18 110-16 168 10" stroke="#a33a32" stroke-width="5" stroke-opacity=".32" fill="none" stroke-linecap="round"/>
 </svg>
