@@ -1,0 +1,19 @@
+{
+  "name": "WorthTracker",
+  "short_name": "WorthTracker",
+  "description": "Net worth and wealth tracking — assets, liabilities, trends, multi-currency.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1110",
+  "theme_color": "#0d1110",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
