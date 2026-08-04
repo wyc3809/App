@@ -1,8 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * E2E tests for WorthBook.
- * Uses a production `next start` server for stable hydration (dev HMR can flake).
+ * E2E tests for WorthBook (static `output: "export"`).
+ * Builds the app and serves `out/` — avoids flaky Next.js dev HMR hydration.
  * Set PLAYWRIGHT_BASE_URL to target an already-running server instead.
  */
 export default defineConfig({
@@ -23,8 +23,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command:
-          "npm run build && npx next start --hostname 127.0.0.1 --port 3000",
+        command: "npm run build && npx serve out -l 3000 --no-request-logging",
         url: "http://127.0.0.1:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 300_000,

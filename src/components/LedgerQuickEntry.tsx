@@ -97,7 +97,6 @@ export function LedgerQuickEntry() {
   const resetForm = () => {
     setExpr("");
     setNote("");
-    setFlash(null);
   };
 
   const submit = () => {
@@ -125,8 +124,8 @@ export function LedgerQuickEntry() {
     });
 
     haptic("success");
-    setFlash("Saved");
     resetForm();
+    setFlash("Saved");
     window.setTimeout(() => setFlash(null), 1200);
   };
 

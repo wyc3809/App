@@ -21,7 +21,7 @@ npm run test:all      # unit + e2e
 
 ## E2E
 
-Playwright builds the app and starts `next start` automatically (see `playwright.config.ts`).
+Playwright builds the static export and serves `out/` automatically (see `playwright.config.ts`).
 Dev HMR is avoided so Zustand persist hydration stays stable.
 
 ```bash

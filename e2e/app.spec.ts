@@ -23,9 +23,9 @@ async function waitForAppReady(page: Page) {
 async function loadDemo(page: Page) {
   await page.goto("/");
   await waitForAppReady(page);
-  await page.getByRole("button", { name: /more options/i }).click();
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: /load demo data/i }).click();
+  // Empty-state primary CTA (also appears in the ⋮ menu when open)
+  await page.locator("button.btn-primary", { hasText: "Load demo data" }).click();
   await expect(page.getByText(/net worth|HK\$/i).first()).toBeVisible({
     timeout: 15_000,
   });
@@ -67,8 +67,8 @@ test.describe("WorthBook E2E", () => {
     await page.getByRole("button", { name: "Done" }).click();
 
     await expect(page.getByText("Saved")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("Food").first()).toBeVisible();
-    await expect(page.getByText(/HK\$50|−HK\$50|-HK\$50/)).toBeVisible();
+    // New expense appears in today's records (title defaults to category)
+    await expect(page.getByText(/−HK\$50|-HK\$50/)).toBeVisible();
   });
 
   test("insights chart chips switch charts", async ({ page }) => {
@@ -113,8 +113,8 @@ test.describe("WorthBook E2E", () => {
     });
 
     await page.getByRole("link", { name: "Ledger" }).click();
-    await expect(
-      page.getByText("CSV Salary").or(page.getByText("Salary")),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("CSV Salary")).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });

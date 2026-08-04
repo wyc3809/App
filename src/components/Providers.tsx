@@ -44,7 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       finish();
     } else {
       // Force a client-side rehydrate when SSR left the store unhydrated.
-      void useWorthStore.persist.rehydrate().then(finish);
+      void Promise.resolve(useWorthStore.persist.rehydrate()).then(finish);
     }
 
     const safety = window.setTimeout(finish, 1500);
