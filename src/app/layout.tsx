@@ -21,14 +21,14 @@ const assetBase =
     : "";
 
 export const metadata: Metadata = {
-  title: "WorthTracker — Net Worth & Wealth Tracking",
+  title: "WorthBook — Net Worth & Wealth Tracking",
   description:
     "Track total net worth, assets vs liabilities, historical trends, and multi-currency portfolios — offline-first and private.",
-  applicationName: "WorthTracker",
+  applicationName: "WorthBook",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "WorthTracker",
+    title: "WorthBook",
   },
   manifest: `${assetBase}/manifest.webmanifest`,
   icons: {

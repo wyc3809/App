@@ -1,4 +1,4 @@
-# WorthTracker
+# WorthBook
 
 Offline-first **net worth & wealth tracking** PWA. Track assets vs liabilities, historical trends, allocation, and multi-currency portfolios — data stays in your browser.
 
@@ -50,13 +50,13 @@ Core types live in `src/lib/types.ts`:
 
 ## Privacy
 
-WorthTracker is **local-only**. Portfolio data is stored in `localStorage` under `worthtracker-v1`. See **Settings → Privacy policy**. Use **Export JSON backup** before clearing browser data.
+WorthBook is **local-only**. Portfolio data is stored in `localStorage` under `worthtracker-v1` (legacy key kept for existing saves). See **Settings → Privacy policy**. Use **Export JSON backup** before clearing browser data.
 
 ## Deploy
 
 ### GitHub Pages (separate from the game)
 
-WorthTracker is published under a **dedicated subpath** so it does not overwrite the game at `/App/`:
+WorthBook is published under a **dedicated subpath** so it does not overwrite the game at `/App/`:
 
 **https://wyc3809.github.io/App/worthtracker/**
 

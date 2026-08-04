@@ -53,7 +53,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `worthtracker-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `worthbook-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -274,7 +274,7 @@ export default function SettingsPage() {
       </section>
 
       <p className="px-1 pb-2 text-center text-xs" style={{ color: "var(--fg-subtle)" }}>
-        WorthTracker v1.1 · Local-only wealth tracking
+        WorthBook v1.1 · Local-only wealth tracking
       </p>
     </div>
   );

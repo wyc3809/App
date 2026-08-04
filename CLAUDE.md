@@ -1,4 +1,4 @@
-# WorthTracker
+# WorthBook
 
 Offline-first net worth & wealth tracking PWA (Next.js + TypeScript).
 

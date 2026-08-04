@@ -46,7 +46,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-6">
         <div className="text-center">
-          <p className="font-display text-2xl">WorthTracker</p>
+          <p className="font-display text-2xl">WorthBook</p>
           <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
             Loading your portfolio…
           </p>

@@ -1,5 +1,5 @@
-/* WorthTracker offline cache — static assets only */
-const CACHE = "worthtracker-static-v2";
+/* WorthBook offline cache — static assets only */
+const CACHE = "worthbook-static-v1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());

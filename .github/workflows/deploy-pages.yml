@@ -1,4 +1,4 @@
-name: Deploy WorthTracker to GitHub Pages
+name: Deploy WorthBook to GitHub Pages
 
 # Publishes to /worthtracker/ only — does not wipe the game at repo Pages root.
 on:

@@ -121,7 +121,7 @@ export function HomeDashboard() {
           <div>
             <p className="text-sm font-semibold">{greeting()}</p>
             <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
-              WorthTracker
+              WorthBook
             </p>
           </div>
         </div>

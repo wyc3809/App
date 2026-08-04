@@ -12,7 +12,7 @@ export default function PrivacyPage() {
         </p>
         <h1 className="mt-1 font-display text-3xl">Privacy</h1>
         <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-          WorthTracker is built to keep your wealth data on your device.
+          WorthBook is built to keep your wealth data on your device.
         </p>
       </header>
 
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <p>
           Accounts, balances, value history, ledger entries, currency rates, and
           settings are saved in this browser&apos;s local storage (and related
-          offline cache). Nothing is uploaded to a WorthTracker server.
+          offline cache). Nothing is uploaded to a WorthBook server.
         </p>
         <h2 className="font-display text-lg" style={{ color: "var(--fg)" }}>
           What we don&apos;t collect
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
           <li>Clearing site data in the browser also removes everything.</li>
         </ul>
         <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
-          Last updated: 3 Aug 2026 · WorthTracker v1.1
+          Last updated: 4 Aug 2026 · WorthBook v1.1
         </p>
       </section>
     </div>
