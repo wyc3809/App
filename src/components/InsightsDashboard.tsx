@@ -7,7 +7,6 @@ import {
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   ChartPie,
-  ChevronDown,
   Filter,
   LineChart,
   Scale,
@@ -54,37 +53,31 @@ const CHARTS = [
   {
     id: "growth",
     label: "Growth",
-    description: "Period growth bars",
     icon: ChartNoAxesColumnIncreasing,
   },
   {
     id: "assets",
-    label: "Assets vs Liabilities",
-    description: "Stacked area trend",
+    label: "Assets",
     icon: Scale,
   },
   {
     id: "allocation",
     label: "Allocation",
-    description: "Pie by category",
     icon: ChartPie,
   },
   {
     id: "cashflow",
     label: "Cashflow",
-    description: "Income vs expense bars",
     icon: BarChart3,
   },
   {
     id: "calendar",
     label: "Calendar",
-    description: "Monthly spending grid",
     icon: CalendarDays,
   },
   {
     id: "trend",
     label: "Trend",
-    description: "Net worth over time",
     icon: LineChart,
   },
 ] as const;
@@ -110,7 +103,6 @@ export function InsightsDashboard() {
   const [granularity, setGranularity] = useState<InsightGranularity>("monthly");
   const [range, setRange] = useState<InsightRange>("6M");
   const [chartId, setChartId] = useState<ChartId>("growth");
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const summary = useMemo(
     () => computeInsightSummary(snapshots, range),
@@ -125,8 +117,6 @@ export function InsightsDashboard() {
     [snapshots, range],
   );
 
-  const activeChart = CHARTS.find((c) => c.id === chartId) ?? CHARTS[0];
-  const ActiveIcon = activeChart.icon;
   const showBarLabels = !privacy && growthBars.length > 0 && growthBars.length <= LABEL_BAR_LIMIT;
 
   const money = (n: number, opts?: { showSign?: boolean }) =>
@@ -236,108 +226,37 @@ export function InsightsDashboard() {
         </div>
       )}
 
-      {/* Chart picker */}
-      <div className="relative z-10 animate-fade-up-delay">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left"
-          style={{
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-soft)",
-          }}
-          aria-haspopup="dialog"
-          aria-expanded={pickerOpen}
-          onClick={() => setPickerOpen((v) => !v)}
+      {/* Chart selector — always in-page, no overlay */}
+      <div className="animate-fade-up-delay" role="tablist" aria-label="Chart type">
+        <p
+          className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
+          style={{ color: "var(--fg-subtle)" }}
         >
-          <span className="flex min-w-0 items-center gap-3">
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-            >
-              <ActiveIcon size={20} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold">{activeChart.label}</span>
-              <span className="block truncate text-xs" style={{ color: "var(--fg-subtle)" }}>
-                {activeChart.description}
-              </span>
-            </span>
-          </span>
-          <ChevronDown
-            size={18}
-            className={`shrink-0 transition ${pickerOpen ? "rotate-180" : ""}`}
-            style={{ color: "var(--fg-muted)" }}
-          />
-        </button>
-
-        {pickerOpen && (
-          <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
-            <button
-              type="button"
-              className="absolute inset-0 bg-black/40"
-              aria-label="Close chart picker"
-              onClick={() => setPickerOpen(false)}
-            />
-            <div
-              role="dialog"
-              aria-label="Choose chart"
-              className="relative z-10 max-h-[min(70dvh,28rem)] w-full max-w-lg overflow-y-auto rounded-t-3xl border pb-[max(1rem,var(--safe-bottom))] sm:rounded-3xl"
-              style={{
-                background: "var(--bg-elevated)",
-                borderColor: "var(--border)",
-              }}
-            >
-              <div className="sticky top-0 z-10 border-b px-4 py-3" style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}>
-                <p className="text-center text-sm font-semibold">Choose chart</p>
-              </div>
-              <ul>
-                {CHARTS.map((chart) => {
-                  const Icon = chart.icon;
-                  const selected = chart.id === chartId;
-                  return (
-                    <li key={chart.id}>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition"
-                        style={{
-                          background: selected ? "var(--accent-soft)" : "transparent",
-                        }}
-                        onClick={() => {
-                          setChartId(chart.id);
-                          setPickerOpen(false);
-                        }}
-                      >
-                        <span
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                          style={{
-                            background: selected
-                              ? "color-mix(in srgb, var(--accent) 18%, transparent)"
-                              : "var(--bg-muted)",
-                            color: selected ? "var(--accent)" : "var(--fg-muted)",
-                          }}
-                        >
-                          <Icon size={18} />
-                        </span>
-                        <span className="min-w-0">
-                          <span
-                            className="block text-sm font-semibold"
-                            style={{ color: selected ? "var(--accent)" : "var(--fg)" }}
-                          >
-                            {chart.label}
-                          </span>
-                          <span className="block text-xs" style={{ color: "var(--fg-subtle)" }}>
-                            {chart.description}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        )}
+          Chart
+        </p>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {CHARTS.map((chart) => {
+            const Icon = chart.icon;
+            const selected = chart.id === chartId;
+            return (
+              <button
+                key={chart.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                className="flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition"
+                style={{
+                  background: selected ? "var(--accent)" : "var(--bg-muted)",
+                  color: selected ? "#04140c" : "var(--fg-muted)",
+                }}
+                onClick={() => setChartId(chart.id)}
+              >
+                <Icon size={14} strokeWidth={selected ? 2.4 : 2} />
+                {chart.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="animate-fade-up-delay" key={chartId}>
