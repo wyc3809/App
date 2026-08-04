@@ -10,8 +10,8 @@ Offline-first net worth & wealth tracking PWA (Next.js + TypeScript).
 - **State / Persistence**: Zustand + localStorage (`worthtracker-v1`)
 - **Charts**: Recharts
 - **Icons**: Lucide React
-- **Tests**: Vitest
-- **Build**: `npm run build` / `npm test` / `npm run dev`
+- **Tests**: Vitest (unit) + Playwright (E2E)
+- **Build**: `npm run build` / `npm test` / `npm run test:e2e` / `npm run dev`
 
 ## Product Focus
 
@@ -24,6 +24,7 @@ Track **Total Net Worth** (Assets vs Liabilities), historical trends, asset allo
 | `src/app/` | Routes: dashboard, accounts, history, settings |
 | `src/components/` | UI shell, charts, account forms |
 | `src/lib/` | Types, store, currency math, demo data |
+| `e2e/` | Playwright end-to-end tests |
 | `public/` | PWA manifest + icons |
 
 ## Coding Preferences
@@ -32,3 +33,10 @@ Track **Total Net Worth** (Assets vs Liabilities), historical trends, asset allo
 - Prefer extending Zustand store + typed schemas over ad-hoc UI state
 - Data is local-only — never send balances to a server
 - Mobile-first shell (`max-w-lg`) with light/dark design tokens in `globals.css`
+
+## Testing Preferences
+
+- Unit: `npm test` (Vitest, `src/**/*.test.ts`)
+- E2E: `npm run test:e2e` (Playwright, `e2e/**/*.spec.ts`)
+- All: `npm run test:all`
+- **Policy**: every new feature ships with automated tests in the same PR — unit/logic at minimum; user-facing flows also need E2E (see `docs/TESTING.md`)

@@ -29,13 +29,31 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const resyncAccounts = useWorthStore((s) => s.resyncAccounts);
 
   useEffect(() => {
+    let cancelled = false;
+
     const finish = () => {
+      if (cancelled) return;
       resyncAccounts();
       setHydrated(true);
     };
+
+    // Persist may finish before this effect runs — check immediately and
+    // subscribe for the late case. Also fall back if either path misses.
     const unsub = useWorthStore.persist.onFinishHydration(finish);
-    if (useWorthStore.persist.hasHydrated()) finish();
-    return unsub;
+    if (useWorthStore.persist.hasHydrated()) {
+      finish();
+    } else {
+      // Force a client-side rehydrate when SSR left the store unhydrated.
+      void useWorthStore.persist.rehydrate().then(finish);
+    }
+
+    const safety = window.setTimeout(finish, 1500);
+
+    return () => {
+      cancelled = true;
+      unsub();
+      window.clearTimeout(safety);
+    };
   }, [setHydrated, resyncAccounts]);
 
   useEffect(() => {
