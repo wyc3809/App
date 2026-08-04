@@ -102,30 +102,52 @@ function AccountFormDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
-        aria-label="Close dialog"
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+      {/* Backdrop — keep below the sheet so header actions stay tappable */}
+      <div
+        className="absolute inset-0 z-0 bg-black/45 backdrop-blur-[2px]"
+        aria-hidden
         onClick={onClose}
       />
       <div
-        className="relative z-10 max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl p-5 sm:rounded-3xl"
+        className="relative z-10 flex max-h-[min(92dvh,40rem)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl"
         style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-form-title"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="account-form-title" className="font-display text-xl">
+        <div
+          className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <button
+            type="button"
+            className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
+            style={{ color: "var(--fg-muted)" }}
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <h2 id="account-form-title" className="font-display text-lg">
             {initial ? "Edit Account" : "Add Account"}
           </h2>
-          <button type="button" className="btn-ghost" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
+            style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
+            onClick={onClose}
+            aria-label="Close"
+          >
             <X size={18} />
           </button>
         </div>
 
-        <form className="space-y-4" onSubmit={submit}>
+        <form
+          className="space-y-4 overflow-y-auto overscroll-contain px-5 py-4"
+          onSubmit={submit}
+        >
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -264,9 +286,18 @@ function AccountFormDialog({
             />
           </div>
 
-          <button type="submit" className="btn-primary w-full">
-            {initial ? "Save Changes" : "Add Account"}
-          </button>
+          <div className="flex gap-2 pb-1">
+            <button
+              type="button"
+              className="btn-secondary flex-1 justify-center"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary flex-1 justify-center">
+              {initial ? "Save Changes" : "Add Account"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
