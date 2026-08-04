@@ -78,7 +78,7 @@ const CHARTS = [
   {
     id: "calendar",
     label: "Calendar",
-    description: "Spending heatmap",
+    description: "Monthly spending grid",
     icon: CalendarDays,
   },
   {
@@ -137,7 +137,7 @@ export function InsightsDashboard() {
     });
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-28">
       <header className="relative flex items-center justify-center animate-fade-up">
         <h1 className="font-display text-2xl">Insights</h1>
         <button
@@ -237,7 +237,7 @@ export function InsightsDashboard() {
       )}
 
       {/* Chart picker */}
-      <div className="relative z-20 animate-fade-up-delay">
+      <div className="relative z-10 animate-fade-up-delay">
         <button
           type="button"
           className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left"
@@ -246,7 +246,7 @@ export function InsightsDashboard() {
             border: "1px solid var(--border)",
             boxShadow: "var(--shadow-soft)",
           }}
-          aria-haspopup="listbox"
+          aria-haspopup="dialog"
           aria-expanded={pickerOpen}
           onClick={() => setPickerOpen((v) => !v)}
         >
@@ -272,66 +272,71 @@ export function InsightsDashboard() {
         </button>
 
         {pickerOpen && (
-          <>
+          <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
             <button
               type="button"
-              className="fixed inset-0 z-30 cursor-default"
+              className="absolute inset-0 bg-black/40"
               aria-label="Close chart picker"
               onClick={() => setPickerOpen(false)}
             />
-            <ul
-              role="listbox"
+            <div
+              role="dialog"
               aria-label="Choose chart"
-              className="absolute left-0 right-0 z-40 mt-2 max-h-[70dvh] overflow-y-auto rounded-2xl border shadow-lg"
+              className="relative z-10 max-h-[min(70dvh,28rem)] w-full max-w-lg overflow-y-auto rounded-t-3xl border pb-[max(1rem,var(--safe-bottom))] sm:rounded-3xl"
               style={{
                 background: "var(--bg-elevated)",
                 borderColor: "var(--border)",
               }}
             >
-              {CHARTS.map((chart) => {
-                const Icon = chart.icon;
-                const selected = chart.id === chartId;
-                return (
-                  <li key={chart.id} role="option" aria-selected={selected}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition"
-                      style={{
-                        background: selected ? "var(--accent-soft)" : "transparent",
-                      }}
-                      onClick={() => {
-                        setChartId(chart.id);
-                        setPickerOpen(false);
-                      }}
-                    >
-                      <span
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+              <div className="sticky top-0 z-10 border-b px-4 py-3" style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}>
+                <p className="text-center text-sm font-semibold">Choose chart</p>
+              </div>
+              <ul>
+                {CHARTS.map((chart) => {
+                  const Icon = chart.icon;
+                  const selected = chart.id === chartId;
+                  return (
+                    <li key={chart.id}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition"
                         style={{
-                          background: selected
-                            ? "color-mix(in srgb, var(--accent) 18%, transparent)"
-                            : "var(--bg-muted)",
-                          color: selected ? "var(--accent)" : "var(--fg-muted)",
+                          background: selected ? "var(--accent-soft)" : "transparent",
+                        }}
+                        onClick={() => {
+                          setChartId(chart.id);
+                          setPickerOpen(false);
                         }}
                       >
-                        <Icon size={18} />
-                      </span>
-                      <span className="min-w-0">
                         <span
-                          className="block text-sm font-semibold"
-                          style={{ color: selected ? "var(--accent)" : "var(--fg)" }}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                          style={{
+                            background: selected
+                              ? "color-mix(in srgb, var(--accent) 18%, transparent)"
+                              : "var(--bg-muted)",
+                            color: selected ? "var(--accent)" : "var(--fg-muted)",
+                          }}
                         >
-                          {chart.label}
+                          <Icon size={18} />
                         </span>
-                        <span className="block text-xs" style={{ color: "var(--fg-subtle)" }}>
-                          {chart.description}
+                        <span className="min-w-0">
+                          <span
+                            className="block text-sm font-semibold"
+                            style={{ color: selected ? "var(--accent)" : "var(--fg)" }}
+                          >
+                            {chart.label}
+                          </span>
+                          <span className="block text-xs" style={{ color: "var(--fg-subtle)" }}>
+                            {chart.description}
+                          </span>
                         </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
         )}
       </div>
 

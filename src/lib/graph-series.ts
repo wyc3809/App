@@ -19,6 +19,8 @@ export interface CalendarDayCell {
   /** income - expense */
   net: number;
   intensity: number; // 0–1 based on expense relative to max in window
+  /** false for padding days outside the focused month */
+  inMonth?: boolean;
 }
 
 function monthLabel(yyyyMm: string): string {
@@ -72,15 +74,10 @@ function isoDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-/**
- * Daily ledger activity for a calendar heatmap covering `weeks` weeks
- * ending today (Sun–Sat columns, GitHub-style optional — we use Mon–Sun rows).
- */
-export function buildLedgerCalendarDays(
+function ledgerTotalsByDate(
   transactions: Transaction[],
   currencies: Currency[],
-  weeks = 16,
-): CalendarDayCell[] {
+): Map<string, { income: number; expense: number }> {
   const byDate = new Map<string, { income: number; expense: number }>();
   for (const tx of transactions) {
     const base = toBaseCurrency(tx.amount, tx.currency, currencies);
@@ -89,16 +86,76 @@ export function buildLedgerCalendarDays(
     else row.expense += base;
     byDate.set(tx.date, row);
   }
+  return byDate;
+}
+
+/**
+ * Month grid (Mon–Sun) for a given year/month, with leading/trailing
+ * padding days from adjacent months.
+ */
+export function buildMonthlyCalendarDays(
+  transactions: Transaction[],
+  currencies: Currency[],
+  year: number,
+  monthIndex: number, // 0–11
+): CalendarDayCell[] {
+  const byDate = ledgerTotalsByDate(transactions, currencies);
+  const first = new Date(year, monthIndex, 1);
+  first.setHours(12, 0, 0, 0);
+  const startDow = (first.getDay() + 6) % 7; // Mon=0
+  const start = new Date(first);
+  start.setDate(first.getDate() - startDow);
+
+  const last = new Date(year, monthIndex + 1, 0);
+  last.setHours(12, 0, 0, 0);
+  const endDow = (last.getDay() + 6) % 7;
+  const end = new Date(last);
+  end.setDate(last.getDate() + (6 - endDow));
+
+  const cells: CalendarDayCell[] = [];
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    const date = isoDate(cursor);
+    const row = byDate.get(date) ?? { income: 0, expense: 0 };
+    cells.push({
+      date,
+      income: Number(row.income.toFixed(2)),
+      expense: Number(row.expense.toFixed(2)),
+      net: Number((row.income - row.expense).toFixed(2)),
+      intensity: 0,
+      inMonth: cursor.getMonth() === monthIndex,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const maxExpense = Math.max(
+    0,
+    ...cells.filter((c) => c.inMonth).map((c) => c.expense),
+  );
+  return cells.map((c) => ({
+    ...c,
+    intensity: c.inMonth && maxExpense > 0 ? c.expense / maxExpense : 0,
+  }));
+}
+
+/**
+ * Daily ledger activity for a calendar heatmap covering `weeks` weeks
+ * ending today (Mon–Sun rows).
+ */
+export function buildLedgerCalendarDays(
+  transactions: Transaction[],
+  currencies: Currency[],
+  weeks = 16,
+): CalendarDayCell[] {
+  const byDate = ledgerTotalsByDate(transactions, currencies);
 
   const today = new Date();
   today.setHours(12, 0, 0, 0);
-  // Align end to today; start = today - (weeks*7 - 1) days
   const totalDays = weeks * 7;
   const start = new Date(today);
   start.setDate(start.getDate() - (totalDays - 1));
 
-  // Shift start back to Monday for a clean grid
-  const startDow = (start.getDay() + 6) % 7; // Mon=0
+  const startDow = (start.getDay() + 6) % 7;
   start.setDate(start.getDate() - startDow);
   const end = new Date(today);
   const endDow = (end.getDay() + 6) % 7;
@@ -116,6 +173,7 @@ export function buildLedgerCalendarDays(
       expense: Number(row.expense.toFixed(2)),
       net: Number(net.toFixed(2)),
       intensity: 0,
+      inMonth: true,
     });
     cursor.setDate(cursor.getDate() + 1);
   }

@@ -93,7 +93,7 @@ h3,
   .app-shell {
     @apply mx-auto w-full max-w-lg min-h-dvh relative;
     padding-top: var(--safe-top);
-    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 28px);
   }
 
   .card-surface {
