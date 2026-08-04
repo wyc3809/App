@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[39756,["/App/worthtracker/_next/static/chunks/00zvr5zyymoi5.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/0oo08pygwvrn2.js"],"default"]
-3:I[37457,["/App/worthtracker/_next/static/chunks/00zvr5zyymoi5.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/0oo08pygwvrn2.js"],"default"]
+2:I[39756,["/App/worthtracker/_next/static/chunks/1ctd6lz4reqty.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/04r9cgv2d3x9a.js"],"default"]
+3:I[37457,["/App/worthtracker/_next/static/chunks/1ctd6lz4reqty.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/04r9cgv2d3x9a.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"lR4ZFOVpO1tUvw77i7-pW"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"7QrymBF6EKFoa8fWczKmk"}
