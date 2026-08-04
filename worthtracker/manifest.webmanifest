@@ -1,6 +1,6 @@
 {
-  "name": "WorthTracker",
-  "short_name": "WorthTracker",
+  "name": "WorthBook",
+  "short_name": "WorthBook",
   "description": "Net worth and wealth tracking — assets, liabilities, trends, multi-currency. Data stays on your device.",
   "start_url": "./",
   "scope": "./",
