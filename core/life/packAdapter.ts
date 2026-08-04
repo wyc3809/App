@@ -76,7 +76,7 @@ function ensureThreeOnly(event: GameEvent): GameEvent {
     (choiceId, choiceText) => [
       {
         type: 'narrate',
-        text: `「${choiceText ?? choiceId}」這條路走不通：門後湧出後援，你帶傷退出，袖裡的線索也被抽走。`,
+        text: `「${choiceText ?? choiceId}」踢到鐵板。你帶傷退出，袖裡線索也被抽走。`,
       },
       { type: 'health', amount: -6 },
     ],

@@ -32,9 +32,14 @@ import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
 import { applyNarrateOverrideToEffects, lookupNarrateOverride } from '@data/events/narrateOverrides';
 import { lookupArcEvent, isArcVisitReady, buildArcVisitEvent, resolveArcVisitGo, resolveArcVisitLater } from './arcs';
 import { partitionStoryAndDeltas, sanitizePlayerLines } from './playerText';
+import { quietMonthLine, scrubAiSlop } from './sceneCopy';
 
 function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
-  const { story } = partitionStoryAndDeltas(logs.filter((l) => l && !/\[object Object\]/i.test(l)));
+  const cleaned = logs
+    .filter((l) => l && !/\[object Object\]/i.test(l))
+    .map((l) => scrubAiSlop(l))
+    .filter(Boolean);
+  const { story } = partitionStoryAndDeltas(cleaned);
   return story || fallback;
 }
 
@@ -61,7 +66,9 @@ function enrichLegacyEvent(event: GameEvent): GameEvent {
     (_id, choiceText) => [
       {
         type: 'narrate',
-        text: `「${choiceText ?? '此舉'}」功敗垂成：門後湧出後援，短棍砸肩，袖裡線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
+        text: scrubAiSlop(
+          `「${choiceText ?? '此舉'}」踢到鐵板。短棍砸肩，你退進雨裏，只記得對方腕上的疤。`,
+        ),
       },
       { type: 'health', amount: -6 },
       { type: 'money', amount: -3 },
@@ -371,19 +378,19 @@ export function applyChoice(
 
 function shouldTriggerSpecial(state: LifeGameState): boolean {
   if (!Number.isFinite(state.specialEventCountdown)) {
-    state.specialEventCountdown = getRng().nextInt(3, 15);
+    state.specialEventCountdown = getRng().nextInt(8, 20);
   }
   state.specialEventCountdown -= 1;
   return state.specialEventCountdown <= 0;
 }
 
-/** 路遇交手：約每 7–15 個月觸發一次 */
+/** 路遇遇敵節奏：約 10–20 個月一次，避免奇遇過密 */
 function shouldTriggerRoadCombat(state: LifeGameState): boolean {
   const rng = getRng();
   if (!Number.isFinite(state.combatEncounterCountdown)) {
-    state.combatEncounterCountdown = rng.nextInt(7, 15);
+    state.combatEncounterCountdown = rng.nextInt(10, 20);
   }
-  state.combatEncounterCountdown = (state.combatEncounterCountdown ?? 10) - 1;
+  state.combatEncounterCountdown = (state.combatEncounterCountdown ?? 14) - 1;
   return (state.combatEncounterCountdown ?? 0) <= 0;
 }
 
@@ -439,18 +446,18 @@ export function startMonth(state: LifeGameState): LifeGameState {
     }
   }
 
-  // 路遇遇敵節奏：約 7–15 月一次（可重複池）
+  // 路遇遇敵節奏：約 10–20 月一次（可重複池）
   if (!event && shouldTriggerRoadCombat(state)) {
     const roadPool = listEligibleEvents(ROAD_ENCOUNTER_EVENTS, state);
     event = weightedPick(state, roadPool.length ? roadPool : ROAD_ENCOUNTER_EVENTS);
     kind = 'ordinary';
-    state.combatEncounterCountdown = rng.nextInt(7, 15);
+    state.combatEncounterCountdown = rng.nextInt(10, 20);
   }
 
   const rumorBoost = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
-  // 首領／傳聞略降，避免與路遇節奏疊加過密；打聽傳聞仍可抬高
-  const bossChance = 0.04 + rumorBoost * 0.025;
-  const secretExtraChance = rumorBoost > 0 ? 0.035 + rumorBoost * 0.022 : 0;
+  // 首領／奇遇更稀疏；打聽傳聞仍可略抬
+  const bossChance = 0.025 + rumorBoost * 0.02;
+  const secretExtraChance = rumorBoost > 0 ? 0.02 + rumorBoost * 0.015 : 0;
 
   if (!event) {
     const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
@@ -467,14 +474,21 @@ export function startMonth(state: LifeGameState): LifeGameState {
         event = weightedPick(state, secretPool);
       }
       kind = 'special';
-      state.specialEventCountdown = rng.nextInt(3, 15);
+      state.specialEventCountdown = rng.nextInt(8, 20);
     }
   }
 
+  // 靜月：無大事時約兩成月份只寫一行淡墨，唔硬塞機緣
+  if (!event && rng.chance(0.22)) {
+    if (rumorBoost > 0) state.character.flags.rumor_boost = rumorBoost - 1;
+    pushChronicle(state, [quietMonthLine(state.year, state.month, seasonLabel(state.month))]);
+    snapshotRng(state);
+    return state;
+  }
+
   if (!event) {
-    // 修煉機緣略降：0.34 → 0.28，讓江湖百事更多露出
     const wanderPool = listEligibleEvents(PRACTICE_WANDER_EVENTS, state);
-    if (wanderPool.length && rng.chance(0.28)) {
+    if (wanderPool.length && rng.chance(0.16)) {
       event = weightedPick(state, wanderPool);
       kind = 'ordinary';
     }
@@ -505,9 +519,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
       kind,
     };
   } else {
-    pushChronicle(state, [
-      `${state.year}年${state.month}月（${seasonLabel(state.month)}），風平浪靜。`,
-    ]);
+    pushChronicle(state, [quietMonthLine(state.year, state.month, seasonLabel(state.month))]);
   }
 
   snapshotRng(state);

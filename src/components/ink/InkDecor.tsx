@@ -42,9 +42,8 @@ export function InkScrollBackdrop({
       {variant === 'hero' && <InkInlineSvg className="ink-boat-img" markup={INK_SVG.boat} />}
       <InkInlineSvg className="ink-blots-img" markup={INK_SVG.blots} />
       <InkInlineSvg className="ink-bamboo-img" markup={INK_SVG.bamboo} />
+      {/* 平時只留一層靜霧；掃筆僅在翻頁時由 .ink-scroll-flip 觸發 */}
       <div className="ink-mist-layer" />
-      <div className="ink-mist-layer ink-mist-layer--soft" />
-      <div className="ink-brush-sweep" />
       <div className="ink-paper-edge" />
     </div>
   );

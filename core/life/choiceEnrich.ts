@@ -1,4 +1,5 @@
 import type { EventChoice, EventOutcome, GameEffect, GameEvent } from '@interfaces/lifeEngine';
+import { narrateCombat, narratePractice, narrateSocial } from './sceneCopy';
 
 /** 選擇姿態：影響三分支權重（順遂／波折／事與願違） */
 export type ChoiceStance = 'aggressive' | 'virtuous' | 'cunning' | 'cautious' | 'neutral';
@@ -128,53 +129,30 @@ function actLabel(choiceText: string): string {
 
 /** 修煉／鍛造／尋訪：敘事貼合本業，氣血代價遠低於江湖衝突 */
 function practiceFair(act: string): GameEffect[] {
-  return [
-    {
-      type: 'narrate',
-      text: `「${act}」時氣息漸穩：窗外風聲遠了，你把心神收回丹田，這一輪總算沒白費。`,
-    },
-  ];
+  return [{ type: 'narrate', text: narratePractice('fair', act) }];
 }
 
 function practiceMixed(act: string): GameEffect[] {
-  return [
-    { type: 'qi', amount: -4 },
-    {
-      type: 'narrate',
-      text: `「${act}」做到半途，雜念一閃，內息略滯。你及時收功，進境打了折扣，卻未傷到根本。`,
-    },
-  ];
+  return [{ type: 'qi', amount: -4 }, { type: 'narrate', text: narratePractice('mixed', act) }];
 }
 
 function practiceIll(act: string): GameEffect[] {
   return [
     { type: 'health', amount: -3 },
     { type: 'qi', amount: -8 },
-    {
-      type: 'narrate',
-      text: `「${act}」岔了半步：氣機逆湧，胸口發悶。你連忙散功躺平，今日修為未進，倒先討了場虛驚。`,
-    },
+    { type: 'narrate', text: narratePractice('ill', act) },
   ];
 }
 
 function combatFair(act: string): GameEffect[] {
-  return [
-    { type: 'health', amount: -2 },
-    {
-      type: 'narrate',
-      text: `「${act}」大致得手：對方退了半步，你也擦破了皮肉。傷口不深，卻提醒你——贏，也要留力氣走夜路。`,
-    },
-  ];
+  return [{ type: 'health', amount: -2 }, { type: 'narrate', text: narrateCombat('fair', act) }];
 }
 
 function combatMixed(act: string): GameEffect[] {
   return [
     { type: 'health', amount: -5 },
     { type: 'martial', amount: 1 },
-    {
-      type: 'narrate',
-      text: `硬來「${act}」：你逼出半句真話，肩頭也挨了實打。血滲衣襟，情報卻夠你跟到下一條巷。`,
-    },
+    { type: 'narrate', text: narrateCombat('mixed', act) },
   ];
 }
 
@@ -182,132 +160,68 @@ function combatIll(act: string): GameEffect[] {
   return [
     { type: 'health', amount: -8 },
     { type: 'money', amount: -4 },
-    {
-      type: 'narrate',
-      text: `「${act}」踢到鐵板：後援從門後湧出，短棍砸肩，線索被抽走。你捂傷退入雨幕，只記住對方腕上的疤。`,
-    },
+    { type: 'narrate', text: narrateCombat('ill', act) },
   ];
 }
 
 function socialFair(stance: ChoiceStance, act: string): GameEffect[] {
-  switch (stance) {
-    case 'aggressive':
-      return combatFair(act);
-    case 'virtuous':
-      return [
-        { type: 'money', amount: -2 },
-        {
-          type: 'narrate',
-          text: `你堅持「${act}」，事辦成了。櫃上少了兩許銀作押，換來對方親口吐出的關鍵一句。`,
-        },
-      ];
-    case 'cunning':
-      return [
-        { type: 'reputation', amount: -1 },
-        {
-          type: 'narrate',
-          text: `靠「${act}」你摸到了實利。巷口卻有人咬耳朵——便宜進袋，閒話也跟了一程。`,
-        },
-      ];
-    case 'cautious':
-      return [
-        {
-          type: 'narrate',
-          text: `你以「${act}」觀變，沒深陷局中。記下來去方向後抽身，眼力長了一寸。`,
-        },
-      ];
-    default:
-      return [
-        {
-          type: 'narrate',
-          text: `「${act}」之後局面鬆動：你把該問的問清、該記的記下，過程雖有小波折，終究沒空手。`,
-        },
-      ];
+  if (stance === 'aggressive') return combatFair(act);
+  if (stance === 'virtuous') {
+    return [{ type: 'money', amount: -2 }, { type: 'narrate', text: narrateSocial('fair', act) }];
   }
+  if (stance === 'cunning') {
+    return [{ type: 'reputation', amount: -1 }, { type: 'narrate', text: narrateSocial('fair', act) }];
+  }
+  return [{ type: 'narrate', text: narrateSocial('fair', act) }];
 }
 
 function socialMixed(stance: ChoiceStance, act: string): GameEffect[] {
-  switch (stance) {
-    case 'aggressive':
-      return combatMixed(act);
-    case 'virtuous':
-      return [
-        { type: 'money', amount: -5 },
-        { type: 'reputation', amount: 1 },
-        {
-          type: 'narrate',
-          text: `你為「${act}」貼了銀兩與力氣，人是護住了，自己卻空了一截。街坊開始記得你的面孔。`,
-        },
-      ];
-    case 'cunning':
-      return [
-        { type: 'money', amount: 4 },
-        { type: 'reputation', amount: -1 },
-        {
-          type: 'narrate',
-          text: `「${act}」讓銀子進袋，也讓一名跑堂盯上了你。天亮前你換了客棧，枕下仍壓着那半頁密帳。`,
-        },
-      ];
-    case 'cautious':
-      return [
-        { type: 'attr', delta: { wuXing: 1 } },
-        {
-          type: 'narrate',
-          text: `你以「${act}」避開鋒芒，也眼睜睜看機緣被捷足者取走。人安穩了，袖裡只多了兩句旁聽來的風聲。`,
-        },
-      ];
-    default:
-      return [
-        { type: 'money', amount: 2 },
-        {
-          type: 'narrate',
-          text: `「${act}」有得有失：你問到半截真話，關鍵一句卻被人岔開；銀錢未怎麼動，心神倒費了不少。`,
-        },
-      ];
+  if (stance === 'aggressive') return combatMixed(act);
+  if (stance === 'virtuous') {
+    return [
+      { type: 'money', amount: -5 },
+      { type: 'reputation', amount: 1 },
+      { type: 'narrate', text: narrateSocial('mixed', act) },
+    ];
   }
+  if (stance === 'cunning') {
+    return [
+      { type: 'money', amount: 4 },
+      { type: 'reputation', amount: -1 },
+      { type: 'narrate', text: narrateSocial('mixed', act) },
+    ];
+  }
+  if (stance === 'cautious') {
+    return [{ type: 'attr', delta: { wuXing: 1 } }, { type: 'narrate', text: narrateSocial('mixed', act) }];
+  }
+  return [{ type: 'money', amount: 2 }, { type: 'narrate', text: narrateSocial('mixed', act) }];
 }
 
 function socialIll(stance: ChoiceStance, act: string): GameEffect[] {
-  switch (stance) {
-    case 'aggressive':
-      return combatIll(act);
-    case 'virtuous':
-      return [
-        { type: 'money', amount: -6 },
-        { type: 'reputation', amount: 1 },
-        {
-          type: 'narrate',
-          text: `你執意「${act}」，人卻被劫走，差役還收了你一筆「滋事」銀。仍有街坊記得你伸過手——這點薄回甘，換不回失蹤的人。`,
-        },
-      ];
-    case 'cunning':
-      return [
-        { type: 'money', amount: -5 },
-        { type: 'reputation', amount: -2 },
-        { type: 'attr', delta: { danShi: 1 } },
-        {
-          type: 'narrate',
-          text: `「${act}」的局被看穿。密信落入敵手，你還被記上一筆欠債。唯一收穫：下次再不會信那名兩邊收錢的跑堂。`,
-        },
-      ];
-    case 'cautious':
-      return [
-        { type: 'reputation', amount: -1 },
-        {
-          type: 'narrate',
-          text: `你把「${act}」做得太乾淨，關鍵時刻無人作證。事主被拖走時丟下一句：「早知不該信你。」你保住了命，也少了一截線。`,
-        },
-      ];
-    default:
-      return [
-        { type: 'health', amount: -4 },
-        { type: 'money', amount: -3 },
-        {
-          type: 'narrate',
-          text: `「${act}」功敗垂成：話不投機，場面冷了，你想要的消息也沒問着。貼了點醫藥與腳力錢出門，立誓下回先看清門後有沒有第二個人。`,
-        },
-      ];
+  if (stance === 'aggressive') return combatIll(act);
+  if (stance === 'virtuous') {
+    return [
+      { type: 'money', amount: -6 },
+      { type: 'reputation', amount: 1 },
+      { type: 'narrate', text: narrateSocial('ill', act) },
+    ];
   }
+  if (stance === 'cunning') {
+    return [
+      { type: 'money', amount: -5 },
+      { type: 'reputation', amount: -2 },
+      { type: 'attr', delta: { danShi: 1 } },
+      { type: 'narrate', text: narrateSocial('ill', act) },
+    ];
+  }
+  if (stance === 'cautious') {
+    return [{ type: 'reputation', amount: -1 }, { type: 'narrate', text: narrateSocial('ill', act) }];
+  }
+  return [
+    { type: 'health', amount: -4 },
+    { type: 'money', amount: -3 },
+    { type: 'narrate', text: narrateSocial('ill', act) },
+  ];
 }
 
 function fairCost(stance: ChoiceStance, choiceText: string, tone: SceneTone): GameEffect[] {

@@ -856,7 +856,7 @@ describe('life event engine', () => {
       const narr = o.effects.find((e) => e.type === 'narrate');
       const blob = narr && narr.type === 'narrate' ? narr.text : '';
       expect(blob).toContain('閉目運功');
-      expect(blob).not.toMatch(/抄件|銀角|名冊|談判|跑堂|密帳/);
+      expect(blob).not.toMatch(/抄件|銀角|名冊|談判|跑堂|密帳|局面鬆動|終究|立誓|有得有失/);
       const hpHits = o.effects.filter((e) => e.type === 'health' && e.amount < 0);
       for (const h of hpHits) {
         if (h.type === 'health') expect(h.amount).toBeGreaterThanOrEqual(-4);
@@ -864,6 +864,30 @@ describe('life event engine', () => {
     }
     const mixed = enriched.outcomes.find((o) => o.label === '波折')!;
     expect(mixed.effects.some((e) => e.type === 'practice')).toBe(true);
+  });
+
+  it('quiet months can pass without pending events', async () => {
+    const { startMonth } = await import('../core/life/eventEngine');
+    const { scrubAiSlop, QUIET_MONTH } = await import('../core/life/sceneCopy');
+    expect(scrubAiSlop('局面鬆動，終究沒空手')).toBe('');
+    expect(QUIET_MONTH.length).toBeGreaterThan(8);
+    initRng(77);
+    let quietHits = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      initRng(seed);
+      const state = createNewLife(seed);
+      state.lifeArc = undefined;
+      state.specialEventCountdown = 99;
+      state.combatEncounterCountdown = 99;
+      state.pending = null;
+      state.pendingCombat = null;
+      startMonth(state);
+      if (!state.pending) {
+        quietHits += 1;
+        expect(state.lifeLog[0] ?? '').toMatch(/\d+年\d+月/);
+      }
+    }
+    expect(quietHits).toBeGreaterThan(0);
   });
 
   it('monthly body soft-regens and does not spike-kill on fatigue alone', async () => {
