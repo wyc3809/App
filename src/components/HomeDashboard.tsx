@@ -6,8 +6,9 @@ import {
   ArrowDownUp,
   Filter,
   FolderOpen,
-  MoreHorizontal,
+  MoreVertical,
   Plus,
+  Settings2,
   Sparkles,
 } from "lucide-react";
 import {
@@ -129,11 +130,11 @@ export function HomeDashboard() {
             <button
               type="button"
               className="btn-ghost"
-              aria-label="More"
+              aria-label="More options"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              <MoreHorizontal size={18} />
+              <MoreVertical size={18} />
             </button>
             {menuOpen && (
               <>
@@ -144,26 +145,28 @@ export function HomeDashboard() {
                   onClick={() => setMenuOpen(false)}
                 />
                 <div
-                  className="absolute right-0 z-50 mt-1 w-44 overflow-hidden rounded-xl border shadow-lg"
+                  className="absolute right-0 z-50 mt-1 w-48 overflow-hidden rounded-xl border shadow-lg"
                   style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
                 >
+                  <Link
+                    href="/settings/"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Settings2 size={16} style={{ color: "var(--fg-muted)" }} />
+                    Settings
+                  </Link>
                   <button
                     type="button"
-                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
                     onClick={() => {
                       setMenuOpen(false);
                       if (confirm("Replace with demo portfolio?")) loadDemoData();
                     }}
                   >
+                    <Sparkles size={16} style={{ color: "var(--fg-muted)" }} />
                     Load demo data
                   </button>
-                  <Link
-                    href="/settings/"
-                    className="block w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Settings
-                  </Link>
                 </div>
               </>
             )}

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ChartPie,
   LayoutDashboard,
   Receipt,
-  Settings2,
   WalletCards,
 } from "lucide-react";
 
@@ -13,7 +13,7 @@ const NAV = [
   { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: WalletCards },
   { href: "/history", label: "Ledger", icon: Receipt },
-  { href: "/settings", label: "Settings", icon: Settings2 },
+  { href: "/graphs", label: "Graphs", icon: ChartPie },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
