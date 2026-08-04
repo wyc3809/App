@@ -1,0 +1,21 @@
+{
+  "name": "江湖一生 · Typography",
+  "stacks": {
+    "display": ["馬善政", "站酷小薇", "Noto Serif TC", "Songti TC", "serif"],
+    "body": ["Noto Serif TC", "Songti TC", "STSong", "serif"],
+    "fallbackWeb": ["Noto Serif TC", "Georgia", "serif"]
+  },
+  "scale": {
+    "brand": { "sizeRem": 2.1, "letterSpacing": "0.28em", "weight": 500 },
+    "title": { "sizeRem": 1.35, "letterSpacing": "0.18em", "weight": 600 },
+    "body": { "sizeRem": 1.0, "lineHeight": 1.7, "weight": 400 },
+    "choice": { "sizeRem": 0.95, "lineHeight": 1.55, "weight": 400 },
+    "meta": { "sizeRem": 0.8, "letterSpacing": "0.06em", "color": "inkWash" },
+    "chronicle": { "sizeRem": 0.78, "lineHeight": 1.5, "color": "inkWash" }
+  },
+  "rules": [
+    "標題字距加寬，避免擠成現代 UI 標題",
+    "正文短句為主，一段不超過四行優先",
+    "選項以批註口吻，左側保留豎筆空間"
+  ]
+}
