@@ -163,8 +163,11 @@ test.describe("WorthBook E2E", () => {
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     const csvPath = path.join(fixturesDir, "ledger-sample.csv");
-    page.once("dialog", (d) => d.accept());
     await page.locator('input[type="file"][accept*="csv"]').setInputFiles(csvPath);
+
+    const confirm = page.getByRole("dialog");
+    await expect(confirm.getByRole("heading", { name: /Import CSV/i })).toBeVisible();
+    await confirm.getByRole("button", { name: "Import" }).click();
 
     await expect(page.getByText(/Added .+ ledger/i)).toBeVisible({
       timeout: 10_000,
