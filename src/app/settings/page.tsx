@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import {
   Download,
   Eraser,
+  FileSpreadsheet,
   Fingerprint,
   Info,
   Moon,
@@ -15,6 +16,11 @@ import {
   Upload,
 } from "lucide-react";
 import { readBackupFile } from "@/lib/import-backup";
+import {
+  CSV_ACCOUNT_TEMPLATE,
+  CSV_LEDGER_TEMPLATE,
+  readCsvFile,
+} from "@/lib/import-csv";
 import { useWorthStore } from "@/lib/store";
 import type { UserSettings } from "@/lib/types";
 
@@ -31,11 +37,23 @@ export default function SettingsPage() {
   const loadDemoData = useWorthStore((s) => s.loadDemoData);
   const resetAll = useWorthStore((s) => s.resetAll);
   const importBackup = useWorthStore((s) => s.importBackup);
+  const importCsvData = useWorthStore((s) => s.importCsvData);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const jsonInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+
+  const downloadText = (filename: string, content: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const exportJson = () => {
     const payload = {
@@ -47,18 +65,14 @@ export default function SettingsPage() {
       valueEntries,
       transactions,
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `worthbook-export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadText(
+      `worthbook-export-${new Date().toISOString().slice(0, 10)}.json`,
+      JSON.stringify(payload, null, 2),
+      "application/json",
+    );
   };
 
-  const onImportFile = async (file: File | null) => {
+  const onImportJson = async (file: File | null) => {
     if (!file) return;
     setImporting(true);
     setImportMessage(null);
@@ -84,7 +98,45 @@ export default function SettingsPage() {
       `Imported ${result.data.accounts.length} accounts, ${result.data.snapshots.length} snapshots, and ${result.data.transactions?.length ?? 0} ledger entries.`,
     );
     setImporting(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (jsonInputRef.current) jsonInputRef.current.value = "";
+  };
+
+  const onImportCsv = async (file: File | null) => {
+    if (!file) return;
+    setImporting(true);
+    setImportMessage(null);
+    setImportError(null);
+
+    const result = await readCsvFile(file);
+    if (!result.ok) {
+      setImportError(result.error);
+      setImporting(false);
+      return;
+    }
+
+    const ok = confirm(
+      result.kind === "accounts"
+        ? `Import ${result.accounts.length} account(s) from CSV?\n\nExisting accounts with the same name are skipped (merge).`
+        : `Import ${result.transactions.length} ledger row(s) from CSV?\n\nRows are added to your current ledger. Account names are linked when they match.`,
+    );
+    if (!ok) {
+      setImporting(false);
+      return;
+    }
+
+    const { accountsAdded, transactionsAdded } = importCsvData({
+      accounts: result.accounts,
+      transactions: result.transactions,
+    });
+    const skipNote =
+      result.skipped > 0 ? ` · ${result.skipped} row(s) skipped` : "";
+    setImportMessage(
+      result.kind === "accounts"
+        ? `Added ${accountsAdded} account(s) from CSV${skipNote}.`
+        : `Added ${transactionsAdded} ledger entr${transactionsAdded === 1 ? "y" : "ies"} from CSV${skipNote}.`,
+    );
+    setImporting(false);
+    if (csvInputRef.current) csvInputRef.current.value = "";
   };
 
   const themes: { value: UserSettings["theme"]; label: string; icon: typeof Sun }[] = [
@@ -221,22 +273,69 @@ export default function SettingsPage() {
         </button>
 
         <input
-          ref={fileInputRef}
+          ref={jsonInputRef}
           type="file"
           accept="application/json,.json"
           className="hidden"
-          onChange={(e) => void onImportFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => void onImportJson(e.target.files?.[0] ?? null)}
         />
 
         <button
           type="button"
           className="btn-secondary w-full"
           disabled={importing}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => jsonInputRef.current?.click()}
         >
           <Upload size={18} />
           {importing ? "Importing…" : "Import JSON backup"}
         </button>
+
+        <input
+          ref={csvInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(e) => void onImportCsv(e.target.files?.[0] ?? null)}
+        />
+
+        <button
+          type="button"
+          className="btn-secondary w-full"
+          disabled={importing}
+          onClick={() => csvInputRef.current?.click()}
+        >
+          <FileSpreadsheet size={18} />
+          {importing ? "Importing…" : "Import CSV"}
+        </button>
+
+        <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
+          CSV merges into current data. Use accounts columns (
+          <code className="text-[11px]">name, type, category, currency, value</code>
+          ) or ledger columns (
+          <code className="text-[11px]">date, type, amount, title, category, account</code>
+          ).
+        </p>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className="btn-ghost justify-center text-xs"
+            onClick={() =>
+              downloadText("worthbook-accounts-template.csv", CSV_ACCOUNT_TEMPLATE, "text/csv")
+            }
+          >
+            Accounts CSV template
+          </button>
+          <button
+            type="button"
+            className="btn-ghost justify-center text-xs"
+            onClick={() =>
+              downloadText("worthbook-ledger-template.csv", CSV_LEDGER_TEMPLATE, "text/csv")
+            }
+          >
+            Ledger CSV template
+          </button>
+        </div>
 
         {importMessage && (
           <p className="text-sm font-medium" style={{ color: "var(--positive)" }}>

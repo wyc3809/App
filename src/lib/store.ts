@@ -16,6 +16,7 @@ import {
 } from "./demo-data";
 import { todayISO } from "./format";
 import type { WorthBackupPayload } from "./import-backup";
+import type { CsvAccountRow, CsvTransactionRow } from "./import-csv";
 import {
   applyLedgerDeltaToBalance,
   balanceOnDate,
@@ -52,6 +53,11 @@ interface WorthState {
   loadDemoData: () => void;
   resetAll: () => void;
   importBackup: (payload: WorthBackupPayload) => void;
+  /** Merge accounts / ledger rows from CSV into the current portfolio. */
+  importCsvData: (input: {
+    accounts: CsvAccountRow[];
+    transactions: CsvTransactionRow[];
+  }) => { accountsAdded: number; transactionsAdded: number };
 
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
@@ -439,6 +445,60 @@ export const useWorthStore = create<WorthState>()(
           currencies: payload.currencies,
           settings: payload.settings,
         });
+      },
+
+      importCsvData: ({ accounts: accountRows, transactions: txRows }) => {
+        const nameToId = new Map<string, string>(
+          get().accounts.map((a) => [a.name.trim().toLowerCase(), a.id]),
+        );
+        let accountsAdded = 0;
+        let transactionsAdded = 0;
+
+        for (const row of accountRows) {
+          const key = row.name.trim().toLowerCase();
+          if (nameToId.has(key)) continue;
+          get().addAccount({
+            name: row.name.trim(),
+            category: row.category,
+            isLiability: row.isLiability,
+            currency: row.currency,
+            currentValue: row.currentValue,
+            asOfDate: row.asOfDate,
+            institutionName: row.institutionName,
+            note: row.note,
+          });
+          const created = get().accounts.find(
+            (a) => a.name.trim().toLowerCase() === key,
+          );
+          if (created) {
+            nameToId.set(key, created.id);
+            accountsAdded++;
+          }
+        }
+
+        // Refresh map after adds
+        for (const a of get().accounts) {
+          nameToId.set(a.name.trim().toLowerCase(), a.id);
+        }
+
+        for (const row of txRows) {
+          const accountId = row.accountName
+            ? nameToId.get(row.accountName.trim().toLowerCase())
+            : undefined;
+          get().addTransaction({
+            type: row.type,
+            amount: row.amount,
+            currency: row.currency,
+            date: row.date,
+            title: row.title,
+            category: row.category,
+            accountId,
+            note: row.note,
+          });
+          transactionsAdded++;
+        }
+
+        return { accountsAdded, transactionsAdded };
       },
 
       addAccount: (input) => {
