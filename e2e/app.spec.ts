@@ -95,6 +95,10 @@ test.describe("WorthBook E2E", () => {
     await page.goto("/accounts/?new=1");
     await waitForAppReady(page);
     await expect(page.getByRole("dialog")).toBeVisible();
+    // Save/Add must stay in the sticky footer viewport (mobile clip regression)
+    await expect(
+      page.getByRole("dialog").getByRole("button", { name: "Add Account" }),
+    ).toBeInViewport();
     await page.getByRole("button", { name: "Cancel" }).first().click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
