@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type PointerEvent, type ReactNode } from "react";
 import {
   Briefcase,
   Bus,
@@ -25,6 +25,7 @@ import {
   evaluateExpression,
   formatKeypadDisplay,
 } from "@/lib/keypad";
+import { haptic, type HapticKind } from "@/lib/haptic";
 import { todayISO } from "@/lib/format";
 import { ledgerCategoriesFor } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
@@ -102,6 +103,7 @@ export function LedgerQuickEntry() {
   const submit = () => {
     const value = amountValue;
     if (value === null || value <= 0) {
+      haptic("warning");
       setFlash("Enter an amount");
       return;
     }
@@ -122,6 +124,7 @@ export function LedgerQuickEntry() {
       note: note.trim() || undefined,
     });
 
+    haptic("success");
     setFlash("Saved");
     resetForm();
     window.setTimeout(() => setFlash(null), 1200);
@@ -393,7 +396,7 @@ export function LedgerQuickEntry() {
               onPress={() => setExpr((e) => appendKey(e, k))}
             />
           ))}
-          <KeypadKey label="Done" primary onPress={submit} />
+          <KeypadKey label="Done" primary hapticKind={false} onPress={submit} />
         </div>
       </div>
     </section>
@@ -406,24 +409,45 @@ function KeypadKey({
   primary,
   className = "",
   ariaLabel,
+  hapticKind = "tap",
 }: {
   label: ReactNode;
   onPress: () => void;
   primary?: boolean;
   className?: string;
   ariaLabel?: string;
+  /** false = caller handles haptic (e.g. Done success/error) */
+  hapticKind?: HapticKind | false;
 }) {
+  const fire = () => {
+    if (hapticKind !== false) haptic(hapticKind);
+    onPress();
+  };
+
+  const handlePointerDown = (e: PointerEvent<HTMLButtonElement>) => {
+    // Primary button / touch only — fire on press for lower latency than click.
+    if (e.button !== 0) return;
+    e.preventDefault();
+    fire();
+  };
+
   return (
     <button
       type="button"
       aria-label={ariaLabel}
-      className={`flex h-11 items-center justify-center rounded-xl text-base font-semibold transition active:scale-[0.97] sm:h-12 sm:text-lg ${className}`}
+      className={`flex h-11 touch-manipulation items-center justify-center rounded-xl text-base font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-12 sm:text-lg ${className}`}
       style={{
         background: primary ? "var(--accent)" : "var(--bg-elevated)",
         color: primary ? "#04140c" : "var(--fg)",
         boxShadow: primary ? "none" : "0 1px 0 rgba(0,0,0,0.04)",
       }}
-      onClick={onPress}
+      onPointerDown={handlePointerDown}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          fire();
+        }
+      }}
     >
       {label}
     </button>
