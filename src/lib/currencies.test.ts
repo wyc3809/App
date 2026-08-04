@@ -39,6 +39,7 @@ describe("portfolio totals", () => {
         isLiability: false,
         currency: "HKD",
         currentValue: 1000,
+        asOfDate: now.slice(0, 10),
         updatedAt: now,
         createdAt: now,
       },
@@ -49,6 +50,7 @@ describe("portfolio totals", () => {
         isLiability: false,
         currency: "USD",
         currentValue: 100,
+        asOfDate: now.slice(0, 10),
         updatedAt: now,
         createdAt: now,
       },
@@ -59,6 +61,7 @@ describe("portfolio totals", () => {
         isLiability: true,
         currency: "HKD",
         currentValue: 500,
+        asOfDate: now.slice(0, 10),
         updatedAt: now,
         createdAt: now,
       },
@@ -68,5 +71,10 @@ describe("portfolio totals", () => {
     expect(totals.totalAssets).toBeCloseTo(1000 + 780);
     expect(totals.totalLiabilities).toBeCloseTo(500);
     expect(totals.netWorth).toBeCloseTo(1280);
+  });
+
+  it("converts account amounts between currencies", () => {
+    expect(convertAmount(100, "USD", "HKD", DEFAULT_CURRENCIES)).toBeCloseTo(780);
+    expect(convertAmount(780, "HKD", "USD", DEFAULT_CURRENCIES)).toBeCloseTo(100);
   });
 });

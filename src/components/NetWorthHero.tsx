@@ -27,7 +27,7 @@ export function NetWorthHero() {
             className="text-xs font-semibold uppercase tracking-[0.14em]"
             style={{ color: "var(--fg-subtle)" }}
           >
-            WorthTracker
+            WorthBook
           </p>
           <h1 className="mt-1 font-display text-2xl" style={{ color: "var(--fg)" }}>
             Net Worth

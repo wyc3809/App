@@ -38,3 +38,8 @@ export function categoryLabel(category: AccountCategory): string {
 export function categoryColor(category: AccountCategory): string {
   return CATEGORY_META[category]?.color ?? "#64748B";
 }
+
+/** Default category after an asset ↔ liability flip from ledger. */
+export function categoryAfterTypeFlip(isLiability: boolean): AccountCategory {
+  return isLiability ? "loan" : "cash";
+}

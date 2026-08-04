@@ -21,19 +21,23 @@ const assetBase =
     : "";
 
 export const metadata: Metadata = {
-  title: "WorthTracker — Net Worth & Wealth Tracking",
+  title: "WorthBook — Net Worth & Wealth Tracking",
   description:
     "Track total net worth, assets vs liabilities, historical trends, and multi-currency portfolios — offline-first and private.",
-  applicationName: "WorthTracker",
+  applicationName: "WorthBook",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "WorthTracker",
+    statusBarStyle: "black-translucent",
+    title: "WorthBook",
   },
   manifest: `${assetBase}/manifest.webmanifest`,
   icons: {
-    icon: [{ url: `${assetBase}/icon.svg`, type: "image/svg+xml" }],
-    apple: [{ url: `${assetBase}/icon.svg` }],
+    icon: [
+      { url: `${assetBase}/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${assetBase}/icon-512.png`, sizes: "512x512", type: "image/png" },
+      { url: `${assetBase}/icon.svg`, type: "image/svg+xml" },
+    ],
+    apple: [{ url: `${assetBase}/apple-touch-icon.png`, sizes: "180x180" }],
   },
 };
 

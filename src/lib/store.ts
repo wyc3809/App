@@ -16,11 +16,14 @@ import {
 } from "./demo-data";
 import { todayISO } from "./format";
 import type { WorthBackupPayload } from "./import-backup";
+import type { CsvAccountRow, CsvTransactionRow } from "./import-csv";
 import {
   applyLedgerDeltaToBalance,
   balanceOnDate,
+  isEntryAfter,
   oppositeTransactionType,
 } from "./ledger";
+import { categoryAfterTypeFlip } from "./categories";
 import type {
   Account,
   AccountValueEntry,
@@ -46,13 +49,21 @@ interface WorthState {
   hydrated: boolean;
 
   setHydrated: (value: boolean) => void;
+  resyncAccounts: () => void;
   loadDemoData: () => void;
   resetAll: () => void;
   importBackup: (payload: WorthBackupPayload) => void;
+  /** Merge accounts / ledger rows from CSV into the current portfolio. */
+  importCsvData: (input: {
+    accounts: CsvAccountRow[];
+    transactions: CsvTransactionRow[];
+  }) => { accountsAdded: number; transactionsAdded: number };
 
   addAccount: (input: Omit<Account, "id" | "createdAt" | "updatedAt">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
+  /** Convert an account + its value history into another currency. */
+  changeAccountCurrency: (accountId: string, nextCurrency: string) => void;
 
   upsertValueEntry: (input: {
     entryId?: string;
@@ -122,7 +133,10 @@ function syncAccountFromEntries(
 ): Account {
   const mine = entries
     .filter((e) => e.accountId === account.id)
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
   if (mine.length === 0) return account;
   const latest = mine[0];
   return {
@@ -131,6 +145,14 @@ function syncAccountFromEntries(
     asOfDate: latest.date,
     updatedAt: new Date().toISOString(),
   };
+}
+
+/** Keep account.currentValue aligned with the newest value-history row. */
+function resyncAllAccounts(
+  accounts: Account[],
+  valueEntries: AccountValueEntry[],
+): Account[] {
+  return accounts.map((a) => syncAccountFromEntries(a, valueEntries));
 }
 
 function seedEntryForAccount(account: Account): AccountValueEntry {
@@ -153,7 +175,7 @@ function writeValueOnDate(
   note?: string,
 ): AccountValueEntry[] {
   const existing = valueEntries.find(
-    (e) => e.accountId === accountId && e.date === date,
+    (e) => e.accountId === accountId && e.date === date && !e.transactionId,
   );
   if (existing) {
     return valueEntries.map((e) =>
@@ -176,15 +198,40 @@ function writeValueOnDate(
   ];
 }
 
+function cascadeAdjustAfterRemoval(
+  entries: AccountValueEntry[],
+  removed: AccountValueEntry,
+): AccountValueEntry[] {
+  const delta = removed.delta ?? 0;
+  if (delta === 0) {
+    return entries.filter((e) => e.id !== removed.id);
+  }
+  return entries
+    .filter((e) => e.id !== removed.id)
+    .map((e) => {
+      if (e.accountId !== removed.accountId) return e;
+      if (!isEntryAfter(e, removed)) return e;
+      return {
+        ...e,
+        value: Math.max(0, Number((e.value - delta).toFixed(2))),
+      };
+    });
+}
+
 /**
  * Apply or reverse a ledger entry against a linked account's value history.
+ * Each linked ledger creates its own Value History row (not merged by date).
+ * Crossing zero flips the account between asset and liability.
  */
 function applyTransactionLink(
   accounts: Account[],
   valueEntries: AccountValueEntry[],
   snapshots: HistoricalSnapshot[],
   currencies: Currency[],
-  tx: Pick<Transaction, "type" | "amount" | "currency" | "date" | "accountId" | "title">,
+  tx: Pick<
+    Transaction,
+    "id" | "type" | "amount" | "currency" | "date" | "accountId" | "title"
+  >,
   mode: "apply" | "reverse",
 ): {
   accounts: Account[];
@@ -200,39 +247,125 @@ function applyTransactionLink(
     return { accounts, valueEntries, snapshots };
   }
 
-  const amountInAccount = convertAmount(
-    tx.amount,
-    tx.currency,
-    account.currency,
-    currencies,
-  );
-  const effectiveType =
-    mode === "apply" ? tx.type : oppositeTransactionType(tx.type);
-  const base = balanceOnDate(
-    valueEntries,
-    account.id,
-    tx.date,
-    account.currentValue,
-  );
-  const nextValue = applyLedgerDeltaToBalance(
-    base,
-    account.isLiability,
-    effectiveType,
-    amountInAccount,
-  );
-  const note =
-    mode === "apply"
-      ? `Ledger: ${tx.title}`
-      : undefined;
+  let nextEntries = valueEntries;
+  let workingAccount = account;
 
-  let nextEntries = writeValueOnDate(
-    valueEntries,
-    account.id,
-    tx.date,
-    nextValue,
-    note,
-  );
-  const synced = syncAccountFromEntries(account, nextEntries);
+  if (mode === "reverse") {
+    const linked = valueEntries.find((e) => e.transactionId === tx.id);
+    if (linked) {
+      nextEntries = cascadeAdjustAfterRemoval(valueEntries, linked);
+      if (linked.typeFlip) {
+        workingAccount = {
+          ...account,
+          isLiability: linked.typeFlip.fromIsLiability,
+          category: linked.typeFlip.fromCategory,
+        };
+      }
+    } else {
+      const amountInAccount = convertAmount(
+        tx.amount,
+        tx.currency,
+        account.currency,
+        currencies,
+      );
+      const base = balanceOnDate(
+        valueEntries,
+        account.id,
+        tx.date,
+        account.currentValue,
+      );
+      const result = applyLedgerDeltaToBalance(
+        base,
+        account.isLiability,
+        oppositeTransactionType(tx.type),
+        amountInAccount,
+      );
+      nextEntries = writeValueOnDate(
+        valueEntries,
+        account.id,
+        tx.date,
+        result.value,
+        undefined,
+      );
+      if (result.flipped) {
+        workingAccount = {
+          ...account,
+          isLiability: result.isLiability,
+          category: categoryAfterTypeFlip(result.isLiability),
+        };
+      }
+    }
+  } else {
+    const withoutSelf = valueEntries.filter((e) => e.transactionId !== tx.id);
+    const amountInAccount = convertAmount(
+      tx.amount,
+      tx.currency,
+      account.currency,
+      currencies,
+    );
+    const base = balanceOnDate(
+      withoutSelf,
+      account.id,
+      tx.date,
+      account.currentValue,
+    );
+    const result = applyLedgerDeltaToBalance(
+      base,
+      account.isLiability,
+      tx.type,
+      amountInAccount,
+    );
+    const delta = result.signedDelta;
+    const kind = tx.type === "income" ? "Income" : "Expense";
+    const flipNote = result.flipped
+      ? result.isLiability
+        ? " · became liability"
+        : " · became asset"
+      : "";
+    const createdAt = new Date().toISOString();
+    const toCategory = result.flipped
+      ? categoryAfterTypeFlip(result.isLiability)
+      : account.category;
+    const newEntry: AccountValueEntry = {
+      id: id(),
+      accountId: account.id,
+      date: tx.date,
+      value: result.value,
+      note: `${kind} · ${tx.title}${flipNote}`,
+      markOnGraph: true,
+      createdAt,
+      transactionId: tx.id,
+      delta,
+      typeFlip: result.flipped
+        ? {
+            fromIsLiability: account.isLiability,
+            fromCategory: account.category,
+            toIsLiability: result.isLiability,
+            toCategory,
+          }
+        : undefined,
+    };
+    nextEntries = [
+      ...withoutSelf.map((e) => {
+        if (e.accountId !== account.id) return e;
+        if (e.date <= tx.date) return e;
+        return {
+          ...e,
+          value: Math.max(0, Number((e.value + delta).toFixed(2))),
+        };
+      }),
+      newEntry,
+    ];
+    if (result.flipped) {
+      workingAccount = {
+        ...account,
+        isLiability: result.isLiability,
+        category: toCategory,
+      };
+    }
+  }
+
+  const synced = syncAccountFromEntries(workingAccount, nextEntries);
   const nextAccounts = accounts.map((a) =>
     a.id === account.id ? synced : a,
   );
@@ -264,6 +397,12 @@ export const useWorthStore = create<WorthState>()(
 
       setHydrated: (value) => set({ hydrated: value }),
 
+      resyncAccounts: () => {
+        set((s) => ({
+          accounts: resyncAllAccounts(s.accounts, s.valueEntries),
+        }));
+      },
+
       loadDemoData: () => {
         const accounts = createDemoAccounts();
         const valueEntries = createDemoValueEntries(accounts);
@@ -279,6 +418,7 @@ export const useWorthStore = create<WorthState>()(
         for (const input of createDemoTransactions(accounts)) {
           get().addTransaction(input);
         }
+        get().resyncAccounts();
       },
 
       resetAll: () =>
@@ -296,14 +436,69 @@ export const useWorthStore = create<WorthState>()(
           payload.valueEntries && payload.valueEntries.length > 0
             ? payload.valueEntries
             : payload.accounts.map(seedEntryForAccount);
+        const accounts = resyncAllAccounts(payload.accounts, valueEntries);
         set({
-          accounts: payload.accounts,
+          accounts,
           valueEntries,
           transactions: payload.transactions ?? [],
           snapshots: payload.snapshots,
           currencies: payload.currencies,
           settings: payload.settings,
         });
+      },
+
+      importCsvData: ({ accounts: accountRows, transactions: txRows }) => {
+        const nameToId = new Map<string, string>(
+          get().accounts.map((a) => [a.name.trim().toLowerCase(), a.id]),
+        );
+        let accountsAdded = 0;
+        let transactionsAdded = 0;
+
+        for (const row of accountRows) {
+          const key = row.name.trim().toLowerCase();
+          if (nameToId.has(key)) continue;
+          get().addAccount({
+            name: row.name.trim(),
+            category: row.category,
+            isLiability: row.isLiability,
+            currency: row.currency,
+            currentValue: row.currentValue,
+            asOfDate: row.asOfDate,
+            institutionName: row.institutionName,
+            note: row.note,
+          });
+          const created = get().accounts.find(
+            (a) => a.name.trim().toLowerCase() === key,
+          );
+          if (created) {
+            nameToId.set(key, created.id);
+            accountsAdded++;
+          }
+        }
+
+        // Refresh map after adds
+        for (const a of get().accounts) {
+          nameToId.set(a.name.trim().toLowerCase(), a.id);
+        }
+
+        for (const row of txRows) {
+          const accountId = row.accountName
+            ? nameToId.get(row.accountName.trim().toLowerCase())
+            : undefined;
+          get().addTransaction({
+            type: row.type,
+            amount: row.amount,
+            currency: row.currency,
+            date: row.date,
+            title: row.title,
+            category: row.category,
+            accountId,
+            note: row.note,
+          });
+          transactionsAdded++;
+        }
+
+        return { accountsAdded, transactionsAdded };
       },
 
       addAccount: (input) => {
@@ -393,6 +588,70 @@ export const useWorthStore = create<WorthState>()(
         }));
       },
 
+      changeAccountCurrency: (accountId, nextCurrency) => {
+        set((s) => {
+          const account = s.accounts.find((a) => a.id === accountId);
+          if (!account || account.currency === nextCurrency) return s;
+          if (!s.currencies.some((c) => c.code === nextCurrency)) return s;
+
+          const valueEntries = s.valueEntries.map((e) => {
+            if (e.accountId !== accountId) return e;
+            const value = Number(
+              convertAmount(
+                e.value,
+                account.currency,
+                nextCurrency,
+                s.currencies,
+              ).toFixed(2),
+            );
+            const delta =
+              e.delta == null
+                ? undefined
+                : Number(
+                    convertAmount(
+                      e.delta,
+                      account.currency,
+                      nextCurrency,
+                      s.currencies,
+                    ).toFixed(2),
+                  );
+            return { ...e, value, delta };
+          });
+
+          const currentValue = Number(
+            convertAmount(
+              account.currentValue,
+              account.currency,
+              nextCurrency,
+              s.currencies,
+            ).toFixed(2),
+          );
+
+          const accounts = s.accounts.map((a) =>
+            a.id === accountId
+              ? {
+                  ...a,
+                  currency: nextCurrency,
+                  currentValue,
+                  updatedAt: new Date().toISOString(),
+                }
+              : a,
+          );
+          const synced = resyncAllAccounts(accounts, valueEntries);
+
+          return {
+            accounts: synced,
+            valueEntries,
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              synced,
+              s.currencies,
+              todayISO(),
+            ),
+          };
+        });
+      },
+
       upsertValueEntry: ({
         entryId,
         accountId,
@@ -455,9 +714,14 @@ export const useWorthStore = create<WorthState>()(
       },
 
       deleteValueEntry: (entryId) => {
+        const entry = get().valueEntries.find((e) => e.id === entryId);
+        if (!entry) return;
+        // Ledger-linked rows are owned by the transaction — reverse via ledger delete.
+        if (entry.transactionId) {
+          get().deleteTransaction(entry.transactionId);
+          return;
+        }
         set((s) => {
-          const entry = s.valueEntries.find((e) => e.id === entryId);
-          if (!entry) return s;
           const valueEntries = s.valueEntries.filter((e) => e.id !== entryId);
           const account = s.accounts.find((a) => a.id === entry.accountId);
           if (!account) return { valueEntries };
@@ -619,7 +883,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -667,6 +931,13 @@ export const useWorthStore = create<WorthState>()(
         if (version < 4) {
           if (!Array.isArray(state.transactions)) {
             state.transactions = [];
+          }
+        }
+
+        if (version < 5) {
+          // Fix same-day history: currentValue must follow newest createdAt.
+          if (Array.isArray(state.accounts) && Array.isArray(state.valueEntries)) {
+            state.accounts = resyncAllAccounts(state.accounts, state.valueEntries);
           }
         }
 

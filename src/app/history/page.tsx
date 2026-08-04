@@ -1,19 +1,30 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Link2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Link2, Pencil, Trash2 } from "lucide-react";
+import { LedgerQuickEntry } from "@/components/LedgerQuickEntry";
 import { TransactionModal } from "@/components/TransactionModal";
 import { toBaseCurrency } from "@/lib/currencies";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, todayISO } from "@/lib/format";
 import {
   computeLedgerTotals,
+  filterTransactionsByPeriod,
   groupTransactionsByDate,
   ledgerCategoryLabel,
+  ledgerPeriodShortLabel,
+  ledgerPeriodStart,
+  type LedgerSummaryPeriod,
 } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
 import type { Transaction, TransactionType } from "@/lib/types";
 
 type Filter = "all" | TransactionType;
+
+const PERIODS: { value: LedgerSummaryPeriod; label: string }[] = [
+  { value: "day", label: "Day" },
+  { value: "month", label: "Month" },
+  { value: "ytd", label: "YTD" },
+];
 
 export default function LedgerPage() {
   const transactions = useWorthStore((s) => s.transactions);
@@ -22,32 +33,49 @@ export default function LedgerPage() {
   const settings = useWorthStore((s) => s.settings);
   const deleteTransaction = useWorthStore((s) => s.deleteTransaction);
 
+  /** Default: from the 1st of the current month through today. */
+  const [period, setPeriod] = useState<LedgerSummaryPeriod>("month");
   const [filter, setFilter] = useState<Filter>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
 
+  const today = todayISO();
+
+  const inPeriod = useMemo(
+    () => filterTransactionsByPeriod(transactions, period, today),
+    [transactions, period, today],
+  );
+
   const filtered = useMemo(() => {
-    if (filter === "all") return transactions;
-    return transactions.filter((t) => t.type === filter);
-  }, [transactions, filter]);
+    if (filter === "all") return inPeriod;
+    return inPeriod.filter((t) => t.type === filter);
+  }, [inPeriod, filter]);
 
   const totals = useMemo(
     () =>
-      computeLedgerTotals(filtered, (amount, currency) =>
+      computeLedgerTotals(inPeriod, (amount, currency) =>
         toBaseCurrency(amount, currency, currencies),
       ),
-    [filtered, currencies],
+    [inPeriod, currencies],
   );
 
   const groups = useMemo(() => groupTransactionsByDate(filtered), [filtered]);
 
+  const periodHint = useMemo(() => {
+    const start = ledgerPeriodStart(period, today);
+    if (period === "day") return "Today";
+    if (period === "month") {
+      const month = new Date(`${start}T00:00:00`).toLocaleDateString(undefined, {
+        month: "short",
+        year: "numeric",
+      });
+      return `From 1 ${month}`;
+    }
+    return `YTD · since ${start.slice(0, 4)}-01-01`;
+  }, [period, today]);
+
   const accountName = (id?: string) =>
     id ? accounts.find((a) => a.id === id)?.name : undefined;
-
-  const openNew = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
 
   const openEdit = (tx: Transaction) => {
     setEditing(tx);
@@ -55,88 +83,129 @@ export default function LedgerPage() {
   };
 
   return (
-    <div className="space-y-4 pb-4">
-      <header className="animate-fade-up">
+    <div className="space-y-3 pb-4">
+      <header className="flex items-baseline justify-between gap-2 animate-fade-up">
+        <h1 className="font-display text-2xl leading-none">Ledger</h1>
         <p
-          className="text-xs font-semibold uppercase tracking-[0.14em]"
+          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
           style={{ color: "var(--fg-subtle)" }}
         >
           Bookkeeping
         </p>
-        <div className="mt-1 flex items-end justify-between gap-3">
-          <h1 className="font-display text-3xl">Ledger</h1>
-          <button type="button" className="btn-primary" onClick={openNew}>
-            <Plus size={18} />
-            Add
-          </button>
-        </div>
-        <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-          Income & expense — optionally link to an account to update its balance.
-        </p>
       </header>
 
-      <section className="grid grid-cols-3 gap-2 animate-fade-up">
-        <SummaryTile
-          label="Income"
-          value={formatMoney(totals.income, settings.baseCurrency, currencies, {
-            privacy: settings.isPrivacyMode,
-            compact: true,
-          })}
-          tone="positive"
-        />
-        <SummaryTile
-          label="Expense"
-          value={formatMoney(totals.expense, settings.baseCurrency, currencies, {
-            privacy: settings.isPrivacyMode,
-            compact: true,
-          })}
-          tone="negative"
-        />
-        <SummaryTile
-          label="Net"
-          value={formatMoney(totals.net, settings.baseCurrency, currencies, {
-            privacy: settings.isPrivacyMode,
-            compact: true,
-            showSign: true,
-          })}
-          tone={totals.net >= 0 ? "positive" : "negative"}
-        />
+      <LedgerQuickEntry />
+
+      <section className="space-y-2 animate-fade-up" aria-label="Cashflow summary">
+        <div className="flex items-center justify-between gap-2">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+            style={{ color: "var(--fg-subtle)" }}
+          >
+            {periodHint}
+          </p>
+          <div
+            className="flex gap-1 rounded-xl p-0.5"
+            style={{ background: "var(--bg-muted)" }}
+            role="tablist"
+            aria-label="Summary period"
+          >
+            {PERIODS.map(({ value, label }) => {
+              const active = period === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className="min-h-9 rounded-lg px-2.5 text-[11px] font-semibold transition"
+                  style={{
+                    background: active ? "var(--accent)" : "transparent",
+                    color: active ? "#04140c" : "var(--fg-muted)",
+                  }}
+                  onClick={() => setPeriod(value)}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <SummaryTile
+            label="Income"
+            value={formatMoney(totals.income, settings.baseCurrency, currencies, {
+              privacy: settings.isPrivacyMode,
+              compact: true,
+            })}
+            tone="positive"
+          />
+          <SummaryTile
+            label="Expense"
+            value={formatMoney(totals.expense, settings.baseCurrency, currencies, {
+              privacy: settings.isPrivacyMode,
+              compact: true,
+            })}
+            tone="negative"
+          />
+          <SummaryTile
+            label="Net"
+            value={formatMoney(totals.net, settings.baseCurrency, currencies, {
+              privacy: settings.isPrivacyMode,
+              compact: true,
+              showSign: true,
+            })}
+            tone={totals.net >= 0 ? "positive" : "negative"}
+          />
+        </div>
       </section>
 
-      <div className="flex gap-2 animate-fade-up-delay">
-        {([
-          ["all", "All"],
-          ["income", "Income"],
-          ["expense", "Expense"],
-        ] as const).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            className="rounded-xl px-3 py-2 text-xs font-semibold"
-            style={{
-              background:
-                filter === value ? "var(--accent-soft)" : "var(--bg-muted)",
-              color: filter === value ? "var(--accent)" : "var(--fg-muted)",
-            }}
-            onClick={() => setFilter(value)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-2 animate-fade-up-delay">
+        <h2
+          className="text-xs font-semibold uppercase tracking-[0.12em]"
+          style={{ color: "var(--fg-subtle)" }}
+        >
+          Records · {ledgerPeriodShortLabel(period)}
+        </h2>
+        <div className="flex gap-1.5">
+          {([
+            ["all", "All"],
+            ["income", "Income"],
+            ["expense", "Expense"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className="rounded-xl px-2.5 py-1.5 text-[11px] font-semibold"
+              style={{
+                background:
+                  filter === value ? "var(--accent-soft)" : "var(--bg-muted)",
+                color: filter === value ? "var(--accent)" : "var(--fg-muted)",
+              }}
+              onClick={() => setFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {groups.length === 0 ? (
         <div
-          className="rounded-2xl px-4 py-10 text-center text-sm"
+          className="rounded-2xl px-4 py-8 text-center"
           style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
         >
-          No ledger entries yet. Add income or expense to start tracking.
+          <p className="text-sm">
+            No records in this period. Use the keypad above or switch Day / Month /
+            YTD.
+          </p>
         </div>
       ) : (
         <div className="space-y-4 animate-fade-up-delay">
           {groups.map(({ date, items }) => (
             <section key={date}>
-              <h2
+              <h3
                 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em]"
                 style={{ color: "var(--fg-subtle)" }}
               >
@@ -146,7 +215,7 @@ export default function LedgerPage() {
                   day: "numeric",
                   year: "numeric",
                 })}
-              </h2>
+              </h3>
               <ul className="space-y-2">
                 {items.map((tx) => {
                   const linked = accountName(tx.accountId);

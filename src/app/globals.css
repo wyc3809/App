@@ -18,6 +18,7 @@
   --negative: #c23b3b;
   --chart-grid: rgba(20, 24, 20, 0.06);
   --nav-height: 72px;
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow-soft: 0 18px 40px rgba(20, 24, 20, 0.08);
   --ring: rgba(15, 122, 76, 0.35);
@@ -50,8 +51,23 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Faster taps; reduce accidental double-tap zoom on controls */
+button,
+a,
+[role="button"],
+[role="tab"],
+.chip,
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
+  touch-action: manipulation;
+}
+
 html {
   scroll-behavior: smooth;
+  /* Keep layout stable when the soft keyboard opens on mobile */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -60,6 +76,8 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100dvh;
   text-rendering: optimizeLegibility;
+  /* Prevent iOS rubber-band from shifting fixed sheets oddly */
+  overscroll-behavior-y: none;
 }
 
 body::before {
@@ -91,7 +109,8 @@ h3,
 @layer components {
   .app-shell {
     @apply mx-auto w-full max-w-lg min-h-dvh relative;
-    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+    padding-top: var(--safe-top);
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 28px);
   }
 
   .card-surface {
@@ -133,15 +152,24 @@ h3,
   }
 
   .field {
-    @apply w-full rounded-xl px-3 py-3 text-sm outline-none transition;
+    /* 16px minimum — iOS Safari zooms the page when focused inputs are smaller */
+    @apply w-full rounded-xl px-3 py-3 text-base outline-none transition;
     background: var(--bg-muted);
     border: 1px solid transparent;
     color: var(--fg);
+    touch-action: manipulation;
   }
 
   .field:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  /* Native controls outside .field (rare) still need 16px on iOS */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   .label {

@@ -43,6 +43,34 @@ export interface LedgerTotals {
   net: number;
 }
 
+/** Day = today · Month = from the 1st (MTD, default) · YTD = Jan 1 → today */
+export type LedgerSummaryPeriod = "day" | "month" | "ytd";
+
+export function ledgerPeriodStart(
+  period: LedgerSummaryPeriod,
+  today: string = new Date().toISOString().slice(0, 10),
+): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) return today;
+  if (period === "day") return today;
+  if (period === "month") return `${today.slice(0, 7)}-01`;
+  return `${today.slice(0, 4)}-01-01`;
+}
+
+export function filterTransactionsByPeriod(
+  transactions: Transaction[],
+  period: LedgerSummaryPeriod,
+  today: string = new Date().toISOString().slice(0, 10),
+): Transaction[] {
+  const start = ledgerPeriodStart(period, today);
+  return transactions.filter((tx) => tx.date >= start && tx.date <= today);
+}
+
+export function ledgerPeriodShortLabel(period: LedgerSummaryPeriod): string {
+  if (period === "day") return "Day";
+  if (period === "month") return "Month";
+  return "YTD";
+}
+
 /** Sum transactions converted with a provided converter to base currency. */
 export function computeLedgerTotals(
   transactions: Transaction[],
@@ -62,21 +90,45 @@ export function computeLedgerTotals(
  * How a ledger entry changes an account balance.
  * Assets: income +, expense −
  * Liabilities: expense + (more debt), income − (payment)
+ * Crossing below zero flips asset ↔ liability and keeps the absolute surplus.
  */
+export interface LedgerBalanceResult {
+  /** Absolute balance after the change (>= 0). */
+  value: number;
+  isLiability: boolean;
+  flipped: boolean;
+  /** Raw signed delta applied to the pre-change balance (can drive below zero). */
+  signedDelta: number;
+}
+
 export function applyLedgerDeltaToBalance(
   currentValue: number,
   isLiability: boolean,
   type: TransactionType,
   amountInAccountCurrency: number,
-): number {
-  const signed = isLiability
+): LedgerBalanceResult {
+  const signedDelta = isLiability
     ? type === "expense"
       ? amountInAccountCurrency
       : -amountInAccountCurrency
     : type === "income"
       ? amountInAccountCurrency
       : -amountInAccountCurrency;
-  return Math.max(0, Number((currentValue + signed).toFixed(2)));
+  const raw = Number((currentValue + signedDelta).toFixed(2));
+  if (raw >= 0) {
+    return {
+      value: raw,
+      isLiability,
+      flipped: false,
+      signedDelta,
+    };
+  }
+  return {
+    value: Math.abs(raw),
+    isLiability: !isLiability,
+    flipped: true,
+    signedDelta,
+  };
 }
 
 export function groupTransactionsByDate(
@@ -102,7 +154,7 @@ export function oppositeTransactionType(type: TransactionType): TransactionType 
 }
 
 /**
- * Balance for an account on `date`: exact entry that day, else latest on/before,
+ * Latest balance for an account on/before `date` (same-day uses newest createdAt),
  * else the provided fallback (usually `account.currentValue`).
  */
 export function balanceOnDate(
@@ -111,10 +163,21 @@ export function balanceOnDate(
   date: string,
   fallback: number,
 ): number {
-  const onDay = entries.find((e) => e.accountId === accountId && e.date === date);
-  if (onDay) return onDay.value;
   const prior = entries
     .filter((e) => e.accountId === accountId && e.date <= date)
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
   return prior[0]?.value ?? fallback;
+}
+
+/** True if `a` is strictly after `b` in value-history order. */
+export function isEntryAfter(
+  a: Pick<AccountValueEntry, "date" | "createdAt">,
+  b: Pick<AccountValueEntry, "date" | "createdAt">,
+): boolean {
+  const d = a.date.localeCompare(b.date);
+  if (d !== 0) return d > 0;
+  return a.createdAt.localeCompare(b.createdAt) > 0;
 }

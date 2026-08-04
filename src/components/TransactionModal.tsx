@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, X } from "lucide-react";
+import { Link2 } from "lucide-react";
+import { BottomSheet } from "@/components/BottomSheet";
 import { todayISO } from "@/lib/format";
 import { ledgerCategoriesFor } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
@@ -10,20 +11,24 @@ import type { LedgerCategory, Transaction, TransactionType } from "@/lib/types";
 interface TransactionModalProps {
   open: boolean;
   initial?: Transaction | null;
+  /** Pre-select this account when creating a new entry. */
+  defaultAccountId?: string;
   onClose: () => void;
 }
 
 export function TransactionModal({
   open,
   initial = null,
+  defaultAccountId,
   onClose,
 }: TransactionModalProps) {
   if (!open) return null;
 
   return (
     <TransactionDialog
-      key={initial?.id ?? "new-tx"}
+      key={initial?.id ?? `new-tx-${defaultAccountId ?? "none"}`}
       initial={initial}
+      defaultAccountId={defaultAccountId}
       onClose={onClose}
     />
   );
@@ -31,9 +36,11 @@ export function TransactionModal({
 
 function TransactionDialog({
   initial,
+  defaultAccountId,
   onClose,
 }: {
   initial: Transaction | null;
+  defaultAccountId?: string;
   onClose: () => void;
 }) {
   const accounts = useWorthStore((s) => s.accounts);
@@ -42,19 +49,20 @@ function TransactionDialog({
   const addTransaction = useWorthStore((s) => s.addTransaction);
   const updateTransaction = useWorthStore((s) => s.updateTransaction);
 
+  const presetAccountId = initial?.accountId ?? defaultAccountId ?? "";
+  const presetAccount = accounts.find((a) => a.id === presetAccountId);
+
   const [type, setType] = useState<TransactionType>(initial?.type ?? "expense");
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [amount, setAmount] = useState(
-    initial ? String(initial.amount) : "",
-  );
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(
-    initial?.currency ?? settings.baseCurrency,
+    initial?.currency ?? presetAccount?.currency ?? settings.baseCurrency,
   );
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [category, setCategory] = useState<LedgerCategory>(
     initial?.category ?? (initial?.type === "income" ? "salary" : "food"),
   );
-  const [accountId, setAccountId] = useState(initial?.accountId ?? "");
+  const [accountId, setAccountId] = useState(presetAccountId);
   const [note, setNote] = useState(initial?.note ?? "");
 
   const categories = ledgerCategoriesFor(type);
@@ -102,29 +110,18 @@ function TransactionDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ background: "rgba(0,0,0,0.45)" }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="tx-modal-title"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl p-4 sm:rounded-3xl"
-        style={{ background: "var(--bg-elevated)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="tx-modal-title" className="font-display text-2xl">
-            {initial ? "Edit entry" : "Add entry"}
-          </h2>
-          <button type="button" className="btn-ghost" onClick={onClose} aria-label="Close">
-            <X size={20} />
+    <form onSubmit={submit}>
+      <BottomSheet
+        onClose={onClose}
+        title={initial ? "Edit entry" : "Add entry"}
+        titleId="tx-modal-title"
+        footer={
+          <button type="submit" className="btn-primary w-full justify-center">
+            {initial ? "Save changes" : "Add entry"}
           </button>
-        </div>
-
-        <form className="space-y-4" onSubmit={submit}>
+        }
+      >
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             {(["expense", "income"] as const).map((t) => (
               <button
@@ -257,11 +254,11 @@ function TransactionDialog({
               <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
                 {linkedAccount.isLiability
                   ? type === "expense"
-                    ? "Expense increases this debt balance."
-                    : "Income / payment reduces this debt balance."
+                    ? "Expense increases this debt. Overshoot stays a larger liability."
+                    : "Payment reduces debt. Paying past zero turns this into an asset."
                   : type === "income"
                     ? "Income increases this account balance."
-                    : "Expense decreases this account balance."}
+                    : "Expense decreases balance. Going past zero turns this into a liability."}
               </p>
             )}
           </div>
@@ -278,12 +275,8 @@ function TransactionDialog({
               placeholder="Optional detail"
             />
           </div>
-
-          <button type="submit" className="btn-primary w-full justify-center">
-            {initial ? "Save changes" : "Add entry"}
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      </BottomSheet>
+    </form>
   );
 }

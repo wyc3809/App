@@ -24,13 +24,18 @@ function AccountsContent() {
   const [manualOpen, setManualOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState<HomeFilterState>(DEFAULT_HOME_FILTER);
+  /** Local dismiss so Cancel works even if router.replace is slow on static hosts. */
+  const [queryNewDismissed, setQueryNewDismissed] = useState(false);
 
-  const openFromQuery = searchParams.get("new") === "1";
+  const openFromQuery = searchParams.get("new") === "1" && !queryNewDismissed;
   const formOpen = manualOpen || openFromQuery;
 
   const closeForm = () => {
     setManualOpen(false);
-    if (openFromQuery) router.replace("/accounts/");
+    if (searchParams.get("new") === "1") {
+      setQueryNewDismissed(true);
+      router.replace("/accounts/");
+    }
   };
 
   const totals = computeTotals(accounts, currencies);

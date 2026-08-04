@@ -1,0 +1,3 @@
+date,type,amount,currency,title,category,account,note
+2026-08-01,income,1000,HKD,CSV Salary,salary,,E2E import
+2026-08-02,expense,42,HKD,CSV Coffee,food,,E2E import

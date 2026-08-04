@@ -33,6 +33,50 @@ describe("account value history", () => {
     expect(points[2].changeAbsolute).toBeNull();
   });
 
+  it("keeps separate same-day ledger rows", () => {
+    const points = buildAccountHistoryPoints(
+      [
+        {
+          id: "1",
+          accountId: "a1",
+          date: "2026-08-01",
+          value: 1000,
+          markOnGraph: true,
+          createdAt: "2026-08-01T10:00:00.000Z",
+        },
+        {
+          id: "2",
+          accountId: "a1",
+          date: "2026-08-01",
+          value: 1200,
+          note: "Income · Salary",
+          markOnGraph: true,
+          createdAt: "2026-08-01T12:00:00.000Z",
+          transactionId: "tx1",
+          delta: 200,
+        },
+        {
+          id: "3",
+          accountId: "a1",
+          date: "2026-08-01",
+          value: 1150,
+          note: "Expense · Lunch",
+          markOnGraph: true,
+          createdAt: "2026-08-01T14:00:00.000Z",
+          transactionId: "tx2",
+          delta: -50,
+        },
+      ],
+      "a1",
+    );
+    expect(points).toHaveLength(3);
+    expect(points[0].transactionId).toBe("tx2");
+    expect(points[0].changeAbsolute).toBe(-50);
+    expect(points[1].transactionId).toBe("tx1");
+    expect(points[1].changeAbsolute).toBe(200);
+    expect(points[0].entryId).toBe("3");
+  });
+
   it("filters by range", () => {
     const points = buildAccountHistoryPoints(
       [

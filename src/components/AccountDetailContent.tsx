@@ -5,8 +5,12 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ChevronRight,
+  Link2,
   MoreHorizontal,
   Pencil,
+  Plus,
+  Receipt,
   Trash2,
   TrendingDown,
   TrendingUp,
@@ -22,18 +26,43 @@ import {
 } from "recharts";
 import { AddValueModal } from "@/components/AddValueModal";
 import { AccountForm } from "@/components/AccountForm";
+import { HistoryEntrySheet } from "@/components/HistoryEntrySheet";
+import { TransactionModal } from "@/components/TransactionModal";
 import { categoryLabel } from "@/lib/categories";
 import {
   buildAccountHistoryPoints,
   filterHistoryByRange,
   getAccountEntries,
   relativeUpdateLabel,
+  type ValueHistoryPoint,
 } from "@/lib/account-history";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
-import type { AccountValueEntry } from "@/lib/types";
+import type { AccountValueEntry, Transaction } from "@/lib/types";
 
-const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "4Y", "8Y"] as const;
+const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "5Y", "8Y"] as const;
+
+/** Resolve the ledger transaction for a Value History row (strict link only). */
+function resolveLedgerTransaction(
+  transactions: Transaction[],
+  accountId: string,
+  point: ValueHistoryPoint,
+): Transaction | undefined {
+  if (point.transactionId) {
+    return transactions.find((t) => t.id === point.transactionId);
+  }
+  // Legacy rows: exact note match only — never guess from same-day leftovers.
+  if (!point.note) return undefined;
+  const onDay = transactions.filter(
+    (t) => t.accountId === accountId && t.date === point.date,
+  );
+  return onDay.find(
+    (t) =>
+      point.note === `Income · ${t.title}` ||
+      point.note === `Expense · ${t.title}` ||
+      point.note === `Ledger: ${t.title}`,
+  );
+}
 
 export function AccountDetailContent() {
   const searchParams = useSearchParams();
@@ -42,15 +71,20 @@ export function AccountDetailContent() {
 
   const accounts = useWorthStore((s) => s.accounts);
   const valueEntries = useWorthStore((s) => s.valueEntries);
+  const transactions = useWorthStore((s) => s.transactions);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
   const deleteAccount = useWorthStore((s) => s.deleteAccount);
   const deleteValueEntry = useWorthStore((s) => s.deleteValueEntry);
+  const deleteTransaction = useWorthStore((s) => s.deleteTransaction);
 
   const account = accounts.find((a) => a.id === accountId) ?? null;
   const [range, setRange] = useState<(typeof RANGES)[number]>("ALL");
   const [addOpen, setAddOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<AccountValueEntry | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<ValueHistoryPoint | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -89,11 +123,10 @@ export function AccountDetailContent() {
   }
 
   const signed = account.isLiability
-    ? -Math.abs(account.currentValue)
-    : account.currentValue;
+    ? -Math.abs(history[0]?.value ?? account.currentValue)
+    : (history[0]?.value ?? account.currentValue);
   const latestChange = history[0];
   const changePositive = (latestChange?.changeAbsolute ?? 0) >= 0;
-  // For liabilities, a decrease in absolute debt is "good" / green in the reference
   const changeGood = account.isLiability
     ? (latestChange?.changeAbsolute ?? 0) <= 0
     : changePositive;
@@ -108,8 +141,8 @@ export function AccountDetailContent() {
   }, null);
 
   return (
-    <div className="space-y-4 pb-24">
-      <header className="flex items-center justify-between animate-fade-up">
+    <div className="space-y-4 pb-28">
+      <header className="relative z-30 flex items-center justify-between animate-fade-up">
         <Link href="/accounts/" className="btn-ghost" aria-label="Back">
           <ArrowLeft size={18} />
         </Link>
@@ -124,7 +157,7 @@ export function AccountDetailContent() {
           </button>
           {menuOpen && (
             <div
-              className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border shadow-lg"
+              className="absolute right-0 z-50 mt-1 w-40 overflow-hidden rounded-xl border shadow-lg"
               style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
             >
               <button
@@ -190,7 +223,7 @@ export function AccountDetailContent() {
         </div>
       </section>
 
-      <section className="card-surface animate-fade-up-delay p-3">
+      <section className="relative z-0 card-surface animate-fade-up-delay p-3">
         {chartPoints.length < 2 ? (
           <div
             className="flex h-40 items-center justify-center rounded-xl text-sm"
@@ -293,13 +326,16 @@ export function AccountDetailContent() {
       </div>
 
       <section className="animate-fade-up-delay-2">
-        <h2 className="mb-2 font-display text-xl">Value History</h2>
+        <h2 className="mb-1 font-display text-xl">Value History</h2>
+        <p className="mb-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
+          Tap a row to see the linked ledger and edit or delete it.
+        </p>
         {history.length === 0 ? (
           <div
             className="rounded-2xl px-4 py-8 text-center text-sm"
             style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
           >
-            No value entries yet. Tap Update to add one.
+            No value entries yet. Tap Update value or Add ledger.
           </div>
         ) : (
           <ul className="card-surface divide-y overflow-hidden" style={{ borderColor: "var(--border)" }}>
@@ -310,76 +346,75 @@ export function AccountDetailContent() {
               const good = account.isLiability
                 ? (point.changeAbsolute ?? 0) <= 0
                 : (point.changeAbsolute ?? 0) >= 0;
-              const entry = entries.find((e) => e.date === point.date);
+              const linkedTx = resolveLedgerTransaction(
+                transactions,
+                account.id,
+                point,
+              );
+              const isLedger = Boolean(linkedTx || point.transactionId);
+
               return (
-                <li key={`${point.date}-${point.value}`} className="px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                <li key={point.entryId}>
+                  <button
+                    type="button"
+                    className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-[var(--bg-muted)]"
+                    onClick={() => setSelectedPoint(point)}
+                  >
+                    <div className="min-w-0">
                       <p className="font-semibold">{point.label}</p>
-                      {point.note && (
+                      {isLedger ? (
+                        <p
+                          className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          <Link2 size={11} />
+                          Linked ledger
+                          {linkedTx ? ` · ${linkedTx.title}` : ""}
+                        </p>
+                      ) : (
                         <p className="mt-0.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
-                          {point.note}
+                          {point.note || "Manual value update"}
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p
-                        className="font-semibold tabular-nums"
-                        style={{
-                          color: account.isLiability ? "var(--negative)" : "var(--fg)",
-                        }}
-                      >
-                        {formatMoney(pointSigned, account.currency, currencies, {
-                          privacy: settings.isPrivacyMode,
-                          showSign: account.isLiability,
-                        })}
-                      </p>
-                      {point.changeAbsolute != null && point.changePercent != null && (
+                    <div className="flex shrink-0 items-start gap-1">
+                      <div className="text-right">
                         <p
-                          className="mt-0.5 text-xs font-semibold tabular-nums"
+                          className="font-semibold tabular-nums"
                           style={{
-                            color: good ? "var(--positive)" : "var(--negative)",
+                            color: account.isLiability ? "var(--negative)" : "var(--fg)",
                           }}
                         >
-                          {settings.isPrivacyMode
-                            ? "••••"
-                            : `${formatPercent(Math.abs(point.changePercent)).replace("+", "")} ${
-                                good ? "↑" : "↓"
-                              } ${formatMoney(Math.abs(point.changeAbsolute), account.currency, currencies, {
-                                compact: true,
-                              })}`}
+                          {formatMoney(pointSigned, account.currency, currencies, {
+                            privacy: settings.isPrivacyMode,
+                            showSign: account.isLiability,
+                          })}
                         </p>
-                      )}
-                      {entry && (
-                        <div className="mt-1.5 flex justify-end gap-2">
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 text-xs font-semibold"
-                            style={{ color: "var(--accent)" }}
-                            onClick={() => setEditingEntry(entry)}
+                        {point.changeAbsolute != null && (
+                          <p
+                            className="mt-0.5 text-xs font-semibold tabular-nums"
+                            style={{
+                              color: good ? "var(--positive)" : "var(--negative)",
+                            }}
                           >
-                            <Pencil size={12} />
-                            Edit
-                          </button>
-                          {history.length > 1 && (
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-1 text-xs font-semibold"
-                              style={{ color: "var(--danger)" }}
-                              onClick={() => {
-                                if (confirm(`Delete entry on ${point.date}?`)) {
-                                  deleteValueEntry(entry.id);
-                                }
-                              }}
-                            >
-                              <Trash2 size={12} />
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      )}
+                            {settings.isPrivacyMode
+                              ? "••••"
+                              : `${good ? "↑" : "↓"} ${formatMoney(
+                                  Math.abs(point.changeAbsolute),
+                                  account.currency,
+                                  currencies,
+                                  { compact: true },
+                                )}`}
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight
+                        size={18}
+                        className="mt-0.5"
+                        style={{ color: "var(--fg-subtle)" }}
+                      />
                     </div>
-                  </div>
+                  </button>
                 </li>
               );
             })}
@@ -388,14 +423,31 @@ export function AccountDetailContent() {
       </section>
 
       <div
-        className="fixed bottom-0 left-1/2 z-30 w-full max-w-lg -translate-x-1/2 px-4 pt-2"
+        className="fixed left-1/2 z-30 flex w-full max-w-lg -translate-x-1/2 gap-2 px-4 pb-2 pt-2"
         style={{
-          paddingBottom: "calc(var(--nav-height) + var(--safe-bottom) + 8px)",
-          background: "linear-gradient(transparent, var(--bg) 30%)",
+          /* Sit above the bottom nav — do not overlap it (overlap steals taps) */
+          bottom: "calc(var(--nav-height) + var(--safe-bottom))",
+          background: "linear-gradient(transparent, var(--bg) 28%)",
         }}
       >
-        <button type="button" className="btn-primary w-full" onClick={() => setAddOpen(true)}>
-          Update
+        <button
+          type="button"
+          className="btn-secondary flex-1"
+          onClick={() => {
+            setEditingTx(null);
+            setLedgerOpen(true);
+          }}
+        >
+          <Receipt size={18} />
+          Add ledger
+        </button>
+        <button
+          type="button"
+          className="btn-primary flex-1"
+          onClick={() => setAddOpen(true)}
+        >
+          <Plus size={18} />
+          Update value
         </button>
       </div>
 
@@ -408,6 +460,52 @@ export function AccountDetailContent() {
           setEditingEntry(null);
         }}
       />
+      <TransactionModal
+        open={ledgerOpen || Boolean(editingTx)}
+        initial={editingTx}
+        defaultAccountId={account.id}
+        onClose={() => {
+          setLedgerOpen(false);
+          setEditingTx(null);
+        }}
+      />
+      {selectedPoint && (
+        <HistoryEntrySheet
+          open
+          account={account}
+          point={selectedPoint}
+          linkedTx={
+            resolveLedgerTransaction(transactions, account.id, selectedPoint) ??
+            null
+          }
+          currencies={currencies}
+          settings={settings}
+          canDelete={history.length > 1}
+          onClose={() => setSelectedPoint(null)}
+          onEditLedger={(tx) => {
+            setSelectedPoint(null);
+            setEditingTx(tx);
+          }}
+          onDeleteLedger={(tx) => {
+            if (confirm(`Delete ledger “${tx.title}”?`)) {
+              deleteTransaction(tx.id);
+              setSelectedPoint(null);
+            }
+          }}
+          onEditValue={() => {
+            const entry = entries.find((e) => e.id === selectedPoint.entryId);
+            setSelectedPoint(null);
+            if (entry) setEditingEntry(entry);
+          }}
+          onDeleteValue={() => {
+            const entry = entries.find((e) => e.id === selectedPoint.entryId);
+            if (entry && confirm(`Delete entry on ${selectedPoint.date}?`)) {
+              deleteValueEntry(entry.id);
+              setSelectedPoint(null);
+            }
+          }}
+        />
+      )}
       <AccountForm open={editOpen} initial={account} onClose={() => setEditOpen(false)} />
     </div>
   );

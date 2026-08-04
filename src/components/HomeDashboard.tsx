@@ -6,8 +6,9 @@ import {
   ArrowDownUp,
   Filter,
   FolderOpen,
-  MoreHorizontal,
+  MoreVertical,
   Plus,
+  Settings2,
   Sparkles,
 } from "lucide-react";
 import {
@@ -22,13 +23,18 @@ import {
 import { FilterSheet, DEFAULT_HOME_FILTER, type HomeFilterState } from "@/components/FilterSheet";
 import { Sparkline } from "@/components/Sparkline";
 import { buildAccountHistoryPoints, relativeUpdateLabel } from "@/lib/account-history";
-import { computeTotals, filterSnapshotsByRange } from "@/lib/calculations";
+import { computeTotals } from "@/lib/calculations";
 import { toBaseCurrency } from "@/lib/currencies";
 import { formatMoney, formatPercent } from "@/lib/format";
+import {
+  buildNetWorthSeries,
+  chartDomainForRange,
+  filterNetWorthSeries,
+  type ChartRange,
+} from "@/lib/net-worth-series";
 import { useWorthStore } from "@/lib/store";
-import type { TimeRange } from "@/lib/types";
 
-const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "4Y", "8Y"] as const;
+const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "5Y", "8Y"] as const;
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -54,44 +60,30 @@ export function HomeDashboard() {
   const privacy = settings.isPrivacyMode;
 
   const chartData = useMemo(() => {
-    const mappedRange: TimeRange | "YTD" | "2Y" | "4Y" | "8Y" =
-      range === "ALL"
-        ? "ALL"
-        : range === "6M"
-          ? "6M"
-          : range === "1Y"
-            ? "1Y"
-            : range === "YTD"
-              ? "YTD"
-              : range === "2Y"
-                ? "2Y"
-                : range === "4Y"
-                  ? "4Y"
-                  : "8Y";
-
-    // Reuse snapshot filter for standard ranges; custom for extended.
-    if (mappedRange === "YTD" || mappedRange === "2Y" || mappedRange === "4Y" || mappedRange === "8Y") {
-      const now = new Date();
-      let cutoff = new Date(now);
-      if (mappedRange === "YTD") cutoff = new Date(now.getFullYear(), 0, 1);
-      else {
-        const years = mappedRange === "2Y" ? 2 : mappedRange === "4Y" ? 4 : 8;
-        cutoff.setFullYear(cutoff.getFullYear() - years);
-      }
-      const cutoffISO = cutoff.toISOString().slice(0, 10);
-      const filtered = snapshots.filter((s) => s.date >= cutoffISO);
-      const list = filtered.length > 0 ? filtered : snapshots.slice(-1);
-      return list.map((s) => ({
-        date: s.date,
-        netWorth: s.netWorthBaseCurrency,
-      }));
-    }
-
-    return filterSnapshotsByRange(snapshots, mappedRange).map((s) => ({
-      date: s.date,
-      netWorth: s.netWorthBaseCurrency,
-    }));
-  }, [snapshots, range]);
+    const series = buildNetWorthSeries(
+      accounts,
+      valueEntries,
+      currencies,
+      snapshots,
+    );
+    const filtered = filterNetWorthSeries(series, range as ChartRange);
+    const domain = chartDomainForRange(range as ChartRange, filtered);
+    const domainMs: [number, number] | ["dataMin", "dataMax"] =
+      domain[0] === "dataMin"
+        ? ["dataMin", "dataMax"]
+        : [
+            new Date(`${domain[0]}T00:00:00`).getTime(),
+            new Date(`${domain[1]}T00:00:00`).getTime(),
+          ];
+    return {
+      points: filtered.map((p) => ({
+        ...p,
+        t: new Date(`${p.date}T00:00:00`).getTime(),
+      })),
+      domainMs,
+      useTimeScale: domain[0] !== "dataMin",
+    };
+  }, [accounts, valueEntries, currencies, snapshots, range]);
 
   const filteredAccounts = useMemo(() => {
     let list = [...accounts];
@@ -118,7 +110,7 @@ export function HomeDashboard() {
 
   return (
     <div className="space-y-4 pb-4">
-      <header className="flex items-center justify-between animate-fade-up">
+      <header className="relative z-30 flex items-center justify-between animate-fade-up">
         <div className="flex items-center gap-3">
           <div
             className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
@@ -129,43 +121,54 @@ export function HomeDashboard() {
           <div>
             <p className="text-sm font-semibold">{greeting()}</p>
             <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
-              WorthTracker
+              WorthBook
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="relative z-30 flex items-center gap-1">
           <div className="relative">
             <button
               type="button"
               className="btn-ghost"
-              aria-label="More"
+              aria-label="More options"
+              aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              <MoreHorizontal size={18} />
+              <MoreVertical size={18} />
             </button>
             {menuOpen && (
-              <div
-                className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border shadow-lg"
-                style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
-              >
+              <>
                 <button
                   type="button"
-                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    if (confirm("Replace with demo portfolio?")) loadDemoData();
-                  }}
-                >
-                  Load demo data
-                </button>
-                <Link
-                  href="/settings/"
-                  className="block w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                  className="fixed inset-0 z-40 cursor-default"
+                  aria-label="Close menu"
                   onClick={() => setMenuOpen(false)}
+                />
+                <div
+                  className="absolute right-0 z-50 mt-1 w-48 overflow-hidden rounded-xl border shadow-lg"
+                  style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
                 >
-                  Settings
-                </Link>
-              </div>
+                  <Link
+                    href="/settings/"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Settings2 size={16} style={{ color: "var(--fg-muted)" }} />
+                    Settings
+                  </Link>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (confirm("Replace with demo portfolio?")) loadDemoData();
+                    }}
+                  >
+                    <Sparkles size={16} style={{ color: "var(--fg-muted)" }} />
+                    Load demo data
+                  </button>
+                </div>
+              </>
             )}
           </div>
           <button
@@ -188,8 +191,8 @@ export function HomeDashboard() {
         </div>
       </header>
 
-      <section className="animate-fade-up-delay">
-        {chartData.length < 2 ? (
+      <section className="relative z-0 animate-fade-up-delay">
+        {chartData.points.length < 2 ? (
           <div
             className="flex h-48 items-center justify-center rounded-2xl text-sm"
             style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
@@ -201,7 +204,10 @@ export function HomeDashboard() {
         ) : (
           <div className="h-52 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+              <AreaChart
+                data={chartData.points}
+                margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="homeNwFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
@@ -210,13 +216,18 @@ export function HomeDashboard() {
                 </defs>
                 <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
                 <XAxis
-                  dataKey="date"
+                  dataKey={chartData.useTimeScale ? "t" : "date"}
+                  type={chartData.useTimeScale ? "number" : "category"}
+                  domain={chartData.useTimeScale ? chartData.domainMs : undefined}
                   tick={{ fill: "var(--fg-subtle)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   minTickGap={36}
                   tickFormatter={(v) => {
-                    const d = new Date(`${v}T00:00:00`);
+                    const d =
+                      typeof v === "number"
+                        ? new Date(v)
+                        : new Date(`${v}T00:00:00`);
                     return d.toLocaleDateString(undefined, {
                       month: "short",
                       year: "2-digit",
@@ -241,6 +252,16 @@ export function HomeDashboard() {
                     background: "var(--bg-elevated)",
                     border: "1px solid var(--border)",
                     borderRadius: 12,
+                  }}
+                  labelFormatter={(_, payload) => {
+                    const row = payload?.[0]?.payload as
+                      | { date?: string }
+                      | undefined;
+                    if (!row?.date) return "";
+                    return new Date(`${row.date}T00:00:00`).toLocaleDateString(
+                      undefined,
+                      { year: "numeric", month: "short", day: "numeric" },
+                    );
                   }}
                   formatter={(value) => [
                     privacy
