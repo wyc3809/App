@@ -47,8 +47,10 @@ test.describe("WorthBook E2E", () => {
   test("settings is reachable from Home menu", async ({ page }) => {
     await page.goto("/");
     await waitForAppReady(page);
+    // Dismiss first-run sheet so header controls are tappable
+    await page.getByRole("button", { name: /Start empty/i }).click();
     await page.getByRole("button", { name: /more options/i }).click();
-    await page.getByRole("link", { name: "Settings" }).click();
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Import CSV/i })).toBeVisible();
   });
