@@ -95,12 +95,38 @@ test.describe("WorthBook E2E", () => {
     await page.goto("/accounts/?new=1");
     await waitForAppReady(page);
     await expect(page.getByRole("dialog")).toBeVisible();
-    // Save/Add must stay in the sticky footer viewport (mobile clip regression)
     await expect(
       page.getByRole("dialog").getByRole("button", { name: "Add Account" }),
     ).toBeInViewport();
     await page.getByRole("button", { name: "Cancel" }).first().click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("add account sheet keeps actions tappable and fields at 16px", async ({
+    page,
+  }) => {
+    await page.goto("/accounts/?new=1");
+    await waitForAppReady(page);
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    const addBtn = dialog.getByRole("button", { name: "Add Account" });
+    await expect(addBtn).toBeInViewport();
+    await expect(addBtn).toBeEnabled();
+
+    const nameInput = dialog.locator("#account-name");
+    const fontSize = await nameInput.evaluate(
+      (el) => window.getComputedStyle(el).fontSize,
+    );
+    expect(Number.parseFloat(fontSize)).toBeGreaterThanOrEqual(16);
+
+    await nameInput.fill("Tap Test Bank");
+    await dialog.locator("#account-value").fill("100");
+    // After focusing inputs, Save must still be hittable (no zoom clip)
+    await expect(addBtn).toBeInViewport();
+    await addBtn.click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText("Tap Test Bank")).toBeVisible();
   });
 
   test("imports ledger CSV from settings", async ({ page }) => {

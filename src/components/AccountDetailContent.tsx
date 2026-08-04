@@ -423,10 +423,11 @@ export function AccountDetailContent() {
       </section>
 
       <div
-        className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-lg -translate-x-1/2 gap-2 px-4 pt-2"
+        className="fixed left-1/2 z-30 flex w-full max-w-lg -translate-x-1/2 gap-2 px-4 pb-2 pt-2"
         style={{
-          paddingBottom: "calc(var(--nav-height) + var(--safe-bottom) + 8px)",
-          background: "linear-gradient(transparent, var(--bg) 30%)",
+          /* Sit above the bottom nav — do not overlap it (overlap steals taps) */
+          bottom: "calc(var(--nav-height) + var(--safe-bottom))",
+          background: "linear-gradient(transparent, var(--bg) 28%)",
         }}
       >
         <button

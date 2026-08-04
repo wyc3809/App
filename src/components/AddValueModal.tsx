@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
 import { convertAmount } from "@/lib/currencies";
 import { todayISO } from "@/lib/format";
 import {
@@ -10,6 +9,7 @@ import {
   splitSignedAmount,
   type AmountSign,
 } from "@/lib/signed-amount";
+import { BottomSheet } from "@/components/BottomSheet";
 import { useWorthStore } from "@/lib/store";
 import type { Account, AccountValueEntry } from "@/lib/types";
 
@@ -107,33 +107,33 @@ function AddValueDialog({
   const isNegative = sign < 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <div
-        className="relative z-10 w-full max-w-lg rounded-t-3xl p-5 sm:rounded-3xl"
-        style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-value-title"
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <button type="button" className="btn-ghost" onClick={onClose}>
+    <form onSubmit={submit}>
+      <BottomSheet
+        onClose={onClose}
+        title={initial ? "Edit Value" : "Add Value"}
+        titleId="add-value-title"
+        headerStart={
+          <button
+            type="button"
+            className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
+            style={{ color: "var(--fg-muted)" }}
+            onClick={onClose}
+          >
             Cancel
           </button>
-          <h2 id="add-value-title" className="font-display text-lg">
-            {initial ? "Edit Value" : "Add Value"}
-          </h2>
-          <button type="button" className="btn-ghost" onClick={onClose} aria-label="Close">
-            <X size={18} />
-          </button>
-        </div>
-
-        <form className="space-y-4" onSubmit={submit}>
+        }
+        footer={
+          <>
+            <button type="button" className="btn-secondary flex-1" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary flex-1">
+              Save
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
           <div>
             <label className="label" htmlFor="entry-value">
               Value
@@ -212,7 +212,7 @@ function AddValueDialog({
             </div>
             <button
               type="button"
-              className="text-sm font-semibold"
+              className="min-h-11 px-2 text-sm font-semibold"
               style={{ color: "var(--accent)" }}
               onClick={() => setShowDatePicker((v) => !v)}
             >
@@ -253,26 +253,17 @@ function AddValueDialog({
             </div>
           </div>
 
-          <label className="flex items-center gap-3 text-sm font-medium">
+          <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
             <input
               type="checkbox"
               checked={markOnGraph}
               onChange={(e) => setMarkOnGraph(e.target.checked)}
-              className="h-4 w-4 accent-[var(--accent)]"
+              className="h-5 w-5 accent-[var(--accent)]"
             />
             Mark on graph
           </label>
-
-          <div className="flex gap-2 pt-1">
-            <button type="button" className="btn-secondary flex-1" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary flex-1">
-              Save
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </BottomSheet>
+    </form>
   );
 }

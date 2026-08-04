@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, X } from "lucide-react";
+import { Link2 } from "lucide-react";
+import { BottomSheet } from "@/components/BottomSheet";
 import { todayISO } from "@/lib/format";
 import { ledgerCategoriesFor } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
@@ -53,9 +54,7 @@ function TransactionDialog({
 
   const [type, setType] = useState<TransactionType>(initial?.type ?? "expense");
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [amount, setAmount] = useState(
-    initial ? String(initial.amount) : "",
-  );
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(
     initial?.currency ?? presetAccount?.currency ?? settings.baseCurrency,
   );
@@ -111,29 +110,18 @@ function TransactionDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ background: "rgba(0,0,0,0.45)" }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="tx-modal-title"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl p-4 sm:rounded-3xl"
-        style={{ background: "var(--bg-elevated)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="tx-modal-title" className="font-display text-2xl">
-            {initial ? "Edit entry" : "Add entry"}
-          </h2>
-          <button type="button" className="btn-ghost" onClick={onClose} aria-label="Close">
-            <X size={20} />
+    <form onSubmit={submit}>
+      <BottomSheet
+        onClose={onClose}
+        title={initial ? "Edit entry" : "Add entry"}
+        titleId="tx-modal-title"
+        footer={
+          <button type="submit" className="btn-primary w-full justify-center">
+            {initial ? "Save changes" : "Add entry"}
           </button>
-        </div>
-
-        <form className="space-y-4" onSubmit={submit}>
+        }
+      >
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             {(["expense", "income"] as const).map((t) => (
               <button
@@ -287,12 +275,8 @@ function TransactionDialog({
               placeholder="Optional detail"
             />
           </div>
-
-          <button type="submit" className="btn-primary w-full justify-center">
-            {initial ? "Save changes" : "Add entry"}
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      </BottomSheet>
+    </form>
   );
 }

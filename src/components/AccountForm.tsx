@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
 import { ASSET_TYPES, LIABILITY_TYPES } from "@/lib/categories";
+import { BottomSheet } from "@/components/BottomSheet";
 import { useWorthStore } from "@/lib/store";
 import type { Account, AccountCategory } from "@/lib/types";
 
@@ -102,37 +102,12 @@ function AccountFormDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
-      style={{
-        paddingTop: "var(--safe-top)",
-        paddingBottom: "var(--safe-bottom)",
-      }}
-    >
-      {/* Backdrop — keep below the sheet so header actions stay tappable */}
-      <div
-        className="absolute inset-0 z-0 bg-black/45 backdrop-blur-[2px]"
-        aria-hidden
-        onClick={onClose}
-      />
-      <div
-        className="relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl sm:max-h-[min(92dvh,40rem)]"
-        style={{
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-          /* Constrain to the padded viewport so body scrolls and footer stays visible */
-          maxHeight: "100%",
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="account-form-title"
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <div
-          className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3"
-          style={{ borderColor: "var(--border)" }}
-        >
+    <form onSubmit={submit}>
+      <BottomSheet
+        onClose={onClose}
+        title={initial ? "Edit Account" : "Add Account"}
+        titleId="account-form-title"
+        headerStart={
           <button
             type="button"
             className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
@@ -141,168 +116,9 @@ function AccountFormDialog({
           >
             Cancel
           </button>
-          <h2 id="account-form-title" className="font-display text-lg">
-            {initial ? "Edit Account" : "Add Account"}
-          </h2>
-          <button
-            type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
-            style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <form
-          className="flex min-h-0 flex-1 flex-col"
-          onSubmit={submit}
-        >
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                className="rounded-xl px-3 py-3 text-sm font-semibold"
-                style={{
-                  background: !isLiability ? "var(--accent-soft)" : "var(--bg-muted)",
-                  color: !isLiability ? "var(--accent)" : "var(--fg-muted)",
-                }}
-                onClick={() => setLiabilityMode(false)}
-              >
-                Asset
-              </button>
-              <button
-                type="button"
-                className="rounded-xl px-3 py-3 text-sm font-semibold"
-                style={{
-                  background: isLiability ? "var(--danger-soft)" : "var(--bg-muted)",
-                  color: isLiability ? "var(--danger)" : "var(--fg-muted)",
-                }}
-                onClick={() => setLiabilityMode(true)}
-              >
-                Liability
-              </button>
-            </div>
-
-            <div>
-              <label className="label" htmlFor="account-name">
-                Name
-              </label>
-              <input
-                id="account-name"
-                className="field"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. HSBC Savings"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label" htmlFor="account-category">
-                  Category
-                </label>
-                <select
-                  id="account-category"
-                  className="field"
-                  value={resolvedCategory}
-                  onChange={(e) => setCategory(e.target.value as AccountCategory)}
-                >
-                  {categories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label" htmlFor="account-currency">
-                  Currency
-                </label>
-                <select
-                  id="account-currency"
-                  className="field"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                >
-                  {currencies.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label" htmlFor="account-value">
-                  Current Value
-                </label>
-                <input
-                  id="account-value"
-                  className="field"
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
-                  placeholder="0"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label" htmlFor="account-asof">
-                  日期 / As of
-                </label>
-                <input
-                  id="account-asof"
-                  className="field"
-                  type="date"
-                  value={asOfDate}
-                  max={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setAsOfDate(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <p className="-mt-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
-              此金額對應的日期；儲存後會更新該日淨資產紀錄。
-            </p>
-
-            <div>
-              <label className="label" htmlFor="account-institution">
-                Institution
-              </label>
-              <input
-                id="account-institution"
-                className="field"
-                value={institutionName}
-                onChange={(e) => setInstitutionName(e.target.value)}
-                placeholder="Optional"
-              />
-            </div>
-
-            <div>
-              <label className="label" htmlFor="account-note">
-                Note
-              </label>
-              <textarea
-                id="account-note"
-                className="field min-h-20 resize-y"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Optional"
-              />
-            </div>
-          </div>
-
-          <div
-            className="flex shrink-0 gap-2 border-t px-5 py-3"
-            style={{ borderColor: "var(--border)" }}
-          >
+        }
+        footer={
+          <>
             <button
               type="button"
               className="btn-secondary flex-1 justify-center"
@@ -313,9 +129,150 @@ function AccountFormDialog({
             <button type="submit" className="btn-primary flex-1 justify-center">
               {initial ? "Save Changes" : "Add Account"}
             </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="rounded-xl px-3 py-3 text-sm font-semibold"
+              style={{
+                background: !isLiability ? "var(--accent-soft)" : "var(--bg-muted)",
+                color: !isLiability ? "var(--accent)" : "var(--fg-muted)",
+              }}
+              onClick={() => setLiabilityMode(false)}
+            >
+              Asset
+            </button>
+            <button
+              type="button"
+              className="rounded-xl px-3 py-3 text-sm font-semibold"
+              style={{
+                background: isLiability ? "var(--danger-soft)" : "var(--bg-muted)",
+                color: isLiability ? "var(--danger)" : "var(--fg-muted)",
+              }}
+              onClick={() => setLiabilityMode(true)}
+            >
+              Liability
+            </button>
           </div>
-        </form>
-      </div>
-    </div>
+
+          <div>
+            <label className="label" htmlFor="account-name">
+              Name
+            </label>
+            <input
+              id="account-name"
+              className="field"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. HSBC Savings"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="account-category">
+                Category
+              </label>
+              <select
+                id="account-category"
+                className="field"
+                value={resolvedCategory}
+                onChange={(e) => setCategory(e.target.value as AccountCategory)}
+              >
+                {categories.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="account-currency">
+                Currency
+              </label>
+              <select
+                id="account-currency"
+                className="field"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                {currencies.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="account-value">
+                Current Value
+              </label>
+              <input
+                id="account-value"
+                className="field"
+                type="number"
+                min="0"
+                step="any"
+                inputMode="decimal"
+                value={currentValue}
+                onChange={(e) => setCurrentValue(e.target.value)}
+                placeholder="0"
+                required
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="account-asof">
+                日期 / As of
+              </label>
+              <input
+                id="account-asof"
+                className="field"
+                type="date"
+                value={asOfDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
+            此金額對應的日期；儲存後會更新該日淨資產紀錄。
+          </p>
+
+          <div>
+            <label className="label" htmlFor="account-institution">
+              Institution
+            </label>
+            <input
+              id="account-institution"
+              className="field"
+              value={institutionName}
+              onChange={(e) => setInstitutionName(e.target.value)}
+              placeholder="Optional"
+            />
+          </div>
+
+          <div>
+            <label className="label" htmlFor="account-note">
+              Note
+            </label>
+            <textarea
+              id="account-note"
+              className="field min-h-20 resize-y"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+      </BottomSheet>
+    </form>
   );
 }
