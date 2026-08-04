@@ -30,7 +30,7 @@ import { ledgerCategoriesFor } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
 import type { LedgerCategory, TransactionType } from "@/lib/types";
 
-type EntryMode = TransactionType; // expense | income
+type EntryMode = TransactionType;
 
 const CATEGORY_META: Record<
   LedgerCategory,
@@ -53,6 +53,10 @@ const CATEGORY_META: Record<
 
 const NUM_KEYS = ["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "00"] as const;
 
+/**
+ * Quick-entry panel sized to keep the full numeric keypad visible above the
+ * bottom nav on first paint. Categories scroll if they overflow.
+ */
 export function LedgerQuickEntry() {
   const accounts = useWorthStore((s) => s.accounts);
   const currencies = useWorthStore((s) => s.currencies);
@@ -65,14 +69,12 @@ export function LedgerQuickEntry() {
   const [note, setNote] = useState("");
   const [date, setDate] = useState(todayISO());
   const [accountId, setAccountId] = useState("");
-  const [includeInStats, setIncludeInStats] = useState(true);
   const [pickingAccount, setPickingAccount] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
 
   const categories = ledgerCategoriesFor(type);
   const linkedAccount = accounts.find((a) => a.id === accountId);
-  const currency =
-    linkedAccount?.currency ?? settings.baseCurrency;
+  const currency = linkedAccount?.currency ?? settings.baseCurrency;
   const currencyMeta = currencies.find((c) => c.code === currency);
   const symbol = currencyMeta?.symbol ?? currency;
 
@@ -138,18 +140,22 @@ export function LedgerQuickEntry() {
 
   return (
     <section
-      className="overflow-hidden rounded-[1.5rem] animate-fade-up"
+      className="flex flex-col overflow-hidden rounded-[1.25rem] animate-fade-up"
       style={{
         background: "var(--bg-elevated)",
         border: "1px solid var(--border)",
         boxShadow: "var(--shadow-soft)",
+        /* Fit above bottom nav + page chrome so all 4 keypad rows stay visible */
+        maxHeight:
+          "calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 4.75rem)",
+        minHeight: "min(32rem, calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 4.75rem))",
       }}
       aria-label="Quick ledger entry"
     >
       {/* Type tabs */}
-      <div className="px-3 pt-3">
+      <div className="shrink-0 px-2.5 pt-2">
         <div
-          className="grid grid-cols-2 gap-1 rounded-2xl p-1"
+          className="grid grid-cols-2 gap-1 rounded-xl p-0.5"
           style={{ background: "var(--bg-muted)" }}
           role="tablist"
           aria-label="Entry type"
@@ -165,7 +171,7 @@ export function LedgerQuickEntry() {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className="rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+                className="rounded-lg px-2 py-1.5 text-sm font-semibold transition"
                 style={{
                   background: active
                     ? value === "income"
@@ -183,9 +189,9 @@ export function LedgerQuickEntry() {
         </div>
       </div>
 
-      {/* Category grid */}
-      <div className="px-3 pt-3 pb-2">
-        <div className="grid grid-cols-4 gap-2">
+      {/* Categories — scrolls if needed; keypad below stays pinned */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-1.5">
+        <div className="grid grid-cols-4 gap-1">
           {categories.map((c) => {
             const meta = CATEGORY_META[c.value];
             const Icon = meta.icon;
@@ -194,7 +200,7 @@ export function LedgerQuickEntry() {
               <button
                 key={c.value}
                 type="button"
-                className="flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2 transition"
+                className="flex flex-col items-center gap-0.5 rounded-xl px-0.5 py-1 transition"
                 style={{
                   background: selected
                     ? "color-mix(in srgb, var(--accent-soft) 70%, transparent)"
@@ -207,16 +213,16 @@ export function LedgerQuickEntry() {
                 aria-pressed={selected}
               >
                 <span
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{
                     background: `color-mix(in srgb, ${meta.tint} 18%, var(--bg-muted))`,
                     color: meta.tint,
                   }}
                 >
-                  <Icon size={22} strokeWidth={2.1} />
+                  <Icon size={18} strokeWidth={2.1} />
                 </span>
                 <span
-                  className="max-w-full truncate text-[11px] font-medium"
+                  className="max-w-full truncate text-[10px] font-medium leading-tight"
                   style={{ color: "var(--fg-muted)" }}
                 >
                   {meta.short}
@@ -227,83 +233,72 @@ export function LedgerQuickEntry() {
         </div>
       </div>
 
-      {/* Meta chips */}
-      <div className="flex flex-wrap gap-2 px-3 pb-2">
-        <label
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-          style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
-        >
-          <Calendar size={13} />
-          {timeLabel}
-          <input
-            type="date"
-            className="sr-only"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            aria-label="Entry date"
-          />
-        </label>
+      {/* Meta + amount — stay above keypad */}
+      <div className="shrink-0 space-y-1.5 px-2.5 pb-1.5 pt-1">
+        <div className="flex flex-wrap gap-1.5">
+          <label
+            className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
+          >
+            <Calendar size={12} />
+            {timeLabel}
+            <input
+              type="date"
+              className="sr-only"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label="Entry date"
+            />
+          </label>
 
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-          style={{
-            background: accountId ? "var(--accent-soft)" : "var(--bg-muted)",
-            color: accountId ? "var(--accent)" : "var(--fg-muted)",
-          }}
-          onClick={() => setPickingAccount((v) => !v)}
-        >
-          <Link2 size={13} />
-          {linkedAccount?.name ?? "Account"}
-        </button>
-
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-          style={{
-            background: includeInStats ? "var(--accent-soft)" : "var(--bg-muted)",
-            color: includeInStats ? "var(--accent)" : "var(--fg-muted)",
-          }}
-          onClick={() => setIncludeInStats((v) => !v)}
-          aria-pressed={includeInStats}
-        >
-          Stats {includeInStats ? "On" : "Off"}
-        </button>
-      </div>
-
-      {pickingAccount && (
-        <div className="mx-3 mb-2 max-h-36 overflow-y-auto rounded-2xl p-2" style={{ background: "var(--bg-muted)" }}>
           <button
             type="button"
-            className="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold"
-            style={{ color: "var(--fg-muted)" }}
-            onClick={() => onAccountPick("")}
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={{
+              background: accountId ? "var(--accent-soft)" : "var(--bg-muted)",
+              color: accountId ? "var(--accent)" : "var(--fg-muted)",
+            }}
+            onClick={() => setPickingAccount((v) => !v)}
           >
-            No link (ledger only)
+            <Link2 size={12} />
+            {linkedAccount?.name ?? "Account"}
           </button>
-          {accounts.map((a) => (
-            <button
-              key={a.id}
-              type="button"
-              className="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold"
-              style={{
-                background:
-                  accountId === a.id ? "var(--bg-elevated)" : "transparent",
-                color: "var(--fg)",
-              }}
-              onClick={() => onAccountPick(a.id)}
-            >
-              {a.name}
-              {a.isLiability ? " · liability" : ""} · {a.currency}
-            </button>
-          ))}
         </div>
-      )}
 
-      {/* Note + amount bar */}
-      <div className="px-3 pb-2">
+        {pickingAccount && (
+          <div
+            className="max-h-28 overflow-y-auto rounded-xl p-1.5"
+            style={{ background: "var(--bg-muted)" }}
+          >
+            <button
+              type="button"
+              className="w-full rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold"
+              style={{ color: "var(--fg-muted)" }}
+              onClick={() => onAccountPick("")}
+            >
+              No link (ledger only)
+            </button>
+            {accounts.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className="w-full rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold"
+                style={{
+                  background:
+                    accountId === a.id ? "var(--bg-elevated)" : "transparent",
+                  color: "var(--fg)",
+                }}
+                onClick={() => onAccountPick(a.id)}
+              >
+                {a.name}
+                {a.isLiability ? " · liability" : ""} · {a.currency}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div
-          className="flex items-center gap-2 rounded-2xl px-3 py-3"
+          className="flex items-center gap-2 rounded-xl px-2.5 py-2"
           style={{ background: "var(--bg-muted)" }}
         >
           <input
@@ -325,7 +320,7 @@ export function LedgerQuickEntry() {
         </div>
         {flash && (
           <p
-            className="mt-1.5 text-center text-xs font-semibold"
+            className="text-center text-[11px] font-semibold"
             style={{
               color: flash === "Saved" ? "var(--positive)" : "var(--danger)",
             }}
@@ -335,32 +330,39 @@ export function LedgerQuickEntry() {
         )}
       </div>
 
-      {/* Keypad */}
+      {/* Full keypad — always visible, never scrolled away */}
       <div
-        className="px-2 pb-2 pt-1"
+        className="shrink-0 px-1.5 pb-1.5 pt-1"
         style={{
           background:
             "color-mix(in srgb, var(--accent-soft) 55%, var(--bg-muted))",
         }}
       >
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-1">
           {NUM_KEYS.slice(0, 3).map((k) => (
-            <KeypadKey key={k} label={k} onPress={() => setExpr((e) => appendKey(e, k))} />
+            <KeypadKey
+              key={k}
+              label={k}
+              onPress={() => setExpr((e) => appendKey(e, k))}
+            />
           ))}
           <KeypadKey
-            label={<Delete size={18} />}
+            label={<Delete size={16} />}
             ariaLabel="Backspace"
             onPress={() => setExpr((e) => backspace(e))}
           />
 
           {NUM_KEYS.slice(3, 6).map((k) => (
-            <KeypadKey key={k} label={k} onPress={() => setExpr((e) => appendKey(e, k))} />
+            <KeypadKey
+              key={k}
+              label={k}
+              onPress={() => setExpr((e) => appendKey(e, k))}
+            />
           ))}
           <KeypadKey
             label="＋－×÷"
-            className="text-[11px] tracking-tight"
+            className="text-[10px] tracking-tight"
             onPress={() => {
-              // cycle operator on trailing op, else add +
               setExpr((e) => {
                 const last = e.slice(-1);
                 const cycle: Record<string, "+" | "-" | "*" | "/"> = {
@@ -376,18 +378,22 @@ export function LedgerQuickEntry() {
           />
 
           {NUM_KEYS.slice(6, 9).map((k) => (
-            <KeypadKey key={k} label={k} onPress={() => setExpr((e) => appendKey(e, k))} />
+            <KeypadKey
+              key={k}
+              label={k}
+              onPress={() => setExpr((e) => appendKey(e, k))}
+            />
           ))}
           <KeypadKey label="AC" onPress={() => setExpr("")} />
 
           {NUM_KEYS.slice(9).map((k) => (
-            <KeypadKey key={k} label={k} onPress={() => setExpr((e) => appendKey(e, k))} />
+            <KeypadKey
+              key={k}
+              label={k}
+              onPress={() => setExpr((e) => appendKey(e, k))}
+            />
           ))}
-          <KeypadKey
-            label="Done"
-            primary
-            onPress={submit}
-          />
+          <KeypadKey label="Done" primary onPress={submit} />
         </div>
       </div>
     </section>
@@ -411,7 +417,7 @@ function KeypadKey({
     <button
       type="button"
       aria-label={ariaLabel}
-      className={`flex h-12 items-center justify-center rounded-xl text-lg font-semibold transition active:scale-[0.97] ${className}`}
+      className={`flex h-11 items-center justify-center rounded-xl text-base font-semibold transition active:scale-[0.97] sm:h-12 sm:text-lg ${className}`}
       style={{
         background: primary ? "var(--accent)" : "var(--bg-elevated)",
         color: primary ? "#04140c" : "var(--fg)",

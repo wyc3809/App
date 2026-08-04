@@ -51,15 +51,15 @@ export default function LedgerPage() {
   };
 
   return (
-    <div className="space-y-4 pb-4">
-      <header className="animate-fade-up">
+    <div className="space-y-3 pb-4">
+      <header className="flex items-baseline justify-between gap-2 animate-fade-up">
+        <h1 className="font-display text-2xl leading-none">Ledger</h1>
         <p
-          className="text-xs font-semibold uppercase tracking-[0.14em]"
+          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
           style={{ color: "var(--fg-subtle)" }}
         >
           Bookkeeping
         </p>
-        <h1 className="mt-1 font-display text-3xl">Ledger</h1>
       </header>
 
       <LedgerQuickEntry />
