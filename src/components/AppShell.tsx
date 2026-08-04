@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ChartPie,
+  ChartNoAxesColumnIncreasing,
   LayoutDashboard,
   Receipt,
   WalletCards,
@@ -13,7 +13,7 @@ const NAV = [
   { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: WalletCards },
   { href: "/history", label: "Ledger", icon: Receipt },
-  { href: "/graphs", label: "Graphs", icon: ChartPie },
+  { href: "/graphs", label: "Insights", icon: ChartNoAxesColumnIncreasing },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
