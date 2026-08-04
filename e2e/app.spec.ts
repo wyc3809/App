@@ -23,10 +23,9 @@ async function waitForAppReady(page: Page) {
 async function loadDemo(page: Page) {
   await page.goto("/");
   await waitForAppReady(page);
-  page.once("dialog", (d) => d.accept());
-  // Empty-state primary CTA (also appears in the ⋮ menu when open)
-  await page.locator("button.btn-primary", { hasText: "Load demo data" }).click();
-  await expect(page.getByText(/net worth|HK\$/i).first()).toBeVisible({
+  // First-run onboarding sheet (replaces empty-state confirm dialog)
+  await page.getByRole("button", { name: /Load demo portfolio/i }).click();
+  await expect(page.getByText(/Net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
 }
@@ -48,8 +47,10 @@ test.describe("WorthBook E2E", () => {
   test("settings is reachable from Home menu", async ({ page }) => {
     await page.goto("/");
     await waitForAppReady(page);
+    // Dismiss first-run sheet so header controls are tappable
+    await page.getByRole("button", { name: /Start empty/i }).click();
     await page.getByRole("button", { name: /more options/i }).click();
-    await page.getByRole("link", { name: "Settings" }).click();
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Import CSV/i })).toBeVisible();
   });
@@ -164,8 +165,11 @@ test.describe("WorthBook E2E", () => {
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     const csvPath = path.join(fixturesDir, "ledger-sample.csv");
-    page.once("dialog", (d) => d.accept());
     await page.locator('input[type="file"][accept*="csv"]').setInputFiles(csvPath);
+
+    const confirm = page.getByRole("dialog");
+    await expect(confirm.getByRole("heading", { name: /Import CSV/i })).toBeVisible();
+    await confirm.getByRole("button", { name: "Import" }).click();
 
     await expect(page.getByText(/Added .+ ledger/i)).toBeVisible({
       timeout: 10_000,

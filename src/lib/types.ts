@@ -74,6 +74,10 @@ export interface UserSettings {
   isPrivacyMode: boolean;
   isBiometricEnabled: boolean;
   theme: "light" | "dark" | "system";
+  /** ISO timestamp of last successful JSON export (local-only reminder). */
+  lastBackupAt?: string | null;
+  /** First-run onboarding completed or dismissed. */
+  onboardingCompleted?: boolean;
 }
 
 export type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";

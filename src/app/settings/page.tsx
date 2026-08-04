@@ -15,14 +15,35 @@ import {
   Sun,
   Upload,
 } from "lucide-react";
-import { readBackupFile } from "@/lib/import-backup";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
+import { formatLastBackupLabel } from "@/lib/backup-meta";
+import { readBackupFile, type WorthBackupPayload } from "@/lib/import-backup";
 import {
   CSV_ACCOUNT_TEMPLATE,
   CSV_LEDGER_TEMPLATE,
   readCsvFile,
+  type CsvAccountRow,
+  type CsvTransactionRow,
 } from "@/lib/import-csv";
 import { useWorthStore } from "@/lib/store";
 import type { UserSettings } from "@/lib/types";
+
+type PendingConfirm =
+  | { kind: "demo" }
+  | { kind: "reset" }
+  | {
+      kind: "import-json";
+      data: WorthBackupPayload;
+      summary: string;
+    }
+  | {
+      kind: "import-csv";
+      accounts: CsvAccountRow[];
+      transactions: CsvTransactionRow[];
+      resultKind: "accounts" | "ledger";
+      skipped: number;
+      summary: string;
+    };
 
 export default function SettingsPage() {
   const settings = useWorthStore((s) => s.settings);
@@ -38,12 +59,14 @@ export default function SettingsPage() {
   const resetAll = useWorthStore((s) => s.resetAll);
   const importBackup = useWorthStore((s) => s.importBackup);
   const importCsvData = useWorthStore((s) => s.importCsvData);
+  const markBackupNow = useWorthStore((s) => s.markBackupNow);
 
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [pending, setPending] = useState<PendingConfirm | null>(null);
 
   const downloadText = (filename: string, content: string, mime: string) => {
     const blob = new Blob([content], { type: mime });
@@ -70,6 +93,9 @@ export default function SettingsPage() {
       JSON.stringify(payload, null, 2),
       "application/json",
     );
+    markBackupNow();
+    setImportMessage("Backup downloaded. Last backup time updated.");
+    setImportError(null);
   };
 
   const onImportJson = async (file: File | null) => {
@@ -85,20 +111,9 @@ export default function SettingsPage() {
       return;
     }
 
-    const replace = confirm(
-      `Import ${result.data.accounts.length} accounts, ${result.data.snapshots.length} snapshots, and ${result.data.transactions?.length ?? 0} ledger entries?\n\nThis replaces your current local data.`,
-    );
-    if (!replace) {
-      setImporting(false);
-      return;
-    }
-
-    importBackup(result.data);
-    setImportMessage(
-      `Imported ${result.data.accounts.length} accounts, ${result.data.snapshots.length} snapshots, and ${result.data.transactions?.length ?? 0} ledger entries.`,
-    );
+    const summary = `Import ${result.data.accounts.length} accounts, ${result.data.snapshots.length} snapshots, and ${result.data.transactions?.length ?? 0} ledger entries? This replaces your current local data.`;
+    setPending({ kind: "import-json", data: result.data, summary });
     setImporting(false);
-    if (jsonInputRef.current) jsonInputRef.current.value = "";
   };
 
   const onImportCsv = async (file: File | null) => {
@@ -114,30 +129,89 @@ export default function SettingsPage() {
       return;
     }
 
-    const ok = confirm(
+    const summary =
       result.kind === "accounts"
-        ? `Import ${result.accounts.length} account(s) from CSV?\n\nExisting accounts with the same name are skipped (merge).`
-        : `Import ${result.transactions.length} ledger row(s) from CSV?\n\nRows are added to your current ledger. Account names are linked when they match.`,
-    );
-    if (!ok) {
-      setImporting(false);
-      return;
-    }
-
-    const { accountsAdded, transactionsAdded } = importCsvData({
+        ? `Import ${result.accounts.length} account(s) from CSV? Existing accounts with the same name are skipped (merge).`
+        : `Import ${result.transactions.length} ledger row(s) from CSV? Rows are added to your current ledger. Account names are linked when they match.`;
+    setPending({
+      kind: "import-csv",
       accounts: result.accounts,
       transactions: result.transactions,
+      resultKind: result.kind === "accounts" ? "accounts" : "ledger",
+      skipped: result.skipped,
+      summary,
     });
-    const skipNote =
-      result.skipped > 0 ? ` · ${result.skipped} row(s) skipped` : "";
-    setImportMessage(
-      result.kind === "accounts"
-        ? `Added ${accountsAdded} account(s) from CSV${skipNote}.`
-        : `Added ${transactionsAdded} ledger entr${transactionsAdded === 1 ? "y" : "ies"} from CSV${skipNote}.`,
-    );
     setImporting(false);
-    if (csvInputRef.current) csvInputRef.current.value = "";
   };
+
+  const runPending = () => {
+    if (!pending) return;
+    if (pending.kind === "demo") {
+      loadDemoData();
+      setImportMessage("Demo portfolio loaded.");
+    } else if (pending.kind === "reset") {
+      resetAll();
+      setImportMessage("All local data cleared.");
+    } else if (pending.kind === "import-json") {
+      importBackup(pending.data);
+      setImportMessage(
+        `Imported ${pending.data.accounts.length} accounts, ${pending.data.snapshots.length} snapshots, and ${pending.data.transactions?.length ?? 0} ledger entries.`,
+      );
+      if (jsonInputRef.current) jsonInputRef.current.value = "";
+    } else if (pending.kind === "import-csv") {
+      const { accountsAdded, transactionsAdded } = importCsvData({
+        accounts: pending.accounts,
+        transactions: pending.transactions,
+      });
+      const skipNote =
+        pending.skipped > 0 ? ` · ${pending.skipped} row(s) skipped` : "";
+      setImportMessage(
+        pending.resultKind === "accounts"
+          ? `Added ${accountsAdded} account(s) from CSV${skipNote}.`
+          : `Added ${transactionsAdded} ledger entr${transactionsAdded === 1 ? "y" : "ies"} from CSV${skipNote}.`,
+      );
+      if (csvInputRef.current) csvInputRef.current.value = "";
+    }
+    setImportError(null);
+    setPending(null);
+  };
+
+  const confirmCopy = (() => {
+    if (!pending) {
+      return { title: "", message: "", confirmLabel: "Confirm", danger: false };
+    }
+    if (pending.kind === "demo") {
+      return {
+        title: "Load demo portfolio?",
+        message: "Demo data replaces your current local data.",
+        confirmLabel: "Load demo",
+        danger: false,
+      };
+    }
+    if (pending.kind === "reset") {
+      return {
+        title: "Reset all data?",
+        message:
+          "Delete all accounts, ledger entries, snapshots, and reset settings on this device.",
+        confirmLabel: "Reset everything",
+        danger: true,
+      };
+    }
+    if (pending.kind === "import-json") {
+      return {
+        title: "Import JSON backup?",
+        message: pending.summary,
+        confirmLabel: "Import & replace",
+        danger: true,
+      };
+    }
+    return {
+      title: "Import CSV?",
+      message: pending.summary,
+      confirmLabel: "Import",
+      danger: false,
+    };
+  })();
 
   const themes: { value: UserSettings["theme"]; label: string; icon: typeof Sun }[] = [
     { value: "light", label: "Light", icon: Sun },
@@ -147,6 +221,20 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4 pb-4">
+      <ConfirmSheet
+        open={pending !== null}
+        title={confirmCopy.title}
+        message={confirmCopy.message}
+        confirmLabel={confirmCopy.confirmLabel}
+        danger={confirmCopy.danger}
+        onConfirm={runPending}
+        onClose={() => {
+          setPending(null);
+          if (jsonInputRef.current) jsonInputRef.current.value = "";
+          if (csvInputRef.current) csvInputRef.current.value = "";
+        }}
+      />
+
       <header className="animate-fade-up">
         <p
           className="text-xs font-semibold uppercase tracking-[0.14em]"
@@ -266,6 +354,20 @@ export default function SettingsPage() {
 
       <section className="card-surface animate-fade-up-delay-2 space-y-3 p-4">
         <h2 className="font-display text-lg">Backup</h2>
+        <div
+          className="rounded-xl px-3 py-2.5 text-sm"
+          style={{ background: "var(--bg-muted)" }}
+        >
+          <p className="font-semibold" style={{ color: "var(--fg)" }}>
+            Last backup
+          </p>
+          <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}>
+            {formatLastBackupLabel(settings.lastBackupAt)}
+            {settings.lastBackupAt
+              ? ` · ${new Date(settings.lastBackupAt).toLocaleString()}`
+              : ""}
+          </p>
+        </div>
 
         <button type="button" className="btn-secondary w-full" onClick={exportJson}>
           <Download size={18} />
@@ -351,9 +453,7 @@ export default function SettingsPage() {
         <button
           type="button"
           className="btn-secondary w-full"
-          onClick={() => {
-            if (confirm("Replace current data with the demo portfolio?")) loadDemoData();
-          }}
+          onClick={() => setPending({ kind: "demo" })}
         >
           <Sparkles size={18} />
           Load demo portfolio
@@ -363,9 +463,7 @@ export default function SettingsPage() {
           type="button"
           className="btn-secondary w-full"
           style={{ color: "var(--danger)" }}
-          onClick={() => {
-            if (confirm("Delete all accounts, ledger entries, snapshots, and reset settings?")) resetAll();
-          }}
+          onClick={() => setPending({ kind: "reset" })}
         >
           <Eraser size={18} />
           Reset all data

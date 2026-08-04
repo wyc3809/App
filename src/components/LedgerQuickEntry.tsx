@@ -72,6 +72,7 @@ export function LedgerQuickEntry() {
   const [accountId, setAccountId] = useState("");
   const [pickingAccount, setPickingAccount] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [keypadOpen, setKeypadOpen] = useState(true);
 
   const categories = ledgerCategoriesFor(type);
   const linkedAccount = accounts.find((a) => a.id === accountId);
@@ -104,6 +105,7 @@ export function LedgerQuickEntry() {
     if (value === null || value <= 0) {
       haptic("warning");
       setFlash("Enter an amount");
+      setKeypadOpen(true);
       return;
     }
 
@@ -124,9 +126,14 @@ export function LedgerQuickEntry() {
     });
 
     haptic("success");
+    const linkNote = linkedAccount
+      ? ` · updated ${linkedAccount.name}`
+      : " · ledger only (no account link)";
     resetForm();
-    setFlash("Saved");
-    window.setTimeout(() => setFlash(null), 1200);
+    setFlash(`Saved${linkNote}`);
+    setKeypadOpen(false);
+    setPickingAccount(false);
+    window.setTimeout(() => setFlash(null), 1800);
   };
 
   const timeLabel = useMemo(() => {
@@ -257,13 +264,25 @@ export function LedgerQuickEntry() {
             type="button"
             className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
             style={{
-              background: accountId ? "var(--accent-soft)" : "var(--bg-muted)",
-              color: accountId ? "var(--accent)" : "var(--fg-muted)",
+              background: accountId
+                ? "var(--accent-soft)"
+                : accounts.length > 0
+                  ? "color-mix(in srgb, var(--danger) 12%, var(--bg-muted))"
+                  : "var(--bg-muted)",
+              color: accountId
+                ? "var(--accent)"
+                : accounts.length > 0
+                  ? "var(--danger)"
+                  : "var(--fg-muted)",
             }}
             onClick={() => setPickingAccount((v) => !v)}
           >
             <Link2 size={12} />
-            {linkedAccount?.name ?? "Account"}
+            {linkedAccount
+              ? `${linkedAccount.name} · ${linkedAccount.currency}`
+              : accounts.length > 0
+                ? "Link account"
+                : "Account"}
           </button>
         </div>
 
@@ -278,7 +297,7 @@ export function LedgerQuickEntry() {
               style={{ color: "var(--fg-muted)" }}
               onClick={() => onAccountPick("")}
             >
-              No link (ledger only)
+              No link (ledger only — balance unchanged)
             </button>
             {accounts.map((a) => (
               <button
@@ -299,6 +318,16 @@ export function LedgerQuickEntry() {
           </div>
         )}
 
+        {linkedAccount ? (
+          <p className="px-0.5 text-[10px] leading-snug" style={{ color: "var(--fg-subtle)" }}>
+            Linked · saves in {linkedAccount.currency} and updates {linkedAccount.name}
+          </p>
+        ) : accounts.length > 0 ? (
+          <p className="px-0.5 text-[10px] leading-snug" style={{ color: "var(--danger)" }}>
+            Not linked · account balances will not change
+          </p>
+        ) : null}
+
         <div
           className="flex items-center gap-2 rounded-xl px-2.5 py-2"
           style={{ background: "var(--bg-muted)" }}
@@ -311,20 +340,23 @@ export function LedgerQuickEntry() {
             placeholder="Note…"
             aria-label="Note"
           />
-          <span
+          <button
+            type="button"
             className="shrink-0 text-base font-semibold tabular-nums"
             style={{
               color: type === "income" ? "var(--positive)" : "var(--negative)",
             }}
+            onClick={() => setKeypadOpen(true)}
+            aria-label="Edit amount"
           >
             {formatKeypadDisplay(expr, symbol)}
-          </span>
+          </button>
         </div>
         {flash && (
           <p
             className="text-center text-[11px] font-semibold"
             style={{
-              color: flash === "Saved" ? "var(--positive)" : "var(--danger)",
+              color: flash.startsWith("Saved") ? "var(--positive)" : "var(--danger)",
             }}
           >
             {flash}
@@ -332,7 +364,21 @@ export function LedgerQuickEntry() {
         )}
       </div>
 
-      {/* Full keypad — always visible, never scrolled away */}
+      {/* Keypad collapses after a successful save to free space for history */}
+      {!keypadOpen ? (
+        <div className="shrink-0 px-2.5 pb-2.5 pt-1">
+          <button
+            type="button"
+            className="btn-primary w-full"
+            onClick={() => {
+              setKeypadOpen(true);
+              setFlash(null);
+            }}
+          >
+            Add another
+          </button>
+        </div>
+      ) : (
       <div
         className="shrink-0 px-1.5 pb-1.5 pt-1"
         style={{
@@ -398,6 +444,7 @@ export function LedgerQuickEntry() {
           <KeypadKey label="Done" primary hapticKind={false} onPress={submit} />
         </div>
       </div>
+      )}
     </section>
   );
 }
