@@ -3,6 +3,7 @@ import {
   buildInsightGrowthBars,
   computeInsightSummary,
   filterMonthlyByInsightRange,
+  growthBarLabelYs,
 } from "./insights";
 import { buildMonthlyGrowthSeries } from "./growth";
 import type { HistoricalSnapshot } from "./types";
@@ -62,5 +63,23 @@ describe("insights", () => {
     expect(summary!.netWorth).toBe(1300);
     expect(summary!.periodChange).toBeCloseTo(300);
     expect(summary!.sparkline.length).toBe(5);
+  });
+
+  it("places negative growth labels below the bar tip", () => {
+    // Positive bar: y is top of rect
+    expect(growthBarLabelYs(100, 80, 500)).toEqual({
+      amountY: 84,
+      percentY: 96,
+    });
+    // Negative bar: y is top (near zero), height extends downward
+    expect(growthBarLabelYs(120, 80, -35000)).toEqual({
+      amountY: 212,
+      percentY: 224,
+    });
+    // Negative bar: y is tip, height is negative toward zero
+    expect(growthBarLabelYs(200, -80, -35000)).toEqual({
+      amountY: 212,
+      percentY: 224,
+    });
   });
 });

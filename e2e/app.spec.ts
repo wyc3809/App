@@ -107,6 +107,8 @@ test.describe("WorthBook E2E", () => {
     await expect(
       page.getByRole("heading", { name: /Growth/i }),
     ).toBeVisible();
+    // Growth chart should render SVG labels for sparse demo data
+    await expect(page.locator(".recharts-bar-rectangles")).toBeVisible();
 
     await page.getByRole("tab", { name: "Allocation" }).click();
     await expect(page.getByRole("heading", { name: "Allocation" })).toBeVisible();

@@ -150,6 +150,25 @@ export function buildInsightGrowthBars(
   return bars;
 }
 
+/**
+ * Place amount/percent labels outside the bar tip.
+ * Recharts may pass `height` as positive or negative; use the rect edges.
+ */
+export function growthBarLabelYs(
+  y: number,
+  height: number,
+  change: number,
+): { amountY: number; percentY: number } {
+  const edgeA = y;
+  const edgeB = y + height;
+  if (change < 0) {
+    const bottom = Math.max(edgeA, edgeB);
+    return { amountY: bottom + 12, percentY: bottom + 24 };
+  }
+  const top = Math.min(edgeA, edgeB);
+  return { amountY: top - 16, percentY: top - 4 };
+}
+
 export function buildAssetsLiabilitiesTrend(
   snapshots: HistoricalSnapshot[],
   range: InsightRange,
