@@ -54,6 +54,34 @@ test.describe("WorthBook E2E", () => {
     await expect(page.getByRole("button", { name: /Import CSV/i })).toBeVisible();
   });
 
+  test("ledger summary period chips switch Day / Month / YTD", async ({ page }) => {
+    await loadDemo(page);
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("heading", { name: "Ledger" })).toBeVisible();
+
+    const periodTabs = page.getByRole("tablist", { name: "Summary period" });
+    await expect(periodTabs).toBeVisible();
+    await expect(periodTabs.getByRole("tab", { name: "Month" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByText(/From 1 /i).first()).toBeVisible();
+
+    await periodTabs.getByRole("tab", { name: "Day" }).click();
+    await expect(periodTabs.getByRole("tab", { name: "Day" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByText("Today").first()).toBeVisible();
+
+    await periodTabs.getByRole("tab", { name: "YTD" }).click();
+    await expect(periodTabs.getByRole("tab", { name: "YTD" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByText(/YTD · since /i).first()).toBeVisible();
+  });
+
   test("ledger quick entry saves an expense", async ({ page }) => {
     await loadDemo(page);
     await page.getByRole("link", { name: "Ledger" }).click();
@@ -67,7 +95,6 @@ test.describe("WorthBook E2E", () => {
     await page.getByRole("button", { name: "Done" }).click();
 
     await expect(page.getByText("Saved")).toBeVisible({ timeout: 5_000 });
-    // New expense appears in today's records (title defaults to category)
     await expect(page.getByText(/−HK\$50|-HK\$50/)).toBeVisible();
   });
 

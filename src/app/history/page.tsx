@@ -5,16 +5,26 @@ import { Link2, Pencil, Trash2 } from "lucide-react";
 import { LedgerQuickEntry } from "@/components/LedgerQuickEntry";
 import { TransactionModal } from "@/components/TransactionModal";
 import { toBaseCurrency } from "@/lib/currencies";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, todayISO } from "@/lib/format";
 import {
   computeLedgerTotals,
+  filterTransactionsByPeriod,
   groupTransactionsByDate,
   ledgerCategoryLabel,
+  ledgerPeriodShortLabel,
+  ledgerPeriodStart,
+  type LedgerSummaryPeriod,
 } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
 import type { Transaction, TransactionType } from "@/lib/types";
 
 type Filter = "all" | TransactionType;
+
+const PERIODS: { value: LedgerSummaryPeriod; label: string }[] = [
+  { value: "day", label: "Day" },
+  { value: "month", label: "Month" },
+  { value: "ytd", label: "YTD" },
+];
 
 export default function LedgerPage() {
   const transactions = useWorthStore((s) => s.transactions);
@@ -23,24 +33,46 @@ export default function LedgerPage() {
   const settings = useWorthStore((s) => s.settings);
   const deleteTransaction = useWorthStore((s) => s.deleteTransaction);
 
+  /** Default: from the 1st of the current month through today. */
+  const [period, setPeriod] = useState<LedgerSummaryPeriod>("month");
   const [filter, setFilter] = useState<Filter>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
 
+  const today = todayISO();
+
+  const inPeriod = useMemo(
+    () => filterTransactionsByPeriod(transactions, period, today),
+    [transactions, period, today],
+  );
+
   const filtered = useMemo(() => {
-    if (filter === "all") return transactions;
-    return transactions.filter((t) => t.type === filter);
-  }, [transactions, filter]);
+    if (filter === "all") return inPeriod;
+    return inPeriod.filter((t) => t.type === filter);
+  }, [inPeriod, filter]);
 
   const totals = useMemo(
     () =>
-      computeLedgerTotals(filtered, (amount, currency) =>
+      computeLedgerTotals(inPeriod, (amount, currency) =>
         toBaseCurrency(amount, currency, currencies),
       ),
-    [filtered, currencies],
+    [inPeriod, currencies],
   );
 
   const groups = useMemo(() => groupTransactionsByDate(filtered), [filtered]);
+
+  const periodHint = useMemo(() => {
+    const start = ledgerPeriodStart(period, today);
+    if (period === "day") return "Today";
+    if (period === "month") {
+      const month = new Date(`${start}T00:00:00`).toLocaleDateString(undefined, {
+        month: "short",
+        year: "numeric",
+      });
+      return `From 1 ${month}`;
+    }
+    return `YTD · since ${start.slice(0, 4)}-01-01`;
+  }, [period, today]);
 
   const accountName = (id?: string) =>
     id ? accounts.find((a) => a.id === id)?.name : undefined;
@@ -64,32 +96,69 @@ export default function LedgerPage() {
 
       <LedgerQuickEntry />
 
-      <section className="grid grid-cols-3 gap-2 animate-fade-up">
-        <SummaryTile
-          label="Income"
-          value={formatMoney(totals.income, settings.baseCurrency, currencies, {
-            privacy: settings.isPrivacyMode,
-            compact: true,
-          })}
-          tone="positive"
-        />
-        <SummaryTile
-          label="Expense"
-          value={formatMoney(totals.expense, settings.baseCurrency, currencies, {
-            privacy: settings.isPrivacyMode,
-            compact: true,
-          })}
-          tone="negative"
-        />
-        <SummaryTile
-          label="Net"
-          value={formatMoney(totals.net, settings.baseCurrency, currencies, {
-            privacy: settings.isPrivacyMode,
-            compact: true,
-            showSign: true,
-          })}
-          tone={totals.net >= 0 ? "positive" : "negative"}
-        />
+      <section className="space-y-2 animate-fade-up" aria-label="Cashflow summary">
+        <div className="flex items-center justify-between gap-2">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+            style={{ color: "var(--fg-subtle)" }}
+          >
+            {periodHint}
+          </p>
+          <div
+            className="flex gap-1 rounded-xl p-0.5"
+            style={{ background: "var(--bg-muted)" }}
+            role="tablist"
+            aria-label="Summary period"
+          >
+            {PERIODS.map(({ value, label }) => {
+              const active = period === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className="min-h-9 rounded-lg px-2.5 text-[11px] font-semibold transition"
+                  style={{
+                    background: active ? "var(--accent)" : "transparent",
+                    color: active ? "#04140c" : "var(--fg-muted)",
+                  }}
+                  onClick={() => setPeriod(value)}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <SummaryTile
+            label="Income"
+            value={formatMoney(totals.income, settings.baseCurrency, currencies, {
+              privacy: settings.isPrivacyMode,
+              compact: true,
+            })}
+            tone="positive"
+          />
+          <SummaryTile
+            label="Expense"
+            value={formatMoney(totals.expense, settings.baseCurrency, currencies, {
+              privacy: settings.isPrivacyMode,
+              compact: true,
+            })}
+            tone="negative"
+          />
+          <SummaryTile
+            label="Net"
+            value={formatMoney(totals.net, settings.baseCurrency, currencies, {
+              privacy: settings.isPrivacyMode,
+              compact: true,
+              showSign: true,
+            })}
+            tone={totals.net >= 0 ? "positive" : "negative"}
+          />
+        </div>
       </section>
 
       <div className="flex items-center justify-between gap-2 animate-fade-up-delay">
@@ -97,7 +166,7 @@ export default function LedgerPage() {
           className="text-xs font-semibold uppercase tracking-[0.12em]"
           style={{ color: "var(--fg-subtle)" }}
         >
-          Records
+          Records · {ledgerPeriodShortLabel(period)}
         </h2>
         <div className="flex gap-1.5">
           {([
@@ -128,7 +197,8 @@ export default function LedgerPage() {
           style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
         >
           <p className="text-sm">
-            No records yet. Use the keypad above to add your first entry.
+            No records in this period. Use the keypad above or switch Day / Month /
+            YTD.
           </p>
         </div>
       ) : (

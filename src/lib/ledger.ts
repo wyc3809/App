@@ -43,6 +43,34 @@ export interface LedgerTotals {
   net: number;
 }
 
+/** Day = today · Month = from the 1st (MTD, default) · YTD = Jan 1 → today */
+export type LedgerSummaryPeriod = "day" | "month" | "ytd";
+
+export function ledgerPeriodStart(
+  period: LedgerSummaryPeriod,
+  today: string = new Date().toISOString().slice(0, 10),
+): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) return today;
+  if (period === "day") return today;
+  if (period === "month") return `${today.slice(0, 7)}-01`;
+  return `${today.slice(0, 4)}-01-01`;
+}
+
+export function filterTransactionsByPeriod(
+  transactions: Transaction[],
+  period: LedgerSummaryPeriod,
+  today: string = new Date().toISOString().slice(0, 10),
+): Transaction[] {
+  const start = ledgerPeriodStart(period, today);
+  return transactions.filter((tx) => tx.date >= start && tx.date <= today);
+}
+
+export function ledgerPeriodShortLabel(period: LedgerSummaryPeriod): string {
+  if (period === "day") return "Day";
+  if (period === "month") return "Month";
+  return "YTD";
+}
+
 /** Sum transactions converted with a provided converter to base currency. */
 export function computeLedgerTotals(
   transactions: Transaction[],
