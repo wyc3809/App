@@ -34,6 +34,7 @@ import {
   buildAssetsLiabilitiesTrend,
   buildInsightGrowthBars,
   computeInsightSummary,
+  growthBarLabelYs,
   growthChartTitle,
   INSIGHT_RANGES,
   rangeSubtitle,
@@ -118,6 +119,7 @@ export function InsightsDashboard() {
   );
 
   const showBarLabels = !privacy && growthBars.length > 0 && growthBars.length <= LABEL_BAR_LIMIT;
+  const hasNegativeGrowth = growthBars.some((b) => b.change < 0);
 
   const money = (n: number, opts?: { showSign?: boolean }) =>
     formatMoney(n, settings.baseCurrency, currencies, {
@@ -281,7 +283,7 @@ export function InsightsDashboard() {
                       top: showBarLabels ? 36 : 8,
                       right: 4,
                       left: 0,
-                      bottom: 0,
+                      bottom: showBarLabels && hasNegativeGrowth ? 36 : 8,
                     }}
                   >
                     <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
@@ -330,13 +332,13 @@ export function InsightsDashboard() {
                       ))}
                       {showBarLabels ? (
                         <LabelList
-                          dataKey="labelText"
-                          position="top"
+                          dataKey="change"
                           content={(props) => {
-                            const { x, y, width, index } = props as {
+                            const { x, y, width, height, index } = props as {
                               x?: number;
                               y?: number;
                               width?: number;
+                              height?: number;
                               index?: number;
                             };
                             if (
@@ -360,11 +362,16 @@ export function InsightsDashboard() {
                               row.change >= 0
                                 ? "var(--positive)"
                                 : "var(--negative)";
+                            const { amountY, percentY } = growthBarLabelYs(
+                              y,
+                              height ?? 0,
+                              row.change,
+                            );
                             return (
                               <g>
                                 <text
                                   x={x + width / 2}
-                                  y={y - 16}
+                                  y={amountY}
                                   textAnchor="middle"
                                   fill={color}
                                   fontSize={9}
@@ -374,7 +381,7 @@ export function InsightsDashboard() {
                                 </text>
                                 <text
                                   x={x + width / 2}
-                                  y={y - 4}
+                                  y={percentY}
                                   textAnchor="middle"
                                   fill={color}
                                   fontSize={8}
