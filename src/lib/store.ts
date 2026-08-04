@@ -83,6 +83,9 @@ interface WorthState {
   deleteSnapshot: (id: string) => void;
 
   updateSettings: (patch: Partial<UserSettings>) => void;
+  /** Stamp last successful JSON export for backup reminders. */
+  markBackupNow: () => void;
+  completeOnboarding: () => void;
   updateCurrencyRate: (code: string, rate: number) => void;
   setBaseCurrency: (code: string) => void;
 }
@@ -382,6 +385,8 @@ const defaultSettings: UserSettings = {
   isPrivacyMode: false,
   isBiometricEnabled: false,
   theme: "system",
+  lastBackupAt: null,
+  onboardingCompleted: false,
 };
 
 export const useWorthStore = create<WorthState>()(
@@ -413,7 +418,7 @@ export const useWorthStore = create<WorthState>()(
           transactions: [],
           snapshots,
           currencies: DEFAULT_CURRENCIES,
-          settings: { ...defaultSettings },
+          settings: { ...defaultSettings, onboardingCompleted: true },
         });
         for (const input of createDemoTransactions(accounts)) {
           get().addTransaction(input);
@@ -863,6 +868,21 @@ export const useWorthStore = create<WorthState>()(
         set((s) => ({ settings: { ...s.settings, ...patch } }));
       },
 
+      markBackupNow: () => {
+        set((s) => ({
+          settings: {
+            ...s.settings,
+            lastBackupAt: new Date().toISOString(),
+          },
+        }));
+      },
+
+      completeOnboarding: () => {
+        set((s) => ({
+          settings: { ...s.settings, onboardingCompleted: true },
+        }));
+      },
+
       updateCurrencyRate: (code, rate) => {
         if (rate <= 0) return;
         set((s) => ({
@@ -883,7 +903,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -939,6 +959,16 @@ export const useWorthStore = create<WorthState>()(
           if (Array.isArray(state.accounts) && Array.isArray(state.valueEntries)) {
             state.accounts = resyncAllAccounts(state.accounts, state.valueEntries);
           }
+        }
+
+        if (version < 6) {
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            lastBackupAt: state.settings?.lastBackupAt ?? null,
+            // Existing users skip the welcome sheet.
+            onboardingCompleted: state.settings?.onboardingCompleted ?? true,
+          };
         }
 
         return state as never;

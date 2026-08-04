@@ -86,7 +86,7 @@ const CHARTS = [
 type ChartId = (typeof CHARTS)[number]["id"];
 
 /** Show bar-top labels only when they won't collide. */
-const LABEL_BAR_LIMIT = 6;
+const LABEL_BAR_LIMIT = 4;
 
 function compactAxis(v: number): string {
   const abs = Math.abs(v);

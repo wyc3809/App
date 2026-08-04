@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Link2, Pencil, Trash2 } from "lucide-react";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { LedgerQuickEntry } from "@/components/LedgerQuickEntry";
 import { TransactionModal } from "@/components/TransactionModal";
 import { toBaseCurrency } from "@/lib/currencies";
@@ -38,6 +39,7 @@ export default function LedgerPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
 
   const today = todayISO();
 
@@ -280,11 +282,7 @@ export default function LedgerPage() {
                           type="button"
                           className="btn-ghost"
                           style={{ color: "var(--danger)" }}
-                          onClick={() => {
-                            if (confirm(`Delete “${tx.title}”?`)) {
-                              deleteTransaction(tx.id);
-                            }
-                          }}
+                          onClick={() => setPendingDelete(tx)}
                         >
                           <Trash2 size={16} />
                           Delete
@@ -306,6 +304,18 @@ export default function LedgerPage() {
           setModalOpen(false);
           setEditing(null);
         }}
+      />
+      <ConfirmSheet
+        open={pendingDelete !== null}
+        title={pendingDelete ? `Delete “${pendingDelete.title}”?` : ""}
+        message="This removes the ledger entry. Linked account balances will reverse the effect."
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (pendingDelete) deleteTransaction(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onClose={() => setPendingDelete(null)}
       />
     </div>
   );

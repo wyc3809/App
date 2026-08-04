@@ -20,8 +20,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { BackupReminder } from "@/components/BackupReminder";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { FilterSheet, DEFAULT_HOME_FILTER, type HomeFilterState } from "@/components/FilterSheet";
+import { OnboardingSheet } from "@/components/OnboardingSheet";
 import { Sparkline } from "@/components/Sparkline";
+import { shouldRemindBackup } from "@/lib/backup-meta";
 import { buildAccountHistoryPoints, relativeUpdateLabel } from "@/lib/account-history";
 import { computeTotals } from "@/lib/calculations";
 import { toBaseCurrency } from "@/lib/currencies";
@@ -50,11 +54,20 @@ export function HomeDashboard() {
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
   const loadDemoData = useWorthStore((s) => s.loadDemoData);
+  const completeOnboarding = useWorthStore((s) => s.completeOnboarding);
 
   const [range, setRange] = useState<(typeof RANGES)[number]>("ALL");
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState<HomeFilterState>(DEFAULT_HOME_FILTER);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDemo, setConfirmDemo] = useState(false);
+  const [backupDismissed, setBackupDismissed] = useState(false);
+  const showOnboarding =
+    !settings.onboardingCompleted && accounts.length === 0;
+  const showBackupReminder =
+    !backupDismissed &&
+    !showOnboarding &&
+    shouldRemindBackup(settings.lastBackupAt);
 
   const totals = computeTotals(accounts, currencies);
   const privacy = settings.isPrivacyMode;
@@ -119,9 +132,9 @@ export function HomeDashboard() {
             W
           </div>
           <div>
-            <p className="text-sm font-semibold">{greeting()}</p>
+            <p className="font-display text-xl leading-tight tracking-tight">WorthBook</p>
             <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
-              WorthBook
+              {greeting()}
             </p>
           </div>
         </div>
@@ -161,7 +174,7 @@ export function HomeDashboard() {
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
                     onClick={() => {
                       setMenuOpen(false);
-                      if (confirm("Replace with demo portfolio?")) loadDemoData();
+                      setConfirmDemo(true);
                     }}
                   >
                     <Sparkles size={16} style={{ color: "var(--fg-muted)" }} />
@@ -190,6 +203,41 @@ export function HomeDashboard() {
           </Link>
         </div>
       </header>
+
+      {showBackupReminder ? (
+        <BackupReminder
+          lastBackupAt={settings.lastBackupAt}
+          onDismiss={() => setBackupDismissed(true)}
+        />
+      ) : null}
+
+      <section className="relative z-0 animate-fade-up text-center">
+        <p
+          className="text-xs font-semibold uppercase tracking-[0.14em]"
+          style={{ color: "var(--fg-subtle)" }}
+        >
+          Net worth
+        </p>
+        <p className="mt-1 font-display text-4xl tabular-nums tracking-tight">
+          {formatMoney(totals.netWorth, settings.baseCurrency, currencies, {
+            privacy,
+            compact: Math.abs(totals.netWorth) >= 1_000_000,
+          })}
+        </p>
+        <p className="mt-1.5 text-sm" style={{ color: "var(--fg-muted)" }}>
+          Assets{" "}
+          {formatMoney(totals.totalAssets, settings.baseCurrency, currencies, {
+            privacy,
+            compact: true,
+          })}
+          {" · "}
+          Liabilities{" "}
+          {formatMoney(totals.totalLiabilities, settings.baseCurrency, currencies, {
+            privacy,
+            compact: true,
+          })}
+        </p>
+      </section>
 
       <section className="relative z-0 animate-fade-up-delay">
         {chartData.points.length < 2 ? (
@@ -295,20 +343,9 @@ export function HomeDashboard() {
           ))}
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
-            Your total net worth is
-          </p>
-          <p className="mt-1 font-display text-3xl tabular-nums tracking-tight">
-            {formatMoney(totals.netWorth, settings.baseCurrency, currencies, {
-              privacy,
-              compact: Math.abs(totals.netWorth) >= 1_000_000,
-            })}
-          </p>
-        </div>
       </section>
 
-      {accounts.length === 0 && (
+      {accounts.length === 0 && settings.onboardingCompleted && (
         <section
           className="rounded-2xl p-4 text-sm animate-fade-up"
           style={{ background: "var(--accent-soft)" }}
@@ -316,13 +353,18 @@ export function HomeDashboard() {
           <div className="flex items-start gap-3">
             <Sparkles size={18} style={{ color: "var(--accent)" }} className="mt-0.5" />
             <div>
-              <p className="font-semibold">Start with a sample portfolio</p>
+              <p className="font-semibold">Add your first account</p>
               <p className="mt-1" style={{ color: "var(--fg-muted)" }}>
-                Or add your first account with +.
+                Or load a sample portfolio to explore the app.
               </p>
-              <button type="button" className="btn-primary mt-3" onClick={loadDemoData}>
-                Load demo data
-              </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link href="/accounts/?new=1" className="btn-primary">
+                  Add account
+                </Link>
+                <button type="button" className="btn-secondary" onClick={() => setConfirmDemo(true)}>
+                  Load demo
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -440,6 +482,27 @@ export function HomeDashboard() {
           </ul>
         )}
       </section>
+
+      <ConfirmSheet
+        open={confirmDemo}
+        title="Load demo portfolio?"
+        message="Demo data replaces your current local data on this device."
+        confirmLabel="Load demo"
+        onConfirm={() => {
+          loadDemoData();
+          completeOnboarding();
+        }}
+        onClose={() => setConfirmDemo(false)}
+      />
+
+      <OnboardingSheet
+        open={showOnboarding}
+        onLoadDemo={() => {
+          loadDemoData();
+          completeOnboarding();
+        }}
+        onDismiss={() => completeOnboarding()}
+      />
 
       <FilterSheet
         open={filterOpen}

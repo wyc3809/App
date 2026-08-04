@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import {
+  isStorageNearFull,
+  MIRROR_KEY,
+  restoreMirrorToLocalStorage,
+  writePersistMirror,
+} from "@/lib/idb-mirror";
 import { useWorthStore } from "@/lib/store";
 
 function registerServiceWorker() {
@@ -23,10 +29,20 @@ function registerServiceWorker() {
     });
 }
 
+function mirrorLocalPersist() {
+  try {
+    const raw = localStorage.getItem(MIRROR_KEY);
+    if (raw) void writePersistMirror(raw);
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const hydrated = useWorthStore((s) => s.hydrated);
   const setHydrated = useWorthStore((s) => s.setHydrated);
   const resyncAccounts = useWorthStore((s) => s.resyncAccounts);
+  const [storageWarn, setStorageWarn] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,23 +51,39 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (cancelled) return;
       resyncAccounts();
       setHydrated(true);
+      mirrorLocalPersist();
     };
 
-    // Persist may finish before this effect runs — check immediately and
-    // subscribe for the late case. Also fall back if either path misses.
-    const unsub = useWorthStore.persist.onFinishHydration(finish);
-    if (useWorthStore.persist.hasHydrated()) {
-      finish();
-    } else {
-      // Force a client-side rehydrate when SSR left the store unhydrated.
-      void Promise.resolve(useWorthStore.persist.rehydrate()).then(finish);
-    }
+    const boot = async () => {
+      // Recover from IndexedDB if localStorage was wiped.
+      await restoreMirrorToLocalStorage();
+      const unsub = useWorthStore.persist.onFinishHydration(finish);
+      if (useWorthStore.persist.hasHydrated()) {
+        finish();
+      } else {
+        void Promise.resolve(useWorthStore.persist.rehydrate()).then(finish);
+      }
+      return unsub;
+    };
+
+    let unsubPersist: (() => void) | undefined;
+    void boot().then((u) => {
+      unsubPersist = u;
+    });
 
     const safety = window.setTimeout(finish, 1500);
+    const unsubStore = useWorthStore.subscribe(() => {
+      mirrorLocalPersist();
+    });
+
+    void isStorageNearFull().then((near) => {
+      if (!cancelled) setStorageWarn(near);
+    });
 
     return () => {
       cancelled = true;
-      unsub();
+      unsubPersist?.();
+      unsubStore();
       window.clearTimeout(safety);
     };
   }, [setHydrated, resyncAccounts]);
@@ -75,7 +107,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <AppShell>{children}</AppShell>
+      <AppShell>
+        {storageWarn ? (
+          <div
+            className="mb-3 rounded-2xl px-3 py-2 text-xs"
+            style={{
+              background: "var(--danger-soft)",
+              color: "var(--danger)",
+            }}
+            role="status"
+          >
+            Browser storage is nearly full. Export a JSON backup in Settings
+            soon so you do not lose data.
+          </div>
+        ) : null}
+        {children}
+      </AppShell>
     </ThemeProvider>
   );
 }

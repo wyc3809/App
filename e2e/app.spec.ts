@@ -23,10 +23,9 @@ async function waitForAppReady(page: Page) {
 async function loadDemo(page: Page) {
   await page.goto("/");
   await waitForAppReady(page);
-  page.once("dialog", (d) => d.accept());
-  // Empty-state primary CTA (also appears in the ⋮ menu when open)
-  await page.locator("button.btn-primary", { hasText: "Load demo data" }).click();
-  await expect(page.getByText(/net worth|HK\$/i).first()).toBeVisible({
+  // First-run onboarding sheet (replaces empty-state confirm dialog)
+  await page.getByRole("button", { name: /Load demo portfolio/i }).click();
+  await expect(page.getByText(/Net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
 }

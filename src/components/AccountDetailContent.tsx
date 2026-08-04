@@ -25,6 +25,7 @@ import {
   YAxis,
 } from "recharts";
 import { AddValueModal } from "@/components/AddValueModal";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { AccountForm } from "@/components/AccountForm";
 import { HistoryEntrySheet } from "@/components/HistoryEntrySheet";
 import { TransactionModal } from "@/components/TransactionModal";
@@ -87,6 +88,12 @@ export function AccountDetailContent() {
   const [selectedPoint, setSelectedPoint] = useState<ValueHistoryPoint | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<
+    | { kind: "account" }
+    | { kind: "ledger"; tx: Transaction }
+    | { kind: "value"; entryId: string; date: string }
+    | null
+  >(null);
 
   const history = useMemo(
     () => (account ? buildAccountHistoryPoints(valueEntries, account.id) : []),
@@ -177,10 +184,7 @@ export function AccountDetailContent() {
                 style={{ color: "var(--danger)" }}
                 onClick={() => {
                   setMenuOpen(false);
-                  if (confirm(`Delete “${account.name}”?`)) {
-                    deleteAccount(account.id);
-                    router.replace("/accounts/");
-                  }
+                  setPendingDelete({ kind: "account" });
                 }}
               >
                 <Trash2 size={16} />
@@ -487,10 +491,7 @@ export function AccountDetailContent() {
             setEditingTx(tx);
           }}
           onDeleteLedger={(tx) => {
-            if (confirm(`Delete ledger “${tx.title}”?`)) {
-              deleteTransaction(tx.id);
-              setSelectedPoint(null);
-            }
+            setPendingDelete({ kind: "ledger", tx });
           }}
           onEditValue={() => {
             const entry = entries.find((e) => e.id === selectedPoint.entryId);
@@ -499,14 +500,53 @@ export function AccountDetailContent() {
           }}
           onDeleteValue={() => {
             const entry = entries.find((e) => e.id === selectedPoint.entryId);
-            if (entry && confirm(`Delete entry on ${selectedPoint.date}?`)) {
-              deleteValueEntry(entry.id);
-              setSelectedPoint(null);
+            if (entry) {
+              setPendingDelete({
+                kind: "value",
+                entryId: entry.id,
+                date: selectedPoint.date,
+              });
             }
           }}
         />
       )}
       <AccountForm open={editOpen} initial={account} onClose={() => setEditOpen(false)} />
+      <ConfirmSheet
+        open={pendingDelete !== null}
+        title={
+          pendingDelete?.kind === "account"
+            ? `Delete “${account.name}”?`
+            : pendingDelete?.kind === "ledger"
+              ? `Delete ledger “${pendingDelete.tx.title}”?`
+              : pendingDelete
+                ? `Delete entry on ${pendingDelete.date}?`
+                : ""
+        }
+        message={
+          pendingDelete?.kind === "account"
+            ? "This removes the account and its value history from this device."
+            : pendingDelete?.kind === "ledger"
+              ? "Linked account balances will reverse this ledger effect."
+              : "This value history row will be removed."
+        }
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.kind === "account") {
+            deleteAccount(account.id);
+            router.replace("/accounts/");
+          } else if (pendingDelete.kind === "ledger") {
+            deleteTransaction(pendingDelete.tx.id);
+            setSelectedPoint(null);
+          } else {
+            deleteValueEntry(pendingDelete.entryId);
+            setSelectedPoint(null);
+          }
+          setPendingDelete(null);
+        }}
+        onClose={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
