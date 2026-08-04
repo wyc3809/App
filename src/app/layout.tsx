@@ -33,9 +33,10 @@ export const metadata: Metadata = {
   manifest: `${assetBase}/manifest.webmanifest`,
   icons: {
     icon: [
+      { url: `${assetBase}/icon.svg`, type: "image/svg+xml" },
+      { url: `${assetBase}/favicon-32.png`, sizes: "32x32", type: "image/png" },
       { url: `${assetBase}/icon-192.png`, sizes: "192x192", type: "image/png" },
       { url: `${assetBase}/icon-512.png`, sizes: "512x512", type: "image/png" },
-      { url: `${assetBase}/icon.svg`, type: "image/svg+xml" },
     ],
     apple: [{ url: `${assetBase}/apple-touch-icon.png`, sizes: "180x180" }],
   },

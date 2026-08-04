@@ -1,6 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <rect width="128" height="128" rx="28" fill="#0D1110"/>
-  <path d="M28 78C28 78 42 42 64 42C86 42 100 78 100 78" stroke="#3DCF8E" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="64" cy="42" r="8" fill="#3DCF8E"/>
-  <rect x="34" y="84" width="60" height="10" rx="5" fill="#E8E4DB" opacity="0.85"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="WorthBook">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#1A3A2C"/>
+      <stop offset="55%" stop-color="#101814"/>
+      <stop offset="100%" stop-color="#0A0E0C"/>
+    </radialGradient>
+    <linearGradient id="pageFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7"/>
+      <stop offset="100%" stop-color="#E8E4DB"/>
+    </linearGradient>
+    <linearGradient id="coverFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1A2420"/>
+      <stop offset="100%" stop-color="#0D1411"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- App tile -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)"/>
+
+  <!-- Soft brand glow behind book -->
+  <ellipse cx="256" cy="270" rx="168" ry="128" fill="#0F7A4C" opacity="0.18"/>
+
+  <g filter="url(#softShadow)">
+    <!-- Book cover / base -->
+    <path
+      d="M118 188
+         C118 176 128 168 140 168
+         H236
+         C246 168 252 174 256 182
+         C260 174 266 168 276 168
+         H372
+         C384 168 394 176 394 188
+         V348
+         C394 362 382 372 368 372
+         H276
+         C266 372 260 366 256 358
+         C252 366 246 372 236 372
+         H144
+         C130 372 118 362 118 348
+         Z"
+      fill="url(#coverFill)"
+    />
+
+    <!-- Left page -->
+    <path
+      d="M132 184
+         H244
+         C250 184 254 188 256 194
+         V352
+         C252 360 246 364 236 364
+         H144
+         C136 364 132 358 132 350
+         Z"
+      fill="#FFFCF7"
+    />
+    <!-- Right page -->
+    <path
+      d="M380 184
+         H268
+         C262 184 258 188 256 194
+         V352
+         C260 360 266 364 276 364
+         H368
+         C376 364 380 358 380 350
+         Z"
+      fill="#F3F1EC"
+    />
+
+    <!-- Page thickness / gutter shade -->
+    <path
+      d="M256 194 C252 206 252 320 256 352 C260 320 260 206 256 194 Z"
+      fill="#D8D2C6"
+      opacity="0.9"
+    />
+    <path d="M140 364 H236 C246 364 252 358 256 350" stroke="#C8C2B4" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+    <path d="M372 364 H276 C266 364 260 358 256 350" stroke="#C8C2B4" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- Rising net-worth chart -->
+    <path
+      d="M168 312 L208 286 L236 298 L268 248 L300 262 L344 198"
+      stroke="#3DCF8E"
+      stroke-width="16"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle cx="344" cy="198" r="14" fill="#3DCF8E"/>
+    <circle cx="344" cy="198" r="6" fill="#0D1110" opacity="0.35"/>
+
+    <!-- Spine badge -->
+    <circle cx="256" cy="372" r="18" fill="#141C18" stroke="#3DCF8E" stroke-width="3"/>
+    <path d="M246 366 H266 M246 372 H266 M246 378 H266" stroke="#3DCF8E" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
 </svg>
