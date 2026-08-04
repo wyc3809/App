@@ -4,6 +4,12 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { convertAmount } from "@/lib/currencies";
 import { todayISO } from "@/lib/format";
+import {
+  combineSignedAmount,
+  flipAmountSign,
+  splitSignedAmount,
+  type AmountSign,
+} from "@/lib/signed-amount";
 import { useWorthStore } from "@/lib/store";
 import type { Account, AccountValueEntry } from "@/lib/types";
 
@@ -45,8 +51,10 @@ function AddValueDialog({
   const changeAccountCurrency = useWorthStore((s) => s.changeAccountCurrency);
   const currencies = useWorthStore((s) => s.currencies);
 
+  const seed = splitSignedAmount(initial?.value ?? account.currentValue);
   const [currency, setCurrency] = useState(account.currency);
-  const [value, setValue] = useState(String(initial?.value ?? account.currentValue));
+  const [magnitude, setMagnitude] = useState(seed.magnitude);
+  const [sign, setSign] = useState<AmountSign>(seed.sign);
   const [asOfDate, setAsOfDate] = useState(initial?.date ?? todayISO());
   const [showDatePicker, setShowDatePicker] = useState(
     Boolean(initial && initial.date !== todayISO()),
@@ -56,18 +64,20 @@ function AddValueDialog({
 
   const onCurrencyChange = (nextCode: string) => {
     if (nextCode === currency) return;
-    const amount = Number(value);
-    if (!Number.isNaN(amount) && amount >= 0) {
+    const amount = combineSignedAmount(magnitude, sign);
+    if (amount !== null) {
       const converted = convertAmount(amount, currency, nextCode, currencies);
-      setValue(String(Number(converted.toFixed(2))));
+      const next = splitSignedAmount(Number(converted.toFixed(2)));
+      setMagnitude(next.magnitude);
+      setSign(next.sign);
     }
     setCurrency(nextCode);
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = Number(value);
-    if (Number.isNaN(amount) || amount < 0) return;
+    const amount = combineSignedAmount(magnitude, sign);
+    if (amount === null) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) return;
 
     if (currency !== account.currency) {
@@ -93,6 +103,8 @@ function AddValueDialog({
           day: "numeric",
           year: "numeric",
         });
+
+  const isNegative = sign < 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -126,7 +138,23 @@ function AddValueDialog({
             <label className="label" htmlFor="entry-value">
               Value
             </label>
-            <div className="grid grid-cols-[1fr_6.5rem] gap-2">
+            <div className="grid grid-cols-[3.25rem_1fr_6.5rem] gap-2">
+              <button
+                type="button"
+                className="field flex items-center justify-center px-0 text-lg font-bold tabular-nums"
+                style={{
+                  color: isNegative ? "var(--danger)" : "var(--positive)",
+                  background: isNegative
+                    ? "var(--danger-soft)"
+                    : "var(--accent-soft)",
+                }}
+                aria-label={isNegative ? "Negative value" : "Positive value"}
+                aria-pressed={isNegative}
+                title="Toggle + / −"
+                onClick={() => setSign((s) => flipAmountSign(s))}
+              >
+                {isNegative ? "−" : "+"}
+              </button>
               <input
                 id="entry-value"
                 className="field"
@@ -135,8 +163,8 @@ function AddValueDialog({
                 step="any"
                 inputMode="decimal"
                 placeholder="Enter Value"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
+                value={magnitude}
+                onChange={(e) => setMagnitude(e.target.value.replace(/^-/, ""))}
                 required
                 autoFocus
               />
@@ -158,6 +186,9 @@ function AddValueDialog({
                 ))}
               </select>
             </div>
+            <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
+              Tap + / − to set a positive or negative balance.
+            </p>
             {currency !== account.currency && (
               <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
                 Saving sets this account to {currency} and converts existing

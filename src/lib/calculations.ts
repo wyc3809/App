@@ -23,7 +23,7 @@ export function computeTotals(
 
   for (const account of accounts) {
     const base = toBaseCurrency(account.currentValue, account.currency, currencies);
-    if (account.isLiability) totalLiabilities += base;
+    if (account.isLiability) totalLiabilities += Math.abs(base);
     else totalAssets += base;
   }
 
@@ -54,7 +54,11 @@ export function computeAllocation(
 
   for (const account of filtered) {
     const base = toBaseCurrency(account.currentValue, account.currency, currencies);
-    byCategory.set(account.category, (byCategory.get(account.category) ?? 0) + base);
+    const amount = account.isLiability ? Math.abs(base) : base;
+    byCategory.set(
+      account.category,
+      (byCategory.get(account.category) ?? 0) + amount,
+    );
   }
 
   const total = [...byCategory.values()].reduce((s, v) => s + v, 0);

@@ -38,6 +38,19 @@ describe("calculations", () => {
     expect(totals.netWorth).toBe(750);
   });
 
+  it("allows signed asset balances and abs liability magnitudes", () => {
+    const totals = computeTotals(
+      [
+        account({ id: "a", name: "Cash", isLiability: false, currentValue: -100 }),
+        account({ id: "b", name: "Loan", isLiability: true, currentValue: -250 }),
+      ],
+      currencies,
+    );
+    expect(totals.totalAssets).toBe(-100);
+    expect(totals.totalLiabilities).toBe(250);
+    expect(totals.netWorth).toBe(-350);
+  });
+
   it("computes asset allocation slices", () => {
     const slices = computeAllocation(
       [

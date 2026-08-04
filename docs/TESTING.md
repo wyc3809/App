@@ -29,4 +29,4 @@ npx playwright install chromium   # once per machine
 npm run test:e2e
 ```
 
-Critical paths covered: Home branding, Settings via ⋮, Ledger keypad entry, Insights chart chips, Add Account cancel, CSV import.
+Critical paths covered: Home branding, Settings via ⋮, Ledger keypad entry, Insights chart chips, Add Account cancel, CSV import, Add Value +/- sign.

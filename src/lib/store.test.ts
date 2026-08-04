@@ -115,4 +115,25 @@ describe("worth store features", () => {
     expect(useWorthStore.getState().accounts).toHaveLength(1);
     expect(useWorthStore.getState().accounts[0].currentValue).toBe(100);
   });
+
+  it("upserts a negative value entry for signed balances", () => {
+    useWorthStore.getState().addAccount({
+      name: "Cash",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 1000,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().upsertValueEntry({
+      accountId,
+      date: "2026-08-04",
+      value: -250,
+      note: "overdraft",
+    });
+    const { accounts, valueEntries } = useWorthStore.getState();
+    expect(accounts[0].currentValue).toBe(-250);
+    expect(valueEntries.some((e) => e.value === -250)).toBe(true);
+  });
 });

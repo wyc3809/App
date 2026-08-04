@@ -117,4 +117,32 @@ test.describe("WorthBook E2E", () => {
       timeout: 10_000,
     });
   });
+
+  test("add value supports +/- sign toggle", async ({ page }) => {
+    await loadDemo(page);
+    await page.getByRole("link", { name: "Accounts" }).click();
+    await expect(page.getByRole("heading", { name: "Accounts" })).toBeVisible();
+
+    // Open first account detail (not the Accounts nav link)
+    await page.locator('a[href*="/accounts/detail"]').first().click();
+    await expect(page.getByRole("button", { name: /Update value/i })).toBeVisible();
+    await page.getByRole("button", { name: /Update value/i }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("heading", { name: /Add Value|Edit Value/ })).toBeVisible();
+
+    const signBtn = dialog.getByRole("button", { name: /Positive value|Negative value/ });
+    await expect(signBtn).toHaveAttribute("aria-label", "Positive value");
+    await signBtn.click();
+    await expect(signBtn).toHaveAttribute("aria-label", "Negative value");
+
+    await dialog.locator("#entry-value").fill("123");
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    // formatMoney renders negatives as -HK$123
+    await expect(page.getByText("-HK$123").first()).toBeVisible({
+      timeout: 10_000,
+    });
+  });
 });
