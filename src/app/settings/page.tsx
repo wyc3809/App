@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Download,
   Eraser,
@@ -17,6 +17,13 @@ import {
 } from "lucide-react";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { formatLastBackupLabel } from "@/lib/backup-meta";
+import { exportTextFile } from "@/lib/backup-export";
+import {
+  authenticateBiometric,
+  getBiometricAvailability,
+  type BiometricAvailability,
+} from "@/lib/biometric";
+import { isNativePlatform } from "@/lib/platform";
 import { readBackupFile, type WorthBackupPayload } from "@/lib/import-backup";
 import {
   CSV_ACCOUNT_TEMPLATE,
@@ -67,18 +74,24 @@ export default function SettingsPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [pending, setPending] = useState<PendingConfirm | null>(null);
+  const [bioAvail, setBioAvail] = useState<BiometricAvailability | null>(null);
+  const [bioBusy, setBioBusy] = useState(false);
 
-  const downloadText = (filename: string, content: string, mime: string) => {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  useEffect(() => {
+    void getBiometricAvailability().then(setBioAvail);
+  }, []);
+
+  const exportText = async (filename: string, content: string, mime: string) => {
+    const result = await exportTextFile({ filename, content, mime });
+    if (!result.ok) {
+      setImportError(result.error);
+      setImportMessage(null);
+      return false;
+    }
+    return true;
   };
 
-  const exportJson = () => {
+  const exportJson = async () => {
     const payload = {
       exportedAt: new Date().toISOString(),
       settings,
@@ -88,13 +101,43 @@ export default function SettingsPage() {
       valueEntries,
       transactions,
     };
-    downloadText(
-      `worthbook-export-${new Date().toISOString().slice(0, 10)}.json`,
+    const filename = `worthbook-export-${new Date().toISOString().slice(0, 10)}.json`;
+    const ok = await exportText(
+      filename,
       JSON.stringify(payload, null, 2),
       "application/json",
     );
+    if (!ok) return;
     markBackupNow();
-    setImportMessage("Backup downloaded. Last backup time updated.");
+    setImportMessage(
+      isNativePlatform()
+        ? "Backup shared. Last backup time updated."
+        : "Backup downloaded. Last backup time updated.",
+    );
+    setImportError(null);
+  };
+
+  const onBiometricToggle = async (next: boolean) => {
+    if (!next) {
+      updateSettings({ isBiometricEnabled: false });
+      return;
+    }
+    setBioBusy(true);
+    const avail = bioAvail ?? (await getBiometricAvailability());
+    setBioAvail(avail);
+    if (!avail.available) {
+      setImportError(avail.reason);
+      setBioBusy(false);
+      return;
+    }
+    const ok = await authenticateBiometric(`Enable ${avail.biometryType} lock`);
+    setBioBusy(false);
+    if (!ok) {
+      setImportError("Biometric verification failed. Lock was not enabled.");
+      return;
+    }
+    updateSettings({ isBiometricEnabled: true });
+    setImportMessage(`${avail.biometryType} lock enabled.`);
     setImportError(null);
   };
 
@@ -284,9 +327,16 @@ export default function SettingsPage() {
         <ToggleRow
           icon={<Fingerprint size={18} />}
           title="Biometric lock"
-          description="Saved as a preference only — device Face ID / Touch ID unlock ships with the iOS app build"
+          description={
+            bioAvail?.available
+              ? `Require ${bioAvail.biometryType} when opening WorthBook`
+              : bioAvail
+                ? bioAvail.reason
+                : "Checking device support…"
+          }
           checked={settings.isBiometricEnabled}
-          onChange={(v) => updateSettings({ isBiometricEnabled: v })}
+          disabled={bioBusy || (bioAvail !== null && !bioAvail.available)}
+          onChange={(v) => void onBiometricToggle(v)}
         />
       </section>
 
@@ -369,7 +419,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <button type="button" className="btn-secondary w-full" onClick={exportJson}>
+        <button type="button" className="btn-secondary w-full" onClick={() => void exportJson()}>
           <Download size={18} />
           Export JSON backup
         </button>
@@ -423,7 +473,11 @@ export default function SettingsPage() {
             type="button"
             className="btn-ghost justify-center text-xs"
             onClick={() =>
-              downloadText("worthbook-accounts-template.csv", CSV_ACCOUNT_TEMPLATE, "text/csv")
+              void exportText(
+                "worthbook-accounts-template.csv",
+                CSV_ACCOUNT_TEMPLATE,
+                "text/csv",
+              )
             }
           >
             Accounts CSV template
@@ -432,7 +486,11 @@ export default function SettingsPage() {
             type="button"
             className="btn-ghost justify-center text-xs"
             onClick={() =>
-              downloadText("worthbook-ledger-template.csv", CSV_LEDGER_TEMPLATE, "text/csv")
+              void exportText(
+                "worthbook-ledger-template.csv",
+                CSV_LEDGER_TEMPLATE,
+                "text/csv",
+              )
             }
           >
             Ledger CSV template
@@ -471,7 +529,7 @@ export default function SettingsPage() {
       </section>
 
       <p className="px-1 pb-2 text-center text-xs" style={{ color: "var(--fg-subtle)" }}>
-        WorthBook v1.1 · Local-only wealth tracking
+        WorthBook v1.2 · Local-only wealth tracking
       </p>
     </div>
   );
@@ -483,15 +541,17 @@ function ToggleRow({
   description,
   checked,
   onChange,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   checked: boolean;
   onChange: (value: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className={`flex items-center justify-between gap-3${disabled ? " opacity-60" : ""}`}>
       <div className="flex min-w-0 items-start gap-3">
         <span className="mt-0.5" style={{ color: "var(--fg-muted)" }}>
           {icon}
@@ -507,9 +567,13 @@ function ToggleRow({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={title}
+        disabled={disabled}
         className="relative h-7 w-12 shrink-0 rounded-full transition"
         style={{ background: checked ? "var(--accent)" : "var(--bg-muted)" }}
-        onClick={() => onChange(!checked)}
+        onClick={() => {
+          if (!disabled) onChange(!checked);
+        }}
       >
         <span
           className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition"

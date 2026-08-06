@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
   images: { unoptimized: true },
+  // Capacitor plugins ship modern ESM that Next should transpile for static export.
+  transpilePackages: [
+    "@capacitor/core",
+    "@capacitor/app",
+    "@capacitor/filesystem",
+    "@capacitor/share",
+    "@capacitor/haptics",
+    "@capacitor/status-bar",
+    "@capgo/capacitor-native-biometric",
+  ],
   ...(isGithubPages
     ? {
         basePath: pagesBasePath,
