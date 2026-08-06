@@ -1,5 +1,5 @@
 /* WorthBook offline cache — static assets only */
-const CACHE = "worthbook-static-v1";
+const CACHE = "worthbook-static-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
