@@ -8,6 +8,7 @@ import {
   ChartNoAxesColumnIncreasing,
   ChartPie,
   Filter,
+  LayoutGrid,
   LineChart,
   Scale,
   TrendingDown,
@@ -29,6 +30,7 @@ import {
 import { AllocationChart } from "@/components/AllocationChart";
 import { CashflowBarChart } from "@/components/CashflowBarChart";
 import { LedgerCalendarHeatmap } from "@/components/LedgerCalendarHeatmap";
+import { LedgerCategoryInsight } from "@/components/LedgerCategoryInsight";
 import { TrendChart } from "@/components/TrendChart";
 import {
   buildAssetsLiabilitiesTrend,
@@ -70,6 +72,11 @@ const CHARTS = [
     id: "cashflow",
     label: "Cashflow",
     icon: BarChart3,
+  },
+  {
+    id: "categories",
+    label: "Categories",
+    icon: LayoutGrid,
   },
   {
     id: "calendar",
@@ -490,6 +497,7 @@ export function InsightsDashboard() {
 
         {chartId === "allocation" && <AllocationChart />}
         {chartId === "cashflow" && <CashflowBarChart />}
+        {chartId === "categories" && <LedgerCategoryInsight />}
         {chartId === "calendar" && <LedgerCalendarHeatmap />}
         {chartId === "trend" && <TrendChart />}
       </div>
