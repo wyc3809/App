@@ -1,6 +1,6 @@
 name: Deploy WorthBook to GitHub Pages
 
-# Publishes to /worthtracker/ only — does not wipe the game at repo Pages root.
+# Publishes WorthBook under /worthtracker/ while keeping other gh-pages files (e.g. game).
 on:
   push:
     branches: [main]
@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: worthtracker-pages
@@ -18,17 +20,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
+
       - run: npm ci
       - run: npm test
       - run: npm run build:pages
-      - name: Deploy WorthTracker to /worthtracker on gh-pages
+
+      # Overlay new WorthBook build onto existing gh-pages (preserve game at repo Pages root)
+      - name: Assemble site (gh-pages + worthtracker)
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          git clone --depth 1 --branch gh-pages "https://github.com/${{ github.repository }}.git" _site
+          rm -rf _site/.git _site/worthtracker
+          mkdir -p _site/worthtracker
+          cp -a out/. _site/worthtracker/
+          touch _site/worthtracker/.nojekyll
+          touch _site/.nojekyll
+
+      - name: Deploy with peaceiris (branch publish)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
-          destination_dir: worthtracker
-          keep_files: true
+          publish_dir: ./_site
+          force_orphan: false
+          keep_files: false
+          commit_message: "deploy: worthtracker from ${{ github.sha }}"
