@@ -28,6 +28,9 @@
 .DS_Store
 *.pem
 
+# Capacitor Android (add locally with `npx cap add android` if needed)
+/android
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -45,3 +48,10 @@ yarn-error.log*
 next-env.d.ts
 /out
 production/session-logs/
+
+# Xcode / Capacitor local noise
+ios/App/Pods
+ios/App/App/public
+**/xcuserdata/
+**/*.xcuserstate
+DerivedData/

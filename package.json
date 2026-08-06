@@ -1,12 +1,15 @@
 {
   "name": "worthbook",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:native": "next build",
     "build:pages": "GITHUB_PAGES=true PAGES_BASE_PATH=/App/worthtracker next build",
     "build:pages:root": "GITHUB_PAGES=true PAGES_BASE_PATH=/App next build",
+    "cap:sync": "npm run build:native && npx cap sync",
+    "cap:ios": "npm run build:native && npx cap sync ios && npx cap open ios",
     "start": "next start",
     "lint": "eslint src --max-warnings=0",
     "test": "vitest run",
@@ -16,6 +19,13 @@
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.3",
+    "@capgo/capacitor-native-biometric": "^8.6.3",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.28.0",
     "next": "^16.2.12",
@@ -25,6 +35,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.62.1",
     "@types/node": "^20",
