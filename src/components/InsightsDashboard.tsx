@@ -59,6 +59,16 @@ const CHARTS = [
     icon: ChartNoAxesColumnIncreasing,
   },
   {
+    id: "categories",
+    label: "Categories",
+    icon: LayoutGrid,
+  },
+  {
+    id: "cashflow",
+    label: "Cashflow",
+    icon: BarChart3,
+  },
+  {
     id: "assets",
     label: "Assets",
     icon: Scale,
@@ -67,16 +77,6 @@ const CHARTS = [
     id: "allocation",
     label: "Allocation",
     icon: ChartPie,
-  },
-  {
-    id: "cashflow",
-    label: "Cashflow",
-    icon: BarChart3,
-  },
-  {
-    id: "categories",
-    label: "Categories",
-    icon: LayoutGrid,
   },
   {
     id: "calendar",
@@ -243,7 +243,7 @@ export function InsightsDashboard() {
         >
           Chart
         </p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-wrap gap-2 pb-1">
           {CHARTS.map((chart) => {
             const Icon = chart.icon;
             const selected = chart.id === chartId;
