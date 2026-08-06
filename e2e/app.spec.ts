@@ -119,6 +119,11 @@ test.describe("WorthBook E2E", () => {
 
     await page.getByRole("tab", { name: "Cashflow" }).click();
     await expect(page.getByRole("heading", { name: "Income vs Expense" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Categories" }).click();
+    await expect(page.getByRole("heading", { name: "Ledger categories" })).toBeVisible();
+    await expect(page.getByRole("tablist", { name: "Category period" })).toBeVisible();
+    await expect(page.getByText("Expense", { exact: false }).first()).toBeVisible();
   });
 
   test("add account cancel closes the sheet", async ({ page }) => {
