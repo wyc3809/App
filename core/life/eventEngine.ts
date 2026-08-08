@@ -20,6 +20,11 @@ import { SECRET_ART_EVENTS } from '@data/events/secretArts';
 import { BOSS_ENCOUNTER_EVENTS, getBossFightConfig } from '@data/events/bossEncounters';
 import { PRACTICE_WANDER_EVENTS } from '@data/events/practiceWander';
 import { JIANGHU_EXTRA_EVENTS } from '@data/events/jianghuExtra100';
+import {
+  JINYONG_TROPE_EVENTS,
+  JINYONG_SPECIAL_EVENTS,
+  JINYONG_ORDINARY_EVENTS,
+} from '@data/events/jinyongTropes';
 import { getRng } from '@core/random';
 import { rollAdventureGear } from '@data/equipment/catalog';
 import { grantGear } from './equipment';
@@ -105,12 +110,13 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
 let cachedCatalog: GameEvent[] | null = null;
 let catalogById: Map<string, GameEvent> | null = null;
 
-/** 合併：日常 + 江湖百事 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包（單例快取） */
+/** 合併：日常 + 江湖百事 + 金庸橋段 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包（單例快取） */
 export function fullCatalog(): GameEvent[] {
   if (!cachedCatalog) {
     cachedCatalog = [
       ...ORDINARY_EVENTS,
       ...JIANGHU_EXTRA_EVENTS,
+      ...JINYONG_TROPE_EVENTS,
       ...ROAD_ENCOUNTER_EVENTS,
       ...PRACTICE_WANDER_EVENTS,
       ...SECRET_ART_EVENTS,
@@ -505,7 +511,10 @@ export function startMonth(state: LifeGameState): LifeGameState {
         event = RANDOM_PACK_EVENTS.find((e) => e.id === packPick.id) ?? null;
       }
       if (!event) {
-        const secretPool = listEligibleEvents(SECRET_ART_EVENTS, state);
+        const secretPool = listEligibleEvents(
+          [...SECRET_ART_EVENTS, ...JINYONG_SPECIAL_EVENTS],
+          state,
+        );
         event = weightedPick(state, secretPool);
       }
       kind = 'special';
@@ -534,6 +543,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
       [
         ...ORDINARY_EVENTS,
         ...JIANGHU_EXTRA_EVENTS,
+        ...JINYONG_ORDINARY_EVENTS,
         ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth'),
       ],
       state,

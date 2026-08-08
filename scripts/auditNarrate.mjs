@@ -12,6 +12,7 @@ const contentFiles = [
   'data/events/ordinary.ts',
   'data/events/practiceWander.ts',
   'data/events/secretArts.ts',
+  'data/events/jinyongTropes.ts',
   'core/life/choiceEnrich.ts',
   'core/life/flavor.ts',
   'core/life/arcs.ts',

@@ -34,6 +34,31 @@ describe('life event catalog', () => {
     expect(fullCatalog().some((e) => e.id === 'jx_black_inn')).toBe(true);
   });
 
+  it('includes Jin Yong trope events in flip pools', async () => {
+    const {
+      JINYONG_TROPE_EVENTS,
+      JINYONG_SPECIAL_EVENTS,
+      JINYONG_ORDINARY_EVENTS,
+    } = await import('../data/events/jinyongTropes');
+    expect(JINYONG_TROPE_EVENTS.length).toBeGreaterThanOrEqual(20);
+    expect(JINYONG_SPECIAL_EVENTS.length).toBeGreaterThanOrEqual(8);
+    expect(JINYONG_ORDINARY_EVENTS.length).toBeGreaterThanOrEqual(10);
+    expect(JINYONG_TROPE_EVENTS.every((e) => e.choices.length === 3)).toBe(true);
+    expect(fullCatalog().some((e) => e.id === 'jy_snake_blood')).toBe(true);
+    expect(fullCatalog().some((e) => e.id === 'jy_beggar_chicken')).toBe(true);
+
+    const state = createNewLife({ seed: 77, name: '試劍', birthplace: '千燈鎮' });
+    state.character.age = 22;
+    state.character.attributes.genGu = 40;
+    const snake = getEventById(fullCatalog(), 'jy_snake_blood')!;
+    expect(meetsRequirements(state, snake.requirements, snake.id)).toBe(true);
+    const drink = snake.choices.find((c) => c.id === 'drink')!;
+    expect(drink.outcomes.some((o) => o.effects.some((e) => e.type === 'maxQi'))).toBe(true);
+    const result = applyChoice(state, snake, 'leave');
+    expect(result.feedback.length).toBeGreaterThan(8);
+    expect(result.feedback).toMatch(/蛇|退|命/);
+  });
+
   it('avoids repeating the same event within 50 months', () => {
     const state = createNewLife({ seed: 99, name: '測試', birthplace: '千燈鎮' });
     state.character.age = 18;
