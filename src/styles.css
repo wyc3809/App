@@ -1137,7 +1137,7 @@ body::before {
 .scroll-shell--combat {
   gap: 8px;
   padding-top: 14px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   overflow: hidden;
 }
 
@@ -1160,11 +1160,19 @@ body::before {
   min-height: 0;
   gap: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 交手時只留戰鬥面板，杜絕分卷殘影疊層 */
+.scroll-shell--combat .ink-play-body > :not(.ink-combat) {
+  display: none !important;
 }
 
 .ink-combat--focus {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1172,6 +1180,15 @@ body::before {
   padding: 0;
   border: none;
   background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  position: relative;
+  z-index: 2;
+}
+
+.ink-combat--focus::before,
+.ink-combat--focus::after {
+  display: none;
 }
 
 .ink-combat-head {
@@ -1186,7 +1203,7 @@ body::before {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
 }
 
 .ink-bracket {

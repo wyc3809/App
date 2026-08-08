@@ -294,6 +294,13 @@ export function InkPlayScreen({ state }: Props) {
     if (eventFocus && tab !== 'home') setTab('home');
   }, [eventFocus, tab, setTab]);
 
+  useEffect(() => {
+    // 交手時強制離開分卷內容，避免人物／修煉面板疊在戰鬥上
+    if (combat && (tab === 'person' || tab === 'practice' || tab === 'jianghu')) {
+      setTab('home');
+    }
+  }, [combat, tab, setTab]);
+
   const choiceCap = pendingEvent?.tags?.includes('arc') ? 4 : 3;
   const eligibleChoices =
     pendingEvent?.choices
@@ -600,7 +607,7 @@ export function InkPlayScreen({ state }: Props) {
         />
       )}
 
-      {tab === 'person' && !eventFocus && (
+      {tab === 'person' && !combat && !eventFocus && (
         <section key="person" className="ink-panel ink-attrs ink-tab-pane">
           <h3>五維</h3>
           <div className="ink-attr-grid">
@@ -673,7 +680,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {tab === 'practice' && !eventFocus && (
+      {tab === 'practice' && !combat && !eventFocus && (
         <section key="practice" className="ink-panel ink-practice ink-tab-pane">
           {practiceView === 'main' && (
             <>
