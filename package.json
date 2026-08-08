@@ -10,7 +10,8 @@
     "build:mobile": "VITE_BASE=/ npm run build",
     "preview": "vite preview",
     "test": "vitest run",
-    "audit:narrate": "node scripts/auditNarrate.mjs --fail"
+    "audit:narrate": "node scripts/auditNarrate.mjs --fail",
+    "docs:events": "vite-node scripts/dumpEvents.mts && vite-node scripts/buildEventsPage.mts"
   },
   "dependencies": {
     "react": "^19.0.0",

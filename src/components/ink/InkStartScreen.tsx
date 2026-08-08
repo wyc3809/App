@@ -61,6 +61,9 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         >
           {resumeHint ? '開卷新篇' : '開卷'}
         </button>
+        <a className="ink-btn ink-btn--quiet" href={`${import.meta.env.BASE_URL}events.html`}>
+          事件一覽 · 可分享下載
+        </a>
         {onSeedDebug && (
           <button
             type="button"
