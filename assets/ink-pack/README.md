@@ -15,6 +15,15 @@
 
 亦可直接下載／上傳整包：`jianghu-ink-pack.zip`。
 
+## 手機下載（一按即可）
+
+用手機 Safari／Chrome 打開下面連結，應會直接下載 ZIP（約 34 KB）：
+
+https://raw.githubusercontent.com/wyc3809/App/main/assets/ink-pack/jianghu-ink-pack.zip
+
+部署後亦可開網站 `/downloads/` 用大按鈕下載。
+
+
 ## 目錄
 
 | 路徑 | 內容 |
