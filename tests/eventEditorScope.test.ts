@@ -1,31 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { filterEventsForEditor, isEventEditorExcluded } from '../core/life/eventEditorScope';
-import { getRawEventById, rawCatalog } from '../core/life/eventEngine';
+import { eventMatchesEditorQuery } from '../core/life/eventEditorScope';
+import { getRawEventById } from '../core/life/eventEngine';
 
-describe('eventEditorScope', () => {
-  it('excludes challenge-letter / 回帖改期 events', () => {
+describe('eventEditorScope search', () => {
+  it('finds 挑戰帖到 by choice text 回帖改期', () => {
     const letter = getRawEventById('jy_rival_letter');
     expect(letter).toBeTruthy();
-    expect(isEventEditorExcluded(letter!)).toBe(true);
-    expect(letter!.choices.some((c) => c.text === '回帖改期')).toBe(true);
+    expect(eventMatchesEditorQuery(letter!, '回帖改期')).toBe(true);
+    expect(eventMatchesEditorQuery(letter!, '挑戰帖')).toBe(true);
+    expect(eventMatchesEditorQuery(letter!, '病體未癒')).toBe(true);
   });
 
-  it('excludes 戰書 titles', () => {
-    const duel = getRawEventById('jx_rival_letter');
-    expect(duel).toBeTruthy();
-    expect(isEventEditorExcluded(duel!)).toBe(true);
-  });
-
-  it('keeps ordinary market editable', () => {
+  it('does not false-match unrelated events', () => {
     const market = getRawEventById('ord_market');
     expect(market).toBeTruthy();
-    expect(isEventEditorExcluded(market!)).toBe(false);
-  });
-
-  it('filterEventsForEditor drops excluded ids', () => {
-    const ids = new Set(filterEventsForEditor(rawCatalog()).map((e) => e.id));
-    expect(ids.has('jy_rival_letter')).toBe(false);
-    expect(ids.has('jx_rival_letter')).toBe(false);
-    expect(ids.has('ord_market')).toBe(true);
+    expect(eventMatchesEditorQuery(market!, '回帖改期')).toBe(false);
   });
 });

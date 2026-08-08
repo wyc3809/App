@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
 import { rawCatalog, getRawEventById } from '@core/life/eventEngine';
-import { filterEventsForEditor, isEventEditorExcluded } from '@core/life/eventEditorScope';
+import { eventMatchesEditorQuery } from '@core/life/eventEditorScope';
 import {
   type ChoicePatch,
   type EventPatch,
@@ -68,20 +68,14 @@ export function InkEventEditor({ onClose }: Props) {
 
   const patchedSet = useMemo(() => new Set(listPatchedEventIds()), [tick]);
 
-  const catalog = useMemo(() => filterEventsForEditor(rawCatalog()), []);
+  const catalog = useMemo(() => rawCatalog(), []);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
     return catalog.filter((ev) => {
       if (filter === 'patched' && !patchedSet.has(ev.id)) return false;
       if (filter === 'special' && !isSpecialEvent(ev.id, ev.tags)) return false;
       if (filter === 'ordinary' && isSpecialEvent(ev.id, ev.tags)) return false;
-      if (!needle) return true;
-      return (
-        ev.id.toLowerCase().includes(needle) ||
-        ev.title.toLowerCase().includes(needle) ||
-        (ev.body ?? '').toLowerCase().includes(needle)
-      );
+      return eventMatchesEditorQuery(ev, q);
     });
   }, [catalog, q, filter, patchedSet]);
 
@@ -91,8 +85,7 @@ export function InkEventEditor({ onClose }: Props) {
       return;
     }
     const raw = getRawEventById(selectedId);
-    if (!raw || isEventEditorExcluded(raw)) {
-      setSelectedId(null);
+    if (!raw) {
       setDraft(null);
       return;
     }
@@ -228,7 +221,7 @@ export function InkEventEditor({ onClose }: Props) {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="標題、正文或 id"
+              placeholder="標題、選項、正文或 id"
               enterKeyHint="search"
             />
           </label>
