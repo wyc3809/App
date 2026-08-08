@@ -114,6 +114,97 @@ body::before {
   overflow-y: auto;
 }
 
+/* 待決事件：壓縮頂欄，正文可捲、選項固定在底部可視區 */
+.scroll-shell--event {
+  gap: 8px;
+  padding-top: 14px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+}
+
+.scroll-shell--event .ink-status {
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.scroll-shell--event .ink-name {
+  font-size: 1.4rem;
+}
+
+.scroll-shell--event .ink-meta {
+  font-size: 0.72rem;
+}
+
+.scroll-shell--event .ink-play-body {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.ink-event--focus {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  animation: none;
+  border: none;
+  background: transparent;
+}
+
+.ink-event-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: 8px;
+}
+
+.scroll-shell--event .ink-event-banner {
+  margin-bottom: 6px;
+}
+
+.scroll-shell--event .ink-event-banner-svg,
+.scroll-shell--event .ink-event-banner-svg svg {
+  max-height: 72px;
+}
+
+.scroll-shell--event .ink-event h3 {
+  font-size: 1.35rem;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  letter-spacing: 0.14em;
+}
+
+.scroll-shell--event .ink-event-body {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin-bottom: 4px;
+}
+
+.ink-choice-list--dock {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding-top: 6px;
+  padding-bottom: max(2px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--ink-faint);
+  background:
+    linear-gradient(180deg, rgba(243, 235, 220, 0.2), var(--paper) 18%),
+    var(--paper);
+  box-shadow: 0 -8px 16px rgba(243, 235, 220, 0.85);
+}
+
+.scroll-shell--event .ink-choice-list--dock .ink-choice {
+  min-height: 44px;
+  padding: 11px 8px;
+  font-size: 0.92rem;
+}
+
 .scroll-shell > *:not(.ink-backdrop):not(.ink-seal-overlay) {
   position: relative;
   z-index: 1;
@@ -2702,11 +2793,27 @@ button.is-pressed,
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
+  .scroll-shell--event {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .scroll-shell--event .ink-event-banner-svg,
+  .scroll-shell--event .ink-event-banner-svg svg {
+    max-height: 64px;
+  }
+
   .ink-choice {
     min-height: 52px;
     padding: 15px 12px;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+  }
+
+  .scroll-shell--event .ink-choice-list--dock .ink-choice {
+    min-height: 46px;
+    padding: 12px 8px;
   }
 
   .ink-practice-btn {

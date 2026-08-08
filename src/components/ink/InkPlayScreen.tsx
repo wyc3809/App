@@ -264,10 +264,13 @@ export function InkPlayScreen({ state }: Props) {
     onHomeTab;
   const nature = ensureNature(c);
   const dominant = dominantNature(c);
+  /** 有待決事件時進入專注版面，避免選項被頂欄／年譜擠出可視區 */
+  const eventFocus =
+    state.phase === 'playing' && Boolean(pendingEvent) && !showResult && !combat;
   /** 交手中隱藏全局氣血條，避免與戰鬥血條重複 */
-  const showVitalsBars = !combat && (tab === 'home' || tab === 'person');
-  const showStatStrip = !combat;
-  const homeHints = onHomeTab ? jianghuHints(state) : [];
+  const showVitalsBars = !combat && !eventFocus && (tab === 'home' || tab === 'person');
+  const showStatStrip = !combat && !eventFocus;
+  const homeHints = onHomeTab && !eventFocus ? jianghuHints(state) : [];
   const resultKind = lastResult?.title === '修煉' ? 'practice' : 'month';
 
   useEffect(() => {
@@ -285,13 +288,21 @@ export function InkPlayScreen({ state }: Props) {
     };
   }, [showResult, clearResult]);
 
+  useEffect(() => {
+    if (eventFocus && tab !== 'home') setTab('home');
+  }, [eventFocus, tab, setTab]);
+
+  const choiceCap = pendingEvent?.tags?.includes('arc') ? 4 : 3;
   const eligibleChoices =
-    pendingEvent?.choices.filter((ch) => meetsRequirements(state, ch.requirements)).slice(0, 3) ?? [];
+    pendingEvent?.choices
+      .filter((ch) => meetsRequirements(state, ch.requirements))
+      .slice(0, choiceCap) ?? [];
   const coachStep = nextCoachStep(c.flags);
   const coach = coachCopy(coachStep);
   const showCoach =
     onHomeTab &&
     !combat &&
+    !eventFocus &&
     !showResult &&
     state.phase === 'playing' &&
     Boolean(coach) &&
@@ -307,7 +318,7 @@ export function InkPlayScreen({ state }: Props) {
 
   return (
     <div
-      className={`scroll-shell scroll-shell--play ink-enter ink-scene--${inkSeason} ink-scene--${inkPlace}${combat ? ' scroll-shell--combat' : ''}`}
+      className={`scroll-shell scroll-shell--play ink-enter ink-scene--${inkSeason} ink-scene--${inkPlace}${combat ? ' scroll-shell--combat' : ''}${eventFocus ? ' scroll-shell--event' : ''}`}
       data-text-scale={textScale === 1 ? undefined : String(textScale)}
       style={
         textScale !== 1
@@ -381,17 +392,17 @@ export function InkPlayScreen({ state }: Props) {
         </div>
       </header>
 
-      {saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
-      {arcLine && state.phase === 'playing' && !combat && (
+      {!eventFocus && saveLabel && <p className="ink-save">已落筆 {saveLabel}</p>}
+      {!eventFocus && arcLine && state.phase === 'playing' && !combat && (
         <p className="ink-arc-chip" aria-label="因緣">{arcLine}</p>
       )}
-      {aftermath && state.phase === 'playing' && !combat && (
+      {!eventFocus && aftermath && state.phase === 'playing' && !combat && (
         <p className={`ink-aftermath-chip ink-aftermath-chip--${aftermath.kind}`} aria-label="餘波">
           {aftermath.text}
         </p>
       )}
 
-      {!combat && (
+      {!combat && !eventFocus && (
         <nav className="ink-tabs" aria-label="分卷">
           {(
             [
@@ -417,8 +428,46 @@ export function InkPlayScreen({ state }: Props) {
 
       <div className="ink-play-body">
 
-      {/* 鎮居首屏：事件／翻頁優先於儀表與年譜 */}
-      {onHomeTab && !combat && (
+      {/* 待決事件：專注版面，選項固定在可視區底部 */}
+      {eventFocus && pendingEvent && (
+        <section className="ink-panel ink-event ink-event--focus" aria-label="待決之事">
+          <div className="ink-event-scroll">
+            {eventBanner && <InkEventBanner markup={eventBanner} />}
+            <p className="ink-event-year">
+              {state.year}年{month}月 · {c.age}歲
+              {state.pending?.kind === 'special' ? ' · 奇遇' : ''}
+              {arcLine ? ` · ${arcLine.replace(/^因緣/, '')}` : ''}
+            </p>
+            <h3>{displayTitle}</h3>
+            {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
+          </div>
+          <div className="ink-choice-list ink-choice-list--dock">
+            {eligibleChoices.map((ch, i) => (
+              <button
+                key={ch.id}
+                type="button"
+                className="ink-choice"
+                style={{ ['--i' as string]: i }}
+                onClick={() => {
+                  choose(ch.id);
+                }}
+              >
+                <span className="ink-choice-mark">{['甲', '乙', '丙', '丁'][i] ?? '註'}</span>
+                {displayChoiceText(ch.text, ch.id)}
+              </button>
+            ))}
+            {eligibleChoices.length === 0 && (
+              <button type="button" className="ink-choice" onClick={() => dismissEvent()}>
+                <span className="ink-choice-mark">避</span>
+                暫避鋒芒（此刻無可行之選）
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 鎮居首屏：翻頁優先於儀表與年譜（無待決事件時） */}
+      {onHomeTab && !combat && !eventFocus && (
         <div key={`${state.year}-${month}`} className="ink-home-focus ink-scroll-flip">
           {showCoach && coach && (
             <section className="ink-coach" aria-live="polite">
@@ -430,45 +479,11 @@ export function InkPlayScreen({ state }: Props) {
             </section>
           )}
 
-          {flashLines.length > 0 && state.phase === 'playing' && !pendingEvent && !showResult && (
+          {flashLines.length > 0 && state.phase === 'playing' && !showResult && (
             <section className="ink-flash" aria-live="polite">
               {flashLines.map((line) => (
                 <p key={line}>{line}</p>
               ))}
-            </section>
-          )}
-
-          {state.phase === 'playing' && pendingEvent && !showResult && (
-            <section className="ink-panel ink-event">
-              {eventBanner && <InkEventBanner markup={eventBanner} />}
-              <p className="ink-event-year">
-                {state.year}年{month}月 · {c.age}歲
-                {state.pending?.kind === 'special' ? ' · 奇遇' : ''}
-              </p>
-              <h3>{displayTitle}</h3>
-              {pendingEvent.body && <p className="ink-event-body">{pendingEvent.body}</p>}
-              <div className="ink-choice-list">
-                {eligibleChoices.map((ch, i) => (
-                  <button
-                    key={ch.id}
-                    type="button"
-                    className="ink-choice"
-                    style={{ ['--i' as string]: i }}
-                    onClick={() => {
-                      choose(ch.id);
-                    }}
-                  >
-                    <span className="ink-choice-mark">{['甲', '乙', '丙'][i] ?? '註'}</span>
-                    {displayChoiceText(ch.text, ch.id)}
-                  </button>
-                ))}
-                {eligibleChoices.length === 0 && (
-                  <button type="button" className="ink-choice" onClick={() => dismissEvent()}>
-                    <span className="ink-choice-mark">避</span>
-                    暫避鋒芒（此刻無可行之選）
-                  </button>
-                )}
-              </div>
             </section>
           )}
 
@@ -553,7 +568,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {tab === 'jianghu' && !combat && (
+      {tab === 'jianghu' && !combat && !eventFocus && (
         <section key="jianghu" className="ink-panel ink-world-panel ink-tab-pane" aria-label="心性">
           <h3>心性</h3>
           <p className="ink-note ink-nature-line">
@@ -573,7 +588,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {tab === 'jianghu' && !combat && (
+      {tab === 'jianghu' && !combat && !eventFocus && (
         <InkHuashanPanel
           state={state}
           onStart={huashanStart}
@@ -583,7 +598,7 @@ export function InkPlayScreen({ state }: Props) {
         />
       )}
 
-      {tab === 'person' && (
+      {tab === 'person' && !eventFocus && (
         <section key="person" className="ink-panel ink-attrs ink-tab-pane">
           <h3>五維</h3>
           <div className="ink-attr-grid">
@@ -656,7 +671,7 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {tab === 'practice' && (
+      {tab === 'practice' && !eventFocus && (
         <section key="practice" className="ink-panel ink-practice ink-tab-pane">
           {practiceView === 'main' && (
             <>
@@ -1229,14 +1244,14 @@ export function InkPlayScreen({ state }: Props) {
         </section>
       )}
 
-      {onPracticeTab && !combat && !showResult && (
+      {onPracticeTab && !combat && !showResult && !eventFocus && (
         <p className="ink-note ink-note--center">修煉不催歲月——請回「鎮居」翻過一頁。</p>
       )}
-      {(tab === 'person' || tab === 'jianghu') && !combat && !showResult && !pendingEvent && (
+      {(tab === 'person' || tab === 'jianghu') && !combat && !showResult && !eventFocus && (
         <p className="ink-note ink-note--center">請回「鎮居」翻頁、覽年譜。</p>
       )}
 
-      {onHomeTab && !combat && (
+      {onHomeTab && !combat && !eventFocus && (
         <section className={`ink-panel ink-chronicle${chronicleOpen ? ' ink-chronicle--open' : ''}`}>
           <button
             type="button"
