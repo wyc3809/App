@@ -34,7 +34,7 @@ import { resolvePackOutcomes, applyPackFortuneTwist } from './outcomeResolver';
 import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
 import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
-import { applyNarrateOverrideToEffects, lookupNarrateOverride } from '@data/events/narrateOverrides';
+import { applyNarrateOverrideToEffects } from '@data/events/narrateOverrides';
 import {
   lookupArcEvent,
   isArcVisitReady,
@@ -50,6 +50,7 @@ import {
   loadEventOverrides,
   subscribeEventOverrides,
 } from './eventOverrides';
+import { getChoiceResultNarrate } from './resultNarrate';
 
 function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
   const cleaned = logs
@@ -348,7 +349,6 @@ export function applyChoice(
     const resolved = resolvePackOutcomes(state, packChoice);
     logs = [...resolved.logs];
     deltas = [...resolved.deltas];
-    feedback = buildStoryFeedback(logs, resolved.feedback);
     died = resolved.died;
     const twistLogs = applyPackFortuneTwist(state);
     if (twistLogs.length) {
@@ -368,20 +368,30 @@ export function applyChoice(
         }
       }
     }
+    const resultNarrate = getChoiceResultNarrate(event, choiceId);
+    feedback = resultNarrate?.trim() || buildStoryFeedback(logs, resolved.feedback);
   } else {
     const outcome = pickOutcomeForChoice(state, choice.outcomes);
     const rng = getRng();
-    const overridden = applyNarrateOverrideToEffects(event.id, choiceId, outcome.effects);
-    const jittered = jitterEffectsForRoll(overridden, rng.nextFloat());
+    // 數值仍跟抽中嘅 outcome；結果正文同編修器「結果敘事」對齊（唔再另套 runtime override 蓋過）
+    const resultNarrate = getChoiceResultNarrate(event, choiceId);
+    const effectsForApply = resultNarrate
+      ? outcome.effects.map((e, i, arr) => {
+          const firstNarr = arr.findIndex((x) => x.type === 'narrate');
+          if (e.type === 'narrate' && i === firstNarr) return { ...e, text: resultNarrate };
+          return e;
+        })
+      : applyNarrateOverrideToEffects(event.id, choiceId, outcome.effects);
+    const hasNarrate = effectsForApply.some((e) => e.type === 'narrate');
+    const withNarrate =
+      resultNarrate && !hasNarrate
+        ? [{ type: 'narrate' as const, text: resultNarrate }, ...effectsForApply]
+        : effectsForApply;
+    const jittered = jitterEffectsForRoll(withNarrate, rng.nextFloat());
     const applied = applyEffects(state, jittered);
     logs = applied.logs;
     deltas = applied.deltas;
     died = applied.died;
-    // 若原效果無 narrate，仍注入覆蓋主文
-    const ov = lookupNarrateOverride(event.id, choiceId);
-    if (ov && !logs.some((l) => l === ov)) {
-      logs = [ov, ...logs];
-    }
     const isIll = outcome.id?.endsWith('_ill') || outcome.label === '事與願違';
     if (!isIll && (tags.includes('secret') || tags.includes('special'))) {
       if (rng.chance(0.22)) {
@@ -395,7 +405,8 @@ export function applyChoice(
         }
       }
     }
-    feedback = buildStoryFeedback(logs, ov ?? '事已了結。');
+    // 結果匣主文：同編修器結果敘事一致（唔經 scrub 改寫手寫正文）
+    feedback = resultNarrate?.trim() || buildStoryFeedback(logs, '事已了結。');
   }
 
   const natureLines = applyChoiceNature(state, choice.text);

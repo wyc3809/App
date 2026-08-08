@@ -1,4 +1,5 @@
 import type { GameEffect, GameEvent, EventChoice, EventOutcome } from '@interfaces/lifeEngine';
+import { getChoiceResultNarrateFromChoice } from './resultNarrate';
 
 const LS_KEY = 'jianghu_event_overrides_v1';
 
@@ -259,10 +260,9 @@ export function draftPatchFromEvent(event: GameEvent): EventPatch {
       const hit = fair?.effects.find((e) => e.type === type) as { amount?: number } | undefined;
       return hit?.amount;
     };
-    const narr = fair?.effects.find((e) => e.type === 'narrate') as { text?: string } | undefined;
     const base: ChoicePatch = {
       text: ch.text,
-      narrate: narr?.text,
+      narrate: getChoiceResultNarrateFromChoice(event.id, ch),
       money: num('money'),
       health: num('health'),
       martial: num('martial'),

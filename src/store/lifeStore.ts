@@ -223,7 +223,8 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         : {
             title: (event.tags ?? []).includes('pack') ? '江湖偶遇' : event.title,
             choiceText: displayChoiceText(choice?.text, choiceId),
-            feedback: sanitizePlayerLine(result.feedback),
+  // 結果匣主文同編修器一致；sanitize 只清技術字串，唔改寫敘事
+            feedback: sanitizePlayerLine(result.feedback) || result.feedback,
             deltas: sanitizePlayerLines(result.deltas),
           },
     });
