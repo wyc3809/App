@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { InkScrollBackdrop } from './InkDecor';
 import { rawCatalog, getRawEventById } from '@core/life/eventEngine';
+import { filterEventsForEditor, isEventEditorExcluded } from '@core/life/eventEditorScope';
 import {
   type ChoicePatch,
   type EventPatch,
@@ -67,7 +68,7 @@ export function InkEventEditor({ onClose }: Props) {
 
   const patchedSet = useMemo(() => new Set(listPatchedEventIds()), [tick]);
 
-  const catalog = useMemo(() => rawCatalog(), []);
+  const catalog = useMemo(() => filterEventsForEditor(rawCatalog()), []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -90,7 +91,8 @@ export function InkEventEditor({ onClose }: Props) {
       return;
     }
     const raw = getRawEventById(selectedId);
-    if (!raw) {
+    if (!raw || isEventEditorExcluded(raw)) {
+      setSelectedId(null);
       setDraft(null);
       return;
     }
