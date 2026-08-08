@@ -14,8 +14,6 @@ export type ChoicePatch = {
   qi?: number;
   maxQi?: number;
   maxHealth?: number;
-  /** 失手機率 0–100；有 _ill 結果時改 outcome weight */
-  riskPercent?: number;
 };
 
 export type EventPatch = {
@@ -165,9 +163,6 @@ function sanitizePatch(patch: EventPatch): EventPatch {
       for (const k of ['money', 'health', 'martial', 'reputation', 'qi', 'maxQi', 'maxHealth'] as const) {
         if (typeof ch[k] === 'number' && Number.isFinite(ch[k])) c[k] = Math.round(ch[k]!);
       }
-      if (typeof ch.riskPercent === 'number' && Number.isFinite(ch.riskPercent)) {
-        c.riskPercent = Math.max(0, Math.min(100, Math.round(ch.riskPercent)));
-      }
       if (Object.keys(c).length) choices[cid] = c;
     }
     if (Object.keys(choices).length) out.choices = choices;
@@ -226,16 +221,6 @@ function applyChoicePatch(choice: EventChoice, patch: ChoicePatch): EventChoice 
     outcomes[idx] = { ...fair, effects };
   }
 
-  if (patch.riskPercent !== undefined && outcomes.length >= 2) {
-    const risk = patch.riskPercent / 100;
-    const fairW = Math.max(0.01, 1 - risk);
-    const illW = Math.max(0.01, risk);
-    outcomes = outcomes.map((o) => {
-      if (String(o.id || '').endsWith('_ill')) return { ...o, weight: illW };
-      return { ...o, weight: fairW };
-    });
-  }
-
   return { ...choice, text, outcomes };
 }
 
@@ -270,19 +255,11 @@ export function draftPatchFromEvent(event: GameEvent): EventPatch {
   const choices: Record<string, ChoicePatch> = {};
   for (const ch of event.choices) {
     const fair = ch.outcomes.find((o) => !String(o.id || '').endsWith('_ill')) || ch.outcomes[0];
-    const ill = ch.outcomes.find((o) => String(o.id || '').endsWith('_ill'));
     const num = (type: string) => {
       const hit = fair?.effects.find((e) => e.type === type) as { amount?: number } | undefined;
       return hit?.amount;
     };
     const narr = fair?.effects.find((e) => e.type === 'narrate') as { text?: string } | undefined;
-    let riskPercent: number | undefined;
-    if (ill && fair) {
-      const fw = fair.weight ?? fair.chance ?? 0.82;
-      const iw = ill.weight ?? ill.chance ?? 0.18;
-      const sum = fw + iw;
-      if (sum > 0) riskPercent = Math.round((iw / sum) * 100);
-    }
     const base: ChoicePatch = {
       text: ch.text,
       narrate: narr?.text,
@@ -293,10 +270,15 @@ export function draftPatchFromEvent(event: GameEvent): EventPatch {
       qi: num('qi'),
       maxQi: num('maxQi'),
       maxHealth: num('maxHealth'),
-      riskPercent,
     };
     const overlay = existing?.choices?.[ch.id];
-    choices[ch.id] = overlay ? { ...base, ...overlay } : base;
+    if (overlay) {
+      const cleaned: ChoicePatch = { ...overlay };
+      delete (cleaned as ChoicePatch & { riskPercent?: number }).riskPercent;
+      choices[ch.id] = { ...base, ...cleaned };
+    } else {
+      choices[ch.id] = base;
+    }
   }
   return {
     title: existing?.title ?? event.title,

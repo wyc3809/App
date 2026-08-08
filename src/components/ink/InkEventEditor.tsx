@@ -214,7 +214,7 @@ export function InkEventEditor({ onClose }: Props) {
         <div>
           <h1 className="ink-editor-title">事件編修</h1>
           <p className="ink-editor-sub">
-            改標題／正文／選項／數值／失手機率 · 存手機本地 · 已改 {patchedSet.size} 則
+            改標題／正文／選項／數值 · 存手機本地 · 已改 {patchedSet.size} 則
           </p>
         </div>
       </header>
@@ -373,18 +373,6 @@ export function InkEventEditor({ onClose }: Props) {
                         </label>
                       ))}
                     </div>
-                    {ch.outcomes.some((o) => String(o.id || '').endsWith('_ill')) ? (
-                      <label className="ink-field">
-                        <span>失手機率 %（0–100）</span>
-                        <input
-                          inputMode="numeric"
-                          value={numOrEmpty(cp.riskPercent)}
-                          onChange={(e) =>
-                            updateChoice(ch.id, { riskPercent: parseOptionalInt(e.target.value) })
-                          }
-                        />
-                      </label>
-                    ) : null}
                   </fieldset>
                 );
               })}

@@ -10,6 +10,7 @@ import {
   removeEventPatch,
   resetEventOverrideRuntime,
   saveEventPatch,
+  type ChoicePatch,
 } from '../core/life/eventOverrides';
 import { fullCatalog, getRawEventById, invalidateCatalogCache, lookupEvent } from '../core/life/eventEngine';
 import type { GameEvent } from '../interfaces/lifeEngine';
@@ -86,7 +87,6 @@ describe('eventOverrides', () => {
           text: '速行',
           narrate: '風塵仆仆',
           money: 12,
-          riskPercent: 40,
         },
       },
     });
@@ -95,11 +95,10 @@ describe('eventOverrides', () => {
     expect(patched.weight).toBe(3);
     expect(patched.choices[0].text).toBe('速行');
     const fair = patched.choices[0].outcomes.find((o) => o.id === 'go_ok')!;
-    const ill = patched.choices[0].outcomes.find((o) => o.id === 'go_ill')!;
     expect(fair.effects.find((e) => e.type === 'narrate')).toMatchObject({ text: '風塵仆仆' });
     expect(fair.effects.find((e) => e.type === 'money')).toMatchObject({ amount: 12 });
-    expect(fair.weight).toBeCloseTo(0.6);
-    expect(ill.weight).toBeCloseTo(0.4);
+    // 失手機率已取消：唔再改 outcome weight
+    expect(fair.weight).toBe(0.8);
   });
 
   it('disabled zeroes weight', () => {
@@ -131,7 +130,20 @@ describe('eventOverrides', () => {
   it('draftPatchFromEvent pre-fills editable fields', () => {
     const draft = draftPatchFromEvent(sampleEvent());
     expect(draft.title).toBe('舊題');
-    expect(draft.choices?.go?.riskPercent).toBe(20);
     expect(draft.choices?.go?.money).toBe(5);
+    expect(draft.choices?.go).not.toHaveProperty('riskPercent');
+  });
+
+  it('ignores legacy riskPercent when applying patches', () => {
+    const patched = applyEventPatch(sampleEvent(), {
+      choices: {
+        go: { money: 8, riskPercent: 90 } as ChoicePatch & { riskPercent?: number },
+      },
+    });
+    expect(patched.choices[0].outcomes.find((o) => o.id === 'go_ok')?.weight).toBe(0.8);
+    expect(patched.choices[0].outcomes.find((o) => o.id === 'go_ill')?.weight).toBe(0.2);
+    expect(patched.choices[0].outcomes.find((o) => o.id === 'go_ok')?.effects.find((e) => e.type === 'money')).toMatchObject({
+      amount: 8,
+    });
   });
 });
