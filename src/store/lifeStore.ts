@@ -5,10 +5,11 @@ import {
   applyChoice,
   clearDanglingPending,
   fullCatalog,
-  getEventById,
+  lookupEvent,
   resolvePendingEvent,
   startMonth,
 } from '@core/life/eventEngine';
+import { subscribeEventOverrides } from '@core/life/eventOverrides';
 import { clearLifeSave, loadLifeSave } from '@core/life/saveIndexedDb';
 import {
   flushPersist,
@@ -33,7 +34,11 @@ import { pushChronicle } from '@core/life/chronicle';
 import { resolveArcVisitLater } from '@core/life/arcs';
 import { track } from '../telemetry/events';
 
-const CATALOG = fullCatalog();
+/** 隨手機覆寫熱更新；勿在模組頂層固定死引用 */
+let CATALOG = fullCatalog();
+subscribeEventOverrides(() => {
+  CATALOG = fullCatalog();
+});
 
 export interface LastResult {
   title: string;
@@ -189,7 +194,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
   choose: (choiceId: string) => {
     const { state } = get();
     if (!state?.pending || state.pendingCombat) return;
-    const event = resolvePendingEvent(state) ?? getEventById(CATALOG, state.pending.eventId);
+    const event = resolvePendingEvent(state) ?? lookupEvent(state.pending.eventId);
     if (!event) {
       // 死 pending：清掉讓玩家可繼續
       const next = structuredClone(state);
@@ -229,7 +234,7 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
     if (!state?.pending || state.pendingCombat) return;
     const next = structuredClone(state);
     const eventId = next.pending!.eventId;
-    const title = resolvePendingEvent(next)?.title ?? getEventById(CATALOG, eventId)?.title ?? '機緣';
+    const title = resolvePendingEvent(next)?.title ?? lookupEvent(eventId)?.title ?? '機緣';
     // 故人訪卡：暫避等同「改日再說」，延遲 monthsLeft，否則下月又掛同一張
     const arcDelay =
       eventId.startsWith('arc_visit_') && next.lifeArc

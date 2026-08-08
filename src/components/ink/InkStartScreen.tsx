@@ -7,6 +7,7 @@ type Props = {
   onContinue: () => void;
   resumeHint?: string;
   onSeedDebug?: () => void;
+  onOpenEditor?: () => void;
 };
 
 function InkInlineSvg({ className, markup }: { className?: string; markup: string }) {
@@ -17,7 +18,7 @@ function InkInlineSvg({ className, markup }: { className?: string; markup: strin
  * 開卷首屏：印章 + 品牌 + 一句副句 + CTA + 遠山滿底。
  * 不放題簽框／十階 icon 列（易似輸入框與現代 App 圖示列）。
  */
-export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }: Props) {
+export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug, onOpenEditor }: Props) {
   return (
     <div className="scroll-shell ink-enter ink-start">
       <InkScrollBackdrop variant="hero" />
@@ -64,6 +65,17 @@ export function InkStartScreen({ onStart, onContinue, resumeHint, onSeedDebug }:
         <a className="ink-btn ink-btn--quiet" href={`${import.meta.env.BASE_URL}events.html`}>
           事件一覽 · 可分享下載
         </a>
+        {onOpenEditor && (
+          <button
+            type="button"
+            className="ink-btn ink-btn--quiet"
+            onClick={() => {
+              onOpenEditor();
+            }}
+          >
+            手機改事件 · 奇遇／機率
+          </button>
+        )}
         {onSeedDebug && (
           <button
             type="button"

@@ -45,6 +45,11 @@ import {
 } from './arcs';
 import { partitionStoryAndDeltas, sanitizePlayerLines } from './playerText';
 import { quietMonthLine, scrubAiSlop } from './sceneCopy';
+import {
+  applyEventPatches,
+  loadEventOverrides,
+  subscribeEventOverrides,
+} from './eventOverrides';
 
 function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
   const cleaned = logs
@@ -107,13 +112,15 @@ export function getEventById(catalog: GameEvent[], id: string): GameEvent | unde
   return catalog.find((e) => e.id === id);
 }
 
+let rawCachedCatalog: GameEvent[] | null = null;
+let rawCatalogById: Map<string, GameEvent> | null = null;
 let cachedCatalog: GameEvent[] | null = null;
 let catalogById: Map<string, GameEvent> | null = null;
 
-/** 合併：日常 + 江湖百事 + 金庸橋段 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包（單例快取） */
-export function fullCatalog(): GameEvent[] {
-  if (!cachedCatalog) {
-    cachedCatalog = [
+/** 原始目錄（未套用手機覆寫）；編輯器以此為底稿 */
+export function rawCatalog(): GameEvent[] {
+  if (!rawCachedCatalog) {
+    rawCachedCatalog = [
       ...ORDINARY_EVENTS,
       ...JIANGHU_EXTRA_EVENTS,
       ...JINYONG_TROPE_EVENTS,
@@ -124,10 +131,41 @@ export function fullCatalog(): GameEvent[] {
       ...ENRICHED_CATALOG,
       ...RANDOM_PACK_EVENTS,
     ];
+    rawCatalogById = new Map(rawCachedCatalog.map((e) => [e.id, e]));
+  }
+  return rawCachedCatalog;
+}
+
+export function getRawEventById(id: string): GameEvent | undefined {
+  rawCatalog();
+  return rawCatalogById?.get(id);
+}
+
+/** 套用手機覆寫後的事件池（無覆寫時回傳原陣列引用） */
+export function livePool(source: GameEvent[]): GameEvent[] {
+  return applyEventPatches(source);
+}
+
+/** 覆寫變更時清快取，下一 tick 重建 */
+export function invalidateCatalogCache(): void {
+  cachedCatalog = null;
+  catalogById = null;
+}
+
+/** 合併：日常 + 江湖百事 + 金庸橋段 + 路遇 + 修煉機緣 + 秘傳 + 舊目錄 + 百人包（單例快取，含覆寫） */
+export function fullCatalog(): GameEvent[] {
+  if (!cachedCatalog) {
+    loadEventOverrides();
+    cachedCatalog = applyEventPatches(rawCatalog());
     catalogById = new Map(cachedCatalog.map((e) => [e.id, e]));
   }
   return cachedCatalog;
 }
+
+loadEventOverrides();
+subscribeEventOverrides(() => {
+  invalidateCatalogCache();
+});
 
 /** O(1) 查主目錄；測試若傳入局部子集仍走線性掃描 */
 export function lookupEvent(id: string): GameEvent | undefined {
@@ -489,8 +527,9 @@ export function startMonth(state: LifeGameState): LifeGameState {
 
   // 路遇遇敵節奏：約 10–20 月一次（可重複池）
   if (!event && shouldTriggerRoadCombat(state)) {
-    const roadPool = listEligibleEvents(ROAD_ENCOUNTER_EVENTS, state);
-    event = weightedPick(state, roadPool.length ? roadPool : ROAD_ENCOUNTER_EVENTS);
+    const roadSource = livePool(ROAD_ENCOUNTER_EVENTS);
+    const roadPool = listEligibleEvents(roadSource, state);
+    event = weightedPick(state, roadPool.length ? roadPool : roadSource);
     kind = 'ordinary';
     state.combatEncounterCountdown = rng.nextInt(10, 20);
   }
@@ -501,18 +540,18 @@ export function startMonth(state: LifeGameState): LifeGameState {
   const secretExtraChance = rumorBoost > 0 ? 0.02 + rumorBoost * 0.015 : 0;
 
   if (!event) {
-    const bossPool = listEligibleEvents(BOSS_ENCOUNTER_EVENTS, state);
+    const bossPool = listEligibleEvents(livePool(BOSS_ENCOUNTER_EVENTS), state);
     if (bossPool.length && rng.chance(bossChance)) {
       event = weightedPick(state, bossPool);
       kind = 'special';
     } else if (shouldTriggerSpecial(state) || (secretExtraChance > 0 && rng.chance(secretExtraChance))) {
       const packPick = pickPackEvent(state);
       if (packPick) {
-        event = RANDOM_PACK_EVENTS.find((e) => e.id === packPick.id) ?? null;
+        event = livePool(RANDOM_PACK_EVENTS).find((e) => e.id === packPick.id) ?? null;
       }
       if (!event) {
         const secretPool = listEligibleEvents(
-          [...SECRET_ART_EVENTS, ...JINYONG_SPECIAL_EVENTS],
+          livePool([...SECRET_ART_EVENTS, ...JINYONG_SPECIAL_EVENTS]),
           state,
         );
         event = weightedPick(state, secretPool);
@@ -531,7 +570,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
   }
 
   if (!event) {
-    const wanderPool = listEligibleEvents(PRACTICE_WANDER_EVENTS, state);
+    const wanderPool = listEligibleEvents(livePool(PRACTICE_WANDER_EVENTS), state);
     if (wanderPool.length && rng.chance(0.16)) {
       event = weightedPick(state, wanderPool);
       kind = 'ordinary';
@@ -540,12 +579,12 @@ export function startMonth(state: LifeGameState): LifeGameState {
 
   if (!event) {
     const pool = listEligibleEvents(
-      [
+      livePool([
         ...ORDINARY_EVENTS,
         ...JIANGHU_EXTRA_EVENTS,
         ...JINYONG_ORDINARY_EVENTS,
         ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth'),
-      ],
+      ]),
       state,
     ).filter((e) => !(e.tags ?? []).includes('pack') && !(e.tags ?? []).includes('arc'));
     event = weightedPick(state, pool);

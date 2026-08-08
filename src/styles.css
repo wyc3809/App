@@ -2942,3 +2942,174 @@ button.is-pressed,
     font-size: 0.74rem;
   }
 }
+
+/* —— 手機事件編修 —— */
+.ink-editor {
+  gap: 12px;
+}
+
+.ink-editor-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ink-editor-back {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+.ink-editor-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  letter-spacing: 0.16em;
+  font-weight: 400;
+}
+
+.ink-editor-sub {
+  margin: 4px 0 0;
+  font-size: var(--fs-caption);
+  color: var(--ink-wash);
+  letter-spacing: 0.06em;
+}
+
+.ink-editor-filters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.ink-editor-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.ink-editor-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ink-editor-row {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  padding: 12px 12px;
+  min-height: 52px;
+  border: 1px solid var(--ink-faint);
+  background: rgba(250, 246, 238, 0.55);
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ink-editor-row:active {
+  background: rgba(26, 26, 26, 0.08);
+}
+
+.ink-editor-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+.ink-editor-row-id {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--ink-wash);
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.ink-editor-badge {
+  font-style: normal;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  padding: 2px 6px;
+  border: 1px solid var(--cinnabar);
+  color: var(--cinnabar);
+}
+
+.ink-editor-id {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-wash);
+  word-break: break-all;
+}
+
+.ink-editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ink-editor-textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-faint);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 88px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ink-editor-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  min-height: 44px;
+}
+
+.ink-editor-check input {
+  width: 20px;
+  height: 20px;
+}
+
+.ink-editor-choice {
+  margin: 8px 0 14px;
+  padding: 12px 10px 8px;
+  border: 1px solid var(--ink-faint);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.ink-editor-choice legend {
+  padding: 0 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-mid);
+}
+
+.ink-editor-nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ink-editor-toast {
+  position: sticky;
+  bottom: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  text-align: center;
+  letter-spacing: 0.1em;
+  background: var(--ink);
+  color: var(--paper);
+  z-index: 5;
+}
+
