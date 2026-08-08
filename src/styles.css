@@ -23,8 +23,9 @@
   --danger: var(--cinnabar);
   --border: var(--ink-faint);
 
-  /* 江湖手卷字階：題簽／正文／批註 */
+  /* 標題書法：固定文案可用；任意玩家名／動態字請用 --font-title，避免缺字混排錯位 */
   --font-display: 'Ma Shan Zheng', 'Noto Serif TC', 'Songti TC', serif;
+  --font-title: 'Noto Serif TC', 'Songti TC', 'STSong', 'SimSun', serif;
   --font-body: 'Noto Serif TC', 'Songti TC', 'STSong', 'SimSun', serif;
   --fs-body: 1rem;
   --fs-caption: 0.82rem;
@@ -916,11 +917,12 @@ body::before {
 
 .ink-coach h3 {
   margin: 0 0 6px;
-  font-family: var(--font-display);
+  font-family: var(--font-title);
   font-size: 1.45rem;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--ink);
   letter-spacing: 0.12em;
+  font-synthesis: none;
 }
 
 .ink-coach p {
@@ -933,11 +935,15 @@ body::before {
 
 .ink-name {
   margin: 0;
-  font-family: var(--font-display);
+  /* 玩家姓名含任意繁簡字；勿用 Ma Shan Zheng，否則缺字會逐字 fallback 導致基線／字重錯位 */
+  font-family: var(--font-title);
   font-size: 1.85rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1.15;
   color: var(--ink);
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
 }
 
 .ink-meta {
@@ -1518,12 +1524,14 @@ body::before {
   padding: 0 0 10px;
   margin: 0 0 8px;
   text-align: center;
-  font-family: var(--font-display);
+  font-family: var(--font-title);
   font-size: 1.65rem;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--ink);
   letter-spacing: 0.2em;
   border-bottom: 1px solid var(--ink-faint);
+  font-synthesis: none;
+  line-height: 1.2;
 }
 
 .ink-event-body {
