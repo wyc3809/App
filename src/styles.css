@@ -1134,8 +1134,59 @@ body::before {
   opacity: 0.2;
 }
 
+.scroll-shell--combat {
+  gap: 8px;
+  padding-top: 14px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+}
+
 .scroll-shell--combat .ink-status {
-  margin-bottom: 4px;
+  margin-bottom: 0;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.scroll-shell--combat .ink-name {
+  font-size: 1.4rem;
+}
+
+.scroll-shell--combat .ink-meta {
+  font-size: 0.72rem;
+}
+
+.scroll-shell--combat .ink-play-body {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.ink-combat--focus {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.ink-combat-head {
+  flex: 0 0 auto;
+  padding-bottom: 4px;
+}
+
+.ink-combat-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
 }
 
 .ink-bracket {
@@ -1965,21 +2016,22 @@ body::before {
 }
 
 .ink-combat-beat {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  margin: 0 0 8px;
-  padding: 8px 12px;
+  position: relative;
+  z-index: 1;
+  margin: 0 0 6px;
+  padding: 7px 10px;
   border-left: 3px solid var(--cinnabar);
   background:
     linear-gradient(90deg, rgba(163, 58, 50, 0.1), rgba(243, 235, 220, 0.97) 55%),
     var(--paper);
   color: var(--ink);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.86rem;
+  line-height: 1.45;
   letter-spacing: 0.04em;
   animation: inkFadeUp 0.35s ease both;
-  box-shadow: 0 6px 12px rgba(243, 235, 220, 0.9);
+  max-height: 7.2em;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ink-combat-beat-hint {
@@ -2142,19 +2194,19 @@ body::before {
 }
 
 .ink-combat-actions {
-  margin-top: 10px;
-  padding-top: 4px;
-  border-top: 1px solid var(--ink-faint);
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(180deg, transparent, rgba(243, 235, 220, 0.96) 28%);
-  padding-bottom: 4px;
+  margin-top: 8px;
+  padding-top: 2px;
+  border-top: 1px dashed var(--ink-faint);
+  position: static;
+  background: transparent;
+  padding-bottom: 2px;
 }
 
 .ink-combat-action-bar {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
+  margin-top: 4px;
 }
 
 .ink-combat-action {
@@ -2630,6 +2682,18 @@ button.is-pressed,
   animation: none;
 }
 
+.scroll-shell--combat .ink-combat h3 {
+  font-size: 1.35rem;
+  margin: 0 0 4px;
+  padding-bottom: 4px;
+  letter-spacing: 0.12em;
+}
+
+.scroll-shell--combat .ink-combat-bars {
+  gap: 6px;
+  margin: 4px 0 6px;
+}
+
 .ink-hint-learn {
   margin-top: 4px;
   color: var(--ink-wash);
@@ -2793,10 +2857,21 @@ button.is-pressed,
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
+  .scroll-shell--combat {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
   .scroll-shell--event {
     padding-left: 14px;
     padding-right: 14px;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .scroll-shell--combat .ink-combat-moves .ink-choice {
+    min-height: 46px;
+    padding: 12px 8px;
   }
 
   .scroll-shell--event .ink-event-banner-svg,
