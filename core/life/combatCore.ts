@@ -63,8 +63,8 @@ export function resolveOneHit(
       defender.isPlayer && (defender.evasion ?? 0) >= 0.05 ? '，借輕功錯開半寸' : '';
     lines.push(
       totalHits > 1
-        ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊被${defender.name}閃過${qing}。`
-        : `${attacker.name}使出「${move.name}」，被${defender.name}閃過${qing}！`,
+        ? `${attacker.name}一式「${move.name}」第${hitIndex + 1}擊——偏了。${defender.name}閃過${qing}。`
+        : `${attacker.name}一式「${move.name}」——偏了。${defender.name}閃過${qing}。`,
     );
     return lines;
   }
@@ -74,10 +74,11 @@ export function resolveOneHit(
   const raw = attacker.attack * move.power * powerMult;
   const mitigated = Math.max(3, Math.round(raw - def * 0.55 + rng.nextInt(-3, 4)));
   defender.hp = clamp(defender.hp - mitigated, 0, defender.maxHp);
+  const hitLabel = mitigated >= 22 ? '重創' : '命中';
   lines.push(
     totalHits > 1
-      ? `${attacker.name}「${move.name}」第${hitIndex + 1}擊命中，造成 ${mitigated} 點傷害。`
-      : `${attacker.name}「${move.name}」命中，造成 ${mitigated} 點傷害。`,
+      ? `${attacker.name}一式「${move.name}」第${hitIndex + 1}擊——${hitLabel}。${defender.name}氣血 −${mitigated}。`
+      : `${attacker.name}一式「${move.name}」——${hitLabel}。${defender.name}氣血 −${mitigated}。`,
   );
 
   const stealRate = (move.lifesteal ?? 0) + (attacker.gearLifesteal ?? 0);

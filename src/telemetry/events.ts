@@ -10,7 +10,8 @@ export type TelemetryEvent =
   | 'life_death'
   | 'life_reincarnate'
   | 'coach_dismiss'
-  | 'audio_mute_toggle';
+  | 'audio_mute_toggle'
+  | 'a11y_text_scale';
 
 const buffer: Array<{ name: TelemetryEvent; props?: Record<string, string | number | boolean>; t: number }> =
   [];

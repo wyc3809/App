@@ -4,6 +4,10 @@ import { tryMonthlyBirth } from './family';
 import { tickAftermath } from './aftermath';
 import { recordDeath } from './death';
 import { tickLifeArc } from './arcs';
+import { tickMonthlyEconomy } from './economy';
+import { tickSectMonth } from './sectLife';
+import { syncTitles } from './titles';
+import { pushChronicle } from './chronicle';
 
 export function makeWorldState(): WorldState {
   const rng = getRng();
@@ -136,6 +140,20 @@ export function simulateMonthBody(state: LifeGameState): void {
   tryMonthlyBirth(state);
   tickAftermath(state);
   tickLifeArc(state);
+  const monthBits = [
+    ...tickMonthlyEconomy(state),
+    ...tickSectMonth(state),
+    ...syncTitles(state),
+  ];
+  if (monthBits.length) pushChronicle(state, monthBits);
+
+  // 老年額外衰弱：遲暮更易體虛
+  if (c.alive && c.age >= 65) {
+    if (rng.chance(0.12)) {
+      c.health = clamp(c.health - rng.nextInt(2, 6), 0, c.maxHealth);
+      c.fatigue = clamp(c.fatigue + rng.nextInt(4, 10), 0, 100);
+    }
+  }
 
   if (c.health <= 0) {
     c.health = 0;
@@ -143,7 +161,7 @@ export function simulateMonthBody(state: LifeGameState): void {
       recordDeath(state, '氣血耗盡，倒於旅途。');
     }
   }
-  if (c.alive && c.age > 72 && rng.chance((c.age - 70) / 180)) {
+  if (c.alive && c.age > 72 && rng.chance((c.age - 70) / 160)) {
     recordDeath(state, '年邁體衰，無疾而終。');
   }
 }

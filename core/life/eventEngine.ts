@@ -30,7 +30,14 @@ import { isFleeChoice, startCombat, tryStartAftermathCombat } from './combat';
 import { applyChoiceNature } from './nature';
 import { ROAD_ENCOUNTER_EVENTS } from '@data/events/roadEncounters';
 import { applyNarrateOverrideToEffects, lookupNarrateOverride } from '@data/events/narrateOverrides';
-import { lookupArcEvent, isArcVisitReady, buildArcVisitEvent, resolveArcVisitGo, resolveArcVisitLater } from './arcs';
+import {
+  lookupArcEvent,
+  isArcVisitReady,
+  buildArcVisitEvent,
+  resolveArcVisitGo,
+  resolveArcVisitLater,
+  resolveArcVisitSever,
+} from './arcs';
 import { partitionStoryAndDeltas, sanitizePlayerLines } from './playerText';
 import { quietMonthLine, scrubAiSlop } from './sceneCopy';
 
@@ -153,13 +160,35 @@ export function listEligibleEvents(catalog: GameEvent[], state: LifeGameState): 
   return fresh.length ? fresh : eligible;
 }
 
+/** 高好感 NPC 略抬相關故事／人情事件權重 */
+function relationshipBias(state: LifeGameState, event: GameEvent): number {
+  const npcs = Object.values(state.npcs ?? {});
+  if (!npcs.length) return 1;
+  const best = Math.max(0, ...npcs.map((n) => n.affinity ?? 0));
+  const tags = event.tags ?? [];
+  if (best >= 40 && (tags.includes('story') || tags.includes('romance') || tags.includes('family'))) {
+    return 1.35;
+  }
+  if (best <= -20 && (tags.includes('combat') || tags.includes('road'))) {
+    return 1.2;
+  }
+  // 絕交旗標：壓低同名弧再觸發（已由 arc_done 處理）；略抬「人情冷」日常
+  if (state.character.flags.arc_sever_arc_shen_heal || state.character.flags.arc_sever_arc_lu_ink) {
+    if (tags.includes('ordinary')) return 1.1;
+  }
+  return 1;
+}
+
 function weightedPick(state: LifeGameState, events: GameEvent[]): GameEvent | null {
   if (!events.length) return null;
   const rng = getRng();
   const age = state.character.age;
   const weighted = events.map((e) => ({
     e,
-    w: Math.max(0.05, (e.weight ?? 10) * stageWeightBias(age, e.tags)),
+    w: Math.max(
+      0.05,
+      (e.weight ?? 10) * stageWeightBias(age, e.tags) * relationshipBias(state, e),
+    ),
   }));
   const total = weighted.reduce((s, x) => s + x.w, 0);
   let roll = rng.nextFloat() * total;
@@ -330,12 +359,18 @@ export function applyChoice(
     deltas.push(...natureLines);
   }
 
-  // 故人短弧：前去相見才落拍；改日只延遲，避免每月重出同一卡
+  // 故人短弧：相見／結緣落拍；絕交斷緣；改日只延遲
   if (tags.includes('arc') || event.id.startsWith('arc_visit_')) {
-    const arcLines =
-      choiceId === 'later' || /改日|他日|稍後|離開|不往/.test(choice.text)
-        ? resolveArcVisitLater(state)
-        : resolveArcVisitGo(state);
+    let arcLines: string[] = [];
+    if (choiceId === 'sever' || /疏遠|斷了|絕交/.test(choice.text)) {
+      arcLines = resolveArcVisitSever(state);
+    } else if (choiceId === 'later' || /改日|他日|稍後|離開|不往/.test(choice.text)) {
+      arcLines = resolveArcVisitLater(state);
+    } else if (choiceId === 'bond' || /深結|以心相交/.test(choice.text)) {
+      arcLines = resolveArcVisitGo(state, 'bond');
+    } else {
+      arcLines = resolveArcVisitGo(state, 'go');
+    }
     if (arcLines.length) {
       logs.push(...arcLines);
       for (const line of arcLines) {

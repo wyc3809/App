@@ -9,7 +9,8 @@
     "build:pages": "VITE_BASE=/App/ npm run build",
     "build:mobile": "VITE_BASE=/ npm run build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "audit:narrate": "node scripts/auditNarrate.mjs --fail"
   },
   "dependencies": {
     "react": "^19.0.0",

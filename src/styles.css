@@ -1891,8 +1891,32 @@ body::before {
   box-shadow: 0 6px 12px rgba(243, 235, 220, 0.9);
 }
 
+.ink-combat-beat-hint {
+  margin: 0 0 6px;
+  color: var(--cinnabar);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
 .ink-combat-beat-line {
   margin: 0;
+}
+
+.ink-combat-beat-line--miss {
+  color: var(--ink-wash);
+}
+
+.ink-combat-beat-line--crit {
+  color: var(--cinnabar);
+  font-weight: var(--fw-strong);
+}
+
+.ink-combat-beat-line--hit {
+  color: var(--ink);
+}
+
+.ink-combat-beat-line--heal {
+  color: var(--jade);
 }
 
 .ink-combat-beat-line + .ink-combat-beat-line {

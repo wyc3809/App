@@ -71,3 +71,11 @@ claude
 ## 部署
 
 與先前相同：GitHub Pages（`npm run build:pages`）、Vercel、Netlify、Cloudflare — 見 `vercel.json` / `netlify.toml`。
+
+### 雙產品注意（jianghu vs WorthTracker）
+
+- **本分支／此 repo 根目錄**是 Vite「江湖一生」遊戲。
+- `main` 上可能另有 **WorthTracker**（Next.js）；**勿把 WorthTracker 根目錄直接 merge 進遊戲根**。
+- GitHub Pages（`gh-pages`）若同時託管兩者：遊戲在 `/App/`，WorthTracker 在 `/App/worthtracker/`。
+- 手動部署請用 `bash scripts/deploy-pages.sh`（會 `build:pages` 並在切到 `gh-pages` 時**保留 `worthtracker/`**）。
+- CI：`npm test` + `npm run audit:narrate`（禁詞／非 catalog 空洞模板）。

@@ -177,7 +177,13 @@ export function tryAdvanceSkill(
   c.martial += 2 + rank;
   const name = skillLabel(skillId);
   const next = rankName(nextRank);
-  return `「${name}」進境至「${next}」，招式威力更盛。`;
+  // 突破儀式感：短敘事 + 朱砂印語感（UI 會蓋「定／修」）
+  const rites = [
+    `燭花爆了一下。「${name}」進至「${next}」。你跪坐片刻，像給自己蓋了一印。`,
+    `砂袋停了。「${name}」到了「${next}」。窗外風聲變細，招式卻沉了。`,
+    `你把「${name}」練到「${next}」。袖口破了，心口反而定了。`,
+  ];
+  return rites[nextRank % rites.length]!;
 }
 
 /** 對已學武學隨機挑一門嘗試進階 */

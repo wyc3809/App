@@ -33,18 +33,32 @@ export function getLifeStageLabel(state: LifeGameState): string {
   return lifeStageLabels[getLifeStage(state.character.age)];
 }
 
-/** 用於事件權重微調：老年更易抽到歲暮事件 */
+/** 用於事件權重微調：老年收尾、壯年江湖、幼年家庭 */
 export function stageWeightBias(age: number, eventTags: string[] | undefined): number {
   const stage = getLifeStage(age);
-  if (!eventTags?.length) return 1;
+  if (!eventTags?.length) {
+    if (stage === 'elder' || stage === 'twilight') return 0.85;
+    return 1;
+  }
+  const tags = eventTags;
   if (stage === 'elder' || stage === 'twilight') {
-    if (eventTags.includes('old_age') || eventTags.includes('death')) return 1.8;
+    if (tags.includes('old_age') || tags.includes('death') || tags.includes('family')) return 2.2;
+    if (tags.includes('boss') || tags.includes('road') || tags.includes('pack')) return 0.45;
+    if (tags.includes('practice_wander') || tags.includes('martial')) return 0.55;
+    if (tags.includes('romance')) return 0.5;
+    return 0.9;
+  }
+  if (stage === 'midlife') {
+    if (tags.includes('martial') || tags.includes('boss') || tags.includes('road')) return 1.35;
+    if (tags.includes('old_age')) return 0.7;
   }
   if (stage === 'youth' || stage === 'adult') {
-    if (eventTags.includes('romance') || eventTags.includes('martial')) return 1.25;
+    if (tags.includes('romance') || tags.includes('martial')) return 1.3;
+    if (tags.includes('old_age') || tags.includes('death')) return 0.4;
   }
   if (stage === 'child' || stage === 'infant') {
-    if (eventTags.includes('childhood') || eventTags.includes('family')) return 1.4;
+    if (tags.includes('childhood') || tags.includes('family')) return 1.5;
+    if (tags.includes('boss') || tags.includes('road') || tags.includes('combat')) return 0.25;
   }
   return 1;
 }

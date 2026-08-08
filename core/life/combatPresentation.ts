@@ -20,11 +20,23 @@ export function combatOpeningLines(combat: PendingCombat, style: FoeAiStyle): st
 }
 
 export function classifyBeat(line: string): 'hit' | 'miss' | 'crit' | 'heal' | 'other' {
-  if (/偏|落空|閃|避|未中|差半分/.test(line)) return 'miss';
+  if (/——偏了|偏了|落空|閃過|未中|差半分/.test(line)) return 'miss';
   if (/重創|要害|猛|爆|絕境/.test(line)) return 'crit';
-  if (/療|回|氣血\+|內息\+/.test(line)) return 'heal';
-  if (/「|擊|刺|砍|掌|拳|傷/.test(line)) return 'hit';
+  if (/療|回復|氣血\+|內息\+|回氣/.test(line)) return 'heal';
+  if (/——命中|氣血 −|「|擊|刺|砍|掌|拳|傷/.test(line)) return 'hit';
   return 'other';
+}
+
+/** 戰況一句摘要：便於一眼讀懂本回合 */
+export function summarizeExchange(lines: string[]): string | null {
+  if (!lines.length) return null;
+  const hits = lines.filter((l) => classifyBeat(l) === 'hit' || classifyBeat(l) === 'crit');
+  const misses = lines.filter((l) => classifyBeat(l) === 'miss');
+  if (hits.length && misses.length) return '互有來往';
+  if (hits.length >= 2) return '刀光往還';
+  if (hits.length === 1) return classifyBeat(hits[0]!) === 'crit' ? '一擊沉重' : '一式得手';
+  if (misses.length) return '招式落空';
+  return null;
 }
 
 export function dispositionBlurb(disposition: 'kill' | 'release' | 'stun', foeName: string): string {

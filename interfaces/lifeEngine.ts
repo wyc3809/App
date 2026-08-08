@@ -339,6 +339,7 @@ export interface LifeGameState {
     maxBeats: number;
     npcId: string;
     monthsLeft: number;
+    branch?: 'severed' | 'bonded';
   };
 }
 
@@ -548,6 +549,7 @@ export const lifeGameStateSchema = z.object({
       maxBeats: z.number(),
       npcId: z.string(),
       monthsLeft: z.number(),
+      branch: z.enum(['severed', 'bonded']).optional(),
     })
     .optional(),
 });

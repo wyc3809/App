@@ -12,11 +12,32 @@ export interface LegacyCarry {
   familyLegacy: boolean;
   teacherLegacy: boolean;
   birthplace?: string;
+  friendNpcId?: string;
+  rivalHint?: string;
+  gearHint?: string;
+  titleHints?: string[];
 }
 
 export function extractLegacy(state: LifeGameState): LegacyCarry {
   const c = state.character;
   const gen = Math.max(1, Number(c.flags.legacy_generation ?? 1));
+  const friendNpcId =
+    typeof c.flags.legacy_friend === 'string'
+      ? c.flags.legacy_friend
+      : Object.values(state.npcs ?? {})
+          .filter((n) => n.alive && (n.affinity ?? 0) >= 45)
+          .sort((a, b) => (b.affinity ?? 0) - (a.affinity ?? 0))[0]?.id;
+  const rival =
+    Object.values(state.npcs ?? {})
+      .filter((n) => (n.affinity ?? 0) <= -25)
+      .sort((a, b) => (a.affinity ?? 0) - (b.affinity ?? 0))[0]?.name ??
+    (c.flags.aftermath_blood_foe ? String(c.flags.aftermath_blood_foe) : undefined);
+  const equipped =
+    c.equipment?.weapon || c.equipment?.armor || c.equipment?.accessory || undefined;
+  const titleIds =
+    typeof c.flags.titles === 'string'
+      ? c.flags.titles.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
   return {
     generation: gen,
     ancestorName: c.name,
@@ -27,6 +48,10 @@ export function extractLegacy(state: LifeGameState): LegacyCarry {
     familyLegacy: Boolean(c.flags.family_legacy),
     teacherLegacy: Boolean(c.flags.legacy_teacher),
     birthplace: c.birthplace,
+    friendNpcId,
+    rivalHint: rival,
+    gearHint: equipped || undefined,
+    titleHints: titleIds.slice(0, 3),
   };
 }
 
@@ -73,7 +98,39 @@ export function applyLegacyToCharacter(
     lines.push('前世傳功餘韻：根骨悟性略增，武學進度有苗頭。');
   }
 
-  if (!legacy.familyLegacy && !legacy.teacherLegacy && martialBonus <= 0) {
+  if (legacy.birthplace) {
+    c.flags.legacy_birthplace = legacy.birthplace;
+    c.birthplace = c.birthplace || legacy.birthplace;
+    lines.push(`族譜上仍寫着故鄉「${legacy.birthplace}」。`);
+  }
+
+  if (legacy.friendNpcId) {
+    c.flags.born_with_friend_hint = legacy.friendNpcId;
+    lines.push('夢裡有人拱手：「來世若還撞見，記得喊一聲。」');
+  }
+
+  if (legacy.rivalHint) {
+    c.flags.born_with_rival_hint = legacy.rivalHint;
+    lines.push(`枕邊似有舊怨低語——「${legacy.rivalHint}」三字未散。`);
+  }
+
+  if (legacy.gearHint) {
+    c.flags.born_with_gear_dream = legacy.gearHint;
+    lines.push('你夢見一把舊兵刃靠牆，醒來掌心還有涼意。');
+  }
+
+  if (legacy.titleHints?.length) {
+    c.flags.legacy_title_echo = legacy.titleHints[0];
+    lines.push('鎮上老人念叨着前世某個綽號，笑你聽不懂。');
+  }
+
+  if (
+    !legacy.familyLegacy &&
+    !legacy.teacherLegacy &&
+    martialBonus <= 0 &&
+    !legacy.friendNpcId &&
+    !legacy.rivalHint
+  ) {
     lines.push('前世平凡，來世仍是白紙——但年譜裡留著那個名字。');
   }
 

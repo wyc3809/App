@@ -1133,4 +1133,84 @@ describe('life event engine', () => {
     const pack = RANDOM_PACK_EVENTS[0];
     if (pack) expect(toRuntimeView(pack).resolveMode).toBe('pack');
   });
+
+  it('economy / sect / titles tick without crashing', async () => {
+    const { tickMonthlyEconomy } = await import('../core/life/economy');
+    const { tickSectMonth } = await import('../core/life/sectLife');
+    const { syncTitles, titleLabels } = await import('../core/life/titles');
+    initRng(44);
+    const state = createNewLife(44);
+    state.character.age = 28;
+    state.character.sectId = Object.keys(state.sects)[0] ?? state.character.sectId;
+    state.character.stats.combatsWon = 10;
+    state.character.stats.eventsSeen = 50;
+    const econ = tickMonthlyEconomy(state);
+    expect(Array.isArray(econ)).toBe(true);
+    const sect = tickSectMonth(state);
+    expect(Array.isArray(sect)).toBe(true);
+    const titles = syncTitles(state);
+    expect(titles.length).toBeGreaterThan(0);
+    expect(titleLabels(state).length).toBeGreaterThan(0);
+  });
+
+  it('arc mid-beat offers sever/bond and sever clears arc', async () => {
+    const { buildArcVisitEvent, resolveArcVisitSever, resolveArcVisitGo } = await import('../core/life/arcs');
+    initRng(45);
+    const state = createNewLife(45);
+    state.lifeArc = {
+      id: 'arc_shen_heal',
+      title: '暮晴診脈',
+      beat: 2,
+      maxBeats: 5,
+      npcId: 'npc_shen_muqing',
+      monthsLeft: 0,
+    };
+    const ev = buildArcVisitEvent(state)!;
+    expect(ev.choices.some((c) => c.id === 'sever')).toBe(true);
+    expect(ev.choices.some((c) => c.id === 'bond')).toBe(true);
+    const lines = resolveArcVisitSever(state);
+    expect(lines.some((l) => /勾了|疏遠|生分/.test(l))).toBe(true);
+    expect(state.lifeArc).toBeUndefined();
+    expect(state.character.flags.arc_sever_arc_shen_heal).toBe(true);
+
+    state.lifeArc = {
+      id: 'arc_lu_ink',
+      title: '硯生授字',
+      beat: 2,
+      maxBeats: 5,
+      npcId: 'npc_lu_yansheng',
+      monthsLeft: 0,
+    };
+    const bond = resolveArcVisitGo(state, 'bond');
+    expect(bond.some((l) => /認了/.test(l))).toBe(true);
+    expect(state.character.flags.arc_bond_arc_lu_ink).toBe(true);
+  });
+
+  it('legacy carry includes friend/rival hints and epitaph varies', async () => {
+    const { extractLegacy, applyLegacyToCharacter } = await import('../core/life/legacy');
+    const { buildLifeSummary } = await import('../core/life/summary');
+    initRng(46);
+    const state = createNewLife(46);
+    state.character.flags.legacy_friend = 'npc_lu_yansheng';
+    state.npcs.npc_shen_muqing!.affinity = -40;
+    state.character.stats.combatsWon = 6;
+    state.character.flags.death_cause = '敗於山賊，力竭倒地。';
+    const legacy = extractLegacy(state);
+    expect(legacy.friendNpcId).toBe('npc_lu_yansheng');
+    expect(legacy.rivalHint).toBeTruthy();
+    const next = createNewLife(47);
+    const lines = applyLegacyToCharacter(next, legacy);
+    expect(lines.some((l) => /第 2 世|來世/.test(l))).toBe(true);
+    state.character.alive = false;
+    const epitaph = buildLifeSummary(state);
+    expect(epitaph).toMatch(/墓誌|刃上有血|碑上有名|平凡一生/);
+  });
+
+  it('combat lines use one-beat readable format', async () => {
+    const { classifyBeat, summarizeExchange } = await import('../core/life/combatPresentation');
+    expect(classifyBeat('你一式「直刺」——命中。山賊氣血 −12。')).toBe('hit');
+    expect(classifyBeat('山賊一式「劈砍」——偏了。你閃過。')).toBe('miss');
+    expect(classifyBeat('你一式「直刺」——重創。山賊氣血 −28。')).toBe('crit');
+    expect(summarizeExchange(['你一式「直刺」——命中。山賊氣血 −12。'])).toBe('一式得手');
+  });
 });

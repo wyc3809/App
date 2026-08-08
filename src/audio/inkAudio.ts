@@ -93,3 +93,15 @@ export function playInkHit() {
 export function playInkMiss() {
   tone(260, 0.05, 'triangle', 0.012);
 }
+
+/** 翻月／翻頁：極輕紙聲 */
+export function playInkPageFlip() {
+  tone(480, 0.035, 'triangle', 0.014);
+  setTimeout(() => tone(360, 0.04, 'sine', 0.01), 28);
+}
+
+/** 出招：短刃氣 */
+export function playInkBlade() {
+  tone(640, 0.03, 'square', 0.012);
+  setTimeout(() => tone(280, 0.05, 'triangle', 0.01), 20);
+}

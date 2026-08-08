@@ -3,6 +3,12 @@
  * 結算時替換空洞「就「…」一事」模板，不改原 catalog 檔案 bulk。
  */
 export const NARRATE_OVERRIDES: Record<string, string> = {
+  'life_birth::cry': '你落地便哭。穩婆笑說嗓門大——爹把你舉高，窗外雪正落。',
+  'life_birth::quiet': '你睜着眼看梁上塵。房裡人說這孩子安靜，像在聽什麼。',
+  'childhood_play::stick': '木劍磕在牆根，你學說書人喊招式。娘在門口喊吃飯，你才記起手臂酸。',
+  'childhood_play::book': '茶棚角落，你偷聽「劍俠夜奔」。銅板聲裡，江湖比鎮口遠。',
+  'family_poverty::help': '米缸見底那天，你去鎮口幫工。銀子不多，夠換半袋雜糧。',
+  'family_poverty::complain': '你摔了碗，又默默掃乾淨。怨氣散在灶灰裡，家里更靜了。',
   'find_coin::keep': '銅錢入手，掌心一涼。你環顧左右，街口無人喚失，便把錢貼身收好——江湖第一課，往往從「這算不算偷」開始。',
   'find_coin::return': '你追上去，把銅錢塞回那人手裡。對方一愣，連聲道謝。巷口風過，你覺得胸口輕了一寸。',
   'master_wanderer::learn': '遊方道人看你一眼，袖裡抖出半卷殘篇：「緣到便傳。」晨霧未散，你已記得三式吐納。',

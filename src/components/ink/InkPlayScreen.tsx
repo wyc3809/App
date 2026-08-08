@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import {
@@ -18,7 +18,17 @@ import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
 import { GUARD_STANCE, CHARGE_STANCE } from '@data/skills/catalog';
-import { playInkSeal, playInkWin, playInkLose, isInkAudioMuted, toggleInkAudioMuted } from '../../audio/inkAudio';
+import {
+  playInkSeal,
+  playInkWin,
+  playInkLose,
+  playInkPageFlip,
+  playInkBlade,
+  isInkAudioMuted,
+  toggleInkAudioMuted,
+} from '../../audio/inkAudio';
+import { titleLabels } from '@core/life/titles';
+import { classifyBeat, summarizeExchange } from '@core/life/combatPresentation';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
@@ -116,17 +126,36 @@ export function InkPlayScreen({ state }: Props) {
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
   const [previewGearId, setPreviewGearId] = useState<string | null>(null);
   const [audioMuted, setAudioMuted] = useState(() => isInkAudioMuted());
+  const [textScale, setTextScale] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem('ink_text_scale') ?? '1');
+      return v === 1.15 || v === 1.3 ? v : 1;
+    } catch {
+      return 1;
+    }
+  });
   const combatBeatRef = useRef<HTMLDivElement | null>(null);
   const resultAckRef = useRef<HTMLButtonElement | null>(null);
+  const lastCombatTurn = useRef<number | null>(null);
 
   useEffect(() => {
     if (!sealText) return;
-    if (sealText === '勝') playInkWin();
+    if (sealText === '月') playInkPageFlip();
+    else if (sealText === '勝') playInkWin();
     else if (sealText === '敗' || sealText === '終') playInkLose();
+    else if (sealText === '戰') playInkBlade();
     else playInkSeal();
     const t = window.setTimeout(() => clearSeal(), 920);
     return () => window.clearTimeout(t);
   }, [sealText, clearSeal]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ink_text_scale', String(textScale));
+    } catch {
+      /* ignore */
+    }
+  }, [textScale]);
 
   useEffect(() => {
     if ((state.tab ?? 'home') !== 'practice') setPracticeView('main');
@@ -171,6 +200,18 @@ export function InkPlayScreen({ state }: Props) {
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
   const showResult = Boolean(lastResult) && state.phase === 'playing' && !state.pendingCombat;
   const combat = state.pendingCombat ?? null;
+
+  useEffect(() => {
+    if (!combat) {
+      lastCombatTurn.current = null;
+      return;
+    }
+    if (lastCombatTurn.current !== null && lastCombatTurn.current !== combat.turn) {
+      playInkBlade();
+    }
+    lastCombatTurn.current = combat.turn;
+  }, [combat, combat?.turn]);
+
   const practiceLeft = state.practiceActionsLeft ?? 3;
   const busy = Boolean(state.pending) || Boolean(combat) || showResult || !c.alive;
   const practiceBusy = busy || practiceLeft <= 0;
@@ -211,6 +252,7 @@ export function InkPlayScreen({ state }: Props) {
     combat?.log?.length
       ? recentExchangeBeats(combat.log, combat.player.name, combat.foe.name)
       : [];
+  const exchangeHint = summarizeExchange(latestBeats);
   const onPracticeTab = tab === 'practice';
   const onHomeTab = tab === 'home';
   const canAdvanceMonth =
@@ -261,8 +303,22 @@ export function InkPlayScreen({ state }: Props) {
   const inkPlace = placeToInk(c.location);
   const combatStyle = combat ? styleForCombat(combat) : null;
 
+  const nicknames = titleLabels(state);
+
   return (
-    <div className={`scroll-shell scroll-shell--play ink-enter ink-scene--${inkSeason} ink-scene--${inkPlace}${combat ? ' scroll-shell--combat' : ''}`}>
+    <div
+      className={`scroll-shell scroll-shell--play ink-enter ink-scene--${inkSeason} ink-scene--${inkPlace}${combat ? ' scroll-shell--combat' : ''}`}
+      data-text-scale={textScale === 1 ? undefined : String(textScale)}
+      style={
+        textScale !== 1
+          ? ({
+              ['--fs-body' as string]: `${textScale}rem`,
+              ['--fs-caption' as string]: `${0.82 * textScale}rem`,
+              ['--fs-label' as string]: `${0.8 * textScale}rem`,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       <InkScrollBackdrop
         variant="play"
         quiet={Boolean(combat)}
@@ -279,9 +335,23 @@ export function InkPlayScreen({ state }: Props) {
             {c.age} 歲 · {stage} · {state.year}年{month}月（{seasonLabel(month)}）
             {c.location ? ` · ${c.location}` : ''}
             {sect ? ` · ${sect.name}` : ''}
+            {nicknames.length ? ` · ${nicknames.slice(0, 2).join('·')}` : ''}
           </p>
         </div>
         <div className="ink-status-actions">
+          <button
+            type="button"
+            className="ink-icon-btn"
+            onClick={() => {
+              const next = textScale === 1 ? 1.15 : textScale === 1.15 ? 1.3 : 1;
+              setTextScale(next);
+              track('a11y_text_scale', { scale: next });
+            }}
+            title="字級"
+            aria-label={`字級 ${textScale === 1 ? '標準' : textScale === 1.15 ? '較大' : '最大'}`}
+          >
+            字
+          </button>
           <button
             type="button"
             className="ink-icon-btn"
@@ -870,12 +940,20 @@ export function InkPlayScreen({ state }: Props) {
               ref={combatBeatRef}
               key={`${combat.turn}-${latestBeats.map((b) => b.slice(0, 12)).join('|')}`}
               className="ink-combat-beat"
+              aria-live="polite"
             >
-              {latestBeats.map((beat, i) => (
-                <p key={`${i}-${beat.slice(0, 16)}`} className="ink-combat-beat-line">
-                  {beat}
-                </p>
-              ))}
+              {exchangeHint && <p className="ink-combat-beat-hint">{exchangeHint}</p>}
+              {latestBeats.map((beat, i) => {
+                const kind = classifyBeat(beat);
+                return (
+                  <p
+                    key={`${i}-${beat.slice(0, 16)}`}
+                    className={`ink-combat-beat-line ink-combat-beat-line--${kind}`}
+                  >
+                    {beat}
+                  </p>
+                );
+              })}
             </div>
           )}
 
