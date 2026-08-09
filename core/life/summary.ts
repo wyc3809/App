@@ -4,6 +4,7 @@ import { skillDisplay } from './flavor';
 import { getLifeStageLabel } from './stages';
 import { deathCauseOf } from './death';
 import { titleLabels } from './titles';
+import { previewInheritanceMoney } from './family';
 
 function pickEpitaph(state: LifeGameState): string {
   const c = state.character;
@@ -109,13 +110,26 @@ export function buildLifeSummary(state: LifeGameState): string {
   if (c.family?.childrenNames?.length) {
     lines.push(`　　【子女】${c.family.childrenNames.join('、')}`);
   }
+  const heir =
+    typeof c.flags.heir_name === 'string' && c.flags.heir_name
+      ? String(c.flags.heir_name)
+      : c.family?.childrenNames?.[0];
+  if (heir) {
+    lines.push(`　　【繼承人】${heir}`);
+  }
 
   const carryBits: string[] = [];
-  if (c.flags.family_legacy) carryBits.push('族規');
+  if (c.flags.family_legacy || (c.childrenCount ?? 0) > 0) carryBits.push('族規／血脈');
   if (c.flags.legacy_teacher) carryBits.push('傳功');
   if (c.flags.legacy_friend) carryBits.push('故人');
   if (carryBits.length) {
     lines.push('', `　　【可傳後世】${carryBits.join('、')}`);
+  }
+  if ((c.childrenCount ?? 0) > 0 || c.flags.family_legacy) {
+    const coin = previewInheritanceMoney(state);
+    if (coin > 0) {
+      lines.push(`　　【來世可繼族產】約 ${coin} 兩（轉世時入匣）`);
+    }
   }
 
   lines.push('', pickEpitaph(state), '', '　　（印）終');

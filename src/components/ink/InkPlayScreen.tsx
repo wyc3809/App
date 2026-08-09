@@ -27,6 +27,7 @@ import { listWeaponMasteries } from '@core/life/weaponMastery';
 import { careerLabel, getCareer } from '@core/life/careers';
 import { formatFragmentProgress } from '@core/life/manualFragments';
 import { getMasterName } from '@core/life/bonds';
+import { canHaveChild, getHeirName, listChildNames, previewInheritanceMoney } from '@core/life/family';
 import { gearTotals, sumGearCombatBonuses, previewEquipDelta, combatPowerScore } from '@core/life/equipment';
 import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
@@ -659,10 +660,20 @@ export function InkPlayScreen({ state }: Props) {
           )}
           <p className="ink-note">
             子女 · {c.childrenCount ?? 0}/{c.childrenMax ?? 0}
-            {c.family?.childrenNames?.length
-              ? `（${c.family.childrenNames.join('、')}）`
+            {listChildNames(state).length
+              ? `（${listChildNames(state).join('、')}）`
               : ''}
+            {getHeirName(state) ? ` · 嗣「${getHeirName(state)}」` : ''}
           </p>
+          {(c.childrenCount ?? 0) > 0 && (
+            <p className="ink-note">
+              死後可繼族產約 {previewInheritanceMoney(state)} 兩
+              {canHaveChild(state).ok ? '' : ` · ${!c.loverId ? '無眷屬則難再添丁' : '（求子冷卻中或已滿）'}`}
+            </p>
+          )}
+          {c.loverId && (c.childrenCount ?? 0) === 0 && (
+            <p className="ink-note">已有眷屬——可至修行「求子添丁」。</p>
+          )}
           <h3 className="ink-subhead">江湖根腳</h3>
           <p className="ink-note">
             行當 · {careerLabel(state)}

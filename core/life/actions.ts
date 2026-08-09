@@ -18,6 +18,7 @@ import { meetsNatureGate, natureGateHint } from './nature';
 import { rollTravelOffer } from './rumorTravel';
 import { ensureMasterBond } from './bonds';
 import { rollRandomFragment } from './manualFragments';
+import { designateHeir, listChildNames, seekChild } from './family';
 
 export type PracticeActionId =
   | 'train_martial'
@@ -36,7 +37,9 @@ export type PracticeActionId =
   | 'sect_meditate'
   | 'sect_namecard'
   | 'sect_politics'
-  | 'sect_leave';
+  | 'sect_leave'
+  | 'seek_child'
+  | 'designate_heir';
 
 export type WanderPracticeActionId =
   | 'train_martial'
@@ -54,6 +57,8 @@ export interface PracticeAction {
 /** 修煉頁主選單（苦練／鑄兵／尋訪改為翻頁機緣） */
 export const PRACTICE_ACTIONS: PracticeAction[] = [
   { id: 'inquire_rumors', label: '打聽傳聞', hint: '多聞風聲，並聞去向，翻頁可擇路' },
+  { id: 'seek_child', label: '求子添丁', hint: '有眷屬可祈嗣；費銀二十兩' },
+  { id: 'designate_heir', label: '立嗣傳家', hint: '有子女時指定繼承人，死後族產可繼' },
   { id: 'heal', label: '醫館調養', hint: '費銀十五兩，療傷減疲' },
   { id: 'equip_best', label: '整裝披掛', hint: '按庫中器物自行披掛妥當' },
 ];
@@ -440,6 +445,23 @@ export function applyPracticeOutcome(
           .filter((x) => x.monthsLeft > 0);
       }
       logs.push('醫館調養後，氣色好了許多。');
+      break;
+    }
+    case 'seek_child': {
+      logs.push(...seekChild(state));
+      break;
+    }
+    case 'designate_heir': {
+      const kids = listChildNames(state);
+      if (!kids.length) {
+        logs.push('尚無子女，無從立嗣。可先求子添丁。');
+        break;
+      }
+      const current = String(c.flags.heir_name ?? kids[0]);
+      // 輪換指定：下一個子女／或第一個
+      const idx = Math.max(0, kids.indexOf(current));
+      const next = kids[(idx + 1) % kids.length]!;
+      logs.push(...designateHeir(state, next));
       break;
     }
     case 'equip_best': {

@@ -295,6 +295,10 @@ export const useLifeStore = create<LifeStore>((set, get) => ({
         temper_body: '淬體強身',
         forge: '鍛造兵器',
         seek_master: '尋訪高人',
+        seek_child: '求子添丁',
+        designate_heir: '立嗣傳家',
+        sect_namecard: '名帖往來',
+        sect_politics: '山門站隊',
       } as Record<string, string>)[actionId] ??
       actionId;
     const startedCombat = Boolean(next.pendingCombat);

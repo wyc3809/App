@@ -1,10 +1,10 @@
 {
   "lifetimeChildrenMin": 1,
   "lifetimeChildrenMax": 5,
-  "monthlyBirthChance": 0.012,
+  "monthlyBirthChance": 0.035,
   "minAge": 18,
-  "maxAge": 42,
-  "cooldownMonths": 20,
+  "maxAge": 45,
+  "cooldownMonths": 12,
   "requireLover": true,
-  "notes": "有眷屬時每月低機率得子；每人一生最多 1–5 個孩子（開局隨機上限）。可改 monthlyBirthChance 調整稀有度。"
+  "notes": "有眷屬可主動求子；每月亦有較低機率自然得子。一生最多 1–5 子。死後子女會帶族產／血脈入來世。"
 }

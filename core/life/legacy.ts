@@ -1,5 +1,6 @@
 import type { LifeGameState, WuxiaAttribute } from '@interfaces/lifeEngine';
 import { wuxiaAttributeKeys } from '@interfaces/lifeEngine';
+import { getHeirName, listChildNames, previewInheritanceMoney } from './family';
 
 /** 前世可帶入來世的墨跡（非付費、非碾壓） */
 export interface LegacyCarry {
@@ -16,6 +17,11 @@ export interface LegacyCarry {
   rivalHint?: string;
   gearHint?: string;
   titleHints?: string[];
+  /** 有子女時的血脈繼承 */
+  heirName?: string;
+  childrenNames?: string[];
+  inheritedMoney?: number;
+  hadChildren?: boolean;
 }
 
 export function extractLegacy(state: LifeGameState): LegacyCarry {
@@ -38,6 +44,12 @@ export function extractLegacy(state: LifeGameState): LegacyCarry {
     typeof c.flags.titles === 'string'
       ? c.flags.titles.split(',').map((s) => s.trim()).filter(Boolean)
       : [];
+
+  const childrenNames = listChildNames(state);
+  const hadChildren = childrenNames.length > 0 || (c.childrenCount ?? 0) > 0;
+  const heirName = hadChildren ? getHeirName(state) ?? childrenNames[0] : undefined;
+  const inheritedMoney = hadChildren || c.flags.family_legacy ? previewInheritanceMoney(state) : 0;
+
   return {
     generation: gen,
     ancestorName: c.name,
@@ -45,20 +57,22 @@ export function extractLegacy(state: LifeGameState): LegacyCarry {
     ancestorMartial: c.martial,
     ancestorReputation: c.reputation,
     ancestorWealthPeak: c.stats.wealthPeak,
-    familyLegacy: Boolean(c.flags.family_legacy),
+    // 有子女或已立族規 → 來世必帶族產線
+    familyLegacy: Boolean(c.flags.family_legacy) || hadChildren,
     teacherLegacy: Boolean(c.flags.legacy_teacher),
     birthplace: c.birthplace,
     friendNpcId,
     rivalHint: rival,
     gearHint: equipped || undefined,
     titleHints: titleIds.slice(0, 3),
+    heirName: heirName || undefined,
+    childrenNames: childrenNames.length ? childrenNames : undefined,
+    inheritedMoney: inheritedMoney || undefined,
+    hadChildren,
   };
 }
 
-export function applyLegacyToCharacter(
-  state: LifeGameState,
-  legacy: LegacyCarry,
-): string[] {
+export function applyLegacyToCharacter(state: LifeGameState, legacy: LegacyCarry): string[] {
   const c = state.character;
   const lines: string[] = [];
   const gen = legacy.generation + 1;
@@ -75,7 +89,34 @@ export function applyLegacyToCharacter(
     lines.push(`祖輩拳腳殘影：武學＋${martialBonus}`);
   }
 
-  if (legacy.familyLegacy) {
+  // 子女血脈／族產繼承（優先於舊 familyLegacy 薄利）
+  if (legacy.hadChildren || legacy.heirName || (legacy.inheritedMoney ?? 0) > 0) {
+    const coin =
+      legacy.inheritedMoney && legacy.inheritedMoney > 0
+        ? legacy.inheritedMoney
+        : Math.min(80, 25 + Math.floor(legacy.ancestorWealthPeak * 0.05));
+    c.money += coin;
+    c.stats.wealthPeak = Math.max(c.stats.wealthPeak, c.money);
+    c.flags.born_with_family_legacy = true;
+    c.flags.family_legacy = true;
+    const key: WuxiaAttribute = 'fuYuan';
+    c.attributes[key] = Math.min(100, c.attributes[key] + 5);
+    if (legacy.heirName) {
+      c.flags.legacy_heir_of = legacy.heirName;
+      // 族譜：你這一世被看作繼承人血脈
+      if (c.gender === 'male') c.family.fatherName = legacy.ancestorName;
+      else c.family.motherName = legacy.ancestorName;
+      lines.push(
+        `血脈未斷：前世立「${legacy.heirName}」為嗣，你承其餘蔭，開局銀兩＋${coin}，福緣略厚。`,
+      );
+    } else {
+      lines.push(`族產入匣：開局銀兩＋${coin}，福緣略厚。`);
+    }
+    if (legacy.childrenNames?.length) {
+      c.flags.legacy_siblings_echo = legacy.childrenNames.join('、');
+      lines.push(`族譜殘頁上還有前世子女之名：${legacy.childrenNames.join('、')}。`);
+    }
+  } else if (legacy.familyLegacy) {
     const coin = Math.min(80, 25 + Math.floor(legacy.ancestorWealthPeak * 0.05));
     c.money += coin;
     c.stats.wealthPeak = Math.max(c.stats.wealthPeak, c.money);
@@ -127,6 +168,7 @@ export function applyLegacyToCharacter(
   if (
     !legacy.familyLegacy &&
     !legacy.teacherLegacy &&
+    !legacy.hadChildren &&
     martialBonus <= 0 &&
     !legacy.friendNpcId &&
     !legacy.rivalHint
