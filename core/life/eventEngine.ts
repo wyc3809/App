@@ -317,7 +317,7 @@ export function applyChoice(
       source: 'event',
       title: tags.includes('boss') ? `首領·${event.title}` : tags.includes('pack') ? '江湖偶遇·交手' : event.title,
       foeName,
-      foePower: bossCfg?.foePower ?? (state.character.martial >= 18 ? 'strong' : 'normal'),
+      foePower: bossCfg?.foePower ?? (state.character.martial > 45 ? 'strong' : 'normal'),
       rewardOnWin:
         bossCfg?.rewardOnWin ??
         { money: 8, reputation: 2, martial: 2 },
@@ -556,15 +556,15 @@ export function startMonth(state: LifeGameState): LifeGameState {
     }
   }
 
-  // 首領／傳聞：優先於路遇，避免長期被路遇擋掉
+  // 首領／傳聞：優先於路遇；機率適中，配合線性戰鬥難度
   if (!event && shouldTriggerBossCheck(state)) {
     const rumorBoostEarly = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
-    const bossChance = 0.55 + rumorBoostEarly * 0.12;
+    const bossChance = 0.38 + rumorBoostEarly * 0.1;
     if (rng.chance(bossChance)) {
       event = pickBossEvent(state);
       if (event) kind = 'special';
     }
-    state.bossEncounterCountdown = rng.nextInt(4, 9);
+    state.bossEncounterCountdown = rng.nextInt(5, 11);
   }
 
   // 路遇遇敵節奏：約 6–12 月一次（可重複池）
