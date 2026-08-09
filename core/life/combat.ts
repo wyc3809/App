@@ -85,26 +85,24 @@ export function buildFoe(
   scale?: { martial: number; maxHp: number; attack: number },
 ): CombatFighter {
   /**
-   * 線性難度：相對玩家面板固定比例 + 武學線性微調。
-   * 唔再疊乘 powerMult×growth×playerHp，避免中後期暴衝。
+   * 線性難度（偏易）：敵人明顯低於玩家一檔，頭目接近但不碾壓。
    */
   const martial = Math.max(0, scale?.martial ?? 12);
   const playerHp = Math.max(80, scale?.maxHp ?? 100);
   const playerAtk = Math.max(12, scale?.attack ?? 14);
-  // 武學 0→0、100→1（線性）
-  const t = Math.min(1.25, martial / 100);
+  // 武學 0→0、100→1（線性，成長較緩）
+  const t = Math.min(1, martial / 110);
 
   const ratio =
-    power === 'weak' ? 0.62 : power === 'strong' ? 0.92 : power === 'boss' ? 1.12 : 0.78;
-  // 基礎底線，早期唔會太脆；後期主要跟玩家線性走
-  const baseHp = power === 'weak' ? 64 : power === 'strong' ? 96 : power === 'boss' ? 120 : 80;
-  const baseAtk = power === 'weak' ? 10 : power === 'strong' ? 15 : power === 'boss' ? 18 : 12;
-  const baseDef = power === 'weak' ? 5 : power === 'strong' ? 8 : power === 'boss' ? 10 : 6;
+    power === 'weak' ? 0.45 : power === 'strong' ? 0.68 : power === 'boss' ? 0.85 : 0.55;
+  const baseHp = power === 'weak' ? 52 : power === 'strong' ? 78 : power === 'boss' ? 96 : 64;
+  const baseAtk = power === 'weak' ? 8 : power === 'strong' ? 12 : power === 'boss' ? 14 : 10;
+  const baseDef = power === 'weak' ? 4 : power === 'strong' ? 6 : power === 'boss' ? 8 : 5;
 
-  const maxHp = Math.round(baseHp * (1 + 0.55 * t) + playerHp * ratio * (0.55 + 0.2 * t));
-  const maxQi = Math.round((power === 'boss' ? 88 : 68) * (1 + 0.5 * t));
-  const attack = Math.round(baseAtk * (1 + 0.6 * t) + playerAtk * ratio * (0.45 + 0.2 * t));
-  const defense = Math.round(baseDef * (1 + 0.5 * t) + martial * 0.04);
+  const maxHp = Math.round(baseHp * (1 + 0.4 * t) + playerHp * ratio * (0.5 + 0.15 * t));
+  const maxQi = Math.round((power === 'boss' ? 72 : 58) * (1 + 0.35 * t));
+  const attack = Math.round(baseAtk * (1 + 0.4 * t) + playerAtk * ratio * (0.38 + 0.15 * t));
+  const defense = Math.round(baseDef * (1 + 0.35 * t) + martial * 0.025);
   return {
     name,
     hp: maxHp,
@@ -113,16 +111,16 @@ export function buildFoe(
     maxQi,
     attack,
     defense,
-    hitBonus: power === 'boss' ? 0.08 : power === 'strong' ? 0.055 : 0.035,
-    evasion: power === 'boss' ? 0.07 : power === 'strong' ? 0.03 : 0.01,
-    qiRegen: power === 'boss' ? 7 : power === 'strong' ? 5 : 4,
+    hitBonus: power === 'boss' ? 0.06 : power === 'strong' ? 0.04 : 0.025,
+    evasion: power === 'boss' ? 0.05 : power === 'strong' ? 0.02 : 0,
+    qiRegen: power === 'boss' ? 6 : power === 'strong' ? 4 : 3,
     blind: 0,
     isPlayer: false,
     stun: 0,
     bleedDamage: 0,
     bleedTurns: 0,
     defenseMod: 0,
-    reflect: power === 'boss' ? 0.04 : 0,
+    reflect: power === 'boss' ? 0.02 : 0,
     chargeBonus: 0,
   };
 }

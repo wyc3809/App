@@ -17,11 +17,12 @@ describe('combat difficulty', () => {
     expect(Math.abs(d1 - d2)).toBeLessThan(d1 * 0.55 + 20);
   });
 
-  it('keeps normal foes below player pressure band', () => {
+  it('keeps normal foes clearly easier than player', () => {
     const scale = { martial: 50, maxHp: 200, attack: 30 };
     const normal = buildFoe('刀客', 'normal', scale);
     const boss = buildFoe('寨主', 'boss', scale);
-    expect(normal.maxHp).toBeLessThan(scale.maxHp * 1.05);
+    expect(normal.maxHp).toBeLessThan(scale.maxHp * 0.9);
+    expect(normal.attack).toBeLessThan(scale.attack * 0.85);
     expect(boss.maxHp).toBeGreaterThan(normal.maxHp);
     expect(boss.attack).toBeGreaterThanOrEqual(normal.attack);
   });
@@ -40,8 +41,8 @@ describe('combat difficulty', () => {
     });
     const player = state.pendingCombat!.player;
     const foe = state.pendingCombat!.foe;
-    expect(foe.maxHp).toBeGreaterThan(player.maxHp * 0.55);
-    expect(foe.maxHp).toBeLessThan(player.maxHp * 1.25);
-    expect(foe.attack).toBeGreaterThan(12);
+    expect(foe.maxHp).toBeGreaterThan(player.maxHp * 0.35);
+    expect(foe.maxHp).toBeLessThan(player.maxHp * 0.95);
+    expect(foe.attack).toBeLessThan(player.attack);
   });
 });

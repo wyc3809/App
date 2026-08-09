@@ -317,7 +317,7 @@ export function applyChoice(
       source: 'event',
       title: tags.includes('boss') ? `首領·${event.title}` : tags.includes('pack') ? '江湖偶遇·交手' : event.title,
       foeName,
-      foePower: bossCfg?.foePower ?? (state.character.martial > 45 ? 'strong' : 'normal'),
+      foePower: bossCfg?.foePower ?? (state.character.martial > 60 ? 'strong' : 'normal'),
       rewardOnWin:
         bossCfg?.rewardOnWin ??
         { money: 8, reputation: 2, martial: 2 },
