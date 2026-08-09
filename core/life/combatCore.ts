@@ -154,6 +154,8 @@ export function resolveStrike(
   rng: SeededRng,
   powerMult = 1,
   extraHit = 0,
+  /** 虛實架相克倍率：克 1.25／被克 0.75／平常 1 */
+  stanceMult = 1,
 ): string[] {
   const lines: string[] = [];
   if (move.id === GUARD_STANCE.id || move.id === CHARGE_STANCE.id || move.id === FLEE_MOVE.id) {
@@ -161,7 +163,7 @@ export function resolveStrike(
   }
   if (attacker.qi < move.qiCost) {
     lines.push(`${attacker.name}內息不足，無法使出「${move.name}」，改為普通攻擊。`);
-    return resolveStrike(attacker, defender, BASIC_STRIKE, rng, 1, extraHit);
+    return resolveStrike(attacker, defender, BASIC_STRIKE, rng, 1, extraHit, stanceMult);
   }
   attacker.qi -= move.qiCost;
   defender.blind = Math.max(0, defender.blind * 0.35);
@@ -174,7 +176,7 @@ export function resolveStrike(
   }
 
   const hits = Math.max(1, move.multiHit ?? 1);
-  const mult = powerMult * charge;
+  const mult = powerMult * charge * stanceMult;
   let anyHit = false;
   for (let i = 0; i < hits; i++) {
     const before = defender.hp;

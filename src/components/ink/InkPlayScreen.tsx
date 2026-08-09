@@ -32,6 +32,7 @@ import { classifyBeat, summarizeExchange } from '@core/life/combatPresentation';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
+import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
 import {
   COMBAT_TECHNIQUE_ROLES,
   combatMoveRole,
@@ -914,6 +915,7 @@ export function InkPlayScreen({ state }: Props) {
             <p className="ink-event-year">
               第 {combat.turn} 回合 · {combat.title}
               {combatStyle ? ` · ${foeStyleLabel(combatStyle)}` : ''}
+              {' · '}實克虛 · 架克實 · 虛克架
             </p>
             <h3>交手 · {combat.foe.name}</h3>
             <div className="ink-combat-bars">
@@ -1081,6 +1083,7 @@ export function InkPlayScreen({ state }: Props) {
                     const rank = ownerSkill ? (c.skillRanks?.[ownerSkill] ?? 0) : 0;
                     const effPower = mv.power * (ownerSkill ? rankPowerMult(rank) : 1);
                     const role = combatMoveRole(mv);
+                    const stance = resolveMoveStance(mv);
                     const def = ownerSkill ? getSkillDef(ownerSkill) : undefined;
                     const matched = Boolean(
                       def?.weaponKind && equippedWeapon?.weaponKind === def.weaponKind,
@@ -1090,21 +1093,25 @@ export function InkPlayScreen({ state }: Props) {
                       <div key={mv.id} className="ink-combat-move-row">
                         <button
                           type="button"
-                          className={`ink-choice ink-choice--compact${matched ? ' ink-choice--match' : ''}`}
+                          className={`ink-choice ink-choice--compact ink-choice--stance-${stance}${matched ? ' ink-choice--match' : ''}`}
                           disabled={combat.phase !== 'player' || short}
                           style={{ ['--i' as string]: i }}
                           onClick={() => {
                             combatMove(mv.id);
                           }}
                         >
-                          <span className="ink-choice-mark">{role}</span>
+                          <span className="ink-choice-mark" title={`屬性${MOVE_STANCE_LABEL[stance]} · ${role}`}>
+                            {MOVE_STANCE_LABEL[stance]}
+                          </span>
                           <span className="ink-combat-move">
                             <strong>
                               {mv.name}
                               {matched ? ' · 契' : ''}
                               {short ? ' · 不足' : ''}
                             </strong>
-                            <em>{formatCombatMoveCompact(mv, effPower)}</em>
+                            <em>
+                              {MOVE_STANCE_LABEL[stance]} · {formatCombatMoveCompact(mv, effPower)}
+                            </em>
                           </span>
                         </button>
                         <button
@@ -1151,26 +1158,27 @@ export function InkPlayScreen({ state }: Props) {
                         const short = combat.player.qi < mv.qiCost;
                         const mark =
                           mv.id === GUARD_STANCE.id ? '守' : mv.id === CHARGE_STANCE.id ? '蓄' : '遁';
+                        const stance = resolveMoveStance(mv);
                         return (
                           <button
                             key={mv.id}
                             type="button"
-                            className="ink-combat-action"
+                            className={`ink-combat-action ink-choice--stance-${stance}`}
                             disabled={combat.phase !== 'player' || short}
-                            title={mv.description}
+                            title={`${mv.description} · ${MOVE_STANCE_LABEL[stance]}`}
                             onClick={() => {
                               combatMove(mv.id);
                             }}
                           >
                             <strong>
-                              {mark} {mv.name}
+                              {MOVE_STANCE_LABEL[stance]}·{mark} {mv.name}
                             </strong>
                             <span>
                               {mv.id === GUARD_STANCE.id
-                                ? '回息守中'
+                                ? '架 · 回息守中'
                                 : mv.id === CHARGE_STANCE.id
-                                  ? `耗${mv.qiCost} · 下一擊加威`
-                                  : '伺機離場'}
+                                  ? `虛 · 耗${mv.qiCost} · 下一擊加威`
+                                  : '虛 · 伺機離場'}
                               {short ? ' · 不足' : ''}
                             </span>
                           </button>

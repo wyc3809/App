@@ -25,7 +25,7 @@ export function foeStyleLabel(style: FoeAiStyle): string {
   }
 }
 
-/** 依風格挑選敵人招式（可重播） */
+/** 依風格挑選敵人招式（可重播）；每招帶虛／實／架 */
 export function chooseFoeMove(
   foe: CombatFighterState,
   rng: { nextFloat: () => number; pick: <T>(arr: T[]) => T; chance: (p: number) => boolean },
@@ -37,7 +37,8 @@ export function chooseFoeMove(
     name: style === 'boss' ? '開山一擊' : '猛攻',
     qiCost: 12,
     power: bossEnraged ? 1.7 : style === 'brute' ? 1.5 : 1.35,
-    description: '',
+    stance: 'shi',
+    description: '實招硬撼',
   };
   const feint: CombatMoveDef = {
     id: 'enemy_feint',
@@ -45,7 +46,17 @@ export function chooseFoeMove(
     qiCost: 8,
     power: style === 'trickster' ? 0.85 : 0.9,
     hitBonus: bossEnraged ? 0.22 : style === 'trickster' ? 0.2 : 0.12,
-    description: '',
+    stance: 'xu',
+    description: '虛招誘敵',
+  };
+  const parry: CombatMoveDef = {
+    id: 'enemy_parry',
+    name: style === 'duelist' ? '卸力反截' : '架勢橫擋',
+    qiCost: 6,
+    power: 0.75,
+    hitBonus: 0.06,
+    stance: 'jia',
+    description: '架招拆解',
   };
   const precise: CombatMoveDef = {
     id: 'enemy_precise',
@@ -54,9 +65,15 @@ export function chooseFoeMove(
     power: 1.15,
     hitBonus: 0.18,
     pierce: 0.08,
-    description: '',
+    stance: 'shi',
+    description: '實指點穴',
   };
-  const pool: CombatMoveDef[] = [BASIC_STRIKE, heavy, feint];
+  const pool: CombatMoveDef[] = [
+    { ...BASIC_STRIKE, stance: 'shi' },
+    heavy,
+    feint,
+    parry,
+  ];
   if (style === 'duelist' || style === 'boss') pool.push(precise);
   if (bossEnraged || style === 'boss') {
     pool.push({
@@ -65,12 +82,13 @@ export function chooseFoeMove(
       qiCost: 18,
       power: 1.95,
       pierce: 0.2,
-      description: '',
+      stance: 'shi',
+      description: '實招絕反',
     });
   }
 
   const affordable = pool.filter((m) => foe.qi >= m.qiCost);
-  const use = affordable.length ? affordable : [BASIC_STRIKE];
+  const use = affordable.length ? affordable : [{ ...BASIC_STRIKE, stance: 'shi' as const }];
 
   // 風格偏好
   if (style === 'brute' && rng.chance(0.55)) {
@@ -81,9 +99,13 @@ export function chooseFoeMove(
     const f = use.find((m) => m.id === 'enemy_feint');
     if (f) return f;
   }
-  if (style === 'duelist' && rng.chance(0.4)) {
+  if (style === 'duelist' && rng.chance(0.35)) {
     const p = use.find((m) => m.id === 'enemy_precise');
     if (p) return p;
+  }
+  if ((style === 'duelist' || style === 'boss') && rng.chance(0.28)) {
+    const g = use.find((m) => m.id === 'enemy_parry');
+    if (g) return g;
   }
   return rng.pick(use);
 }

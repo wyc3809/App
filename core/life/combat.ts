@@ -31,6 +31,12 @@ import {
 import { recordDeath } from './death';
 import { chooseFoeMove, inferFoeAiStyle } from './foeAi';
 import { combatOpeningLines, dispositionBlurb } from './combatPresentation';
+import {
+  MOVE_STANCE_LABEL,
+  resolveMoveStance,
+  stanceClashLine,
+  stanceDamageMult,
+} from './moveStance';
 
 export type CombatFoeDisposition = 'kill' | 'release' | 'stun';
 
@@ -445,7 +451,7 @@ function finishCombat(state: LifeGameState, won: boolean): string[] {
 }
 
 /**
- * 玩家回合：選外功招式或普通攻擊 → 結算 → 敵方回合 → 回到玩家
+ * 玩家回合：選招 → 與敵同期對勢（虛實架）→ 結算你我傷害
  */
 export function playerCombatTurn(state: LifeGameState, moveId: string): string[] {
   if (!state.pendingCombat || state.pendingCombat.phase !== 'player') {
@@ -463,13 +469,27 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
     return [...lines, ...end];
   }
 
+  // 敵我同時出招，再比虛／實／架
+  const bossEnragedPreview =
+    combat.foePower === 'boss' && combat.foe.maxHp > 0 && combat.foe.hp / combat.foe.maxHp <= 0.45;
+  const enemyMove = enemyChooseMove(combat, rng, Boolean(combat.bossPhase2 || bossEnragedPreview));
+  const playerMovePreview = findMove(state, moveId) ?? BASIC_STRIKE;
+  const playerStance = resolveMoveStance(playerMovePreview);
+  const foeStance = resolveMoveStance(enemyMove);
+  const playerStanceMult = stanceDamageMult(playerStance, foeStance);
+  const foeStanceMult = stanceDamageMult(foeStance, playerStance);
+
+  const reveal = `對勢：你「${MOVE_STANCE_LABEL[playerStance]}」對 ${combat.foe.name}「${MOVE_STANCE_LABEL[foeStance]}」（敵出「${enemyMove.name}」）。`;
+  lines.push(reveal);
+  combat.log.push(reveal);
+
   if (combat.player.stun > 0) {
     combat.player.stun -= 1;
     lines.push('你穴道未暢，這一招使不出來。');
-    combat.log.push(...lines);
+    combat.log.push(lines[lines.length - 1]!);
   } else {
     tickRegen(combat.player);
-    const move = findMove(state, moveId) ?? BASIC_STRIKE;
+    const move = playerMovePreview;
 
     if (move.id === FLEE_MOVE.id) {
       const chance = clamp(0.32 + combat.player.evasion + state.character.attributes.danShi / 400, 0.15, 0.82);
@@ -493,24 +513,39 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
         return lines;
       }
       lines.push('你欲抽身，卻被對方截住去路！');
-      combat.log.push(lines[lines.length - 1]);
+      combat.log.push(lines[lines.length - 1]!);
       // fall through to enemy turn without attacking
     } else if (move.id === GUARD_STANCE.id) {
       combat.player.defenseMod += 6;
       const recover = 12;
       combat.player.qi = clamp(combat.player.qi + recover, 0, combat.player.maxQi);
-      lines.push(`你收招守中，架勢更穩，緩回內力 ${recover}。`);
-      combat.log.push(...lines);
+      lines.push(`你收招守中（架），架勢更穩，緩回內力 ${recover}。`);
+      combat.log.push(lines[lines.length - 1]!);
     } else if (move.id === CHARGE_STANCE.id) {
       if (combat.player.qi < move.qiCost) {
         lines.push('內息不足，無法蓄勢，只好改為普通攻擊。');
-        lines.push(...resolveStrike(combat.player, combat.foe, BASIC_STRIKE, rng, 1));
+        const clash = stanceClashLine(combat.player.name, 'shi', foeStance);
+        if (clash) {
+          lines.push(clash);
+          combat.log.push(clash);
+        }
+        const strikeLines = resolveStrike(
+          combat.player,
+          combat.foe,
+          BASIC_STRIKE,
+          rng,
+          1,
+          0,
+          stanceDamageMult('shi', foeStance),
+        );
+        lines.push(...strikeLines);
+        combat.log.push(...strikeLines);
       } else {
         combat.player.qi -= move.qiCost;
         combat.player.chargeBonus = Math.max(combat.player.chargeBonus, 0.55);
-        lines.push('你凝勁於腕，蓄勢待發。');
+        lines.push('你凝勁於腕，蓄勢待發（虛）。');
+        combat.log.push(lines[lines.length - 1]!);
       }
-      combat.log.push(...lines);
     } else {
       const sid = skillIdForMove(state, move.id);
       if (sid && !combat.usedExternalSkillIds.includes(sid)) {
@@ -518,10 +553,27 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
       }
       const rank = sid ? (state.character.skillRanks?.[sid] ?? 0) : 0;
       const wpn = weaponMatchBoost(state, sid);
-      if (wpn.label) lines.push(wpn.label);
+      if (wpn.label) {
+        lines.push(wpn.label);
+        combat.log.push(wpn.label);
+      }
+      const clash = stanceClashLine(combat.player.name, playerStance, foeStance);
+      if (clash) {
+        lines.push(clash);
+        combat.log.push(clash);
+      }
       const powerMult = (sid ? rankPowerMult(rank) : 1) * wpn.power;
-      lines.push(...resolveStrike(combat.player, combat.foe, move, rng, powerMult, wpn.hit));
-      combat.log.push(...lines);
+      const strikeLines = resolveStrike(
+        combat.player,
+        combat.foe,
+        move,
+        rng,
+        powerMult,
+        wpn.hit,
+        playerStanceMult,
+      );
+      lines.push(...strikeLines);
+      combat.log.push(...strikeLines);
     }
   }
 
@@ -570,8 +622,15 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
       lines.push(roar);
       combat.log.push(roar);
     }
-    const enemyMove = enemyChooseMove(combat, rng, Boolean(combat.bossPhase2));
-    const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng);
+    if (enemyMove.id === 'enemy_parry') {
+      combat.foe.defenseMod += 4;
+    }
+    const foeClash = stanceClashLine(combat.foe.name, foeStance, playerStance);
+    if (foeClash) {
+      lines.push(foeClash);
+      combat.log.push(foeClash);
+    }
+    const enemyLines = resolveStrike(combat.foe, combat.player, enemyMove, rng, 1, 0, foeStanceMult);
     combat.log.push(...enemyLines);
     lines.push(...enemyLines);
   }

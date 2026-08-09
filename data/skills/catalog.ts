@@ -12,6 +12,8 @@ export interface CombatMoveDef {
   name: string;
   qiCost: number;
   power: number;
+  /** 包剪揼屬性：虛／實／架；缺省由 resolveMoveStance 推斷 */
+  stance?: 'xu' | 'shi' | 'jia';
   hitBonus?: number;
   healSelf?: number;
   applyBlind?: number;
@@ -105,7 +107,8 @@ export const BASIC_STRIKE: CombatMoveDef = {
   name: '普通攻擊',
   qiCost: 0,
   power: 1,
-  description: '一記尋常拳腳／兵刃。',
+  stance: 'shi',
+  description: '一記尋常拳腳／兵刃（實）。',
 };
 
 export const GUARD_STANCE: CombatMoveDef = {
@@ -113,7 +116,8 @@ export const GUARD_STANCE: CombatMoveDef = {
   name: '守勢',
   qiCost: 0,
   power: 0,
-  description: '收招守中，暫增防禦；戰鬥中可藉此緩回些許內力。',
+  stance: 'jia',
+  description: '收招守中（架），暫增防禦；戰鬥中可藉此緩回些許內力。',
 };
 
 export const CHARGE_STANCE: CombatMoveDef = {
@@ -121,7 +125,8 @@ export const CHARGE_STANCE: CombatMoveDef = {
   name: '蓄勢',
   qiCost: 12,
   power: 0,
-  description: '凝勁一輪，下一擊威能大增。',
+  stance: 'xu',
+  description: '凝勁一輪（虛），下一擊威能大增。',
 };
 
 export const FLEE_MOVE: CombatMoveDef = {
@@ -129,7 +134,8 @@ export const FLEE_MOVE: CombatMoveDef = {
   name: '抽身',
   qiCost: 0,
   power: 0,
-  description: '伺機脫戰；成敗看身法與氣運。',
+  stance: 'xu',
+  description: '伺機脫戰（虛）；成敗看身法與氣運。',
 };
 
 export const SYSTEM_MOVES: CombatMoveDef[] = [GUARD_STANCE, CHARGE_STANCE, FLEE_MOVE];
@@ -248,10 +254,13 @@ export function formatCombatMoveSummary(m: CombatMoveDef, effPower?: number): st
   return bits.join(' · ');
 }
 
-/** 戰鬥清單用短標：內力 · 角色 · 主特效 */
+/** 戰鬥清單用短標：屬性 · 內力 · 角色 · 主特效 */
 export function formatCombatMoveCompact(m: CombatMoveDef, effPower?: number): string {
   const role = combatMoveRole(m);
   const bits: string[] = [];
+  const stance =
+    m.stance === 'xu' ? '虛' : m.stance === 'jia' ? '架' : m.stance === 'shi' ? '實' : '';
+  if (stance) bits.push(stance);
   bits.push(m.qiCost > 0 ? `${m.qiCost}` : '0');
   bits.push(role);
   if (m.power > 0) bits.push(`×${(effPower ?? m.power).toFixed(1)}`);

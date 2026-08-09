@@ -1606,6 +1606,28 @@ body::before {
   background: var(--cinnabar-soft);
 }
 
+/* 虛／實／架：水墨色差，唔用霓虹 */
+.ink-choice--stance-shi .ink-choice-mark,
+.ink-combat-action.ink-choice--stance-shi strong {
+  color: var(--cinnabar);
+  border-color: var(--cinnabar);
+}
+.ink-choice--stance-xu .ink-choice-mark,
+.ink-combat-action.ink-choice--stance-xu strong {
+  color: var(--jade);
+  border-color: var(--jade);
+}
+.ink-choice--stance-jia .ink-choice-mark,
+.ink-combat-action.ink-choice--stance-jia strong {
+  color: var(--antique-gold);
+  border-color: var(--antique-gold);
+}
+.ink-combat-action.ink-choice--stance-shi,
+.ink-combat-action.ink-choice--stance-xu,
+.ink-combat-action.ink-choice--stance-jia {
+  border-color: var(--ink-faint);
+}
+
 .ink-flash {
   padding: 8px 4px;
   color: var(--ink-mid);
