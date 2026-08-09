@@ -1,38 +1,16 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import type { LifeGameState } from '@interfaces/lifeEngine';
-import {
-  natureKeys,
-  natureLabels,
-  wuxiaAttributeKeys,
-  wuxiaAttributeLabels,
-} from '@interfaces/lifeEngine';
+import { natureKeys, natureLabels } from '@interfaces/lifeEngine';
 import { useLifeStore } from '../../store/lifeStore';
 import { resolvePendingEvent } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
 import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
-import {
-  RARITY_SHORT,
-  SLOT_LABEL,
-  displayGearName,
-  formatAffixDisplay,
-  gearTitleBits,
-  listGearAffixes,
-  summarizeAffixTotals,
-} from '@data/equipment/affixes';
-import { grudgeKindLabel, listGrudges } from '@core/life/grudgeBook';
-import { listWeaponMasteries } from '@core/life/weaponMastery';
-import { careerLabel, getCareer } from '@core/life/careers';
-import { formatFragmentProgress } from '@core/life/manualFragments';
-import { getMasterName } from '@core/life/bonds';
-import { canHaveChild, getHeirName, listChildNames, previewInheritanceMoney } from '@core/life/family';
-import { buildGenealogy } from '@core/life/genealogy';
-import { gearTotals, sumGearCombatBonuses, previewEquipDelta, combatPowerScore } from '@core/life/equipment';
 import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
-import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
-import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
+import { overallMartialLabel } from '@core/life/flavor';
+import { jianghuHints, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
 import { GUARD_STANCE, CHARGE_STANCE } from '@data/skills/catalog';
 import {
@@ -53,17 +31,14 @@ import {
   COMBAT_TECHNIQUE_ROLES,
   combatMoveRole,
   formatCombatMoveCompact,
-  formatSkillEffects,
   getSkillDef,
   isCombatActionMove,
-  skillKindLabel,
   type CombatMoveRole,
 } from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
 import { displayChoiceText } from '@core/life/playerText';
 import { coachCopy, nextCoachStep } from '@core/life/tutorial';
 import { lifeArcStatusLine } from '@core/life/arcs';
-import { listKnownNpcLines } from '@core/life/npcCatalog';
 import { getAftermathStatus, styleForCombat } from '@core/life/combatPresentation';
 import { foeStyleLabel } from '@core/life/foeAi';
 import { track } from '../../telemetry/events';
@@ -71,6 +46,7 @@ import { seasonToInk, placeToInk } from './sceneVariants';
 import { InkScrollBackdrop, InkSealStamp, InkResultSeal, InkEventBanner } from './InkDecor';
 import { pickEventBanner, eventBannerSvg } from '../../ui/inkAssets';
 import { InkHuashanPanel } from './InkHuashanPanel';
+import { InkPersonPanel, type PersonView } from './InkPersonPanel';
 import { LifeDebugPanel } from '../LifeDebugPanel';
 
 type Props = {
@@ -128,6 +104,7 @@ export function InkPlayScreen({ state }: Props) {
   const flashLines = useLifeStore((s) => s.flashLines);
   const clearSeal = useLifeStore((s) => s.clearSeal);
   const [practiceView, setPracticeView] = useState<PracticeView>('main');
+  const [personView, setPersonView] = useState<PersonView>('main');
   const [combatRoleFilter, setCombatRoleFilter] = useState<CombatRoleFilter>('all');
   const [combatLogOpen, setCombatLogOpen] = useState(false);
   const [combatFiltersOpen, setCombatFiltersOpen] = useState(false);
@@ -135,7 +112,6 @@ export function InkPlayScreen({ state }: Props) {
   const [chronicleOpen, setChronicleOpen] = useState(() => (state.character.stats.monthsLived ?? 0) < 3);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [expandedMoveId, setExpandedMoveId] = useState<string | null>(null);
-  const [previewGearId, setPreviewGearId] = useState<string | null>(null);
   const [audioMuted, setAudioMuted] = useState(() => isInkAudioMuted());
   const [textScale, setTextScale] = useState(() => {
     try {
@@ -170,6 +146,7 @@ export function InkPlayScreen({ state }: Props) {
 
   useEffect(() => {
     if ((state.tab ?? 'home') !== 'practice') setPracticeView('main');
+    if ((state.tab ?? 'home') !== 'person') setPersonView('main');
   }, [state.tab]);
 
   useEffect(() => {
@@ -191,7 +168,6 @@ export function InkPlayScreen({ state }: Props) {
   const month = state.month ?? 1;
   const pendingEvent = resolvePendingEvent(state);
   const sect = c.sectId ? state.sects[c.sectId] : null;
-  const lover = c.loverId ? state.npcs[c.loverId] : null;
   const stage = getLifeStageLabel(state);
   const hpPct = Math.max(0, Math.min(100, (c.health / Math.max(1, c.maxHealth)) * 100));
   const qiPct = Math.max(0, Math.min(100, ((c.qi ?? 0) / Math.max(1, c.maxQi ?? 1)) * 100));
@@ -208,7 +184,6 @@ export function InkPlayScreen({ state }: Props) {
           }),
         )
       : null;
-  const gearIds = c.gear ?? [];
   const equipment = c.equipment ?? { weapon: null, armor: null, accessory: null };
   const showResult = Boolean(lastResult) && state.phase === 'playing' && !state.pendingCombat;
   const combat = state.pendingCombat ?? null;
@@ -231,8 +206,6 @@ export function InkPlayScreen({ state }: Props) {
   const techniqueMoves = moves.filter((mv) => !isCombatActionMove(mv.id));
   const actionMoves = moves.filter((mv) => isCombatActionMove(mv.id));
   const equippedWeapon = equipment.weapon ? getGearDef(equipment.weapon) : undefined;
-  const gearStatTotals = gearTotals(c);
-  const gearFxTotals = sumGearCombatBonuses(c);
   const sortedTechniques = [...techniqueMoves].sort((a, b) => {
     const skillOf = (moveId: string) => c.skills.find((id) => getSkillDef(id)?.move?.id === moveId);
     const score = (mv: (typeof techniqueMoves)[number]) => {
@@ -618,192 +591,16 @@ export function InkPlayScreen({ state }: Props) {
       )}
 
       {tab === 'person' && !combat && !eventFocus && (
-        <section key="person" className="ink-panel ink-attrs ink-tab-pane">
-          <h3>五維</h3>
-          <div className="ink-attr-grid">
-            {wuxiaAttributeKeys.map((k) => (
-              <div key={k} className="ink-attr">
-                <span className="ink-attr-label">{wuxiaAttributeLabels[k]}</span>
-                <strong>{c.attributes[k]}</strong>
-              </div>
-            ))}
-          </div>
-          <h3 className="ink-subhead">心性</h3>
-          <div className="ink-attr-grid">
-            {natureKeys.map((k) => (
-              <div
-                key={k}
-                className={`ink-attr ink-nature-card ink-nature--${k}${k === dominant ? ' ink-nature--dominant' : ''}`}
-              >
-                <span className="ink-attr-label">
-                  {natureLabels[k]}
-                  {k === dominant ? ' · 獨顯' : ''}
-                </span>
-                <strong>{nature[k]}</strong>
-              </div>
-            ))}
-          </div>
-          <p className="ink-note">{natureSummary(c)}</p>
-          <p className="ink-note">
-            體力 {Math.round(c.stamina ?? 0)}/{c.maxStamina ?? 0} · 閃避約 {playerEvasionPercent(state)}%
-          </p>
-          <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
-          {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
-          <h3 className="ink-subhead">族譜</h3>
-          {(() => {
-            const book = buildGenealogy(state);
-            let lastGen = '';
-            return (
-              <div className="ink-genealogy" aria-label={`族譜·${book.clanLabel}`}>
-                <p className="ink-genealogy-head">
-                  {book.clanLabel} · 第{book.generationIndex}世
-                </p>
-                <ul className="ink-genealogy-list">
-                  {book.entries.map((e, i) => {
-                    const showGen = e.generation !== lastGen;
-                    lastGen = e.generation;
-                    return (
-                      <li
-                        key={`${e.generation}-${e.title}-${e.name}-${i}`}
-                        className={`ink-genealogy-row${e.self ? ' ink-genealogy-row--self' : ''}${
-                          e.heir ? ' ink-genealogy-row--heir' : ''
-                        }`}
-                      >
-                        {showGen ? (
-                          <span className="ink-genealogy-gen">{e.generation}</span>
-                        ) : (
-                          <span className="ink-genealogy-gen ink-genealogy-gen--gap" aria-hidden />
-                        )}
-                        <span className="ink-genealogy-title">{e.title}</span>
-                        <strong className="ink-genealogy-name">{e.name}</strong>
-                        {e.note ? <span className="ink-genealogy-note">{e.note}</span> : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-                {book.chronicle.length > 0 && (
-                  <>
-                    <p className="ink-genealogy-sub">跨世殘頁</p>
-                    <ul className="ink-genealogy-chronicle">
-                      {book.chronicle.slice(-6).map((line) => (
-                        <li key={line}>{line}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            );
-          })()}
-          <h3 className="ink-subhead">鎮中故人</h3>
-          {listKnownNpcLines(state).length === 0 ? (
-            <p className="ink-note">尚未結識江湖人物。</p>
-          ) : (
-            listKnownNpcLines(state).map((line) => (
-              <p key={line} className="ink-note">
-                {line}
-              </p>
-            ))
-          )}
-          <p className="ink-note">
-            子女 · {c.childrenCount ?? 0}
-            {listChildNames(state).length
-              ? `（${listChildNames(state).join('、')}）`
-              : ''}
-            {getHeirName(state) ? ` · 嗣「${getHeirName(state)}」` : ''}
-          </p>
-          {(c.childrenCount ?? 0) > 0 && (
-            <p className="ink-note">
-              死後可繼族產約 {previewInheritanceMoney(state)} 兩
-              {canHaveChild(state).ok ? '' : ` · ${!c.loverId ? '無眷屬則難再添丁' : '（求子冷卻中或已滿）'}`}
-            </p>
-          )}
-          {c.loverId && (c.childrenCount ?? 0) === 0 && (
-            <p className="ink-note">已有眷屬——可至修行「求子添丁」。</p>
-          )}
-          <h3 className="ink-subhead">江湖根腳</h3>
-          <p className="ink-note">
-            行當 · {careerLabel(state)}
-            {getCareer(state) ? `（月利約${getCareer(state)!.income}兩）` : ''}
-            {getMasterName(state)
-              ? ` · 業師「${getMasterName(state)}」${c.flags.master_severed ? '（已斷）' : ''}`
-              : ''}
-            {c.flags.lover_dual_done ? ' · 俠侶相守' : ''}
-            {c.flags.lover_severed ? ' · 舊情已斷' : ''}
-          </p>
-          {listWeaponMasteries(state).length > 0 && (
-            <p className="ink-note">
-              兵刃專精 ·{' '}
-              {listWeaponMasteries(state)
-                .map((m) => `${m.label}${m.level}境`)
-                .join(' · ')}
-            </p>
-          )}
-          {formatFragmentProgress(state).length > 0 && (
-            <ul className="ink-delta-board ink-playability-board">
-              {formatFragmentProgress(state).map((line) => (
-                <li key={line} className="ink-delta-row ink-delta-row--flat">
-                  <span className="ink-delta-row-text">{line}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {listGrudges(state).length > 0 && (
-            <>
-              <h3 className="ink-subhead">恩怨簿</h3>
-              <ul className="ink-delta-board ink-playability-board">
-                {listGrudges(state)
-                  .slice(0, 6)
-                  .map((g) => (
-                    <li
-                      key={g.id}
-                      className={`ink-delta-row ink-delta-row--${
-                        g.kind === 'favor' ? 'up' : g.kind === 'blood' ? 'down' : 'flat'
-                      }`}
-                    >
-                      <span className="ink-delta-row-text">
-                        {grudgeKindLabel(g.kind)} · {g.name}
-                        （深{g.strength} · 餘{g.monthsLeft}月）
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </>
-          )}
-          {c.skills.length > 0 && (
-            <>
-              <h3 className="ink-subhead">武學招式</h3>
-              <ul className="ink-skill-cards">
-                {c.skills.map((id) => {
-                  const def = getSkillDef(id);
-                  const kind = def?.kind ?? 'external';
-                  const stance = def?.move ? resolveMoveStance(def.move) : null;
-                  return (
-                    <li key={id} className={`ink-skill-card ink-skill-card--${kind}`}>
-                      <div className="ink-skill-card-head">
-                        <strong>{skillDisplay(c, id)}</strong>
-                        <span className="ink-skill-badge">{skillKindLabel(kind)}</span>
-                        {stance ? (
-                          <span className={`ink-stance-seal ink-stance-seal--${stance}`}>
-                            {MOVE_STANCE_LABEL[stance]}
-                          </span>
-                        ) : null}
-                      </div>
-                      {def?.move ? (
-                        <p className="ink-skill-move">
-                          戰招「{def.move.name}」
-                          {stance ? ` · ${MOVE_STANCE_LABEL[stance]}` : ''}
-                          {def.move.qiCost > 0 ? ` · 耗內${def.move.qiCost}` : ' · 無耗'}
-                          {def.move.power > 0 ? ` · 威×${def.move.power.toFixed(1)}` : ''}
-                        </p>
-                      ) : null}
-                      <p className="ink-skill-fx">{formatSkillEffects(id) || '尚無詳載'}</p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
-        </section>
+        <InkPersonPanel
+          state={state}
+          view={personView}
+          onView={setPersonView}
+          busy={busy}
+          onEquip={equipOwned}
+          onEquipBest={() => {
+            practice('equip_best');
+          }}
+        />
       )}
 
       {tab === 'practice' && !combat && !eventFocus && (
@@ -925,153 +722,7 @@ export function InkPlayScreen({ state }: Props) {
             </>
           )}
 
-          <h3 className="ink-subhead">行囊披掛</h3>
-          <p className="ink-note ink-gear-totals">
-            <span className="ink-gear-power">戰意 {combatPowerScore(c)}</span>
-            {(() => {
-              const bits = summarizeAffixTotals({ ...gearStatTotals, ...gearFxTotals });
-              return bits.length ? ` · ${bits.join(' · ')}` : '';
-            })()}
-          </p>
-          <div className="ink-gear-slots" aria-label="已披掛">
-            {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
-              const id = equipment[slot];
-              const def = id ? getGearDef(id) : null;
-              const affixes = def ? listGearAffixes(def) : [];
-              return (
-                <div
-                  key={slot}
-                  className={`ink-gear-slot${def ? ` ink-gear-slot--${def.rarity}` : ' ink-gear-slot--empty'}`}
-                >
-                  <span className="ink-gear-slot-label">{SLOT_LABEL[slot]}</span>
-                  {def ? (
-                    <>
-                      <strong className={`ink-gear-name ink-rarity-${def.rarity}`}>
-                        {displayGearName(def)}
-                      </strong>
-                      <span className="ink-gear-meta">
-                        {RARITY_SHORT[def.rarity]}
-                        {def.weaponKind ? ` · ${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}
-                      </span>
-                      <ul className="ink-affix-list ink-affix-list--compact">
-                        {affixes.slice(0, 3).map((line) => (
-                          <li key={`${line.tier}-${line.text}`} className={`ink-affix ink-affix--${line.tier}`}>
-                            {formatAffixDisplay(line)}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : (
-                    <span className="ink-gear-empty">空</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {gearIds.length > 0 && (
-            <ul className="ink-gear-cards">
-              {gearIds.map((id) => {
-                const def = getGearDef(id);
-                if (!def) return null;
-                const equipped = equipment[def.slot] === id;
-                const preview = previewGearId === id ? previewEquipDelta(c, id) : null;
-                const affixes = listGearAffixes(def);
-                return (
-                  <li
-                    key={id}
-                    className={`ink-gear-card ink-gear-card--${def.rarity}${equipped ? ' ink-gear-card--on' : ''}`}
-                  >
-                    <div className="ink-gear-card-head">
-                      <strong className={`ink-gear-name ink-rarity-${def.rarity}`}>
-                        {displayGearName(def)}
-                      </strong>
-                      <span className={`ink-rarity-tag ink-rarity-${def.rarity}`}>
-                        {RARITY_SHORT[def.rarity]}
-                      </span>
-                      {equipped ? <span className="ink-gear-on-tag">披中</span> : null}
-                    </div>
-                    <p className="ink-gear-meta">{gearTitleBits(def)} · {SLOT_LABEL[def.slot]}</p>
-                    <ul className="ink-affix-list">
-                      {affixes.map((line) => (
-                        <li key={`${line.tier}-${line.name ?? ''}-${line.text}`} className={`ink-affix ink-affix--${line.tier}`}>
-                          {formatAffixDisplay(line)}
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="ink-gear-desc">{def.description}</p>
-                    <div className="ink-gear-actions">
-                      {!equipped && (
-                        <button
-                          type="button"
-                          className="ink-btn ink-btn--quiet"
-                          disabled={busy}
-                          onClick={() => {
-                            setPreviewGearId(previewGearId === id ? null : id);
-                          }}
-                        >
-                          {previewGearId === id ? '收起' : '對比'}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="ink-btn ink-btn--quiet"
-                        disabled={busy || equipped}
-                        onClick={() => {
-                          setPreviewGearId(null);
-                          equipOwned(id);
-                        }}
-                      >
-                        {equipped ? '披中' : '披上'}
-                      </button>
-                    </div>
-                    {preview && !preview.alreadyEquipped && (
-                      <p
-                        className={`ink-gear-preview${
-                          preview.powerDelta >= 0 ? ' ink-gear-preview--up' : ' ink-gear-preview--down'
-                        }`}
-                      >
-                        若披上：{preview.summary}
-                      </p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {c.skills.length > 0 && (
-            <>
-              <h3 className="ink-subhead">已習武學</h3>
-              <ul className="ink-skill-cards ink-skill-cards--compact">
-                {c.skills.map((id) => {
-                  const def = getSkillDef(id);
-                  const kind = def?.kind ?? 'external';
-                  const stance = def?.move ? resolveMoveStance(def.move) : null;
-                  return (
-                    <li key={id} className={`ink-skill-card ink-skill-card--${kind}`}>
-                      <div className="ink-skill-card-head">
-                        <strong>{skillDisplay(c, id)}</strong>
-                        <span className="ink-skill-badge">{skillKindLabel(kind)}</span>
-                        {stance ? (
-                          <span className={`ink-stance-seal ink-stance-seal--${stance}`}>
-                            {MOVE_STANCE_LABEL[stance]}
-                          </span>
-                        ) : null}
-                      </div>
-                      {def?.move ? (
-                        <p className="ink-skill-move">
-                          {def.move.name}
-                          {def.move.qiCost > 0 ? ` · 內${def.move.qiCost}` : ' · 無耗'}
-                          {def.move.power > 0 ? ` · 威×${def.move.power.toFixed(1)}` : ''}
-                        </p>
-                      ) : (
-                        <p className="ink-skill-fx">{formatSkillEffects(id) || '內功心法'}</p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
+          <p className="ink-note">披掛與武學詳情，請至「人物」分頁點入查看。</p>
         </section>
       )}
 

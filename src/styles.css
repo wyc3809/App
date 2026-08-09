@@ -3052,6 +3052,80 @@ button.is-pressed,
   text-align: left;
 }
 
+/* BitLife 式人物選單：點入再看詳情 */
+.ink-bitlife-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 8px 0 4px;
+  border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+}
+
+.ink-bitlife-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 4px 14px 2px;
+  border: 0;
+  border-bottom: 1px dashed rgba(26, 26, 26, 0.1);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ink-bitlife-row:last-child {
+  border-bottom: none;
+}
+
+.ink-bitlife-row:hover {
+  background: rgba(163, 58, 50, 0.04);
+}
+
+.ink-bitlife-row:active {
+  background: rgba(163, 58, 50, 0.08);
+}
+
+.ink-bitlife-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ink-bitlife-row-text strong {
+  font-size: 1rem;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+
+.ink-bitlife-row-text span {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-wash);
+  line-height: 1.35;
+}
+
+.ink-bitlife-chevron {
+  flex: 0 0 auto;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--ink-mid);
+  opacity: 0.55;
+  transform: translateY(-1px);
+}
+
+.ink-person-back {
+  margin: 0 0 10px;
+  letter-spacing: 0.12em;
+}
+
 /* 族譜：直式冊頁 */
 .ink-genealogy {
   margin: 4px 0 12px;
