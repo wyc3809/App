@@ -17,9 +17,8 @@ You still need a paid Apple Developer account for signing and App Store Connect.
 ## Prerequisites (Mac for iOS)
 
 - Xcode 16+
-- CocoaPods
 - Apple Developer account
-- Node 20+
+- Node 22+ (Capacitor CLI requirement)
 
 ## One-time setup
 

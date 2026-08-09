@@ -20,7 +20,7 @@ workflows:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "app.worthbook.tracker"
-      node: 20
+      node: 22
       xcode: latest
       ios_signing:
         distribution_type: app_store
