@@ -1,5 +1,8 @@
 # 江湖一生 Jianghu Life Engine V1.0
 
+> **產品分離**：本分支線是《江湖一生》。同 remote 的 `main` 已是 **WorthBook**
+> （净资产 PWA），兩邊**不要互相 merge**。詳見 [`docs/PRODUCT-SEPARATION.md`](docs/PRODUCT-SEPARATION.md)。
+
 **BitLife × 武俠人生模擬** — 玩家體驗可重玩的武俠人生，內容由 **JSON 事件引擎** 驅動。
 
 ## 核心循環
