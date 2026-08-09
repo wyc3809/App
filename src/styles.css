@@ -1057,8 +1057,270 @@ body::before {
 }
 
 .ink-gear-totals {
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+  margin-bottom: 0.65rem;
+  line-height: 1.55;
+}
+
+.ink-gear-power {
+  color: var(--cinnabar);
+  letter-spacing: 0.06em;
+}
+
+/* Diablo 式稀有度色階（水墨紙面可讀） */
+.ink-rarity-common {
+  color: var(--ink-mid);
+}
+.ink-rarity-fine {
+  color: #3d5c4f;
+}
+.ink-rarity-rare {
+  color: #3a4f7a;
+}
+.ink-rarity-epic {
+  color: #6b3d6e;
+}
+.ink-rarity-divine {
+  color: #9a6b1f;
+}
+
+.ink-rarity-tag {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.ink-gear-slots {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.ink-gear-slot {
+  padding: 10px 12px;
+  border-left: 3px solid var(--ink-faint);
+  background: linear-gradient(90deg, rgba(26, 26, 26, 0.03), transparent 70%);
+}
+
+.ink-gear-slot--fine {
+  border-left-color: #3d5c4f;
+}
+.ink-gear-slot--rare {
+  border-left-color: #3a4f7a;
+}
+.ink-gear-slot--epic {
+  border-left-color: #6b3d6e;
+}
+.ink-gear-slot--divine {
+  border-left-color: #9a6b1f;
+}
+.ink-gear-slot--empty {
+  opacity: 0.72;
+}
+
+.ink-gear-slot-label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  color: var(--ink-wash);
+}
+
+.ink-gear-slot .ink-gear-name {
+  display: block;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+.ink-gear-meta {
+  margin: 2px 0 4px;
+  font-size: 0.72rem;
+  color: var(--ink-wash);
+  letter-spacing: 0.06em;
+}
+
+.ink-gear-empty {
+  color: var(--ink-wash);
+  font-size: 0.88rem;
+  letter-spacing: 0.2em;
+}
+
+.ink-gear-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ink-gear-card {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+  background: linear-gradient(180deg, rgba(250, 246, 238, 0.55), transparent);
+}
+
+.ink-gear-card--on {
+  background: linear-gradient(180deg, rgba(163, 58, 50, 0.06), transparent 55%);
+}
+
+.ink-gear-card--fine {
+  box-shadow: inset 3px 0 0 #3d5c4f;
+}
+.ink-gear-card--rare {
+  box-shadow: inset 3px 0 0 #3a4f7a;
+}
+.ink-gear-card--epic {
+  box-shadow: inset 3px 0 0 #6b3d6e;
+}
+.ink-gear-card--divine {
+  box-shadow: inset 3px 0 0 #9a6b1f;
+}
+
+.ink-gear-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+}
+
+.ink-gear-card-head .ink-gear-name {
+  flex: 1 1 auto;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+}
+
+.ink-gear-on-tag {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: var(--cinnabar);
+}
+
+.ink-affix-list {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ink-affix-list--compact {
+  margin: 4px 0 0;
+}
+
+.ink-affix {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+.ink-affix--base {
+  color: var(--ink-mid);
+}
+
+.ink-affix--magic {
+  color: #3a4f7a;
+}
+
+.ink-affix--legendary {
+  color: #9a6b1f;
+  font-style: normal;
+}
+
+.ink-skill-cards {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ink-skill-cards--compact .ink-skill-fx,
+.ink-skill-cards--compact .ink-skill-move {
+  font-size: 0.74rem;
+}
+
+.ink-skill-card {
+  padding: 8px 10px;
+  border-left: 2px solid var(--ink-faint);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.ink-skill-card--external {
+  border-left-color: var(--cinnabar);
+}
+
+.ink-skill-card--internal {
+  border-left-color: var(--jade);
+}
+
+.ink-skill-card--qinggong {
+  border-left-color: #3a4f7a;
+}
+
+.ink-skill-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ink-skill-card-head strong {
+  letter-spacing: 0.1em;
+}
+
+.ink-skill-badge {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-wash);
+  border: 1px solid var(--ink-faint);
+  padding: 0 5px;
+  line-height: 1.35;
+}
+
+.ink-stance-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35em;
+  height: 1.35em;
+  padding: 0 3px;
+  border: 1.5px solid currentColor;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.ink-stance-seal--shi {
+  color: var(--cinnabar);
+}
+
+.ink-stance-seal--xu {
+  color: #3a4f7a;
+}
+
+.ink-stance-seal--jia {
+  color: var(--jade);
+}
+
+.ink-skill-move,
+.ink-skill-fx {
+  margin: 4px 0 0;
+  color: var(--ink-mid);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.ink-combat-move-meta {
+  display: block;
+  margin-top: 1px;
 }
 
 .ink-home-focus {

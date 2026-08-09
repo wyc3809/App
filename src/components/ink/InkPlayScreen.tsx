@@ -12,8 +12,18 @@ import { resolvePendingEvent } from '@core/life/eventEngine';
 import { getLifeStageLabel } from '@core/life/stages';
 import { seasonLabel } from '@core/life/monthly';
 import { PRACTICE_ACTIONS, SECT_INNER_ACTIONS, SECT_DEFS } from '@core/life/actions';
-import { getGearDef, WEAPON_KIND_LABEL, formatGearCombatLine, formatGearStatLine } from '@data/equipment/catalog';
+import { getGearDef, WEAPON_KIND_LABEL } from '@data/equipment/catalog';
+import {
+  RARITY_SHORT,
+  SLOT_LABEL,
+  displayGearName,
+  formatAffixDisplay,
+  gearTitleBits,
+  listGearAffixes,
+  summarizeAffixTotals,
+} from '@data/equipment/affixes';
 import { gearTotals, sumGearCombatBonuses, previewEquipDelta, combatPowerScore } from '@core/life/equipment';
+import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
 import { jianghuHints, playerEvasionPercent, practiceLearningHints } from '@core/life/jianghuHints';
 import { meetsRequirements } from '@core/life/requirements';
@@ -32,7 +42,6 @@ import { classifyBeat, summarizeExchange } from '@core/life/combatPresentation';
 import { describeSectProgress } from '@core/life/sectStanding';
 import { ensureNature, dominantNature, natureGateHint, natureSummary } from '@core/life/nature';
 import { getPlayerMoves } from '@core/life/combat';
-import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
 import {
   COMBAT_TECHNIQUE_ROLES,
   combatMoveRole,
@@ -40,6 +49,7 @@ import {
   formatSkillEffects,
   getSkillDef,
   isCombatActionMove,
+  skillKindLabel,
   type CombatMoveRole,
 } from '@data/skills/catalog';
 import { rankPowerMult } from '@core/life/martialRanks';
@@ -86,14 +96,6 @@ function recentExchangeBeats(log: string[], playerName: string, foeName: string)
 
 type PracticeView = 'main' | 'sect';
 type CombatRoleFilter = 'all' | CombatMoveRole;
-
-const RARITY_ZH: Record<string, string> = {
-  common: '凡',
-  fine: '良',
-  rare: '珍',
-  epic: '奇',
-  divine: '神',
-};
 
 export function InkPlayScreen({ state }: Props) {
   const choose = useLifeStore((s) => s.choose);
@@ -657,26 +659,38 @@ export function InkPlayScreen({ state }: Props) {
               : ''}
           </p>
           {c.skills.length > 0 && (
-            <ul className="ink-skill-list">
-              {c.skills.map((id) => {
-                const def = getSkillDef(id);
-                return (
-                  <li key={id}>
-                    <strong>{skillDisplay(c, id)}</strong>
-                    {def?.kind === 'internal' && def.passive ? (
-                      <span className="ink-skill-passive"> · 內功被動</span>
-                    ) : null}
-                    {def?.kind === 'qinggong' && def.passive ? (
-                      <span className="ink-skill-passive"> · 輕功身法</span>
-                    ) : null}
-                    {def?.kind === 'external' && def.move ? (
-                      <span className="ink-skill-passive"> · 戰招「{def.move.name}」</span>
-                    ) : null}
-                    <span className="ink-gear-desc">{formatSkillEffects(id)}</span>
-                  </li>
-                );
-              })}
-            </ul>
+            <>
+              <h3 className="ink-subhead">武學招式</h3>
+              <ul className="ink-skill-cards">
+                {c.skills.map((id) => {
+                  const def = getSkillDef(id);
+                  const kind = def?.kind ?? 'external';
+                  const stance = def?.move ? resolveMoveStance(def.move) : null;
+                  return (
+                    <li key={id} className={`ink-skill-card ink-skill-card--${kind}`}>
+                      <div className="ink-skill-card-head">
+                        <strong>{skillDisplay(c, id)}</strong>
+                        <span className="ink-skill-badge">{skillKindLabel(kind)}</span>
+                        {stance ? (
+                          <span className={`ink-stance-seal ink-stance-seal--${stance}`}>
+                            {MOVE_STANCE_LABEL[stance]}
+                          </span>
+                        ) : null}
+                      </div>
+                      {def?.move ? (
+                        <p className="ink-skill-move">
+                          戰招「{def.move.name}」
+                          {stance ? ` · ${MOVE_STANCE_LABEL[stance]}` : ''}
+                          {def.move.qiCost > 0 ? ` · 耗內${def.move.qiCost}` : ' · 無耗'}
+                          {def.move.power > 0 ? ` · 威×${def.move.power.toFixed(1)}` : ''}
+                        </p>
+                      ) : null}
+                      <p className="ink-skill-fx">{formatSkillEffects(id) || '尚無詳載'}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </section>
       )}
@@ -802,65 +816,78 @@ export function InkPlayScreen({ state }: Props) {
 
           <h3 className="ink-subhead">行囊披掛</h3>
           <p className="ink-note ink-gear-totals">
-            披掛合計：戰意 {combatPowerScore(c)} ·{' '}
-            {[
-              gearStatTotals.attack ? `威＋${gearStatTotals.attack}` : '',
-              gearStatTotals.defense ? `禦＋${gearStatTotals.defense}` : '',
-              gearStatTotals.maxHpBonus ? `氣血＋${gearStatTotals.maxHpBonus}` : '',
-              gearStatTotals.maxQiBonus ? `內息＋${gearStatTotals.maxQiBonus}` : '',
-              gearStatTotals.martialBonus ? `武學＋${gearStatTotals.martialBonus}` : '',
-              gearFxTotals.hitBonus ? `準＋${Math.round(gearFxTotals.hitBonus * 100)}%` : '',
-              gearFxTotals.evasion ? `身法＋${Math.round(gearFxTotals.evasion * 100)}%` : '',
-              gearFxTotals.reflect ? `反震${Math.round(gearFxTotals.reflect * 100)}%` : '',
-              gearFxTotals.pierce ? `破甲${Math.round(gearFxTotals.pierce * 100)}%` : '',
-              gearFxTotals.lifesteal ? `吸敵氣血${Math.round(gearFxTotals.lifesteal * 100)}%` : '',
-              gearFxTotals.bleedChance ? `見血${Math.round(gearFxTotals.bleedChance * 100)}%` : '',
-            ]
-              .filter(Boolean)
-              .join(' · ') || '尚無加成'}
+            <span className="ink-gear-power">戰意 {combatPowerScore(c)}</span>
+            {(() => {
+              const bits = summarizeAffixTotals({ ...gearStatTotals, ...gearFxTotals });
+              return bits.length ? ` · ${bits.join(' · ')}` : '';
+            })()}
           </p>
-          <div className="ink-gear-equipped">
+          <div className="ink-gear-slots" aria-label="已披掛">
             {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
               const id = equipment[slot];
               const def = id ? getGearDef(id) : null;
-              const stats = def ? formatGearStatLine(def) : '';
-              const fx = def ? formatGearCombatLine(def) : '';
+              const affixes = def ? listGearAffixes(def) : [];
               return (
-                <p key={slot} className="ink-note">
-                  {slot === 'weapon' ? '兵刃' : slot === 'armor' ? '護體' : '佩飾'} ·{' '}
-                  {def
-                    ? `${def.name}（${RARITY_ZH[def.rarity] ?? def.rarity}${def.weaponKind ? `·${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}）`
-                    : '空'}
-                  {stats && <span className="ink-gear-stat"> — {stats}</span>}
-                  {fx && <span className="ink-gear-fx"> {fx}</span>}
-                </p>
+                <div
+                  key={slot}
+                  className={`ink-gear-slot${def ? ` ink-gear-slot--${def.rarity}` : ' ink-gear-slot--empty'}`}
+                >
+                  <span className="ink-gear-slot-label">{SLOT_LABEL[slot]}</span>
+                  {def ? (
+                    <>
+                      <strong className={`ink-gear-name ink-rarity-${def.rarity}`}>
+                        {displayGearName(def)}
+                      </strong>
+                      <span className="ink-gear-meta">
+                        {RARITY_SHORT[def.rarity]}
+                        {def.weaponKind ? ` · ${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}
+                      </span>
+                      <ul className="ink-affix-list ink-affix-list--compact">
+                        {affixes.slice(0, 3).map((line) => (
+                          <li key={`${line.tier}-${line.text}`} className={`ink-affix ink-affix--${line.tier}`}>
+                            {formatAffixDisplay(line)}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <span className="ink-gear-empty">空</span>
+                  )}
+                </div>
               );
             })}
           </div>
           {gearIds.length > 0 && (
-            <ul className="ink-gear-list">
+            <ul className="ink-gear-cards">
               {gearIds.map((id) => {
                 const def = getGearDef(id);
                 if (!def) return null;
                 const equipped = equipment[def.slot] === id;
                 const preview = previewGearId === id ? previewEquipDelta(c, id) : null;
+                const affixes = listGearAffixes(def);
                 return (
-                  <li key={id} className={equipped ? 'ink-gear-item ink-gear-item--on' : 'ink-gear-item'}>
-                    <span>
-                      {def.name}
-                      <em>
-                        {RARITY_ZH[def.rarity]}
-                        {def.weaponKind ? ` · ${WEAPON_KIND_LABEL[def.weaponKind]}` : ''}
-                        {equipped ? ' · 已披' : ''}
-                      </em>
-                    </span>
-                    {formatGearStatLine(def) && (
-                      <span className="ink-gear-stat">{formatGearStatLine(def)}</span>
-                    )}
-                    {formatGearCombatLine(def) && (
-                      <span className="ink-gear-fx">{formatGearCombatLine(def)}</span>
-                    )}
-                    <span className="ink-gear-desc">{def.description}</span>
+                  <li
+                    key={id}
+                    className={`ink-gear-card ink-gear-card--${def.rarity}${equipped ? ' ink-gear-card--on' : ''}`}
+                  >
+                    <div className="ink-gear-card-head">
+                      <strong className={`ink-gear-name ink-rarity-${def.rarity}`}>
+                        {displayGearName(def)}
+                      </strong>
+                      <span className={`ink-rarity-tag ink-rarity-${def.rarity}`}>
+                        {RARITY_SHORT[def.rarity]}
+                      </span>
+                      {equipped ? <span className="ink-gear-on-tag">披中</span> : null}
+                    </div>
+                    <p className="ink-gear-meta">{gearTitleBits(def)} · {SLOT_LABEL[def.slot]}</p>
+                    <ul className="ink-affix-list">
+                      {affixes.map((line) => (
+                        <li key={`${line.tier}-${line.name ?? ''}-${line.text}`} className={`ink-affix ink-affix--${line.tier}`}>
+                          {formatAffixDisplay(line)}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="ink-gear-desc">{def.description}</p>
                     <div className="ink-gear-actions">
                       {!equipped && (
                         <button
@@ -871,7 +898,7 @@ export function InkPlayScreen({ state }: Props) {
                             setPreviewGearId(previewGearId === id ? null : id);
                           }}
                         >
-                          {previewGearId === id ? '收起端詳' : '端詳'}
+                          {previewGearId === id ? '收起' : '對比'}
                         </button>
                       )}
                       <button
@@ -883,11 +910,15 @@ export function InkPlayScreen({ state }: Props) {
                           equipOwned(id);
                         }}
                       >
-                        {equipped ? '已披' : '披上'}
+                        {equipped ? '披中' : '披上'}
                       </button>
                     </div>
                     {preview && !preview.alreadyEquipped && (
-                      <p className={`ink-gear-preview${preview.powerDelta >= 0 ? ' ink-gear-preview--up' : ' ink-gear-preview--down'}`}>
+                      <p
+                        className={`ink-gear-preview${
+                          preview.powerDelta >= 0 ? ' ink-gear-preview--up' : ' ink-gear-preview--down'
+                        }`}
+                      >
                         若披上：{preview.summary}
                       </p>
                     )}
@@ -897,14 +928,38 @@ export function InkPlayScreen({ state }: Props) {
             </ul>
           )}
           {c.skills.length > 0 && (
-            <ul className="ink-skill-list">
-              {c.skills.map((id) => (
-                <li key={id}>
-                  <strong>{skillDisplay(c, id)}</strong>
-                  <span className="ink-gear-desc">{formatSkillEffects(id)}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <h3 className="ink-subhead">已習武學</h3>
+              <ul className="ink-skill-cards ink-skill-cards--compact">
+                {c.skills.map((id) => {
+                  const def = getSkillDef(id);
+                  const kind = def?.kind ?? 'external';
+                  const stance = def?.move ? resolveMoveStance(def.move) : null;
+                  return (
+                    <li key={id} className={`ink-skill-card ink-skill-card--${kind}`}>
+                      <div className="ink-skill-card-head">
+                        <strong>{skillDisplay(c, id)}</strong>
+                        <span className="ink-skill-badge">{skillKindLabel(kind)}</span>
+                        {stance ? (
+                          <span className={`ink-stance-seal ink-stance-seal--${stance}`}>
+                            {MOVE_STANCE_LABEL[stance]}
+                          </span>
+                        ) : null}
+                      </div>
+                      {def?.move ? (
+                        <p className="ink-skill-move">
+                          {def.move.name}
+                          {def.move.qiCost > 0 ? ` · 內${def.move.qiCost}` : ' · 無耗'}
+                          {def.move.power > 0 ? ` · 威×${def.move.power.toFixed(1)}` : ''}
+                        </p>
+                      ) : (
+                        <p className="ink-skill-fx">{formatSkillEffects(id) || '內功心法'}</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </section>
       )}
@@ -1106,10 +1161,10 @@ export function InkPlayScreen({ state }: Props) {
                           <span className="ink-combat-move">
                             <strong>
                               {mv.name}
-                              {matched ? ' · 契' : ''}
-                              {short ? ' · 不足' : ''}
+                              {matched ? ' · 兵刃契' : ''}
+                              {short ? ' · 內息不足' : ''}
                             </strong>
-                            <em>{formatCombatMoveCompact(mv, effPower)}</em>
+                            <em className="ink-combat-move-meta">{formatCombatMoveCompact(mv, effPower)}</em>
                           </span>
                         </button>
                         <button

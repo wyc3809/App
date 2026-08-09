@@ -257,8 +257,8 @@ export function formatCombatMoveSummary(m: CombatMoveDef, effPower?: number): st
 /** 戰鬥清單用短標：內力 · 威能 · 主特效（屬性只顯示喺印章） */
 export function formatCombatMoveCompact(m: CombatMoveDef, effPower?: number): string {
   const bits: string[] = [];
-  bits.push(m.qiCost > 0 ? `${m.qiCost}` : '0');
-  if (m.power > 0) bits.push(`×${(effPower ?? m.power).toFixed(1)}`);
+  bits.push(m.qiCost > 0 ? `內${m.qiCost}` : '無耗');
+  if (m.power > 0) bits.push(`威×${(effPower ?? m.power).toFixed(1)}`);
   const fx = formatCombatMoveEffectBits(m);
   if (fx[0]) bits.push(fx[0]);
   return bits.join(' · ');
