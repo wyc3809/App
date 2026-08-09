@@ -11,7 +11,6 @@ import {
 } from '@data/skills/catalog';
 import { rankPowerMult } from './martialRanks';
 import { grantGear, ensureGear, gearTotals, sumGearCombatBonuses } from './equipment';
-import { getGearDef } from '@data/equipment/catalog';
 import { learnMartialArt, tryAdvanceSkill } from './flavor';
 import { applyNatureDelta } from './nature';
 import { recordDispositionAftermath } from './aftermath';
@@ -37,6 +36,7 @@ import {
   stanceClashLine,
   stanceDamageMult,
 } from './moveStance';
+import { gainWeaponMastery, weaponSynergyBoost } from './weaponMastery';
 
 export type CombatFoeDisposition = 'kill' | 'release' | 'stun';
 
@@ -195,18 +195,12 @@ function skillIdForMove(state: LifeGameState, moveId: string): string | null {
   return null;
 }
 
-/** 持對應兵器時：威力×1.15、命中+0.06 */
-function weaponMatchBoost(state: LifeGameState, skillId: string | null): { power: number; hit: number; label?: string } {
-  if (!skillId) return { power: 1, hit: 0 };
-  const def = getSkillDef(skillId);
-  if (!def?.weaponKind) return { power: 1, hit: 0 };
-  const equipped = state.character.equipment?.weapon
-    ? getGearDef(state.character.equipment.weapon)
-    : undefined;
-  if (equipped?.weaponKind === def.weaponKind) {
-    return { power: 1.15, hit: 0.06, label: `兵刃相契（${equipped.name}）` };
-  }
-  return { power: 1, hit: 0 };
+/** 持對應兵器時：威力／命中隨專精加深；錯兵略滯 */
+function weaponMatchBoost(
+  state: LifeGameState,
+  skillId: string | null,
+): { power: number; hit: number; label?: string } {
+  return weaponSynergyBoost(state, skillId);
 }
 
 function enemyChooseMove(
@@ -559,6 +553,11 @@ export function playerCombatTurn(state: LifeGameState, moveId: string): string[]
       if (clash) {
         lines.push(clash);
         combat.log.push(clash);
+      }
+      const masteryLine = gainWeaponMastery(state, sid, 1);
+      if (masteryLine) {
+        lines.push(masteryLine);
+        combat.log.push(masteryLine);
       }
       const powerMult = (sid ? rankPowerMult(rank) : 1) * wpn.power;
       const strikeLines = resolveStrike(

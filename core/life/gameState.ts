@@ -277,6 +277,7 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   }
   if (c.flags.baseMaxHp === undefined) c.flags.baseMaxHp = c.maxHealth;
   if (c.flags.baseMaxQi === undefined) c.flags.baseMaxQi = c.maxQi;
+  if (c.sectId && !c.flags.joined_sect) c.flags.joined_sect = true;
   if (c.stats.monthsLived === undefined) c.stats.monthsLived = 0;
   if (raw.month === undefined) raw.month = 1;
   if (!raw.world) raw.world = makeWorldState();

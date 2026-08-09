@@ -19,6 +19,7 @@ import { EVENT_CATALOG } from '@data/events/catalog';
 import { SECRET_ART_EVENTS } from '@data/events/secretArts';
 import { BOSS_ENCOUNTER_EVENTS, getBossFightConfig } from '@data/events/bossEncounters';
 import { PRACTICE_WANDER_EVENTS } from '@data/events/practiceWander';
+import { PLAYABILITY_EVENTS } from '@data/events/playabilityPack';
 import { JIANGHU_EXTRA_EVENTS } from '@data/events/jianghuExtra100';
 import {
   JINYONG_TROPE_EVENTS,
@@ -51,6 +52,13 @@ import {
   subscribeEventOverrides,
 } from './eventOverrides';
 import { getChoiceResultNarrate } from './resultNarrate';
+import {
+  buildTravelOfferEvent,
+  finalizeTravelFromFlags,
+  isTravelOfferReady,
+} from './rumorTravel';
+import { applyBondSideEffects, pickBondEvent } from './bonds';
+import { rollRandomFragment } from './manualFragments';
 
 function buildStoryFeedback(logs: string[], fallback = '事已了結。'): string {
   const cleaned = logs
@@ -127,6 +135,7 @@ export function rawCatalog(): GameEvent[] {
       ...JINYONG_TROPE_EVENTS,
       ...ROAD_ENCOUNTER_EVENTS,
       ...PRACTICE_WANDER_EVENTS,
+      ...PLAYABILITY_EVENTS,
       ...SECRET_ART_EVENTS,
       ...BOSS_ENCOUNTER_EVENTS,
       ...ENRICHED_CATALOG,
@@ -181,6 +190,17 @@ export function lookupEvent(id: string): GameEvent | undefined {
 export function resolvePendingEvent(state: LifeGameState): GameEvent | null {
   if (!state.pending) return null;
   const id = state.pending.eventId;
+  if (id === 'play_travel_offer') return buildTravelOfferEvent(state);
+  if (id === 'play_master_fork' || id === 'play_lover_fork') {
+    const cached = state.character.flags._pending_bond_json;
+    if (typeof cached === 'string' && cached) {
+      try {
+        return JSON.parse(cached) as GameEvent;
+      } catch {
+        /* fall through */
+      }
+    }
+  }
   const fromCat = lookupEvent(id) ?? getEventById(fullCatalog(), id);
   if (fromCat) return fromCat;
   return lookupArcEvent(state, id);
@@ -414,6 +434,28 @@ export function applyChoice(
     deltas.push(...natureLines);
   }
 
+  // 可玩性副作用：擇路／殘譜／絆線
+  if (state.character.flags._travel_apply) {
+    const travelLines = finalizeTravelFromFlags(state);
+    if (travelLines.length) logs.push(...travelLines);
+  }
+  if (state.character.flags._roll_fragment) {
+    delete state.character.flags._roll_fragment;
+    const fragLines = rollRandomFragment(state);
+    if (fragLines.length) {
+      logs.push(...fragLines);
+      deltas.push(...fragLines.filter((l) => /殘譜|合璧|武學/.test(l)));
+    }
+  }
+  if (tags.includes('bond') || tags.includes('master') || tags.includes('romance')) {
+    logs = applyBondSideEffects(state, logs);
+    delete state.character.flags._pending_bond_json;
+  }
+  if (event.id === 'play_travel_offer') {
+    delete state.character.flags.travel_offer_consumed;
+    delete state.character.flags.travel_offer_json;
+  }
+
   // 故人短弧：相見／結緣落拍；絕交斷緣；改日只延遲
   if (tags.includes('arc') || event.id.startsWith('arc_visit_')) {
     let arcLines: string[] = [];
@@ -547,8 +589,28 @@ export function startMonth(state: LifeGameState): LifeGameState {
   let event: GameEvent | null = null;
   let kind: 'ordinary' | 'special' | 'story' = 'ordinary';
 
+  // 傳聞擇路：打聽後優先掛動態指路
+  if (!event && isTravelOfferReady(state)) {
+    const travelEv = buildTravelOfferEvent(state);
+    if (travelEv) {
+      event = travelEv;
+      kind = 'ordinary';
+      state.character.flags.travel_offer_consumed = true;
+    }
+  }
+
+  // 師徒／俠侶心結
+  if (!event) {
+    const bondEv = pickBondEvent(state);
+    if (bondEv) {
+      event = bondEv;
+      kind = 'story';
+      state.character.flags._pending_bond_json = JSON.stringify(bondEv);
+    }
+  }
+
   // 故人拍數到期：本月優先掛訪故人，唔同其他事件搶池、亦唔在冷卻期重抽
-  if (isArcVisitReady(state)) {
+  if (!event && isArcVisitReady(state)) {
     const arcEv = buildArcVisitEvent(state);
     if (arcEv) {
       event = arcEv;
@@ -624,6 +686,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
       livePool([
         ...ORDINARY_EVENTS,
         ...JIANGHU_EXTRA_EVENTS,
+        ...PLAYABILITY_EVENTS,
         ...JINYONG_ORDINARY_EVENTS,
         ...ENRICHED_CATALOG.filter((e) => e.id !== 'life_birth'),
       ]),

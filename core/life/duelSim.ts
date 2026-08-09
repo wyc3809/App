@@ -15,6 +15,7 @@ import { rankPowerMult } from './martialRanks';
 import type { CombatFighterState, LifeCharacter, WuxiaAttribute } from '@interfaces/lifeEngine';
 import type { ContestantBuild } from '@interfaces/lifeEngine';
 import { clamp, tickStatus, resolveStrike as resolveStrikeCore } from './combatCore';
+import { weaponSynergyForLoadout } from './weaponMastery';
 
 export type ContestFighter = CombatFighterState;
 
@@ -123,10 +124,7 @@ function weaponMatchBoost(
   const def = getSkillDef(skillId);
   if (!def?.weaponKind) return { power: 1, hit: 0 };
   const equipped = loadout.equipment?.weapon ? getGearDef(loadout.equipment.weapon) : undefined;
-  if (equipped?.weaponKind === def.weaponKind) {
-    return { power: 1.15, hit: 0.06 };
-  }
-  return { power: 1, hit: 0 };
+  return weaponSynergyForLoadout(equipped?.weaponKind, def.weaponKind, 0);
 }
 
 

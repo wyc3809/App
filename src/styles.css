@@ -3034,6 +3034,24 @@ button.is-pressed,
   }
 }
 
+.ink-playability-board {
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.ink-playability-board .ink-delta-row {
+  opacity: 1;
+  animation: none;
+  min-height: 1.7rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  justify-content: flex-start;
+}
+
+.ink-playability-board .ink-delta-row-text {
+  text-align: left;
+}
+
 .ink-combat {
   /* 交手期間不重播整面板 wash，避免每回合閃爍 */
   animation: none;

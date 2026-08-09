@@ -22,6 +22,11 @@ import {
   listGearAffixes,
   summarizeAffixTotals,
 } from '@data/equipment/affixes';
+import { grudgeKindLabel, listGrudges } from '@core/life/grudgeBook';
+import { listWeaponMasteries } from '@core/life/weaponMastery';
+import { careerLabel, getCareer } from '@core/life/careers';
+import { formatFragmentProgress } from '@core/life/manualFragments';
+import { getMasterName } from '@core/life/bonds';
 import { gearTotals, sumGearCombatBonuses, previewEquipDelta, combatPowerScore } from '@core/life/equipment';
 import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
@@ -658,6 +663,55 @@ export function InkPlayScreen({ state }: Props) {
               ? `（${c.family.childrenNames.join('、')}）`
               : ''}
           </p>
+          <h3 className="ink-subhead">江湖根腳</h3>
+          <p className="ink-note">
+            行當 · {careerLabel(state)}
+            {getCareer(state) ? `（月利約${getCareer(state)!.income}兩）` : ''}
+            {getMasterName(state)
+              ? ` · 業師「${getMasterName(state)}」${c.flags.master_severed ? '（已斷）' : ''}`
+              : ''}
+            {c.flags.lover_dual_done ? ' · 俠侶相守' : ''}
+            {c.flags.lover_severed ? ' · 舊情已斷' : ''}
+          </p>
+          {listWeaponMasteries(state).length > 0 && (
+            <p className="ink-note">
+              兵刃專精 ·{' '}
+              {listWeaponMasteries(state)
+                .map((m) => `${m.label}${m.level}境`)
+                .join(' · ')}
+            </p>
+          )}
+          {formatFragmentProgress(state).length > 0 && (
+            <ul className="ink-delta-board ink-playability-board">
+              {formatFragmentProgress(state).map((line) => (
+                <li key={line} className="ink-delta-row ink-delta-row--flat">
+                  <span className="ink-delta-row-text">{line}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {listGrudges(state).length > 0 && (
+            <>
+              <h3 className="ink-subhead">恩怨簿</h3>
+              <ul className="ink-delta-board ink-playability-board">
+                {listGrudges(state)
+                  .slice(0, 6)
+                  .map((g) => (
+                    <li
+                      key={g.id}
+                      className={`ink-delta-row ink-delta-row--${
+                        g.kind === 'favor' ? 'up' : g.kind === 'blood' ? 'down' : 'flat'
+                      }`}
+                    >
+                      <span className="ink-delta-row-text">
+                        {grudgeKindLabel(g.kind)} · {g.name}
+                        （深{g.strength} · 餘{g.monthsLeft}月）
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </>
+          )}
           {c.skills.length > 0 && (
             <>
               <h3 className="ink-subhead">武學招式</h3>

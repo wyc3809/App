@@ -5,6 +5,7 @@ import { pushChronicle } from './chronicle';
 import { learnMartialArt } from './flavor';
 import { grantGear } from './equipment';
 import { applyNatureDelta } from './nature';
+import { recordGrudgeFromDisposition, tickGrudgeBook } from './grudgeBook';
 
 export const MERCY_KEY = 'aftermath_mercy_months';
 export const MERCY_FOE = 'aftermath_mercy_foe';
@@ -34,6 +35,8 @@ export function recordDispositionAftermath(
   } else {
     c.flags['aftermath_stun_soft'] = (Number(c.flags['aftermath_stun_soft'] ?? 0) || 0) + 1;
   }
+  recordGrudgeFromDisposition(state, disposition, foeName);
+  lines.push('已記入恩怨簿。');
   snapshotRng(state);
   return lines;
 }
@@ -96,6 +99,7 @@ export function tickAftermath(state: LifeGameState): string[] {
     }
   }
 
+  lines.push(...tickGrudgeBook(state));
   if (lines.length) pushChronicle(state, lines);
   snapshotRng(state);
   return lines;

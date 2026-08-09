@@ -10,6 +10,8 @@ import { ensureGear } from './equipment';
 import { pushChronicle } from './chronicle';
 import { snapshotRng, syncRngFromState } from './gameState';
 import { defaultAttributes, simulateContestDuel } from './duelSim';
+import { topGrudgeNames } from './grudgeBook';
+import { getMasterName } from './bonds';
 
 export const HUASHAN_MIN_AGE = 16;
 export const HUASHAN_MIN_MARTIAL = 12;
@@ -339,6 +341,29 @@ export function startHuashanBracket(state: LifeGameState): string[] {
     contestants[id] = buildGhost(id, i, player.martial, rng);
   }
 
+  // 鬼影人格化：恩怨／師門／前世宿敵／眷屬相關名號覆寫 1～3 席
+  const personalNames: string[] = [];
+  for (const n of topGrudgeNames(state, 2)) personalNames.push(`${n}（舊怨）`);
+  const master = getMasterName(state);
+  if (master && !state.character.flags.master_severed) {
+    personalNames.push(`${master}座下代打`);
+  } else if (master && state.character.flags.master_severed) {
+    personalNames.push(`追討師門的${String(master).slice(0, 2)}姓客`);
+  }
+  const rivalHint =
+    state.character.flags.born_with_rival_hint ?? state.character.flags.legacy_rival;
+  if (typeof rivalHint === 'string' && rivalHint) personalNames.push(`${rivalHint}（前世影）`);
+  if (state.character.loverId && state.npcs[state.character.loverId]) {
+    const ln = state.npcs[state.character.loverId]!.name;
+    personalNames.push(`為${ln}出頭的過客`);
+  }
+  const ghostIds = Object.keys(contestants).filter((id) => id !== 'player');
+  for (let i = 0; i < Math.min(3, personalNames.length, ghostIds.length); i += 1) {
+    const gid = ghostIds[i]!;
+    const g = contestants[gid]!;
+    g.name = personalNames[i]!;
+  }
+
   const ids = shuffleIds(Object.keys(contestants), rng);
   const matches = createInitialMatches(ids);
   const bracket: HuashanBracketState = {
@@ -351,9 +376,12 @@ export function startHuashanBracket(state: LifeGameState): string[] {
   state.huashan = bracket;
   snapshotRng(state);
 
+  const named = personalNames.slice(0, 3);
   const lines = [
     `【華山論劍】你持帖上山，本屆${huashanSeasonLabel(seasonKey)}，八強單淘汰。`,
-    '其餘七席為江湖幽靈名手，論劍不問生死，只較一招一式。',
+    named.length
+      ? `席間隱約可見舊識影跡：${named.join('、')}。`
+      : '其餘七席為江湖幽靈名手，論劍不問生死，只較一招一式。',
   ];
   pushChronicle(state, [lines[0]!]);
   autoResolveGhosts(state, bracket);

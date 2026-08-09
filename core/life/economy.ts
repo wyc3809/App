@@ -1,5 +1,6 @@
 import type { LifeGameState } from '@interfaces/lifeEngine';
 import { getLifeStage } from './stages';
+import { careerMonthlyIncome, getCareer } from './careers';
 
 /** 月度薄利：令銀兩有緩慢壓力／來源，唔靠純事件掉錢 */
 export function tickMonthlyEconomy(state: LifeGameState): string[] {
@@ -14,13 +15,15 @@ export function tickMonthlyEconomy(state: LifeGameState): string[] {
   if (stage === 'twilight') upkeep = 4;
   if (c.sectId) upkeep += 1;
   if ((c.family?.childrenNames?.length ?? 0) > 0) upkeep += 1;
+  if (getCareer(state)) upkeep += 1;
 
-  // 薄利：門派津贴／小買賣／傳承族產
+  // 薄利：門派津贴／小買賣／傳承族產／行當
   let income = 0;
   if (c.sectId) income += 2;
   if (c.flags.born_with_family_legacy || c.flags.family_legacy) income += 2;
   if (c.flags.side_trade) income += Number(c.flags.side_trade) || 1;
   if (c.martial >= 40) income += 1;
+  income += careerMonthlyIncome(state);
 
   const net = income - upkeep;
   c.money = Math.max(0, c.money + net);

@@ -15,6 +15,9 @@ import { startCombat } from './combat';
 import { getSkillDef } from '@data/skills/catalog';
 import { teachSectArtForStanding, tryGainSectStanding } from './sectStanding';
 import { meetsNatureGate, natureGateHint } from './nature';
+import { rollTravelOffer } from './rumorTravel';
+import { ensureMasterBond } from './bonds';
+import { rollRandomFragment } from './manualFragments';
 
 export type PracticeActionId =
   | 'train_martial'
@@ -31,6 +34,8 @@ export type PracticeActionId =
   | 'sect_spar'
   | 'sect_guard'
   | 'sect_meditate'
+  | 'sect_namecard'
+  | 'sect_politics'
   | 'sect_leave';
 
 export type WanderPracticeActionId =
@@ -48,7 +53,7 @@ export interface PracticeAction {
 
 /** 修煉頁主選單（苦練／鑄兵／尋訪改為翻頁機緣） */
 export const PRACTICE_ACTIONS: PracticeAction[] = [
-  { id: 'inquire_rumors', label: '打聽傳聞', hint: '多聞風聲，翻頁易逢奇人' },
+  { id: 'inquire_rumors', label: '打聽傳聞', hint: '多聞風聲，並聞去向，翻頁可擇路' },
   { id: 'heal', label: '醫館調養', hint: '費銀十五兩，療傷減疲' },
   { id: 'equip_best', label: '整裝披掛', hint: '按庫中器物自行披掛妥當' },
 ];
@@ -60,6 +65,8 @@ export const SECT_INNER_ACTIONS: PracticeAction[] = [
   { id: 'sect_spar', label: '師門比武', hint: '實戰淬鍊，進階可期' },
   { id: 'sect_guard', label: '守護山門', hint: '夜巡風雨，磨礪心膽' },
   { id: 'sect_meditate', label: '靜室修煉', hint: '門中心法，閉目調息' },
+  { id: 'sect_namecard', label: '名帖往來', hint: '接待外派，交好或交惡' },
+  { id: 'sect_politics', label: '山門站隊', hint: '門中風波，選邊或調解' },
 ];
 
 export { SECT_DEFS };
@@ -147,11 +154,15 @@ export function applyPracticeOutcome(
       const paid = c.money >= 4;
       if (paid) c.money -= 4;
       c.flags.rumor_boost = cur + 1;
+      const offer = rollTravelOffer(state);
       logs.push(
         paid
           ? `你在茶棚酒肆間花了 4 兩打聽風聲。往後翻頁，遇首領與奇遇的機緣略增（傳聞層數 ${cur + 1}）。`
           : `你空口打聽，也聽得幾句江湖碎語。往後翻頁，遇首領與奇遇的機緣略增（傳聞層數 ${cur + 1}）。`,
       );
+      if (offer.length) {
+        logs.push(`耳聞去向：${offer.map((d) => d.name).join('、')}——翻過一頁或可擇路而行。`);
+      }
       break;
     }
     case 'join_sect': {
@@ -184,6 +195,8 @@ export function applyPracticeOutcome(
       c.sectStanding = 0;
       c.flags.joined_sect = true;
       logs.push(`你拜入${state.sects[target].name}，成為外門弟子。`);
+      ensureMasterBond(state, `${state.sects[target].name}執法長老`);
+      logs.push(`你對執法長老執弟子禮，師徒之名已定。`);
       const artId = artForStanding(target, 0);
       if (artId) {
         logs.push(learnMartialArt(state, artId, `${state.sects[target].name}外門武學`));
@@ -287,6 +300,43 @@ export function applyPracticeOutcome(
       if (stand) logs.push(stand);
       break;
     }
+    case 'sect_namecard': {
+      if (!c.sectId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      c.money = Math.max(0, c.money - 3);
+      c.reputation += 1;
+      logs.push('你持帖接待外派使者，茶過三巡，山門人情略增。');
+      const stand = tryGainSectStanding(state, 0.24);
+      if (stand) logs.push(stand);
+      if (rng.chance(0.2)) {
+        c.flags.master_bond = Math.min(100, (Number(c.flags.master_bond ?? 0) || 0) + 4);
+        logs.push('長老見你做事得體，多看了你一眼。');
+      }
+      break;
+    }
+    case 'sect_politics': {
+      if (!c.sectId) {
+        logs.push('你尚未拜入門派。');
+        break;
+      }
+      if (rng.chance(0.45)) {
+        c.reputation += 2;
+        c.flags.sect_politics_elder = true;
+        logs.push('你站定長老一邊，門中風波暫歇，人情偏向你。');
+        const stand = tryGainSectStanding(state, 0.35);
+        if (stand) logs.push(stand);
+      } else if (rng.chance(0.5)) {
+        c.flags.sect_rival_anger = true;
+        c.money += 6;
+        logs.push('你暗中使了手腳。對手跌了面子，盯梢卻也多了。');
+      } else {
+        c.reputation += 1;
+        logs.push('你兩頭勸和，風波未起，卻也無功無過。');
+      }
+      break;
+    }
     case 'sect_leave': {
       if (!c.sectId) {
         logs.push('你本就不屬任何門派。');
@@ -296,6 +346,7 @@ export function applyPracticeOutcome(
       c.sectId = null;
       c.sectStanding = 0;
       c.reputation = Math.max(0, c.reputation - 3);
+      c.flags.master_severed = true;
       logs.push(`你辭別${name}，从此山門內外，兩不相干。`);
       break;
     }
@@ -309,12 +360,17 @@ export function applyPracticeOutcome(
       if (rng.chance(0.32)) {
         logs.push('爐火失控，兵器毀於一旦，還燙傷了手。');
         addCondition(state, 'bleeding');
+        if (rng.chance(0.4)) {
+          logs.push(...rollRandomFragment(state));
+          logs.push('灰燼裡卻撿得半卷殘譜。');
+        }
         break;
       }
       const gearId = rollForgeResult(rng, { age: c.age, martial: c.martial });
       const name = grantGear(state, gearId);
       logs.push(`爐火純青，你煉成「${name}」。`);
       if (gearId.startsWith('divine')) logs.push('天地異象一瞬——竟是神兵！');
+      if (rng.chance(0.12)) logs.push(...rollRandomFragment(state));
       break;
     }
     case 'seek_master': {
@@ -343,6 +399,9 @@ export function applyPracticeOutcome(
           { id: 'art_heavy_halberd', name: '開山戟意' },
         ];
         const art = rng.pick(arts);
+        const masterNames = ['白眉叟', '青衫客', '赤練娘', '啞僕高人', '雲遊道人'];
+        ensureMasterBond(state, rng.pick(masterNames));
+        logs.push(`你拜入「${c.flags.master_name}」門下，執弟子禮。`);
         if (!c.skills.includes(art.id)) {
           logs.push(learnMartialArt(state, art.id, art.name));
           raiseBaseMaxQi(c, rng.nextInt(10, 25));

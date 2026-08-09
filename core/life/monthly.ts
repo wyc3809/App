@@ -8,6 +8,7 @@ import { tickMonthlyEconomy } from './economy';
 import { tickSectMonth } from './sectLife';
 import { syncTitles } from './titles';
 import { pushChronicle } from './chronicle';
+import { tickBonds } from './bonds';
 
 export function makeWorldState(): WorldState {
   const rng = getRng();
@@ -139,6 +140,7 @@ export function simulateMonthBody(state: LifeGameState): void {
   simulateWorldMonth(state);
   tryMonthlyBirth(state);
   tickAftermath(state);
+  tickBonds(state);
   tickLifeArc(state);
   const monthBits = [
     ...tickMonthlyEconomy(state),
