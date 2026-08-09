@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFoe, buildPlayerFighter, startCombat } from '../core/life/combat';
+import { buildFoe, startCombat } from '../core/life/combat';
 import { createNewLife } from '../core/life/gameState';
 import { initRng } from '../core/random';
 
