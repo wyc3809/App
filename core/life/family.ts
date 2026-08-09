@@ -41,7 +41,7 @@ export function canHaveChild(state: LifeGameState): ChildBirthGate {
     };
   }
   if (c.childrenCount >= c.childrenMax) {
-    return { ok: false, reason: `此生子女已滿（${c.childrenCount}/${c.childrenMax}）。` };
+    return { ok: false, reason: '此生子女已滿，不宜再添。' };
   }
   if ((c.monthsSinceLastBirth ?? 0) < FAMILY_RULES.cooldownMonths) {
     const left = FAMILY_RULES.cooldownMonths - (c.monthsSinceLastBirth ?? 0);
@@ -77,7 +77,7 @@ function spawnChild(state: LifeGameState, source: 'monthly' | 'seek'): string[] 
   const title = source === 'seek' ? '【求子得償】' : '【添丁】';
   return [
     `${title}你與${loverName}得一${gender === 'male' ? '子' : '女'}，取名${childName}。`,
-    `（此生子女 ${c.childrenCount}/${c.childrenMax} · 繼承人「${c.flags.heir_name}」）`,
+    `（子女 ${c.childrenCount} · 繼承人「${c.flags.heir_name}」）`,
   ];
 }
 

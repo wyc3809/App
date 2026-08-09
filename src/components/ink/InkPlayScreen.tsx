@@ -659,7 +659,7 @@ export function InkPlayScreen({ state }: Props) {
             ))
           )}
           <p className="ink-note">
-            子女 · {c.childrenCount ?? 0}/{c.childrenMax ?? 0}
+            子女 · {c.childrenCount ?? 0}
             {listChildNames(state).length
               ? `（${listChildNames(state).join('、')}）`
               : ''}
