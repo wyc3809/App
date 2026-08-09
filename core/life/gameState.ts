@@ -155,11 +155,12 @@ export function createNewLife(options: CreateLifeOptions | number = {}): LifeGam
     sects,
     world: makeWorldState(),
     story: makeStoryState(),
-    specialEventCountdown: rng.nextInt(3, 15),
+    specialEventCountdown: rng.nextInt(3, 10),
     worldFlags: {},
     completedEvents: [],
     recentEvents: [],
-    combatEncounterCountdown: rng.nextInt(7, 15),
+    combatEncounterCountdown: rng.nextInt(5, 11),
+    bossEncounterCountdown: rng.nextInt(3, 7),
     pending: null,
     pendingCombat: null,
     practiceActionsLeft: 3,
@@ -286,7 +287,10 @@ export function migrateLifeState(raw: LifeGameState): LifeGameState {
   if (raw.practiceActionsLeft === undefined) raw.practiceActionsLeft = 3;
   if (!Array.isArray(raw.recentEvents)) raw.recentEvents = [];
   if (raw.combatEncounterCountdown === undefined) {
-    raw.combatEncounterCountdown = 10;
+    raw.combatEncounterCountdown = 8;
+  }
+  if (raw.bossEncounterCountdown === undefined) {
+    raw.bossEncounterCountdown = 5;
   }
   if (!raw.sects) raw.sects = {};
   for (const def of SECT_DEFS) {

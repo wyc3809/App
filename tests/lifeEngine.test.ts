@@ -135,8 +135,10 @@ describe('life event engine', () => {
 
   it('road encounters exist and combat countdown starts in 7–15', () => {
     const state = createNewLife({ seed: 7, name: '試劍', birthplace: '千燈鎮' });
-    expect(state.combatEncounterCountdown).toBeGreaterThanOrEqual(7);
-    expect(state.combatEncounterCountdown).toBeLessThanOrEqual(15);
+    expect(state.combatEncounterCountdown).toBeGreaterThanOrEqual(5);
+    expect(state.combatEncounterCountdown).toBeLessThanOrEqual(11);
+    expect(state.bossEncounterCountdown).toBeGreaterThanOrEqual(3);
+    expect(state.bossEncounterCountdown).toBeLessThanOrEqual(7);
     expect(fullCatalog().some((e) => e.id === 'road_bandit_pass')).toBe(true);
   });
 

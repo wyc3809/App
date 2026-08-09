@@ -450,7 +450,7 @@ const FIGHTS: GameEvent[] = [
     body: '茶棚外紅裙一閃，袖中寒芒對準咽喉。赤練娘笑道：「聽說你記得我名字——那便留下暗器與命，選一樣。」',
     tags: ['special', 'combat', 'boss', 'secret'],
     weight: 4,
-    requirements: { minAge: 20, minMartial: 28, once: true, flags: { rumor_boss_scarlet: true } },
+    requirements: { minAge: 20, minMartial: 28, once: true },
     choices: [
       {
         id: 'fight',
@@ -484,7 +484,7 @@ const FIGHTS: GameEvent[] = [
     body: '官道橫着鐵甲車。車簾掀起，魁梧漢子聲如悶雷：「買路錢，或者命。」',
     tags: ['special', 'combat', 'boss', 'secret'],
     weight: 4,
-    requirements: { minAge: 22, minMartial: 35, once: true, flags: { rumor_boss_iron: true } },
+    requirements: { minAge: 22, minMartial: 28, once: true },
     choices: [
       {
         id: 'fight',
@@ -521,7 +521,6 @@ const FIGHTS: GameEvent[] = [
       minAge: 18,
       minAttrs: { wuXing: 48 },
       once: true,
-      flags: { rumor_boss_monk: true },
       minNature: { xia: 8 },
     },
     choices: [
@@ -563,7 +562,7 @@ const FIGHTS: GameEvent[] = [
     body: '林間鐵鏈拖地。黑風寨主鞭影如幕：「今日要留一件——命，或者武學。」',
     tags: ['special', 'combat', 'boss', 'secret'],
     weight: 4,
-    requirements: { minAge: 24, minMartial: 42, once: true, flags: { rumor_boss_black: true } },
+    requirements: { minAge: 24, minMartial: 34, once: true },
     choices: [
       {
         id: 'fight',
@@ -596,7 +595,7 @@ const FIGHTS: GameEvent[] = [
     body: '北嶺雪地上，一柄未出鞘的刀凝着霜。刀客抬頭：「來試刀的，就你？」',
     tags: ['special', 'combat', 'boss', 'secret'],
     weight: 3,
-    requirements: { minAge: 21, minMartial: 38, once: true, flags: { rumor_boss_frost: true } },
+    requirements: { minAge: 21, minMartial: 30, once: true },
     choices: [
       {
         id: 'fight',
@@ -633,7 +632,6 @@ const FIGHTS: GameEvent[] = [
       minAge: 19,
       minMartial: 30,
       once: true,
-      flags: { rumor_boss_lute: true },
       maxNature: { e: 60 },
     },
     choices: [
@@ -668,7 +666,7 @@ const FIGHTS: GameEvent[] = [
     body: '沙道揚塵，掌風挾沙直撲面門。沙蠍客低笑：「留下兵器，或留下眼睛。」',
     tags: ['special', 'combat', 'boss', 'secret'],
     weight: 3,
-    requirements: { minAge: 20, minMartial: 32, once: true, flags: { rumor_boss_sand: true } },
+    requirements: { minAge: 20, minMartial: 32, once: true },
     choices: [
       {
         id: 'fight',
@@ -699,7 +697,6 @@ const FIGHTS: GameEvent[] = [
       minAge: 18,
       minMartial: 28,
       once: true,
-      flags: { rumor_boss_mirror: true },
       minNature: { xia: 10 },
       maxNature: { e: 48 },
     },

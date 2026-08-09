@@ -76,29 +76,43 @@ export function buildPlayerFighter(state: LifeGameState): CombatFighter {
 export function buildFoe(
   name: string,
   power: 'weak' | 'normal' | 'strong' | 'boss' = 'normal',
+  scale?: { martial: number; maxHp: number; attack: number },
 ): CombatFighter {
-  const mult =
-    power === 'weak' ? 0.75 : power === 'strong' ? 1.35 : power === 'boss' ? 1.75 : 1;
-  const maxHp = Math.round((power === 'boss' ? 130 : 90) * mult);
-  const maxQi = Math.round((power === 'boss' ? 95 : 70) * mult);
+  // 基礎難度略抬；再按玩家武學／攻防縮放，避免後期碾壓
+  const powerMult =
+    power === 'weak' ? 0.92 : power === 'strong' ? 1.55 : power === 'boss' ? 2.15 : 1.22;
+  const martial = Math.max(0, scale?.martial ?? 12);
+  const playerHp = Math.max(80, scale?.maxHp ?? 100);
+  const playerAtk = Math.max(12, scale?.attack ?? 14);
+  // martial 0→1.0；55→≈1.85；110→≈2.45（封頂）
+  const growth = Math.min(2.55, 1 + martial / 60);
+
+  const hpTier = power === 'weak' ? 0.82 : power === 'normal' ? 1.05 : power === 'strong' ? 1.28 : 1.55;
+  const maxHp = Math.round(Math.max(75, playerHp * hpTier) * powerMult * Math.min(1.35, 0.72 + growth * 0.28));
+  const maxQi = Math.round((power === 'boss' ? 110 : 78) * powerMult * growth);
+  const attack = Math.round(
+    Math.max(playerAtk * (power === 'weak' ? 0.78 : power === 'normal' ? 0.98 : power === 'strong' ? 1.18 : 1.38), (power === 'boss' ? 20 : 15) * powerMult) *
+      Math.min(1.45, 0.8 + growth * 0.28),
+  );
+  const defense = Math.round((power === 'boss' ? 12 : 8) * powerMult * (0.9 + growth * 0.2));
   return {
     name,
     hp: maxHp,
     maxHp,
     qi: maxQi,
     maxQi,
-    attack: Math.round((power === 'boss' ? 18 : 14) * mult),
-    defense: Math.round((power === 'boss' ? 9 : 7) * mult),
-    hitBonus: (power === 'boss' ? 0.08 : 0.04) * mult,
-    evasion: power === 'boss' ? 0.06 : 0,
-    qiRegen: power === 'boss' ? 7 : 5,
+    attack,
+    defense,
+    hitBonus: (power === 'boss' ? 0.12 : power === 'strong' ? 0.08 : 0.05) * Math.min(1.3, growth),
+    evasion: power === 'boss' ? 0.1 : power === 'strong' ? 0.05 : 0.02,
+    qiRegen: power === 'boss' ? 9 : power === 'strong' ? 6 : 5,
     blind: 0,
     isPlayer: false,
     stun: 0,
     bleedDamage: 0,
     bleedTurns: 0,
     defenseMod: 0,
-    reflect: 0,
+    reflect: power === 'boss' ? 0.06 : 0,
     chargeBonus: 0,
   };
 }
@@ -119,7 +133,11 @@ export function startCombat(
   const foePower = opts.foePower ?? 'normal';
   const style = inferFoeAiStyle(opts.foeName, foePower);
   const player = buildPlayerFighter(state);
-  const foe = buildFoe(opts.foeName, opts.foePower);
+  const foe = buildFoe(opts.foeName, foePower, {
+    martial: state.character.martial,
+    maxHp: player.maxHp,
+    attack: player.attack,
+  });
   const combat: PendingCombat = {
     id: `cbt_${state.year}_${state.month}_${state.character.stats.combats}`,
     source: opts.source,

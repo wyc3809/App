@@ -317,7 +317,7 @@ export function applyChoice(
       source: 'event',
       title: tags.includes('boss') ? `首領·${event.title}` : tags.includes('pack') ? '江湖偶遇·交手' : event.title,
       foeName,
-      foePower: bossCfg?.foePower ?? (state.character.martial > 40 ? 'strong' : 'normal'),
+      foePower: bossCfg?.foePower ?? (state.character.martial >= 18 ? 'strong' : 'normal'),
       rewardOnWin:
         bossCfg?.rewardOnWin ??
         { money: 8, reputation: 2, martial: 2 },
@@ -468,20 +468,40 @@ export function applyChoice(
 
 function shouldTriggerSpecial(state: LifeGameState): boolean {
   if (!Number.isFinite(state.specialEventCountdown)) {
-    state.specialEventCountdown = getRng().nextInt(8, 20);
+    state.specialEventCountdown = getRng().nextInt(5, 12);
   }
   state.specialEventCountdown -= 1;
   return state.specialEventCountdown <= 0;
 }
 
-/** 路遇遇敵節奏：約 10–20 個月一次，避免奇遇過密 */
+/** 路遇遇敵節奏：約 6–12 個月一次 */
 function shouldTriggerRoadCombat(state: LifeGameState): boolean {
   const rng = getRng();
   if (!Number.isFinite(state.combatEncounterCountdown)) {
-    state.combatEncounterCountdown = rng.nextInt(10, 20);
+    state.combatEncounterCountdown = rng.nextInt(6, 12);
   }
-  state.combatEncounterCountdown = (state.combatEncounterCountdown ?? 14) - 1;
+  state.combatEncounterCountdown = (state.combatEncounterCountdown ?? 9) - 1;
   return (state.combatEncounterCountdown ?? 0) <= 0;
+}
+
+/** 首領檢定節奏：約 4–9 個月一次（再加機率） */
+function shouldTriggerBossCheck(state: LifeGameState): boolean {
+  const rng = getRng();
+  if (!Number.isFinite(state.bossEncounterCountdown)) {
+    state.bossEncounterCountdown = rng.nextInt(4, 9);
+  }
+  state.bossEncounterCountdown = (state.bossEncounterCountdown ?? 6) - 1;
+  return (state.bossEncounterCountdown ?? 0) <= 0;
+}
+
+function pickBossEvent(state: LifeGameState): GameEvent | null {
+  const rng = getRng();
+  const bossPool = listEligibleEvents(livePool(BOSS_ENCOUNTER_EVENTS), state);
+  if (!bossPool.length) return null;
+  const fights = bossPool.filter((e) => (e.tags ?? []).includes('boss') && e.id.startsWith('boss_'));
+  // 有可戰首領時優先交手，避免長期只抽傳聞
+  const pool = fights.length && rng.chance(0.78) ? fights : bossPool;
+  return weightedPick(state, pool);
 }
 
 export function startMonth(state: LifeGameState): LifeGameState {
@@ -536,26 +556,37 @@ export function startMonth(state: LifeGameState): LifeGameState {
     }
   }
 
-  // 路遇遇敵節奏：約 10–20 月一次（可重複池）
+  // 首領／傳聞：優先於路遇，避免長期被路遇擋掉
+  if (!event && shouldTriggerBossCheck(state)) {
+    const rumorBoostEarly = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
+    const bossChance = 0.55 + rumorBoostEarly * 0.12;
+    if (rng.chance(bossChance)) {
+      event = pickBossEvent(state);
+      if (event) kind = 'special';
+    }
+    state.bossEncounterCountdown = rng.nextInt(4, 9);
+  }
+
+  // 路遇遇敵節奏：約 6–12 月一次（可重複池）
   if (!event && shouldTriggerRoadCombat(state)) {
     const roadSource = livePool(ROAD_ENCOUNTER_EVENTS);
     const roadPool = listEligibleEvents(roadSource, state);
     event = weightedPick(state, roadPool.length ? roadPool : roadSource);
     kind = 'ordinary';
-    state.combatEncounterCountdown = rng.nextInt(10, 20);
+    state.combatEncounterCountdown = rng.nextInt(6, 12);
   }
 
   const rumorBoost = Math.max(0, Math.min(3, Number(state.character.flags.rumor_boost ?? 0)));
-  // 首領／奇遇更稀疏；打聽傳聞仍可略抬
-  const bossChance = 0.025 + rumorBoost * 0.02;
-  const secretExtraChance = rumorBoost > 0 ? 0.02 + rumorBoost * 0.015 : 0;
+  // 月中額外首領機率（倒數未到亦可偶發）
+  const bossChance = 0.04 + rumorBoost * 0.03;
+  const secretExtraChance = rumorBoost > 0 ? 0.025 + rumorBoost * 0.02 : 0;
 
   if (!event) {
-    const bossPool = listEligibleEvents(livePool(BOSS_ENCOUNTER_EVENTS), state);
-    if (bossPool.length && rng.chance(bossChance)) {
-      event = weightedPick(state, bossPool);
-      kind = 'special';
-    } else if (shouldTriggerSpecial(state) || (secretExtraChance > 0 && rng.chance(secretExtraChance))) {
+    if (rng.chance(bossChance)) {
+      event = pickBossEvent(state);
+      if (event) kind = 'special';
+    }
+    if (!event && (shouldTriggerSpecial(state) || (secretExtraChance > 0 && rng.chance(secretExtraChance)))) {
       const packPick = pickPackEvent(state);
       if (packPick) {
         event = livePool(RANDOM_PACK_EVENTS).find((e) => e.id === packPick.id) ?? null;
@@ -568,7 +599,7 @@ export function startMonth(state: LifeGameState): LifeGameState {
         event = weightedPick(state, secretPool);
       }
       kind = 'special';
-      state.specialEventCountdown = rng.nextInt(8, 20);
+      state.specialEventCountdown = rng.nextInt(5, 12);
     }
   }
 
