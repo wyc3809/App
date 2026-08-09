@@ -28,6 +28,7 @@ import { careerLabel, getCareer } from '@core/life/careers';
 import { formatFragmentProgress } from '@core/life/manualFragments';
 import { getMasterName } from '@core/life/bonds';
 import { canHaveChild, getHeirName, listChildNames, previewInheritanceMoney } from '@core/life/family';
+import { buildGenealogy } from '@core/life/genealogy';
 import { gearTotals, sumGearCombatBonuses, previewEquipDelta, combatPowerScore } from '@core/life/equipment';
 import { MOVE_STANCE_LABEL, resolveMoveStance } from '@core/life/moveStance';
 import { overallMartialLabel, skillDisplay } from '@core/life/flavor';
@@ -648,6 +649,51 @@ export function InkPlayScreen({ state }: Props) {
           </p>
           <p className="ink-note">籍貫 · {c.birthplace || '千燈鎮'} · 所在 {c.location || '千燈鎮'}</p>
           {lover && <p className="ink-note">眷屬 · {lover.name}</p>}
+          <h3 className="ink-subhead">族譜</h3>
+          {(() => {
+            const book = buildGenealogy(state);
+            let lastGen = '';
+            return (
+              <div className="ink-genealogy" aria-label={`族譜·${book.clanLabel}`}>
+                <p className="ink-genealogy-head">
+                  {book.clanLabel} · 第{book.generationIndex}世
+                </p>
+                <ul className="ink-genealogy-list">
+                  {book.entries.map((e, i) => {
+                    const showGen = e.generation !== lastGen;
+                    lastGen = e.generation;
+                    return (
+                      <li
+                        key={`${e.generation}-${e.title}-${e.name}-${i}`}
+                        className={`ink-genealogy-row${e.self ? ' ink-genealogy-row--self' : ''}${
+                          e.heir ? ' ink-genealogy-row--heir' : ''
+                        }`}
+                      >
+                        {showGen ? (
+                          <span className="ink-genealogy-gen">{e.generation}</span>
+                        ) : (
+                          <span className="ink-genealogy-gen ink-genealogy-gen--gap" aria-hidden />
+                        )}
+                        <span className="ink-genealogy-title">{e.title}</span>
+                        <strong className="ink-genealogy-name">{e.name}</strong>
+                        {e.note ? <span className="ink-genealogy-note">{e.note}</span> : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {book.chronicle.length > 0 && (
+                  <>
+                    <p className="ink-genealogy-sub">跨世殘頁</p>
+                    <ul className="ink-genealogy-chronicle">
+                      {book.chronicle.slice(-6).map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            );
+          })()}
           <h3 className="ink-subhead">鎮中故人</h3>
           {listKnownNpcLines(state).length === 0 ? (
             <p className="ink-note">尚未結識江湖人物。</p>

@@ -5,6 +5,7 @@ import { getLifeStageLabel } from './stages';
 import { deathCauseOf } from './death';
 import { titleLabels } from './titles';
 import { previewInheritanceMoney } from './family';
+import { formatGenealogyText } from './genealogy';
 
 function pickEpitaph(state: LifeGameState): string {
   const c = state.character;
@@ -131,6 +132,8 @@ export function buildLifeSummary(state: LifeGameState): string {
       lines.push(`　　【來世可繼族產】約 ${coin} 兩（轉世時入匣）`);
     }
   }
+
+  lines.push('', ...formatGenealogyText(state).map((l) => (l.startsWith('【') ? `　　${l}` : `　${l}`)));
 
   lines.push('', pickEpitaph(state), '', '　　（印）終');
   return lines.join('\n');

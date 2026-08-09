@@ -3052,6 +3052,108 @@ button.is-pressed,
   text-align: left;
 }
 
+/* 族譜：直式冊頁 */
+.ink-genealogy {
+  margin: 4px 0 12px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+  background: linear-gradient(180deg, rgba(250, 246, 238, 0.55), rgba(243, 235, 220, 0.22));
+}
+
+.ink-genealogy-head {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.28em;
+  color: var(--cinnabar);
+}
+
+.ink-genealogy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ink-genealogy-row {
+  display: grid;
+  grid-template-columns: 4.2em 2.4em 1fr auto;
+  gap: 4px 8px;
+  align-items: baseline;
+  padding: 5px 2px;
+  border-bottom: 1px dashed rgba(26, 26, 26, 0.08);
+  font-size: 0.86rem;
+}
+
+.ink-genealogy-row:last-child {
+  border-bottom: none;
+}
+
+.ink-genealogy-row--self {
+  background: rgba(163, 58, 50, 0.05);
+}
+
+.ink-genealogy-row--heir .ink-genealogy-name {
+  color: var(--jade);
+}
+
+.ink-genealogy-gen {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-wash);
+}
+
+.ink-genealogy-gen--gap {
+  visibility: hidden;
+}
+
+.ink-genealogy-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-mid);
+}
+
+.ink-genealogy-name {
+  letter-spacing: 0.12em;
+  font-weight: var(--fw-ui);
+}
+
+.ink-genealogy-note {
+  font-size: 0.7rem;
+  color: var(--ink-wash);
+  letter-spacing: 0.06em;
+}
+
+.ink-genealogy-sub {
+  margin: 10px 0 4px;
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  color: var(--ink-wash);
+  text-align: center;
+}
+
+.ink-genealogy-chronicle {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ink-genealogy-chronicle li {
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(26, 26, 26, 0.08);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--ink-mid);
+  letter-spacing: 0.04em;
+}
+
+.ink-genealogy-chronicle li:last-child {
+  border-bottom: none;
+}
+
 .ink-combat {
   /* 交手期間不重播整面板 wash，避免每回合閃爍 */
   animation: none;

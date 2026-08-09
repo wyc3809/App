@@ -1,6 +1,7 @@
 import type { LifeGameState, WuxiaAttribute } from '@interfaces/lifeEngine';
 import { wuxiaAttributeKeys } from '@interfaces/lifeEngine';
 import { getHeirName, listChildNames, previewInheritanceMoney } from './family';
+import { sealGenealogyForLegacy, writeGenealogyChronicle } from './genealogy';
 
 /** 前世可帶入來世的墨跡（非付費、非碾壓） */
 export interface LegacyCarry {
@@ -22,6 +23,8 @@ export interface LegacyCarry {
   childrenNames?: string[];
   inheritedMoney?: number;
   hadChildren?: boolean;
+  /** 跨世族譜殘頁 */
+  genealogyChronicle?: string[];
 }
 
 export function extractLegacy(state: LifeGameState): LegacyCarry {
@@ -49,6 +52,7 @@ export function extractLegacy(state: LifeGameState): LegacyCarry {
   const hadChildren = childrenNames.length > 0 || (c.childrenCount ?? 0) > 0;
   const heirName = hadChildren ? getHeirName(state) ?? childrenNames[0] : undefined;
   const inheritedMoney = hadChildren || c.flags.family_legacy ? previewInheritanceMoney(state) : 0;
+  const genealogyChronicle = sealGenealogyForLegacy(state);
 
   return {
     generation: gen,
@@ -69,6 +73,7 @@ export function extractLegacy(state: LifeGameState): LegacyCarry {
     childrenNames: childrenNames.length ? childrenNames : undefined,
     inheritedMoney: inheritedMoney || undefined,
     hadChildren,
+    genealogyChronicle,
   };
 }
 
@@ -78,6 +83,9 @@ export function applyLegacyToCharacter(state: LifeGameState, legacy: LegacyCarry
   const gen = legacy.generation + 1;
   c.flags.legacy_generation = gen;
   c.flags.legacy_ancestor = legacy.ancestorName;
+  if (legacy.genealogyChronicle?.length) {
+    writeGenealogyChronicle(c, legacy.genealogyChronicle);
+  }
   lines.push(
     `前世「${legacy.ancestorName}」享年 ${legacy.ancestorAge}，此為第 ${gen} 世入江湖。`,
   );
