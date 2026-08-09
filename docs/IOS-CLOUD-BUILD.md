@@ -85,6 +85,7 @@ Then:
 ## Important notes
 
 - Always use `npm run build:native` / `cap sync` — **not** `build:pages` (Pages `basePath` breaks the native shell).
+- The iOS project uses **Swift Package Manager** (`CapApp-SPM`), not CocoaPods — CI builds `-project App.xcodeproj`.
 - Bundle ID must stay `app.worthbook.tracker` (or change it everywhere: Xcode, `capacitor.config.ts`, profiles, Codemagic).
 - Face ID usage string is already in `ios/App/App/Info.plist`.
 - Cloud builds spend CI minutes; Codemagic and GitHub both have free tiers with limits.

@@ -17,7 +17,7 @@ workflows:
       app_store_connect: WorthBook
     environment:
       vars:
-        XCODE_WORKSPACE: "ios/App/App.xcodeproj"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "app.worthbook.tracker"
       node: 20
@@ -48,8 +48,9 @@ workflows:
           xcode-project use-profiles
       - name: Build ipa
         script: |
+          # Capacitor 8 iOS uses SPM (CapApp-SPM), not CocoaPods
           xcode-project build-ipa \
-            --project "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
