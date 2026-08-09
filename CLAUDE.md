@@ -4,6 +4,10 @@ Indie game development managed through 49 coordinated Claude Code subagents.
 This repo has **adopted** [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios)
 on top of an existing playable V1.
 
+> **Split products**: Git `main` in this remote is **WorthBook** (Next.js). Jianghu
+> work stays on Jianghu branches only — never merge the two app trees.
+> See `docs/PRODUCT-SEPARATION.md`.
+
 ## Technology Stack
 
 - **Engine / Runtime**: Web (Vite + React 19)
