@@ -1272,10 +1272,23 @@ export function InkPlayScreen({ state }: Props) {
               {lastResult.deltas.length > 0 && (
                 <div className="ink-result-deltas">
                   <p className="ink-result-delta-label">此番消長</p>
-                  <ul className="ink-delta-list">
-                    {lastResult.deltas.map((d, i) => (
-                      <li key={`${i}-${d}`}>{d}</li>
-                    ))}
+                  <ul className="ink-delta-board" aria-label="此番消長">
+                    {lastResult.deltas.map((d, i) => {
+                      const tone = /[+\uFF0B]/.test(d)
+                        ? 'up'
+                        : /[-－\u2212]/.test(d)
+                          ? 'down'
+                          : 'flat';
+                      return (
+                        <li
+                          key={`${i}-${d}`}
+                          className={`ink-delta-row ink-delta-row--${tone}`}
+                          style={{ ['--i' as string]: i }}
+                        >
+                          <span className="ink-delta-row-text">{d}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
