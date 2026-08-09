@@ -56,7 +56,7 @@ WorthBook is **local-only**. Portfolio data is stored in `localStorage` under `w
 
 ### Native (App Store)
 
-See **[docs/APP_STORE.md](docs/APP_STORE.md)** — Capacitor wraps `npm run build:native` → `out/` for iOS / Android. Biometric lock, Share-sheet backup, and native haptics are wired for that path.
+See **[docs/APP_STORE.md](docs/APP_STORE.md)**. No Mac? Use **[docs/IOS-CLOUD-BUILD.md](docs/IOS-CLOUD-BUILD.md)** (Codemagic / GitHub Actions). — Capacitor wraps `npm run build:native` → `out/` for iOS / Android. Biometric lock, Share-sheet backup, and native haptics are wired for that path.
 
 ### GitHub Pages (separate from the game)
 

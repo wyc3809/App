@@ -1,0 +1,201 @@
+name: iOS Cloud Build
+
+# Hosted Mac build for WorthBook (no personal Mac required).
+# Docs: docs/IOS-CLOUD-BUILD.md
+#
+# Modes:
+# 1) No signing secrets → Release compile check (CODE_SIGNING_ALLOWED=NO)
+# 2) Signing secrets present → Archive + IPA artifact
+# 3) workflow_dispatch + upload_testflight + ASC API secrets → TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_testflight:
+        description: "Upload IPA to TestFlight (needs signing + App Store Connect API secrets)"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "src/**"
+      - "public/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ios-build.yml"
+
+concurrency:
+  group: ios-cloud-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    name: Build iOS (macOS)
+    runs-on: macos-14
+    timeout-minutes: 75
+    env:
+      # Non-empty when the secret is configured (safe to expose as boolean-ish)
+      HAS_IOS_SIGNING: ${{ secrets.BUILD_CERTIFICATE_BASE64 != '' && secrets.BUILD_PROVISION_PROFILE_BASE64 != '' && secrets.APPLE_TEAM_ID != '' }}
+      HAS_ASC_API: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install JS deps
+        run: npm ci
+
+      - name: Build web (native — no Pages basePath)
+        run: npm run build:native
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Resolve Swift packages
+        working-directory: ios/App
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project App.xcodeproj \
+            -scheme App
+
+      - name: Build unsigned Release (compile smoke test)
+        if: env.HAS_IOS_SIGNING != 'true'
+        working-directory: ios/App
+        run: |
+          mkdir -p build
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+          echo "unsigned-ok $(date -u +%Y-%m-%dT%H:%M:%SZ)" > build/unsigned-ok.txt
+
+      - name: Upload unsigned build marker
+        if: env.HAS_IOS_SIGNING != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: worthbook-ios-unsigned-ok
+          path: ios/App/build/unsigned-ok.txt
+
+      - name: Install signing certificate + profile
+        if: env.HAS_IOS_SIGNING == 'true'
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          PROFILE_UUID=$(security cms -D -i "$PP_PATH" | plutil -extract UUID raw -)
+          cp "$PP_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+
+      - name: Archive + export IPA (signed)
+        if: env.HAS_IOS_SIGNING == 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ios/App
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild archive \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/WorthBook.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE="$PROFILE_UUID"
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          team = os.environ["APPLE_TEAM_ID"]
+          profile = os.environ["PROFILE_UUID"]
+          xml = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>method</key>
+\t<string>app-store-connect</string>
+\t<key>teamID</key>
+\t<string>__TEAM__</string>
+\t<key>signingStyle</key>
+\t<string>manual</string>
+\t<key>provisioningProfiles</key>
+\t<dict>
+\t\t<key>app.worthbook.tracker</key>
+\t\t<string>__PROFILE__</string>
+\t</dict>
+\t<key>uploadSymbols</key>
+\t<true/>
+</dict>
+</plist>
+"""
+          Path("build/ExportOptions.plist").write_text(
+              xml.replace("__TEAM__", team).replace("__PROFILE__", profile)
+          )
+          PY
+
+          xcodebuild -exportArchive \
+            -archivePath build/WorthBook.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.plist
+
+      - name: Upload IPA artifact
+        if: env.HAS_IOS_SIGNING == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: worthbook-ios-ipa
+          path: ios/App/build/export/*.ipa
+          if-no-files-found: error
+
+      - name: Upload to TestFlight
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_testflight && env.HAS_IOS_SIGNING == 'true' && env.HAS_ASC_API == 'true' }}
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          echo -n "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode -o "$KEY_PATH"
+          IPA=$(ls ios/App/build/export/*.ipa | head -1)
+          echo "Uploading $IPA …"
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA" \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"

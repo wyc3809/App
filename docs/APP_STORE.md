@@ -2,6 +2,18 @@
 
 WorthBook ships as a **static web app** (`next export` → `out/`) and optionally as a **native shell** via Capacitor for App Store distribution.
 
+
+## No Mac? Use a cloud Mac
+
+You do **not** need your own Mac to ship to TestFlight.
+
+Follow **[docs/IOS-CLOUD-BUILD.md](IOS-CLOUD-BUILD.md)**:
+
+1. **Codemagic** (`codemagic.yaml`) — easiest → auto TestFlight
+2. **GitHub Actions** (`.github/workflows/ios-build.yml`) — hosted `macos-14` runner
+
+You still need a paid Apple Developer account for signing and App Store Connect.
+
 ## Prerequisites (Mac for iOS)
 
 - Xcode 16+
