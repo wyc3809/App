@@ -1,0 +1,68 @@
+# Codemagic — recommended no-Mac path for TestFlight
+# Dashboard: https://codemagic.io
+# Docs: docs/IOS-CLOUD-BUILD.md
+#
+# After connecting the GitHub repo in Codemagic:
+# 1. Enable code signing (App Store distribution) for bundle id app.worthbook.tracker
+# 2. Add App Store Connect API key integration
+# 3. Start a build from the UI or on every main push
+
+workflows:
+  worthbook-ios:
+    name: WorthBook iOS (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 75
+    # Name must match an App Store Connect key you add in Codemagic → Teams → Integrations
+    integrations:
+      app_store_connect: WorthBook
+    environment:
+      vars:
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "app.worthbook.tracker"
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.worthbook.tracker
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+      cancel_previous_builds: true
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+      - name: Build web assets (native — no Pages basePath)
+        script: |
+          npm run build:native
+      - name: Sync Capacitor iOS
+        script: |
+          npx cap sync ios
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+      - name: Build ipa
+        script: |
+          # Capacitor 8 iOS uses SPM (CapApp-SPM), not CocoaPods
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      # Optional — set your email in the Codemagic UI or uncomment:
+      # email:
+      #   recipients:
+      #     - you@example.com
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Set true only when you are ready for App Review automation:
+        submit_to_app_store: false
