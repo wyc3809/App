@@ -47,7 +47,7 @@ concurrency:
 jobs:
   ios:
     name: Capacitor iOS
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
 
     steps:
@@ -63,11 +63,26 @@ jobs:
       - name: Install JS dependencies
         run: npm ci
 
-      - name: Select Xcode
+      - name: Select Xcode 16
         run: |
-          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || \
-            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          # Capacitor 8 needs Xcode 16+ (Swift API / PluginConfig). Prefer newest 16.x on the image.
+          set -euo pipefail
+          for candidate in \
+            /Applications/Xcode_16.4.app \
+            /Applications/Xcode_16.3.app \
+            /Applications/Xcode_16.2.app \
+            /Applications/Xcode_16.1.app \
+            /Applications/Xcode_16.0.app \
+            /Applications/Xcode_16.app \
+            /Applications/Xcode.app
+          do
+            if [ -d "$candidate" ]; then
+              sudo xcode-select -s "$candidate/Contents/Developer"
+              break
+            fi
+          done
           xcodebuild -version
+          sw_vers
 
       - name: Build web + sync Capacitor iOS
         run: |
@@ -87,6 +102,7 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
             build
 
       - name: Import signing certificate & profile

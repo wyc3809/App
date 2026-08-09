@@ -49,7 +49,7 @@ Push to `main` (or press **Start build**). No Mac required.
 
 Actions → **iOS Cloud Build** → **Run workflow**.
 
-Without signing secrets this only proves the iOS project **compiles** on `macos-14`. You cannot install that artifact on a phone.
+Without signing secrets this only proves the iOS project **compiles** on `macos-15` / Xcode 16. You cannot install that artifact on a phone.
 
 ### 2. Signed IPA + optional TestFlight
 
