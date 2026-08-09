@@ -1109,9 +1109,7 @@ export function InkPlayScreen({ state }: Props) {
                               {matched ? ' · 契' : ''}
                               {short ? ' · 不足' : ''}
                             </strong>
-                            <em>
-                              {MOVE_STANCE_LABEL[stance]} · {formatCombatMoveCompact(mv, effPower)}
-                            </em>
+                            <em>{formatCombatMoveCompact(mv, effPower)}</em>
                           </span>
                         </button>
                         <button

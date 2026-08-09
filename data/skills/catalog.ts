@@ -254,15 +254,10 @@ export function formatCombatMoveSummary(m: CombatMoveDef, effPower?: number): st
   return bits.join(' · ');
 }
 
-/** 戰鬥清單用短標：屬性 · 內力 · 角色 · 主特效 */
+/** 戰鬥清單用短標：內力 · 威能 · 主特效（屬性只顯示喺印章） */
 export function formatCombatMoveCompact(m: CombatMoveDef, effPower?: number): string {
-  const role = combatMoveRole(m);
   const bits: string[] = [];
-  const stance =
-    m.stance === 'xu' ? '虛' : m.stance === 'jia' ? '架' : m.stance === 'shi' ? '實' : '';
-  if (stance) bits.push(stance);
   bits.push(m.qiCost > 0 ? `${m.qiCost}` : '0');
-  bits.push(role);
   if (m.power > 0) bits.push(`×${(effPower ?? m.power).toFixed(1)}`);
   const fx = formatCombatMoveEffectBits(m);
   if (fx[0]) bits.push(fx[0]);
