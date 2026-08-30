@@ -20,6 +20,17 @@ async function waitForAppReady(page: Page) {
   });
 }
 
+/** Dismiss first-run intro overlay when present (fresh localStorage). */
+async function dismissIntro(page: Page) {
+  const skip = page.getByRole("button", { name: /^Skip$/i });
+  if (await skip.isVisible().catch(() => false)) {
+    await skip.click();
+    await expect(
+      page.getByRole("dialog", { name: "Welcome to WorthBook" }),
+    ).toHaveCount(0);
+  }
+}
+
 async function loadDemo(page: Page) {
   await page.goto("/");
   await waitForAppReady(page);
@@ -47,8 +58,8 @@ test.describe("WorthBook E2E", () => {
   test("settings is reachable from Home menu", async ({ page }) => {
     await page.goto("/");
     await waitForAppReady(page);
-    // Dismiss first-run sheet so header controls are tappable
-    await page.getByRole("button", { name: /Start empty/i }).click();
+    // Dismiss first-run intro so header controls are tappable
+    await page.getByRole("button", { name: /^Skip$/i }).click();
     await page.getByRole("button", { name: /more options/i }).click();
     await page.getByRole("link", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
@@ -129,10 +140,10 @@ test.describe("WorthBook E2E", () => {
   test("add account cancel closes the sheet", async ({ page }) => {
     await page.goto("/accounts/?new=1");
     await waitForAppReady(page);
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(
-      page.getByRole("dialog").getByRole("button", { name: "Add Account" }),
-    ).toBeInViewport();
+    await dismissIntro(page);
+    const dialog = page.getByRole("dialog", { name: "Add Account" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Add Account" })).toBeInViewport();
     await page.getByRole("button", { name: "Cancel" }).first().click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
@@ -142,7 +153,8 @@ test.describe("WorthBook E2E", () => {
   }) => {
     await page.goto("/accounts/?new=1");
     await waitForAppReady(page);
-    const dialog = page.getByRole("dialog");
+    await dismissIntro(page);
+    const dialog = page.getByRole("dialog", { name: "Add Account" });
     await expect(dialog).toBeVisible();
 
     const addBtn = dialog.getByRole("button", { name: "Add Account" });
@@ -167,6 +179,7 @@ test.describe("WorthBook E2E", () => {
   test("imports ledger CSV from settings", async ({ page }) => {
     await page.goto("/settings/");
     await waitForAppReady(page);
+    await dismissIntro(page);
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     const csvPath = path.join(fixturesDir, "ledger-sample.csv");

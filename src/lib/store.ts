@@ -385,6 +385,7 @@ const defaultSettings: UserSettings = {
   isPrivacyMode: false,
   isBiometricEnabled: false,
   theme: "system",
+  locale: "en",
   lastBackupAt: null,
   onboardingCompleted: false,
 };
@@ -903,7 +904,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -968,6 +969,19 @@ export const useWorthStore = create<WorthState>()(
             lastBackupAt: state.settings?.lastBackupAt ?? null,
             // Existing users skip the welcome sheet.
             onboardingCompleted: state.settings?.onboardingCompleted ?? true,
+          };
+        }
+
+        if (version < 7) {
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            locale:
+              state.settings?.locale === "zh-Hant" ||
+              state.settings?.locale === "zh-Hans" ||
+              state.settings?.locale === "en"
+                ? state.settings.locale
+                : "en",
           };
         }
 

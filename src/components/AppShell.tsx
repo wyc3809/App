@@ -8,16 +8,19 @@ import {
   Receipt,
   WalletCards,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
+import type { TranslationKey } from "@/lib/i18n";
 
 const NAV = [
-  { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/accounts", label: "Accounts", icon: WalletCards },
-  { href: "/history", label: "Ledger", icon: Receipt },
-  { href: "/graphs", label: "Insights", icon: ChartNoAxesColumnIncreasing },
+  { href: "/", labelKey: "nav.home" as TranslationKey, icon: LayoutDashboard },
+  { href: "/accounts", labelKey: "nav.accounts" as TranslationKey, icon: WalletCards },
+  { href: "/history", labelKey: "nav.ledger" as TranslationKey, icon: Receipt },
+  { href: "/graphs", labelKey: "nav.insights" as TranslationKey, icon: ChartNoAxesColumnIncreasing },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   return (
     <div className="app-shell">
@@ -35,9 +38,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Primary"
       >
         <ul className="grid grid-cols-4 gap-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {NAV.map(({ href, labelKey, icon: Icon }) => {
             const active =
               href === "/" ? pathname === "/" : pathname.startsWith(href);
+            const label = t(labelKey);
             return (
               <li key={href}>
                 <Link

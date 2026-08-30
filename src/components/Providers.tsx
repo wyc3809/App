@@ -12,6 +12,8 @@ import {
 import { shouldSkipServiceWorker } from "@/lib/platform";
 import { useWorthStore } from "@/lib/store";
 import { AppLock } from "@/components/AppLock";
+import { IntroductionFlow } from "@/components/IntroductionFlow";
+import { LocaleSync } from "@/lib/i18n/context";
 
 function registerServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
@@ -110,8 +112,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
+      <LocaleSync />
       <AppLock>
         <AppShell>
+          <IntroductionFlow />
           {storageWarn ? (
             <div
               className="mb-3 rounded-2xl px-3 py-2 text-xs"

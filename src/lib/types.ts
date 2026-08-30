@@ -69,11 +69,15 @@ export interface HistoricalSnapshot {
   accountBalances: AccountBalanceSnapshot[];
 }
 
+export type AppLocale = "en" | "zh-Hant" | "zh-Hans";
+
 export interface UserSettings {
   baseCurrency: string;
   isPrivacyMode: boolean;
   isBiometricEnabled: boolean;
   theme: "light" | "dark" | "system";
+  /** UI language (en / zh-Hant / zh-Hans). */
+  locale?: AppLocale;
   /** ISO timestamp of last successful JSON export (local-only reminder). */
   lastBackupAt?: string | null;
   /** First-run onboarding completed or dismissed. */
