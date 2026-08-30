@@ -21,15 +21,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <main className="px-4 pt-5">{children}</main>
+      <main className="px-4 pt-4">{children}</main>
 
       <nav
-        className="fixed bottom-0 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t px-2 pt-2"
+        className="fixed bottom-0 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t px-3 pt-2"
         style={{
-          background: "color-mix(in srgb, var(--bg-elevated) 92%, transparent)",
+          background: "color-mix(in srgb, var(--bg-elevated) 94%, transparent)",
           borderColor: "var(--border)",
-          backdropFilter: "blur(16px)",
-          paddingBottom: "calc(10px + var(--safe-bottom))",
+          backdropFilter: "blur(18px)",
+          paddingBottom: "calc(8px + var(--safe-bottom))",
+          boxShadow: "0 -8px 24px rgba(0,0,0,0.04)",
         }}
         aria-label="Primary"
       >
@@ -41,13 +42,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition"
+                  className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold uppercase tracking-wide transition"
                   style={{
                     color: active ? "var(--accent)" : "var(--fg-subtle)",
                     background: active ? "var(--accent-soft)" : "transparent",
                   }}
                 >
-                  <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                  <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                   {label}
                 </Link>
               </li>

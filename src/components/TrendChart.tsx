@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   Area,
   AreaChart,
@@ -75,21 +77,18 @@ export function TrendChart() {
       : ([metric] as const);
 
   return (
-    <section className="card-surface animate-fade-up-delay p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-lg">Trend</h2>
-        <div className="flex flex-wrap gap-1">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              className={`chip ${range === r ? "chip-active" : ""}`}
-              onClick={() => setRange(r)}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
+    <SectionCard title="Trend" className="animate-fade-up-delay">
+      <div className="mb-3 flex flex-wrap gap-1">
+        {RANGES.map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={`chip ${range === r ? "chip-active" : ""}`}
+            onClick={() => setRange(r)}
+          >
+            {r}
+          </button>
+        ))}
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1">
@@ -202,7 +201,7 @@ export function TrendChart() {
                     dataKey={METRIC_META[key].dataKey}
                     name={METRIC_META[key].label}
                     stroke={METRIC_META[key].color}
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     dot={false}
                     animationDuration={700}
                   />
@@ -213,7 +212,7 @@ export function TrendChart() {
                     dataKey={METRIC_META[key].dataKey}
                     name={METRIC_META[key].label}
                     stroke={METRIC_META[key].color}
-                    strokeWidth={2.5}
+                    strokeWidth={3}
                     fill={`url(#fill-${key})`}
                     animationDuration={700}
                   />
@@ -223,17 +222,10 @@ export function TrendChart() {
           </ResponsiveContainer>
         </div>
       )}
-    </section>
+    </SectionCard>
   );
 }
 
 function EmptyChart({ message }: { message: string }) {
-  return (
-    <div
-      className="flex h-40 items-center justify-center rounded-2xl px-4 text-center text-sm"
-      style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
-    >
-      {message}
-    </div>
-  );
+  return <EmptyState message={message} className="min-h-40" />;
 }

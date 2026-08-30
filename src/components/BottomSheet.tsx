@@ -41,7 +41,8 @@ export function BottomSheet({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+        className="absolute inset-0 backdrop-blur-[2px]"
+        style={{ background: "var(--overlay)" }}
         aria-label="Close"
         onClick={onClose}
       />
