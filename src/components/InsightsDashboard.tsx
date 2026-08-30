@@ -138,7 +138,10 @@ export function InsightsDashboard() {
   return (
     <div className="space-y-4 pb-28">
       <header className="relative flex items-center justify-center animate-fade-up">
-        <h1 className="font-display text-2xl">Insights</h1>
+        <div className="text-center">
+          <p className="eyebrow">Analytics</p>
+          <h1 className="font-display text-2xl font-bold">Insights</h1>
+        </div>
         <button
           type="button"
           className="btn-ghost absolute right-0"
@@ -149,12 +152,7 @@ export function InsightsDashboard() {
         </button>
       </header>
 
-      <div
-        className="grid grid-cols-3 gap-1 rounded-2xl p-1 animate-fade-up"
-        style={{ background: "var(--bg-muted)" }}
-        role="tablist"
-        aria-label="Granularity"
-      >
+      <div className="segment-track animate-fade-up" role="tablist" aria-label="Granularity">
         {GRANULARITIES.map((g) => {
           const active = granularity === g.value;
           return (
@@ -163,12 +161,7 @@ export function InsightsDashboard() {
               type="button"
               role="tab"
               aria-selected={active}
-              className="rounded-xl px-2 py-2.5 text-sm font-semibold transition"
-              style={{
-                background: active ? "var(--bg-elevated)" : "transparent",
-                color: active ? "var(--fg)" : "var(--fg-muted)",
-                boxShadow: active ? "var(--shadow-soft)" : "none",
-              }}
+              className={`segment-item ${active ? "segment-item-active" : ""}`}
               onClick={() => setGranularity(g.value)}
             >
               {g.label}
@@ -184,11 +177,7 @@ export function InsightsDashboard() {
             <button
               key={r.value}
               type="button"
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition"
-              style={{
-                background: active ? "var(--fg)" : "var(--bg-muted)",
-                color: active ? "var(--bg)" : "var(--fg-muted)",
-              }}
+              className={`chip shrink-0 ${active ? "chip-active" : ""}`}
               onClick={() => setRange(r.value)}
             >
               {r.label}
@@ -521,14 +510,7 @@ function SummaryCard({
   hint?: string;
 }) {
   return (
-    <div
-      className="relative min-w-[9.5rem] flex-1 overflow-hidden rounded-2xl px-3.5 py-3"
-      style={{
-        background: "var(--bg-elevated)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-soft)",
-      }}
-    >
+    <div className="card-surface relative min-w-[9.5rem] flex-1 overflow-hidden px-3.5 py-3">
       {sparkline && sparkline.length > 1 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-40">
           <ResponsiveContainer width="100%" height="100%">

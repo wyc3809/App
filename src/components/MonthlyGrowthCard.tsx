@@ -12,6 +12,8 @@ import {
   YAxis,
 } from "recharts";
 import { useMemo } from "react";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   buildMonthlyGrowthSeries,
   computeMonthlyGrowth,
@@ -43,47 +45,32 @@ export function MonthlyGrowthCard() {
 
   if (!growth && chartData.length === 0) {
     return (
-      <section className="card-surface animate-fade-up-delay p-4">
-        <div className="mb-2 flex items-center gap-2">
-          <CalendarRange size={18} style={{ color: "var(--accent)" }} />
-          <h2 className="font-display text-lg">Monthly Growth</h2>
-        </div>
-        <div
-          className="flex h-28 items-center justify-center rounded-2xl px-4 text-center text-sm"
-          style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
-        >
-          Need at least two months of snapshots to calculate growth.
-        </div>
-      </section>
+      <SectionCard
+        title="Monthly Growth"
+        className="animate-fade-up-delay"
+        action={<CalendarRange size={18} style={{ color: "var(--accent)" }} />}
+      >
+        <EmptyState message="Need at least two months of snapshots to calculate growth." />
+      </SectionCard>
     );
   }
 
   const positive = (growth?.absolute ?? 0) >= 0;
 
   return (
-    <section className="card-surface animate-fade-up-delay p-4">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <CalendarRange size={18} style={{ color: "var(--accent)" }} />
-            <h2 className="font-display text-lg">Monthly Growth</h2>
-          </div>
-          {growth && (
-            <p className="mt-1 text-xs" style={{ color: "var(--fg-subtle)" }}>
-              {growth.fromDate} → {growth.toDate}
-            </p>
-          )}
-        </div>
-
-        {growth && (
+    <SectionCard
+      title="Monthly Growth"
+      className="animate-fade-up-delay"
+      action={
+        growth ? (
           <div
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
             style={{
               background: positive ? "var(--accent-soft)" : "var(--danger-soft)",
               color: positive ? "var(--positive)" : "var(--negative)",
             }}
           >
-            {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            {positive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
             {privacy
               ? "••••"
               : `${formatMoney(growth.absolute, settings.baseCurrency, currencies, {
@@ -91,8 +78,16 @@ export function MonthlyGrowthCard() {
                   compact: true,
                 })} (${formatPercent(growth.percent)})`}
           </div>
-        )}
-      </div>
+        ) : (
+          <CalendarRange size={18} style={{ color: "var(--accent)" }} />
+        )
+      }
+    >
+      {growth && (
+        <p className="-mt-1 mb-3 text-xs" style={{ color: "var(--fg-subtle)" }}>
+          {growth.fromDate} → {growth.toDate}
+        </p>
+      )}
 
       {chartData.length === 0 ? (
         <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
@@ -142,7 +137,7 @@ export function MonthlyGrowthCard() {
                   return [`${money}${pct}`, "MoM change"];
                 }}
               />
-              <Bar dataKey="change" radius={[6, 6, 0, 0]} animationDuration={600}>
+              <Bar dataKey="change" radius={[8, 8, 0, 0]} animationDuration={600}>
                 {chartData.map((entry) => (
                   <Cell
                     key={entry.month}
@@ -154,6 +149,6 @@ export function MonthlyGrowthCard() {
           </ResponsiveContainer>
         </div>
       )}
-    </section>
+    </SectionCard>
   );
 }

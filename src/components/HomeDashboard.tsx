@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   ArrowDownUp,
+  ChevronRight,
   Filter,
   FolderOpen,
   MoreVertical,
@@ -211,20 +212,20 @@ export function HomeDashboard() {
         />
       ) : null}
 
-      <section className="relative z-0 animate-fade-up text-center">
-        <p
-          className="text-xs font-semibold uppercase tracking-[0.14em]"
-          style={{ color: "var(--fg-subtle)" }}
-        >
-          Net worth
+      <section className="hero-card relative z-0 animate-fade-up p-5 text-center">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--hero-muted)" }}>
+          Net Worth Profile
         </p>
-        <p className="mt-1 font-display text-4xl tabular-nums tracking-tight">
+        <p
+          className="mt-2 text-[2.75rem] font-bold leading-none tracking-tight tabular-nums sm:text-4xl"
+          style={{ color: "var(--hero-fg)" }}
+        >
           {formatMoney(totals.netWorth, settings.baseCurrency, currencies, {
             privacy,
             compact: Math.abs(totals.netWorth) >= 1_000_000,
           })}
         </p>
-        <p className="mt-1.5 text-sm" style={{ color: "var(--fg-muted)" }}>
+        <p className="mt-3 text-sm" style={{ color: "var(--hero-muted)" }}>
           Assets{" "}
           {formatMoney(totals.totalAssets, settings.baseCurrency, currencies, {
             privacy,
@@ -322,7 +323,7 @@ export function HomeDashboard() {
                   type="monotone"
                   dataKey="netWorth"
                   stroke="var(--accent)"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   fill="url(#homeNwFill)"
                 />
               </AreaChart>
@@ -374,7 +375,7 @@ export function HomeDashboard() {
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FolderOpen size={16} style={{ color: "var(--accent)" }} />
-            <h2 className="font-semibold">Assets & Liabilities</h2>
+            <h2 className="text-base font-bold">Assets & Liabilities</h2>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -431,7 +432,7 @@ export function HomeDashboard() {
                 <li key={account.id}>
                   <Link
                     href={`/accounts/detail/?id=${account.id}`}
-                    className="card-surface flex items-center gap-3 px-3 py-3 transition hover:bg-[var(--bg-muted)]"
+                    className="list-row transition hover:opacity-95"
                   >
                     <Sparkline
                       entries={valueEntries}
@@ -475,6 +476,7 @@ export function HomeDashboard() {
                         </p>
                       )}
                     </div>
+                    <ChevronRight size={18} style={{ color: "var(--fg-subtle)" }} className="shrink-0" />
                   </Link>
                 </li>
               );

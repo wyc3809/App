@@ -9,13 +9,13 @@ import {
   Fingerprint,
   Info,
   Moon,
-  Monitor,
   Shield,
   Sparkles,
   Sun,
   Upload,
 } from "lucide-react";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
+import { SegmentControl } from "@/components/ui/SegmentControl";
 import { formatLastBackupLabel } from "@/lib/backup-meta";
 import { exportTextFile } from "@/lib/backup-export";
 import {
@@ -256,11 +256,8 @@ export default function SettingsPage() {
     };
   })();
 
-  const themes: { value: UserSettings["theme"]; label: string; icon: typeof Sun }[] = [
-    { value: "light", label: "Light", icon: Sun },
-    { value: "dark", label: "Dark", icon: Moon },
-    { value: "system", label: "System", icon: Monitor },
-  ];
+  const themeValue: "light" | "dark" =
+    settings.theme === "dark" ? "dark" : "light";
 
   return (
     <div className="space-y-4 pb-4">
@@ -296,24 +293,20 @@ export default function SettingsPage() {
 
         <div>
           <p className="label">Theme</p>
-          <div className="grid grid-cols-3 gap-2">
-            {themes.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                type="button"
-                className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-xs font-semibold"
-                style={{
-                  background:
-                    settings.theme === value ? "var(--accent-soft)" : "var(--bg-muted)",
-                  color: settings.theme === value ? "var(--accent)" : "var(--fg-muted)",
-                }}
-                onClick={() => updateSettings({ theme: value })}
-              >
-                <Icon size={18} />
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentControl
+            value={themeValue}
+            options={[
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" },
+            ]}
+            onChange={(value) => updateSettings({ theme: value })}
+          />
+          <p className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
+            {themeValue === "light" ? <Sun size={14} /> : <Moon size={14} />}
+            {themeValue === "light"
+              ? "Clean white + green accent"
+              : "Dark shell + bright green accent"}
+          </p>
         </div>
 
         <ToggleRow

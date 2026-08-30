@@ -20,22 +20,20 @@ export function NetWorthHero() {
   const privacy = settings.isPrivacyMode;
 
   return (
-    <section className="card-surface animate-fade-up overflow-hidden p-5">
+    <section className="hero-card animate-fade-up overflow-hidden p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.14em]"
-            style={{ color: "var(--fg-subtle)" }}
-          >
-            WorthBook
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--hero-muted)" }}>
+            Net Worth Profile
           </p>
-          <h1 className="mt-1 font-display text-2xl" style={{ color: "var(--fg)" }}>
-            Net Worth
+          <h1 className="mt-1 text-lg font-bold" style={{ color: "var(--hero-fg)" }}>
+            Total Balance
           </h1>
         </div>
         <button
           type="button"
-          className="btn-ghost"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl transition"
+          style={{ background: "rgba(255,255,255,0.16)", color: "var(--hero-fg)" }}
           aria-label={privacy ? "Show balances" : "Hide balances"}
           onClick={() => updateSettings({ isPrivacyMode: !privacy })}
         >
@@ -44,8 +42,8 @@ export function NetWorthHero() {
       </div>
 
       <p
-        className="font-display text-4xl tabular-nums tracking-tight sm:text-5xl"
-        style={{ color: "var(--fg)" }}
+        className="text-[2.75rem] font-bold leading-none tracking-tight tabular-nums sm:text-5xl"
+        style={{ color: "var(--hero-fg)" }}
       >
         {formatMoney(totals.netWorth, settings.baseCurrency, currencies, {
           privacy,
@@ -78,34 +76,28 @@ export function NetWorthHero() {
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl p-3" style={{ background: "var(--accent-soft)" }}>
-          <p
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: "var(--fg-subtle)" }}
-          >
+        <div
+          className="rounded-2xl p-3"
+          style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.12)" }}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--hero-muted)" }}>
             Assets
           </p>
-          <p
-            className="mt-1 text-lg font-semibold tabular-nums"
-            style={{ color: "var(--positive)" }}
-          >
+          <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: "var(--hero-fg)" }}>
             {formatMoney(totals.totalAssets, settings.baseCurrency, currencies, {
               privacy,
               compact: true,
             })}
           </p>
         </div>
-        <div className="rounded-2xl p-3" style={{ background: "var(--danger-soft)" }}>
-          <p
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: "var(--fg-subtle)" }}
-          >
+        <div
+          className="rounded-2xl p-3"
+          style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.12)" }}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--hero-muted)" }}>
             Liabilities
           </p>
-          <p
-            className="mt-1 text-lg font-semibold tabular-nums"
-            style={{ color: "var(--negative)" }}
-          >
+          <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: "var(--hero-fg)" }}>
             {formatMoney(totals.totalLiabilities, settings.baseCurrency, currencies, {
               privacy,
               compact: true,
@@ -139,19 +131,11 @@ function GrowthPill({
     <div
       className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
       style={{
-        background: muted
-          ? "var(--bg-muted)"
-          : positive
-            ? "var(--accent-soft)"
-            : "var(--danger-soft)",
-        color: muted
-          ? "var(--fg-muted)"
-          : positive
-            ? "var(--positive)"
-            : "var(--negative)",
+        background: muted ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.2)",
+        color: "var(--hero-fg)",
       }}
     >
-      {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+      {positive ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
       <span>
         {privacy
           ? "••••"
@@ -160,7 +144,7 @@ function GrowthPill({
               compact: true,
             })} (${formatPercent(percent)})`}
       </span>
-      <span className="font-medium opacity-70">{label}</span>
+      <span className="font-medium opacity-75">{label}</span>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { computeAllocation } from "@/lib/calculations";
 import { formatMoney, formatPercent } from "@/lib/format";
@@ -18,9 +20,10 @@ export function AllocationChart() {
   );
 
   return (
-    <section className="card-surface animate-fade-up-delay-2 p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-display text-lg">Allocation</h2>
+    <SectionCard
+      title="Allocation"
+      className="animate-fade-up-delay-2"
+      action={
         <div className="flex gap-1">
           <button
             type="button"
@@ -37,15 +40,10 @@ export function AllocationChart() {
             Liabilities
           </button>
         </div>
-      </div>
-
+      }
+    >
       {slices.length === 0 ? (
-        <div
-          className="flex h-40 items-center justify-center rounded-2xl text-sm"
-          style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
-        >
-          Add {mode} to see allocation.
-        </div>
+        <EmptyState message={`Add ${mode} to see allocation.`} className="min-h-40" />
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1.1fr] sm:items-center">
           <div className="mx-auto h-44 w-44">
@@ -111,6 +109,6 @@ export function AllocationChart() {
           </ul>
         </div>
       )}
-    </section>
+    </SectionCard>
   );
 }
