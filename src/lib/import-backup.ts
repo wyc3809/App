@@ -224,11 +224,23 @@ function parseSettings(raw: unknown): UserSettings | null {
   if (raw.theme !== "light" && raw.theme !== "dark" && raw.theme !== "system") {
     return null;
   }
+  const locale =
+    raw.locale === "en" || raw.locale === "zh-Hant" || raw.locale === "zh-Hans"
+      ? raw.locale
+      : undefined;
+
   return {
     baseCurrency: raw.baseCurrency,
     isPrivacyMode: raw.isPrivacyMode,
     isBiometricEnabled: raw.isBiometricEnabled,
     theme: raw.theme,
+    ...(locale ? { locale } : {}),
+    ...(typeof raw.lastBackupAt === "string" || raw.lastBackupAt === null
+      ? { lastBackupAt: raw.lastBackupAt }
+      : {}),
+    ...(typeof raw.onboardingCompleted === "boolean"
+      ? { onboardingCompleted: raw.onboardingCompleted }
+      : {}),
   };
 }
 

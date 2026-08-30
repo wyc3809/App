@@ -24,7 +24,6 @@ import {
 import { BackupReminder } from "@/components/BackupReminder";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { FilterSheet, DEFAULT_HOME_FILTER, type HomeFilterState } from "@/components/FilterSheet";
-import { OnboardingSheet } from "@/components/OnboardingSheet";
 import { Sparkline } from "@/components/Sparkline";
 import { shouldRemindBackup } from "@/lib/backup-meta";
 import { buildAccountHistoryPoints, relativeUpdateLabel } from "@/lib/account-history";
@@ -495,15 +494,6 @@ export function HomeDashboard() {
           completeOnboarding();
         }}
         onClose={() => setConfirmDemo(false)}
-      />
-
-      <OnboardingSheet
-        open={showOnboarding}
-        onLoadDemo={() => {
-          loadDemoData();
-          completeOnboarding();
-        }}
-        onDismiss={() => completeOnboarding()}
       />
 
       <FilterSheet

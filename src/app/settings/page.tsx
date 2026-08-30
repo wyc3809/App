@@ -17,6 +17,8 @@ import {
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { SegmentControl } from "@/components/ui/SegmentControl";
 import { formatLastBackupLabel } from "@/lib/backup-meta";
+import { useI18n } from "@/lib/i18n/context";
+import type { Locale } from "@/lib/i18n";
 import { exportTextFile } from "@/lib/backup-export";
 import {
   authenticateBiometric,
@@ -53,6 +55,7 @@ type PendingConfirm =
     };
 
 export default function SettingsPage() {
+  const { t, locale, setLocale } = useI18n();
   const settings = useWorthStore((s) => s.settings);
   const currencies = useWorthStore((s) => s.currencies);
   const accounts = useWorthStore((s) => s.accounts);
@@ -280,39 +283,52 @@ export default function SettingsPage() {
           className="text-xs font-semibold uppercase tracking-[0.14em]"
           style={{ color: "var(--fg-subtle)" }}
         >
-          Preferences
+          {t("settings.eyebrow")}
         </p>
-        <h1 className="mt-1 font-display text-3xl">Settings</h1>
+        <h1 className="mt-1 font-display text-3xl">{t("settings.title")}</h1>
         <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-          Offline-first. Your balances never leave this browser.
+          {t("settings.subtitle")}
         </p>
       </header>
 
       <section className="card-surface animate-fade-up space-y-4 p-4">
-        <h2 className="font-display text-lg">Display</h2>
+        <h2 className="font-display text-lg">{t("settings.display")}</h2>
 
         <div>
-          <p className="label">Theme</p>
+          <p className="label">{t("settings.language")}</p>
+          <SegmentControl
+            value={locale}
+            options={[
+              { value: "en" as Locale, label: t("settings.languageEn") },
+              { value: "zh-Hant" as Locale, label: t("settings.languageZhHant") },
+              { value: "zh-Hans" as Locale, label: t("settings.languageZhHans") },
+            ]}
+            onChange={setLocale}
+          />
+        </div>
+
+        <div>
+          <p className="label">{t("settings.theme")}</p>
           <SegmentControl
             value={themeValue}
             options={[
-              { value: "light", label: "Light" },
-              { value: "dark", label: "Dark" },
+              { value: "light", label: t("settings.themeLight") },
+              { value: "dark", label: t("settings.themeDark") },
             ]}
             onChange={(value) => updateSettings({ theme: value })}
           />
           <p className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
             {themeValue === "light" ? <Sun size={14} /> : <Moon size={14} />}
             {themeValue === "light"
-              ? "Clean white + green accent"
-              : "Dark shell + bright green accent"}
+              ? t("settings.themeLightHint")
+              : t("settings.themeDarkHint")}
           </p>
         </div>
 
         <ToggleRow
           icon={<Shield size={18} />}
-          title="Privacy mode"
-          description="Mask balances with dots"
+          title={t("settings.privacyTitle")}
+          description={t("settings.privacyDesc")}
           checked={settings.isPrivacyMode}
           onChange={(v) => updateSettings({ isPrivacyMode: v })}
         />
