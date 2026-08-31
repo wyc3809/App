@@ -48,11 +48,9 @@
     <ellipse cx="256" cy="178" rx="8" ry="10" fill="#DC2626"/>
     <path d="M244 188c8 10 24 10 32 0" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none"/>
 
-    <!-- Chart whiskers (signature) -->
-    <path d="M196 172l-28-8 8 12M196 186l-32 4 10 10M196 200l-28 12 6 14" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="176" cy="164" r="4" fill="#16a34a"/><circle cx="174" cy="190" r="4" fill="#16a34a"/><circle cx="174" cy="212" r="4" fill="#16a34a"/>
-    <path d="M316 172l28-8-8 12M316 186l32 4-10 10M316 200l28 12-6 14" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="336" cy="164" r="4" fill="#16a34a"/><circle cx="338" cy="190" r="4" fill="#16a34a"/><circle cx="338" cy="212" r="4" fill="#16a34a"/>
+    <!-- Normal whiskers -->
+    <path d="M188 168h-36M188 182h-40M188 196h-36" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M324 168h36M324 182h40M324 196h36" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
 
     <!-- Red collar + bell -->
     <path d="M204 228h104c0 0 6 10-2 16H206c-8-6-2-16-2-16z" fill="#DC2626"/>
