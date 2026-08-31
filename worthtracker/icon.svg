@@ -1,97 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="WorthBook">
   <defs>
-    <radialGradient id="bgGlow" cx="50%" cy="42%" r="58%">
+    <radialGradient id="bg" cx="50%" cy="42%" r="58%">
       <stop offset="0%" stop-color="#1A3A2C"/>
       <stop offset="55%" stop-color="#101814"/>
       <stop offset="100%" stop-color="#0A0E0C"/>
     </radialGradient>
-    <linearGradient id="pageFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFFCF7"/>
-      <stop offset="100%" stop-color="#E8E4DB"/>
-    </linearGradient>
-    <linearGradient id="coverFill" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#1A2420"/>
       <stop offset="100%" stop-color="#0D1411"/>
     </linearGradient>
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.45"/>
     </filter>
   </defs>
 
-  <!-- App tile -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGlow)"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <ellipse cx="256" cy="300" rx="168" ry="128" fill="#0F7A4C" opacity="0.18"/>
 
-  <!-- Soft brand glow behind book -->
-  <ellipse cx="256" cy="270" rx="168" ry="128" fill="#0F7A4C" opacity="0.18"/>
+  <g filter="url(#shadow)">
+    <!-- Open book -->
+    <path d="M118 220 C118 208 128 200 140 200 H236 C246 200 252 206 256 214 C260 206 266 200 276 200 H372 C384 200 394 208 394 220 V372 C394 386 382 396 368 396 H276 C266 396 260 390 256 382 C252 390 246 396 236 396 H144 C130 396 118 386 118 372 Z" fill="url(#cover)"/>
+    <path d="M132 216 H244 C250 216 254 220 256 226 V364 C252 372 246 376 236 376 H144 C136 376 132 370 132 362 Z" fill="#FFFCF7"/>
+    <path d="M380 216 H268 C262 216 258 220 256 226 V364 C260 372 266 376 276 376 H368 C376 376 380 370 380 362 Z" fill="#F3F1EC"/>
+    <path d="M256 226 C252 238 252 340 256 364 C260 340 260 238 256 226 Z" fill="#D8D2C6" opacity="0.9"/>
 
-  <g filter="url(#softShadow)">
-    <!-- Book cover / base -->
-    <path
-      d="M118 188
-         C118 176 128 168 140 168
-         H236
-         C246 168 252 174 256 182
-         C260 174 266 168 276 168
-         H372
-         C384 168 394 176 394 188
-         V348
-         C394 362 382 372 368 372
-         H276
-         C266 372 260 366 256 358
-         C252 366 246 372 236 372
-         H144
-         C130 372 118 362 118 348
-         Z"
-      fill="url(#coverFill)"
-    />
+    <!-- Grid on pages -->
+    <g opacity="0.12" stroke="#16a34a" stroke-width="1.5">
+      <path d="M148 280h88M148 304h88M148 328h88M160 268v72M184 268v72M208 268v72"/>
+      <path d="M268 280h88M268 304h88M268 328h88M280 268v72M304 268v72M328 268v72"/>
+    </g>
 
-    <!-- Left page -->
-    <path
-      d="M132 184
-         H244
-         C250 184 254 188 256 194
-         V352
-         C252 360 246 364 236 364
-         H144
-         C136 364 132 358 132 350
-         Z"
-      fill="#FFFCF7"
-    />
-    <!-- Right page -->
-    <path
-      d="M380 184
-         H268
-         C262 184 258 188 256 194
-         V352
-         C260 360 266 364 276 364
-         H368
-         C376 364 380 358 380 350
-         Z"
-      fill="#F3F1EC"
-    />
+    <!-- Rising chart on book -->
+    <path d="M168 340 L208 314 L236 326 L268 276 L300 290 L344 226" stroke="#3DCF8E" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="344" cy="226" r="12" fill="#3DCF8E"/>
+    <circle cx="344" cy="226" r="5" fill="#0D1110" opacity="0.35"/>
 
-    <!-- Page thickness / gutter shade -->
-    <path
-      d="M256 194 C252 206 252 320 256 352 C260 320 260 206 256 194 Z"
-      fill="#D8D2C6"
-      opacity="0.9"
-    />
-    <path d="M140 364 H236 C246 364 252 358 256 350" stroke="#C8C2B4" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-    <path d="M372 364 H276 C266 364 260 358 256 350" stroke="#C8C2B4" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+    <!-- Cat head (#3 style) -->
+    <ellipse cx="256" cy="168" rx="78" ry="72" fill="#F7F7F5"/>
+    <path d="M196 148 L178 108 L212 126 Z" fill="#F7F7F5" stroke="#E7C4C4" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M316 148 L334 108 L300 126 Z" fill="#F7F7F5" stroke="#E7C4C4" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M202 118 L194 102 L208 110 Z" fill="#DC2626"/>
+    <path d="M310 118 L318 102 L304 110 Z" fill="#DC2626"/>
 
-    <!-- Rising net-worth chart -->
-    <path
-      d="M168 312 L208 286 L236 298 L268 248 L300 262 L344 198"
-      stroke="#3DCF8E"
-      stroke-width="16"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <circle cx="344" cy="198" r="14" fill="#3DCF8E"/>
-    <circle cx="344" cy="198" r="6" fill="#0D1110" opacity="0.35"/>
+    <!-- Closed happy eyes -->
+    <path d="M224 158c0-10 8-16 18-16" stroke="#333" stroke-width="6" stroke-linecap="round"/>
+    <path d="M288 158c0-10-8-16-18-16" stroke="#333" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="256" cy="178" rx="8" ry="10" fill="#DC2626"/>
+    <path d="M244 188c8 10 24 10 32 0" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none"/>
 
-    <!-- Spine badge -->
-    <circle cx="256" cy="372" r="18" fill="#141C18" stroke="#3DCF8E" stroke-width="3"/>
-    <path d="M246 366 H266 M246 372 H266 M246 378 H266" stroke="#3DCF8E" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Normal whiskers -->
+    <path d="M188 168h-36M188 182h-40M188 196h-36" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M324 168h36M324 182h40M324 196h36" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Red collar + bell -->
+    <path d="M204 228h104c0 0 6 10-2 16H206c-8-6-2-16-2-16z" fill="#DC2626"/>
+    <circle cx="256" cy="244" r="13" fill="#F0C832" stroke="#C8941A" stroke-width="2"/>
+    <path d="M256 236v16" stroke="#C8941A" stroke-width="2" stroke-linecap="round"/>
   </g>
 </svg>
