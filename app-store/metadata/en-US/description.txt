@@ -1,0 +1,11 @@
+WorthBook helps you track total net worth, assets vs liabilities, and day-to-day ledger entries — entirely on your device.
+
+• Home dashboard with net worth trends and account list
+• Accounts for cash, investments, property, crypto, loans, and more
+• Ledger for income and expenses (optionally linked to accounts)
+• Insights charts: growth, allocation, cashflow, and categories
+• Multi-currency with manual exchange rates
+• JSON / CSV export and biometric lock (Face ID / Touch ID)
+• No sign-in, no cloud sync, no ads — your data stays private
+
+Perfect for offline-first wealth tracking on iPhone and iPad.

@@ -14,6 +14,7 @@ import { useWorthStore } from "@/lib/store";
 import { AppLock } from "@/components/AppLock";
 import { IntroductionFlow } from "@/components/IntroductionFlow";
 import { LocaleSync } from "@/lib/i18n/context";
+import { NativeShell } from "@/components/NativeShell";
 
 function registerServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
@@ -113,6 +114,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <LocaleSync />
+      <NativeShell />
       <AppLock>
         <AppShell>
           <IntroductionFlow />
