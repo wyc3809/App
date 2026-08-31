@@ -16,6 +16,11 @@ const config: CapacitorConfig = {
     CapacitorHttp: {
       enabled: false,
     },
+    SplashScreen: {
+      launchAutoHide: false,
+      backgroundColor: "#0d1110",
+      showSpinner: false,
+    },
   },
   ios: {
     contentInset: "automatic",

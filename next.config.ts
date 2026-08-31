@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     "@capacitor/share",
     "@capacitor/haptics",
     "@capacitor/status-bar",
+    "@capacitor/splash-screen",
     "@capgo/capacitor-native-biometric",
   ],
   ...(isGithubPages
