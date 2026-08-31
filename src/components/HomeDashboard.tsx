@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import { BackupReminder } from "@/components/BackupReminder";
+import { BrandMark } from "@/components/BrandMark";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { FilterSheet, DEFAULT_HOME_FILTER, type HomeFilterState } from "@/components/FilterSheet";
 import { Sparkline } from "@/components/Sparkline";
@@ -126,10 +127,10 @@ export function HomeDashboard() {
       <header className="relative z-30 flex items-center justify-between animate-fade-up">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
+            style={{ background: "var(--accent-soft)" }}
           >
-            W
+            <BrandMark className="h-9 w-9" />
           </div>
           <div>
             <p className="font-display text-xl leading-tight tracking-tight">WorthBook</p>
