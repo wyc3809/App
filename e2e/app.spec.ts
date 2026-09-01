@@ -194,6 +194,7 @@ test.describe("WorthBook E2E", () => {
     });
 
     await page.getByRole("link", { name: "Ledger" }).click();
+    await page.getByRole("tab", { name: "YTD" }).click();
     await expect(page.getByText("CSV Salary")).toBeVisible({
       timeout: 10_000,
     });
@@ -210,7 +211,9 @@ test.describe("WorthBook E2E", () => {
     await page.getByRole("button", { name: /Update value/i }).click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: /Add Value|Edit Value/ })).toBeVisible();
+    await expect(
+      dialog.getByRole("heading", { name: /Update Value|Add Value|Edit Value/ }),
+    ).toBeVisible();
 
     const signBtn = dialog.getByRole("button", { name: /Positive value|Negative value/ });
     await expect(signBtn).toHaveAttribute("aria-label", "Positive value");
