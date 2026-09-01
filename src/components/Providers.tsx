@@ -11,9 +11,14 @@ import {
   writePersistMirror,
 } from "@/lib/idb-mirror";
 import { shouldSkipServiceWorker } from "@/lib/platform";
+import {
+  registerReportNotificationHandlers,
+  syncReportNotifications,
+} from "@/lib/report-notifications";
 import { useWorthStore } from "@/lib/store";
 import { AppLock } from "@/components/AppLock";
 import { IntroductionFlow } from "@/components/IntroductionFlow";
+import { WrappedReportFlow } from "@/components/WrappedReportFlow";
 import { LocaleSync } from "@/lib/i18n/context";
 import { useI18n } from "@/lib/i18n/context";
 
@@ -65,6 +70,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const hydrated = useWorthStore((s) => s.hydrated);
   const setHydrated = useWorthStore((s) => s.setHydrated);
   const resyncAccounts = useWorthStore((s) => s.resyncAccounts);
+  const settings = useWorthStore((s) => s.settings);
   const [storageWarn, setStorageWarn] = useState(false);
 
   useEffect(() => {
@@ -112,6 +118,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
     registerServiceWorker();
   }, []);
 
+  useEffect(() => {
+    void registerReportNotificationHandlers();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void syncReportNotifications({
+      weeklyReportNotifications: settings.weeklyReportNotifications,
+      monthlyReportNotifications: settings.monthlyReportNotifications,
+    });
+  }, [
+    hydrated,
+    settings.weeklyReportNotifications,
+    settings.monthlyReportNotifications,
+  ]);
+
   if (!hydrated) {
     return <LoadingSplash />;
   }
@@ -122,6 +144,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AppLock>
         <AppShell>
           <IntroductionFlow />
+          <WrappedReportFlow />
           {storageWarn ? <StorageWarning /> : null}
           {children}
         </AppShell>

@@ -88,6 +88,13 @@ interface WorthState {
   completeOnboarding: () => void;
   updateCurrencyRate: (code: string, rate: number) => void;
   setBaseCurrency: (code: string) => void;
+
+  /** Ephemeral — open wrapped report from Settings (not persisted). */
+  wrappedReportTrigger: "weekly" | "monthly" | null;
+  requestWrappedReport: (type: "weekly" | "monthly") => void;
+  clearWrappedReportTrigger: () => void;
+  markWeeklyReportSeen: (weekKey: string) => void;
+  markMonthlyReportSeen: (monthKey: string) => void;
 }
 
 function buildSnapshot(
@@ -388,6 +395,10 @@ const defaultSettings: UserSettings = {
   locale: "en",
   lastBackupAt: null,
   onboardingCompleted: false,
+  lastWeeklyReportSeenKey: null,
+  lastMonthlyReportSeenKey: null,
+  weeklyReportNotifications: true,
+  monthlyReportNotifications: true,
 };
 
 export const useWorthStore = create<WorthState>()(
@@ -400,6 +411,7 @@ export const useWorthStore = create<WorthState>()(
       currencies: DEFAULT_CURRENCIES,
       settings: defaultSettings,
       hydrated: false,
+      wrappedReportTrigger: null,
 
       setHydrated: (value) => set({ hydrated: value }),
 
@@ -901,10 +913,23 @@ export const useWorthStore = create<WorthState>()(
           settings: { ...settings, baseCurrency: code },
         });
       },
+
+      requestWrappedReport: (type) => set({ wrappedReportTrigger: type }),
+      clearWrappedReportTrigger: () => set({ wrappedReportTrigger: null }),
+      markWeeklyReportSeen: (weekKey) => {
+        set((s) => ({
+          settings: { ...s.settings, lastWeeklyReportSeenKey: weekKey },
+        }));
+      },
+      markMonthlyReportSeen: (monthKey) => {
+        set((s) => ({
+          settings: { ...s.settings, lastMonthlyReportSeenKey: monthKey },
+        }));
+      },
     }),
     {
       name: "worthtracker-v1",
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -982,6 +1007,17 @@ export const useWorthStore = create<WorthState>()(
               state.settings?.locale === "en"
                 ? state.settings.locale
                 : "en",
+          };
+        }
+
+        if (version < 8) {
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            lastWeeklyReportSeenKey: state.settings?.lastWeeklyReportSeenKey ?? null,
+            lastMonthlyReportSeenKey: state.settings?.lastMonthlyReportSeenKey ?? null,
+            weeklyReportNotifications: state.settings?.weeklyReportNotifications ?? true,
+            monthlyReportNotifications: state.settings?.monthlyReportNotifications ?? true,
           };
         }
 

@@ -10,9 +10,11 @@ import {
   Info,
   Moon,
   Monitor,
+  Receipt,
   Shield,
   Sparkles,
   Sun,
+  TrendingUp,
   Upload,
 } from "lucide-react";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
@@ -71,6 +73,7 @@ export default function SettingsPage() {
   const importBackup = useWorthStore((s) => s.importBackup);
   const importCsvData = useWorthStore((s) => s.importCsvData);
   const markBackupNow = useWorthStore((s) => s.markBackupNow);
+  const requestWrappedReport = useWorthStore((s) => s.requestWrappedReport);
 
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -364,6 +367,46 @@ export default function SettingsPage() {
           disabled={bioBusy || (bioAvail !== null && !bioAvail.available)}
           onChange={(v) => void onBiometricToggle(v)}
         />
+      </section>
+
+      <section className="card-surface animate-fade-up-delay space-y-3 p-4">
+        <h2 className="font-display text-lg">{t("settings.reportsTitle")}</h2>
+        <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+          {t("settings.reportsDesc")}
+        </p>
+        <button
+          type="button"
+          className="btn-secondary w-full justify-start"
+          onClick={() => requestWrappedReport("weekly")}
+        >
+          <Receipt size={18} />
+          {t("settings.viewWeekly")}
+        </button>
+        <button
+          type="button"
+          className="btn-secondary w-full justify-start"
+          onClick={() => requestWrappedReport("monthly")}
+        >
+          <TrendingUp size={18} />
+          {t("settings.viewMonthly")}
+        </button>
+        <ToggleRow
+          icon={<Receipt size={18} />}
+          title={t("settings.weeklyNotifications")}
+          description={t("settings.weeklyNotificationsDesc")}
+          checked={settings.weeklyReportNotifications ?? true}
+          onChange={(v) => updateSettings({ weeklyReportNotifications: v })}
+        />
+        <ToggleRow
+          icon={<TrendingUp size={18} />}
+          title={t("settings.monthlyNotifications")}
+          description={t("settings.monthlyNotificationsDesc")}
+          checked={settings.monthlyReportNotifications ?? true}
+          onChange={(v) => updateSettings({ monthlyReportNotifications: v })}
+        />
+        <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
+          {t("settings.reportsNativeHint")}
+        </p>
       </section>
 
       <section className="card-surface animate-fade-up-delay space-y-4 p-4">
