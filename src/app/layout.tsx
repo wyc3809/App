@@ -35,9 +35,10 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
+
+const themeBootScript = `(function(){try{var k=localStorage.getItem('worthtracker-v1');if(!k)return;var p=JSON.parse(k);var th=p.state&&p.state.settings&&p.state.settings.theme;var r=document.documentElement;if(th==='dark')r.classList.add('dark');else if(th==='light')r.classList.remove('dark');else if(window.matchMedia('(prefers-color-scheme: dark)').matches)r.classList.add('dark');else r.classList.remove('dark');}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -46,6 +47,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className={`${sans.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>

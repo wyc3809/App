@@ -20,6 +20,7 @@ import {
   filterMonthlySeriesByRange,
 } from "@/lib/growth";
 import { formatMoney, formatPercent } from "@/lib/format";
+import { CHART_ANIMATION } from "@/lib/chart-config";
 import { useWorthStore } from "@/lib/store";
 
 export function MonthlyGrowthCard() {
@@ -137,7 +138,7 @@ export function MonthlyGrowthCard() {
                   return [`${money}${pct}`, "MoM change"];
                 }}
               />
-              <Bar dataKey="change" radius={[8, 8, 0, 0]} animationDuration={600}>
+              <Bar dataKey="change" radius={[8, 8, 0, 0]} {...CHART_ANIMATION}>
                 {chartData.map((entry) => (
                   <Cell
                     key={entry.month}

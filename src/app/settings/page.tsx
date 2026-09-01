@@ -9,6 +9,7 @@ import {
   Fingerprint,
   Info,
   Moon,
+  Monitor,
   Shield,
   Sparkles,
   Sun,
@@ -75,6 +76,7 @@ export default function SettingsPage() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [rateErrors, setRateErrors] = useState<Record<string, string>>({});
   const [importing, setImporting] = useState(false);
   const [pending, setPending] = useState<PendingConfirm | null>(null);
   const [bioAvail, setBioAvail] = useState<BiometricAvailability | null>(null);
@@ -259,8 +261,12 @@ export default function SettingsPage() {
     };
   })();
 
-  const themeValue: "light" | "dark" =
-    settings.theme === "dark" ? "dark" : "light";
+  const themeValue: "light" | "dark" | "system" =
+    settings.theme === "dark"
+      ? "dark"
+      : settings.theme === "system"
+        ? "system"
+        : "light";
 
   return (
     <div className="space-y-4 pb-4">
@@ -314,14 +320,25 @@ export default function SettingsPage() {
             options={[
               { value: "light", label: t("settings.themeLight") },
               { value: "dark", label: t("settings.themeDark") },
+              { value: "system", label: t("settings.themeSystem") },
             ]}
-            onChange={(value) => updateSettings({ theme: value })}
+            onChange={(value) =>
+              updateSettings({ theme: value as UserSettings["theme"] })
+            }
           />
           <p className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
-            {themeValue === "light" ? <Sun size={14} /> : <Moon size={14} />}
+            {themeValue === "light" ? (
+              <Sun size={14} />
+            ) : themeValue === "dark" ? (
+              <Moon size={14} />
+            ) : (
+              <Monitor size={14} />
+            )}
             {themeValue === "light"
               ? t("settings.themeLightHint")
-              : t("settings.themeDarkHint")}
+              : themeValue === "dark"
+                ? t("settings.themeDarkHint")
+                : t("settings.themeSystemHint")}
           </p>
         </div>
 
@@ -376,20 +393,38 @@ export default function SettingsPage() {
             {currencies
               .filter((c) => c.code !== settings.baseCurrency)
               .map((c) => (
-                <li key={c.code} className="flex items-center gap-3">
-                  <span className="w-14 shrink-0 text-sm font-semibold">{c.code}</span>
-                  <input
-                    className="field"
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={c.exchangeRateToBase}
-                    onChange={(e) => {
-                      const rate = Number(e.target.value);
-                      if (!Number.isNaN(rate)) updateCurrencyRate(c.code, rate);
-                    }}
-                    aria-label={`${c.code} exchange rate`}
-                  />
+                <li key={c.code}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-14 shrink-0 text-sm font-semibold">{c.code}</span>
+                    <input
+                      className="field flex-1"
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={c.exchangeRateToBase}
+                      onChange={(e) => {
+                        const rate = Number(e.target.value);
+                        if (Number.isNaN(rate) || rate <= 0) {
+                          setRateErrors((prev) => ({
+                            ...prev,
+                            [c.code]: t("settings.rateInvalid"),
+                          }));
+                          return;
+                        }
+                        setRateErrors((prev) => {
+                          const next = { ...prev };
+                          delete next[c.code];
+                          return next;
+                        });
+                        updateCurrencyRate(c.code, rate);
+                      }}
+                      aria-invalid={Boolean(rateErrors[c.code])}
+                      aria-label={`${c.code} exchange rate`}
+                    />
+                  </div>
+                  {rateErrors[c.code] ? (
+                    <p className="field-error ml-[3.75rem]">{rateErrors[c.code]}</p>
+                  ) : null}
                 </li>
               ))}
           </ul>

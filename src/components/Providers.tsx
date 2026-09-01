@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { LoadingSplash } from "@/components/LoadingSplash";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import {
   isStorageNearFull,
@@ -14,6 +15,7 @@ import { useWorthStore } from "@/lib/store";
 import { AppLock } from "@/components/AppLock";
 import { IntroductionFlow } from "@/components/IntroductionFlow";
 import { LocaleSync } from "@/lib/i18n/context";
+import { useI18n } from "@/lib/i18n/context";
 
 function registerServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
@@ -43,6 +45,22 @@ function mirrorLocalPersist() {
   }
 }
 
+function StorageWarning() {
+  const { t } = useI18n();
+  return (
+    <div
+      className="mb-3 rounded-2xl px-3 py-2 text-xs"
+      style={{
+        background: "var(--danger-soft)",
+        color: "var(--danger)",
+      }}
+      role="status"
+    >
+      {t("storage.nearFull")}
+    </div>
+  );
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const hydrated = useWorthStore((s) => s.hydrated);
   const setHydrated = useWorthStore((s) => s.setHydrated);
@@ -60,7 +78,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     };
 
     const boot = async () => {
-      // Recover from IndexedDB if localStorage was wiped.
       await restoreMirrorToLocalStorage();
       const unsub = useWorthStore.persist.onFinishHydration(finish);
       if (useWorthStore.persist.hasHydrated()) {
@@ -76,7 +93,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       unsubPersist = u;
     });
 
-    const safety = window.setTimeout(finish, 1500);
     const unsubStore = useWorthStore.subscribe(() => {
       mirrorLocalPersist();
     });
@@ -89,7 +105,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       cancelled = true;
       unsubPersist?.();
       unsubStore();
-      window.clearTimeout(safety);
     };
   }, [setHydrated, resyncAccounts]);
 
@@ -98,16 +113,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!hydrated) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-6">
-        <div className="text-center">
-          <p className="font-display text-2xl">WorthBook</p>
-          <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-            Loading your portfolio…
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingSplash />;
   }
 
   return (
@@ -116,19 +122,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AppLock>
         <AppShell>
           <IntroductionFlow />
-          {storageWarn ? (
-            <div
-              className="mb-3 rounded-2xl px-3 py-2 text-xs"
-              style={{
-                background: "var(--danger-soft)",
-                color: "var(--danger)",
-              }}
-              role="status"
-            >
-              Browser storage is nearly full. Export a JSON backup in Settings
-              soon so you do not lose data.
-            </div>
-          ) : null}
+          {storageWarn ? <StorageWarning /> : null}
           {children}
         </AppShell>
       </AppLock>

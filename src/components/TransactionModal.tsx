@@ -6,6 +6,8 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { todayISO } from "@/lib/format";
 import { ledgerCategoriesFor } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n/context";
+import { hapticSuccess } from "@/lib/haptic";
 import type { LedgerCategory, Transaction, TransactionType } from "@/lib/types";
 
 interface TransactionModalProps {
@@ -48,6 +50,7 @@ function TransactionDialog({
   const settings = useWorthStore((s) => s.settings);
   const addTransaction = useWorthStore((s) => s.addTransaction);
   const updateTransaction = useWorthStore((s) => s.updateTransaction);
+  const { t } = useI18n();
 
   const presetAccountId = initial?.accountId ?? defaultAccountId ?? "";
   const presetAccount = accounts.find((a) => a.id === presetAccountId);
@@ -64,6 +67,7 @@ function TransactionDialog({
   );
   const [accountId, setAccountId] = useState(presetAccountId);
   const [note, setNote] = useState(initial?.note ?? "");
+  const [errors, setErrors] = useState<{ amount?: string; date?: string }>({});
 
   const categories = ledgerCategoriesFor(type);
   const linkedAccount = accounts.find((a) => a.id === accountId);
@@ -87,8 +91,14 @@ function TransactionDialog({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const value = Number(amount);
-    if (Number.isNaN(value) || value <= 0) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    const nextErrors: typeof errors = {};
+    if (Number.isNaN(value) || value <= 0) nextErrors.amount = t("txForm.amountRequired");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) nextErrors.date = t("common.invalidDate");
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
 
     const payload = {
       type,
@@ -106,6 +116,7 @@ function TransactionDialog({
     } else {
       addTransaction(payload);
     }
+    hapticSuccess();
     onClose();
   };
 
@@ -113,11 +124,11 @@ function TransactionDialog({
     <form onSubmit={submit}>
       <BottomSheet
         onClose={onClose}
-        title={initial ? "Edit entry" : "Add entry"}
+        title={initial ? t("txForm.editTitle") : t("txForm.addTitle")}
         titleId="tx-modal-title"
         footer={
           <button type="submit" className="btn-primary w-full justify-center">
-            {initial ? "Save changes" : "Add entry"}
+            {initial ? t("common.saveChanges") : t("txForm.addTitle")}
           </button>
         }
       >
@@ -173,10 +184,15 @@ function TransactionDialog({
                 className="field"
                 inputMode="decimal"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  if (errors.amount) setErrors((prev) => ({ ...prev, amount: undefined }));
+                }}
+                aria-invalid={Boolean(errors.amount)}
                 placeholder="0"
                 required
               />
+              {errors.amount ? <p className="field-error">{errors.amount}</p> : null}
             </div>
             <div>
               <label className="label" htmlFor="tx-currency">

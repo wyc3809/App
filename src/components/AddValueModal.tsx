@@ -11,6 +11,8 @@ import {
 } from "@/lib/signed-amount";
 import { BottomSheet } from "@/components/BottomSheet";
 import { useWorthStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n/context";
+import { hapticSuccess } from "@/lib/haptic";
 import type { Account, AccountValueEntry } from "@/lib/types";
 
 interface AddValueModalProps {
@@ -50,6 +52,7 @@ function AddValueDialog({
   const upsertValueEntry = useWorthStore((s) => s.upsertValueEntry);
   const changeAccountCurrency = useWorthStore((s) => s.changeAccountCurrency);
   const currencies = useWorthStore((s) => s.currencies);
+  const { t } = useI18n();
 
   const seed = splitSignedAmount(initial?.value ?? account.currentValue);
   const [currency, setCurrency] = useState(account.currency);
@@ -61,6 +64,7 @@ function AddValueDialog({
   );
   const [note, setNote] = useState(initial?.note ?? "");
   const [markOnGraph, setMarkOnGraph] = useState(initial?.markOnGraph ?? true);
+  const [errors, setErrors] = useState<{ amount?: string; date?: string }>({});
 
   const onCurrencyChange = (nextCode: string) => {
     if (nextCode === currency) return;
@@ -77,8 +81,16 @@ function AddValueDialog({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const amount = combineSignedAmount(magnitude, sign);
-    if (amount === null) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) return;
+    const nextErrors: typeof errors = {};
+    if (amount === null) nextErrors.amount = t("valueForm.amountRequired");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) nextErrors.date = t("common.invalidDate");
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
+
+    const resolvedAmount = amount as number;
 
     if (currency !== account.currency) {
       changeAccountCurrency(account.id, currency);
@@ -88,10 +100,11 @@ function AddValueDialog({
       entryId: initial?.id,
       accountId: account.id,
       date: asOfDate,
-      value: amount,
+      value: resolvedAmount,
       note: note.trim() || undefined,
       markOnGraph,
     });
+    hapticSuccess();
     onClose();
   };
 
@@ -110,7 +123,7 @@ function AddValueDialog({
     <form onSubmit={submit}>
       <BottomSheet
         onClose={onClose}
-        title={initial ? "Edit Value" : "Add Value"}
+        title={initial ? t("valueForm.editTitle") : t("valueForm.addTitle")}
         titleId="add-value-title"
         headerStart={
           <button
@@ -119,18 +132,13 @@ function AddValueDialog({
             style={{ color: "var(--fg-muted)" }}
             onClick={onClose}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         }
         footer={
-          <>
-            <button type="button" className="btn-secondary flex-1" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary flex-1">
-              Save
-            </button>
-          </>
+          <button type="submit" className="btn-primary w-full justify-center">
+            {t("common.save")}
+          </button>
         }
       >
         <div className="space-y-4">
@@ -164,7 +172,11 @@ function AddValueDialog({
                 inputMode="decimal"
                 placeholder="Enter Value"
                 value={magnitude}
-                onChange={(e) => setMagnitude(e.target.value.replace(/^-/, ""))}
+                onChange={(e) => {
+                  setMagnitude(e.target.value.replace(/^-/, ""));
+                  if (errors.amount) setErrors((prev) => ({ ...prev, amount: undefined }));
+                }}
+                aria-invalid={Boolean(errors.amount)}
                 required
                 autoFocus
               />
@@ -186,6 +198,7 @@ function AddValueDialog({
                 ))}
               </select>
             </div>
+            {errors.amount ? <p className="field-error">{errors.amount}</p> : null}
             <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
               Tap + / − to set a positive or negative balance.
             </p>
