@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { filterSnapshotsByRange } from "@/lib/calculations";
+import { CHART_ANIMATION } from "@/lib/chart-config";
 import {
   buildMonthlyGrowthSeries,
   filterMonthlySeriesByRange,
@@ -203,7 +204,7 @@ export function TrendChart() {
                     stroke={METRIC_META[key].color}
                     strokeWidth={2.5}
                     dot={false}
-                    animationDuration={700}
+                    {...CHART_ANIMATION}
                   />
                 ) : (
                   <Area
@@ -214,7 +215,7 @@ export function TrendChart() {
                     stroke={METRIC_META[key].color}
                     strokeWidth={3}
                     fill={`url(#fill-${key})`}
-                    animationDuration={700}
+                    {...CHART_ANIMATION}
                   />
                 ),
               )}

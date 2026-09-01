@@ -1,7 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+} from "react";
 import { X } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 interface BottomSheetProps {
   onClose: () => void;
@@ -17,6 +24,9 @@ interface BottomSheetProps {
   /** Show the default close (X) control. */
   showClose?: boolean;
 }
+
+const FOCUSABLE =
+  'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 /**
  * Full-screen overlay + bottom sheet that:
@@ -34,6 +44,61 @@ export function BottomSheet({
   zIndex = 70,
   showClose = true,
 }: BottomSheetProps) {
+  const { t } = useI18n();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const titleFallbackId = useId();
+  const resolvedTitleId = title ? titleId : titleFallbackId;
+
+  const trapFocus = useCallback((event: KeyboardEvent) => {
+    if (event.key !== "Tab" || !sheetRef.current) return;
+    const nodes = Array.from(
+      sheetRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
+    ).filter((el) => el.offsetParent !== null);
+    if (nodes.length === 0) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const sheet = sheetRef.current;
+    const focusTarget =
+      sheet?.querySelector<HTMLElement>(FOCUSABLE) ?? sheet;
+    focusTarget?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      trapFocus(event);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [onClose, trapFocus]);
+
   return (
     <div
       className="fixed inset-0 flex items-end justify-center sm:items-center"
@@ -41,13 +106,15 @@ export function BottomSheet({
     >
       <button
         type="button"
-        className="absolute inset-0 backdrop-blur-[2px]"
+        className="sheet-backdrop-enter absolute inset-0 backdrop-blur-[2px]"
         style={{ background: "var(--overlay)" }}
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={onClose}
       />
       <div
-        className="relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl sm:max-h-[min(92dvh,40rem)]"
+        ref={sheetRef}
+        tabIndex={-1}
+        className="sheet-enter relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl outline-none sm:max-h-[min(92dvh,40rem)] sm:rounded-3xl"
         style={{
           background: "var(--bg-elevated)",
           border: "1px solid var(--border)",
@@ -57,7 +124,7 @@ export function BottomSheet({
         }}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={resolvedTitleId}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -70,12 +137,12 @@ export function BottomSheet({
               {headerStart ?? <span className="w-11" aria-hidden />}
             </div>
             {title ? (
-              <h2 id={titleId} className="font-display text-lg">
+              <h2 id={resolvedTitleId} className="font-display text-lg">
                 {title}
               </h2>
             ) : (
-              <span id={titleId} className="sr-only">
-                Dialog
+              <span id={resolvedTitleId} className="sr-only">
+                {t("common.dialog")}
               </span>
             )}
             <div className="flex min-w-[3rem] items-center justify-end">
@@ -85,7 +152,7 @@ export function BottomSheet({
                   className="btn-ghost inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
                   style={{ background: "var(--bg-muted)" }}
                   onClick={onClose}
-                  aria-label="Close"
+                  aria-label={t("common.close")}
                 >
                   <X size={18} />
                 </button>

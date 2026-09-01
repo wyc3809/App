@@ -170,7 +170,7 @@ export function InsightsDashboard() {
         })}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 animate-fade-up-delay">
+      <div className="chip-scroll animate-fade-up-delay">
         {INSIGHT_RANGES.map((r) => {
           const active = range === r.value;
           return (
@@ -194,7 +194,7 @@ export function InsightsDashboard() {
           Take snapshots or update account values to unlock Insights.
         </div>
       ) : (
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 animate-fade-up-delay">
+        <div className="chip-scroll -mx-1 px-1 animate-fade-up-delay">
           <SummaryCard
             label="Total Net Worth"
             value={money(summary.netWorth)}

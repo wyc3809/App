@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n/context";
 import type { TranslationKey } from "@/lib/i18n";
+import { hapticTap } from "@/lib/haptic";
 
 const NAV = [
   { href: "/", labelKey: "nav.home" as TranslationKey, icon: LayoutDashboard },
@@ -24,7 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <main className="px-4 pt-4">{children}</main>
+      <main className="px-4">{children}</main>
 
       <nav
         className="fixed bottom-0 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t px-3 pt-2"
@@ -51,6 +52,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     color: active ? "var(--accent)" : "var(--fg-subtle)",
                     background: active ? "var(--accent-soft)" : "transparent",
                   }}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => hapticTap()}
                 >
                   <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                   {label}

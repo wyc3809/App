@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { BackupReminder } from "@/components/BackupReminder";
 import { BrandMark } from "@/components/BrandMark";
+import { ChartErrorBoundary } from "@/components/ChartErrorBoundary";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { FilterSheet, DEFAULT_HOME_FILTER, type HomeFilterState } from "@/components/FilterSheet";
 import { Sparkline } from "@/components/Sparkline";
@@ -38,17 +39,21 @@ import {
   type ChartRange,
 } from "@/lib/net-worth-series";
 import { useWorthStore } from "@/lib/store";
+import { CHART_ANIMATION } from "@/lib/chart-config";
+import { useI18n } from "@/lib/i18n/context";
+import { hapticTap } from "@/lib/haptic";
 
 const RANGES = ["ALL", "6M", "YTD", "1Y", "2Y", "5Y", "8Y"] as const;
 
-function greeting(): string {
+function greeting(t: (key: import("@/lib/i18n").TranslationKey) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good Morning";
-  if (hour < 18) return "Good Afternoon";
-  return "Good Evening";
+  if (hour < 12) return t("home.greetingMorning");
+  if (hour < 18) return t("home.greetingAfternoon");
+  return t("home.greetingEvening");
 }
 
 export function HomeDashboard() {
+  const { t } = useI18n();
   const accounts = useWorthStore((s) => s.accounts);
   const valueEntries = useWorthStore((s) => s.valueEntries);
   const snapshots = useWorthStore((s) => s.snapshots);
@@ -135,7 +140,7 @@ export function HomeDashboard() {
           <div>
             <p className="font-display text-xl leading-tight tracking-tight">WorthBook</p>
             <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
-              {greeting()}
+              {greeting(t)}
             </p>
           </div>
         </div>
@@ -144,9 +149,12 @@ export function HomeDashboard() {
             <button
               type="button"
               className="btn-ghost"
-              aria-label="More options"
+              aria-label={t("home.moreOptions")}
               aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((v) => !v)}
+              onClick={() => {
+                hapticTap();
+                setMenuOpen((v) => !v);
+              }}
             >
               <MoreVertical size={18} />
             </button>
@@ -168,7 +176,7 @@ export function HomeDashboard() {
                     onClick={() => setMenuOpen(false)}
                   >
                     <Settings2 size={16} style={{ color: "var(--fg-muted)" }} />
-                    Settings
+                    {t("home.settings")}
                   </Link>
                   <button
                     type="button"
@@ -179,7 +187,7 @@ export function HomeDashboard() {
                     }}
                   >
                     <Sparkles size={16} style={{ color: "var(--fg-muted)" }} />
-                    Load demo data
+                    {t("home.loadDemo")}
                   </button>
                 </div>
               </>
@@ -188,8 +196,11 @@ export function HomeDashboard() {
           <button
             type="button"
             className="btn-ghost relative"
-            aria-label="Filter"
-            onClick={() => setFilterOpen(true)}
+            aria-label={t("home.filter")}
+            onClick={() => {
+              hapticTap();
+              setFilterOpen(true);
+            }}
           >
             <Filter size={18} />
             {activeFilterCount > 0 && (
@@ -199,7 +210,7 @@ export function HomeDashboard() {
               />
             )}
           </button>
-          <Link href="/accounts/?new=1" className="btn-ghost" aria-label="Add account">
+          <Link href="/accounts/?new=1" className="btn-ghost" aria-label={t("home.addAccount")} onClick={() => hapticTap()}>
             <Plus size={18} />
           </Link>
         </div>
@@ -214,7 +225,7 @@ export function HomeDashboard() {
 
       <section className="hero-card relative z-0 animate-fade-up p-5 text-center">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--hero-muted)" }}>
-          Net Worth Profile
+          {t("home.netWorthProfile")}
         </p>
         <p
           className="mt-2 text-[2.75rem] font-bold leading-none tracking-tight tabular-nums sm:text-4xl"
@@ -226,13 +237,13 @@ export function HomeDashboard() {
           })}
         </p>
         <p className="mt-3 text-sm" style={{ color: "var(--hero-muted)" }}>
-          Assets{" "}
+          {t("home.assets")}{" "}
           {formatMoney(totals.totalAssets, settings.baseCurrency, currencies, {
             privacy,
             compact: true,
           })}
           {" · "}
-          Liabilities{" "}
+          {t("home.liabilities")}{" "}
           {formatMoney(totals.totalLiabilities, settings.baseCurrency, currencies, {
             privacy,
             compact: true,
@@ -247,11 +258,12 @@ export function HomeDashboard() {
             style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
           >
             {accounts.length === 0
-              ? "Add accounts or load demo data to see your net worth trend."
-              : "Take snapshots / update values to build the chart."}
+              ? t("home.chartEmptyNoAccounts")
+              : t("home.chartEmptyNeedData")}
           </div>
         ) : (
-          <div className="h-52 w-full">
+          <ChartErrorBoundary>
+          <div className="h-52 w-full" role="img" aria-label={t("home.netWorthProfile")}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData.points}
@@ -325,19 +337,24 @@ export function HomeDashboard() {
                   stroke="var(--accent)"
                   strokeWidth={3}
                   fill="url(#homeNwFill)"
+                  {...CHART_ANIMATION}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          </ChartErrorBoundary>
         )}
 
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="chip-scroll mt-2">
           {RANGES.map((r) => (
             <button
               key={r}
               type="button"
               className={`chip ${range === r ? "chip-active" : ""}`}
-              onClick={() => setRange(r)}
+              onClick={() => {
+                hapticTap();
+                setRange(r);
+              }}
             >
               {r === "ALL" ? "All" : r}
             </button>
@@ -354,16 +371,16 @@ export function HomeDashboard() {
           <div className="flex items-start gap-3">
             <Sparkles size={18} style={{ color: "var(--accent)" }} className="mt-0.5" />
             <div>
-              <p className="font-semibold">Add your first account</p>
+              <p className="font-semibold">{t("home.addFirstAccount")}</p>
               <p className="mt-1" style={{ color: "var(--fg-muted)" }}>
                 Or load a sample portfolio to explore the app.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Link href="/accounts/?new=1" className="btn-primary">
-                  Add account
+                <Link href="/accounts/?new=1" className="btn-primary" onClick={() => hapticTap()}>
+                  {t("home.addAccount")}
                 </Link>
-                <button type="button" className="btn-secondary" onClick={() => setConfirmDemo(true)}>
-                  Load demo
+                <button type="button" className="btn-secondary" onClick={() => { hapticTap(); setConfirmDemo(true); }}>
+                  {t("home.loadDemo")}
                 </button>
               </div>
             </div>

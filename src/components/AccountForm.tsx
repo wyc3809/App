@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ASSET_TYPES, LIABILITY_TYPES } from "@/lib/categories";
 import { BottomSheet } from "@/components/BottomSheet";
 import { useWorthStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n/context";
+import { hapticSuccess } from "@/lib/haptic";
 import type { Account, AccountCategory } from "@/lib/types";
 
 interface AccountFormProps {
@@ -44,6 +46,7 @@ function AccountFormDialog({
   const settings = useWorthStore((s) => s.settings);
   const addAccount = useWorthStore((s) => s.addAccount);
   const updateAccount = useWorthStore((s) => s.updateAccount);
+  const { t } = useI18n();
 
   const [isLiability, setIsLiability] = useState(
     initial?.isLiability ?? defaultLiability,
@@ -65,6 +68,7 @@ function AccountFormDialog({
     initial?.institutionName ?? "",
   );
   const [note, setNote] = useState(initial?.note ?? "");
+  const [errors, setErrors] = useState<{ name?: string; value?: string; date?: string }>({});
 
   const categories = isLiability ? LIABILITY_TYPES : ASSET_TYPES;
   const resolvedCategory = categories.some((t) => t.value === category)
@@ -81,9 +85,16 @@ function AccountFormDialog({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const nextErrors: typeof errors = {};
     const value = Number(currentValue);
-    if (!name.trim() || Number.isNaN(value) || value < 0) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) return;
+    if (!name.trim()) nextErrors.name = t("accountForm.nameRequired");
+    if (Number.isNaN(value) || value < 0) nextErrors.value = t("accountForm.valueRequired");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) nextErrors.date = t("common.invalidDate");
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
 
     const payload = {
       name: name.trim(),
@@ -98,6 +109,7 @@ function AccountFormDialog({
 
     if (initial) updateAccount(initial.id, payload);
     else addAccount(payload);
+    hapticSuccess();
     onClose();
   };
 
@@ -105,7 +117,7 @@ function AccountFormDialog({
     <form onSubmit={submit}>
       <BottomSheet
         onClose={onClose}
-        title={initial ? "Edit Account" : "Add Account"}
+        title={initial ? t("accountForm.editTitle") : t("accountForm.addTitle")}
         titleId="account-form-title"
         headerStart={
           <button
@@ -114,22 +126,16 @@ function AccountFormDialog({
             style={{ color: "var(--fg-muted)" }}
             onClick={onClose}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         }
         footer={
-          <>
-            <button
-              type="button"
-              className="btn-secondary flex-1 justify-center"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary flex-1 justify-center">
-              {initial ? "Save Changes" : "Add Account"}
-            </button>
-          </>
+          <button
+            type="submit"
+            className="btn-primary w-full justify-center"
+          >
+            {initial ? t("common.saveChanges") : t("accountForm.addTitle")}
+          </button>
         }
       >
         <div className="space-y-4">
@@ -143,7 +149,7 @@ function AccountFormDialog({
               }}
               onClick={() => setLiabilityMode(false)}
             >
-              Asset
+              {t("accountForm.asset")}
             </button>
             <button
               type="button"
@@ -154,28 +160,33 @@ function AccountFormDialog({
               }}
               onClick={() => setLiabilityMode(true)}
             >
-              Liability
+              {t("accountForm.liability")}
             </button>
           </div>
 
           <div>
             <label className="label" htmlFor="account-name">
-              Name
+              {t("accountForm.name")}
             </label>
             <input
               id="account-name"
               className="field"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. HSBC Savings"
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              placeholder={t("accountForm.namePlaceholder")}
+              aria-invalid={Boolean(errors.name)}
               required
             />
+            {errors.name ? <p className="field-error">{errors.name}</p> : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="account-category">
-                Category
+                {t("accountForm.category")}
               </label>
               <select
                 id="account-category"
@@ -192,7 +203,7 @@ function AccountFormDialog({
             </div>
             <div>
               <label className="label" htmlFor="account-currency">
-                Currency
+                {t("accountForm.currency")}
               </label>
               <select
                 id="account-currency"
@@ -212,7 +223,7 @@ function AccountFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="account-value">
-                Current Value
+                {t("accountForm.currentValue")}
               </label>
               <input
                 id="account-value"
@@ -222,14 +233,19 @@ function AccountFormDialog({
                 step="any"
                 inputMode="decimal"
                 value={currentValue}
-                onChange={(e) => setCurrentValue(e.target.value)}
+                onChange={(e) => {
+                  setCurrentValue(e.target.value);
+                  if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
+                }}
                 placeholder="0"
+                aria-invalid={Boolean(errors.value)}
                 required
               />
+              {errors.value ? <p className="field-error">{errors.value}</p> : null}
             </div>
             <div>
               <label className="label" htmlFor="account-asof">
-                日期 / As of
+                {t("accountForm.asOfDate")}
               </label>
               <input
                 id="account-asof"
@@ -237,38 +253,43 @@ function AccountFormDialog({
                 type="date"
                 value={asOfDate}
                 max={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setAsOfDate(e.target.value)}
+                onChange={(e) => {
+                  setAsOfDate(e.target.value);
+                  if (errors.date) setErrors((prev) => ({ ...prev, date: undefined }));
+                }}
+                aria-invalid={Boolean(errors.date)}
                 required
               />
+              {errors.date ? <p className="field-error">{errors.date}</p> : null}
             </div>
           </div>
           <p className="-mt-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
-            此金額對應的日期；儲存後會更新該日淨資產紀錄。
+            {t("accountForm.asOfHint")}
           </p>
 
           <div>
             <label className="label" htmlFor="account-institution">
-              Institution
+              {t("accountForm.institution")}
             </label>
             <input
               id="account-institution"
               className="field"
               value={institutionName}
               onChange={(e) => setInstitutionName(e.target.value)}
-              placeholder="Optional"
+              placeholder={t("accountForm.optional")}
             />
           </div>
 
           <div>
             <label className="label" htmlFor="account-note">
-              Note
+              {t("accountForm.note")}
             </label>
             <textarea
               id="account-note"
               className="field min-h-20 resize-y"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Optional"
+              placeholder={t("accountForm.optional")}
             />
           </div>
         </div>

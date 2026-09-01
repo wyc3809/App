@@ -5,6 +5,7 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { computeAllocation } from "@/lib/calculations";
+import { CHART_ANIMATION } from "@/lib/chart-config";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
 
@@ -57,6 +58,7 @@ export function AllocationChart() {
                   outerRadius={72}
                   paddingAngle={2}
                   stroke="none"
+                  {...CHART_ANIMATION}
                 >
                   {slices.map((s) => (
                     <Cell key={s.category} fill={s.color} />

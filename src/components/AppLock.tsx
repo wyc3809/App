@@ -7,12 +7,14 @@ import {
   getBiometricAvailability,
 } from "@/lib/biometric";
 import { useWorthStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n/context";
 
 /**
  * Full-screen lock when biometric preference is on (native Face ID / Touch ID).
  * Re-locks when the app returns from background. Skips on web builds.
  */
 export function AppLock({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   const enabled = useWorthStore((s) => s.settings.isBiometricEnabled);
   const updateSettings = useWorthStore((s) => s.updateSettings);
   const [locked, setLocked] = useState(false);
@@ -28,7 +30,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     if (ok) {
       setLocked(false);
     } else {
-      setError("Authentication failed. Try again.");
+      setError(t("appLock.failed"));
     }
   }, []);
 
@@ -58,7 +60,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, unlock, updateSettings]);
+  }, [enabled, unlock, updateSettings, t]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -109,10 +111,10 @@ export function AppLock({ children }: { children: React.ReactNode }) {
         <Lock size={28} />
       </div>
       <h1 id="app-lock-title" className="font-display text-2xl">
-        WorthBook
+        {t("appLock.title")}
       </h1>
       <p className="text-center text-sm" style={{ color: "var(--fg-muted)" }}>
-        Unlock with Face ID / Touch ID to view your portfolio.
+        {t("appLock.unlock")}
       </p>
       {error ? (
         <p className="text-center text-sm" style={{ color: "var(--danger)" }}>
