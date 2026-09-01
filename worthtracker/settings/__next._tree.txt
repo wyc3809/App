@@ -1,3 +1,3 @@
-:HL["/App/worthtracker/_next/static/chunks/3n_mdklsk4tyx.css","style"]
+:HL["/App/worthtracker/_next/static/chunks/1jyw_bosfcn72.css","style"]
 :HL["/App/worthtracker/_next/static/media/5c285b27cdda1fe8-s.p.2_mbdogr7ni8i.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"settings","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"VmMVZG72aNoqiOBuUVXWT"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"settings","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"39aI7RHXX7_8kt1XwptgX"}
