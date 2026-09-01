@@ -26,10 +26,9 @@ export function LoadingSplash() {
       style={{ paddingTop: "var(--safe-top)" }}
     >
       <div
-        className="flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ background: "var(--accent-soft)" }}
+        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl"
       >
-        <BrandMark className="h-11 w-11" />
+        <BrandMark className="h-14 w-14" />
       </div>
       <div className="text-center">
         <p className="font-display text-2xl">WorthBook</p>

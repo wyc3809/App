@@ -132,10 +132,9 @@ export function HomeDashboard() {
       <header className="relative z-30 flex items-center justify-between animate-fade-up">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
-            style={{ background: "var(--accent-soft)" }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl"
           >
-            <BrandMark className="h-9 w-9" />
+            <BrandMark className="h-10 w-10" />
           </div>
           <div>
             <p className="font-display text-xl leading-tight tracking-tight">WorthBook</p>
