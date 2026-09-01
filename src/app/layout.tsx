@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { getPublicAssetBase } from "@/lib/public-asset-base";
 import "./globals.css";
 
 const sans = DM_Sans({
@@ -9,7 +10,7 @@ const sans = DM_Sans({
   display: "swap",
 });
 
-const assetBase = process.env.GITHUB_PAGES === "true" ? "/App" : "";
+const assetBase = getPublicAssetBase();
 
 export const metadata: Metadata = {
   title: "WorthBook — Net Worth & Wealth Tracking",
@@ -23,8 +24,14 @@ export const metadata: Metadata = {
   },
   manifest: `${assetBase}/manifest.webmanifest`,
   icons: {
-    icon: [{ url: `${assetBase}/icon.svg`, type: "image/svg+xml" }],
-    apple: [{ url: `${assetBase}/icon.svg` }],
+    icon: [
+      { url: `${assetBase}/icon.svg`, type: "image/svg+xml" },
+      { url: `${assetBase}/favicon-32.png`, sizes: "32x32", type: "image/png" },
+      { url: `${assetBase}/icon-192.png`, sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: `${assetBase}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
