@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
     "@capacitor/filesystem",
     "@capacitor/share",
     "@capacitor/haptics",
+    "@capacitor/local-notifications",
     "@capacitor/status-bar",
     "@capgo/capacitor-native-biometric",
   ],

@@ -82,6 +82,14 @@ export interface UserSettings {
   lastBackupAt?: string | null;
   /** First-run onboarding completed or dismissed. */
   onboardingCompleted?: boolean;
+  /** ISO week key when weekly ledger recap was last shown (YYYY-Www). */
+  lastWeeklyReportSeenKey?: string | null;
+  /** Month key when monthly net worth recap was last shown (YYYY-MM). */
+  lastMonthlyReportSeenKey?: string | null;
+  /** Native local notification for weekly ledger recap. */
+  weeklyReportNotifications?: boolean;
+  /** Native local notification for monthly net worth recap. */
+  monthlyReportNotifications?: boolean;
 }
 
 export type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";

@@ -115,7 +115,20 @@ export type TranslationKey =
   | "settings.themeDarkHint"
   | "settings.themeSystemHint"
   | "settings.privacyTitle"
-  | "settings.privacyDesc";
+  | "settings.privacyDesc"
+  | "settings.reportsTitle"
+  | "settings.reportsDesc"
+  | "settings.viewWeekly"
+  | "settings.viewMonthly"
+  | "settings.weeklyNotifications"
+  | "settings.weeklyNotificationsDesc"
+  | "settings.monthlyNotifications"
+  | "settings.monthlyNotificationsDesc"
+  | "settings.reportsNativeHint"
+  | "reports.close"
+  | "reports.next"
+  | "reports.done"
+  | "reports.tapContinue";
 
 export const LOCALE_LABELS: Record<Locale, TranslationKey> = {
   en: "settings.languageEn",
