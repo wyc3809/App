@@ -2,4 +2,4 @@
 2:I[39756,["/App/worthtracker/_next/static/chunks/3x-ow5-23uagr.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/3befy3f4c2jwi.js"],"default"]
 3:I[37457,["/App/worthtracker/_next/static/chunks/3x-ow5-23uagr.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/3befy3f4c2jwi.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"39aI7RHXX7_8kt1XwptgX"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"3xSXoqrjjZEIe20fs2grn"}
