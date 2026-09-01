@@ -13,8 +13,40 @@ async function clearAppData(page: Page) {
   });
 }
 
+/** Dismiss Spotify-style Wrapped recaps when they block the shell. */
+async function dismissWrappedReports(page: Page) {
+  for (let i = 0; i < 24; i++) {
+    const title = page.getByText(/Your week in WorthBook|Your month in WorthBook/i);
+    if (!(await title.isVisible().catch(() => false))) return;
+
+    const close = page.getByRole("button", { name: /^Close$/i });
+    if (await close.isVisible().catch(() => false)) {
+      await close.click();
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    const action = page.locator('[role="dialog"] footer .btn-primary');
+    if (await action.isVisible().catch(() => false)) {
+      await action.click();
+      await page.waitForTimeout(250);
+      continue;
+    }
+    return;
+  }
+}
+
 /** Wait until Zustand persist finishes and the shell is interactive. */
 async function waitForAppReady(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const nav = document.querySelector('[aria-label="Primary"]');
+      const wrapped = /Your (week|month) in WorthBook/.test(document.body.innerText);
+      return Boolean(nav || wrapped);
+    },
+    { timeout: 20_000 },
+  );
+  await dismissWrappedReports(page);
   await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible({
     timeout: 20_000,
   });
@@ -29,6 +61,7 @@ async function dismissIntro(page: Page) {
       page.getByRole("dialog", { name: "Welcome to WorthBook" }),
     ).toHaveCount(0);
   }
+  await dismissWrappedReports(page);
 }
 
 async function loadDemo(page: Page) {
@@ -39,6 +72,7 @@ async function loadDemo(page: Page) {
   await expect(page.getByText(/Net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
+  await dismissWrappedReports(page);
 }
 
 test.describe("WorthBook E2E", () => {
