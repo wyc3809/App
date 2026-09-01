@@ -284,6 +284,12 @@ h3,
   .wrapped-slide-enter {
     animation: none !important;
   }
+
+  .wrapped-rank-line-visible {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes sheet-slide-up {
@@ -344,6 +350,22 @@ h3,
 
 .wrapped-slide-enter {
   animation: wrapped-slide-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wrapped-rank-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wrapped-rank-line-visible {
+  animation: wrapped-rank-line-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

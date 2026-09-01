@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Receipt, Sparkles, TrendingUp } from "lucide-react";
 import { formatMoney, todayISO } from "@/lib/format";
 import { hapticSuccess, hapticTap } from "@/lib/haptic";
@@ -15,19 +15,129 @@ import {
   buildWeeklyLedgerReport,
   monthlyReportToSlides,
   weeklyReportToSlides,
+  type WrappedRankItem,
   type WrappedSlide,
+  type WrappedStatItem,
 } from "@/lib/wrapped-reports";
 import { useWorthStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n/context";
 
 type ActiveReport = { type: "weekly" | "monthly"; slides: WrappedSlide[] };
 
-function slideIcon(slide: WrappedSlide) {
+function renderSlideIcon(slide: WrappedSlide) {
   if (slide.kind === "intro") {
-    return slide.accent === "ledger" ? Receipt : TrendingUp;
+    const Icon = slide.accent === "ledger" ? Receipt : TrendingUp;
+    return <Icon size={32} strokeWidth={2} />;
   }
-  if (slide.kind === "outro") return Sparkles;
+  if (slide.kind === "outro") return <Sparkles size={32} strokeWidth={2} />;
   return null;
+}
+
+function toneColor(
+  tone: WrappedStatItem["tone"] | WrappedRankItem["tone"] | undefined,
+): string {
+  if (tone === "positive") return "var(--positive)";
+  if (tone === "negative") return "var(--negative)";
+  return "var(--fg)";
+}
+
+function StatGroupSlide({ slide }: { slide: WrappedSlide & { kind: "statsGroup" } }) {
+  return (
+    <div className="w-full max-w-md space-y-1">
+      {slide.heading ? (
+        <p
+          className="mb-4 text-xs font-bold uppercase tracking-[0.14em]"
+          style={{ color: "var(--fg-subtle)" }}
+        >
+          {slide.heading}
+        </p>
+      ) : null}
+      <div
+        className="rounded-2xl px-4 py-3"
+        style={{ background: "var(--bg-muted)" }}
+      >
+        {slide.items.map((item, index) => (
+          <div
+            key={`${item.label}-${index}`}
+            className="flex items-baseline justify-between gap-3 py-3"
+            style={{
+              borderBottom:
+                index < slide.items.length - 1
+                  ? "1px solid var(--border-subtle)"
+                  : undefined,
+            }}
+          >
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-medium" style={{ color: "var(--fg-muted)" }}>
+                {item.label}
+              </p>
+              {item.hint ? (
+                <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>{item.hint}</p>
+              ) : null}
+            </div>
+            <p
+              className="shrink-0 text-xl font-bold tabular-nums tracking-tight"
+              style={{ color: toneColor(item.tone) }}
+            >
+              {item.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RankListSlide({
+  slide,
+  animKey,
+}: {
+  slide: WrappedSlide & { kind: "rankList" };
+  animKey: number;
+}) {
+  return (
+    <div className="w-full max-w-md text-left">
+      <h2 id="wrapped-slide-title" className="font-display mb-5 text-2xl leading-tight">
+        {slide.heading}
+      </h2>
+      <ul className="space-y-2" aria-label={slide.heading}>
+        {slide.items.map((item, index) => (
+          <li
+            key={`${animKey}-${item.rank}-${item.title}`}
+            className="wrapped-rank-line wrapped-rank-line-visible flex items-center gap-3 rounded-xl px-3 py-2.5"
+            style={{
+              background: "var(--bg-muted)",
+              animationDelay: `${0.12 + index * 0.38}s`,
+            }}
+          >
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+            >
+              #{item.rank}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold leading-tight">{item.title}</p>
+              {item.subtitle ? (
+                <p className="truncate text-xs" style={{ color: "var(--fg-muted)" }}>
+                  {item.subtitle}
+                </p>
+              ) : null}
+            </div>
+            <p
+              className="shrink-0 text-sm font-bold tabular-nums"
+              style={{ color: toneColor(item.tone) }}
+            >
+              {item.value}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export function WrappedReportFlow() {
@@ -165,18 +275,10 @@ export function WrappedReportFlow() {
   const slide = active?.slides[step];
   const progress = active ? ((step + 1) / active.slides.length) * 100 : 0;
 
-  const toneColor = useMemo(() => {
-    if (!slide || slide.kind === "intro" || slide.kind === "outro") return "var(--accent)";
-    if (slide.kind === "stat" || slide.kind === "rank") {
-      if (slide.tone === "positive") return "var(--positive)";
-      if (slide.tone === "negative") return "var(--negative)";
-    }
-    return "var(--fg)";
-  }, [slide]);
-
   if (!active || !slide) return null;
 
-  const Icon = slideIcon(slide);
+  const slideIcon = renderSlideIcon(slide);
+  const isRankList = slide.kind === "rankList";
 
   return (
     <div
@@ -207,20 +309,24 @@ export function WrappedReportFlow() {
 
       <button
         type="button"
-        className="flex flex-1 flex-col items-center justify-center px-8 text-center"
+        className={`flex flex-1 flex-col px-6 py-4 ${
+          isRankList ? "items-stretch justify-start overflow-y-auto" : "items-center justify-center text-center"
+        }`}
         onClick={advance}
         aria-label="Next slide"
       >
         <div
           key={animKey}
-          className="wrapped-slide-enter mx-auto flex w-full max-w-md flex-col items-center gap-4"
+          className={`wrapped-slide-enter mx-auto flex w-full max-w-md flex-col gap-4 ${
+            isRankList ? "items-stretch" : "items-center"
+          }`}
         >
-          {Icon ? (
+          {slideIcon ? (
             <div
-              className="flex h-16 w-16 items-center justify-center rounded-2xl"
+              className="flex h-16 w-16 items-center justify-center rounded-2xl self-center"
               style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
             >
-              <Icon size={32} strokeWidth={2} />
+              {slideIcon}
             </div>
           ) : null}
 
@@ -233,45 +339,9 @@ export function WrappedReportFlow() {
             </>
           )}
 
-          {slide.kind === "stat" && (
-            <>
-              <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: "var(--fg-subtle)" }}>
-                {slide.label}
-              </p>
-              <p
-                className="font-display text-4xl font-bold tabular-nums tracking-tight sm:text-5xl"
-                style={{ color: toneColor }}
-              >
-                {slide.value}
-              </p>
-              {slide.hint ? (
-                <p className="text-sm" style={{ color: "var(--fg-muted)" }}>{slide.hint}</p>
-              ) : null}
-            </>
-          )}
+          {slide.kind === "statsGroup" && <StatGroupSlide slide={slide} />}
 
-          {slide.kind === "rank" && (
-            <>
-              <p
-                className="text-xs font-bold uppercase tracking-[0.2em]"
-                style={{ color: "var(--fg-subtle)" }}
-              >
-                #{slide.rank}
-              </p>
-              <h2 id="wrapped-slide-title" className="font-display text-2xl leading-tight">
-                {slide.title}
-              </h2>
-              {slide.subtitle ? (
-                <p className="text-sm" style={{ color: "var(--fg-muted)" }}>{slide.subtitle}</p>
-              ) : null}
-              <p
-                className="mt-2 text-3xl font-bold tabular-nums"
-                style={{ color: toneColor }}
-              >
-                {slide.value}
-              </p>
-            </>
-          )}
+          {slide.kind === "rankList" && <RankListSlide slide={slide} animKey={animKey} />}
 
           {slide.kind === "outro" && (
             <>
@@ -282,7 +352,12 @@ export function WrappedReportFlow() {
             </>
           )}
 
-          <p className="mt-6 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--fg-subtle)" }}>
+          <p
+            className={`text-xs font-semibold uppercase tracking-wide ${
+              isRankList ? "mt-4 text-center" : "mt-6"
+            }`}
+            style={{ color: "var(--fg-subtle)" }}
+          >
             {t("reports.tapContinue")}
           </p>
         </div>

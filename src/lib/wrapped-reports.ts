@@ -194,6 +194,21 @@ export function buildMonthlyNetWorthReport(
   };
 }
 
+export type WrappedStatItem = {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "positive" | "negative" | "neutral";
+};
+
+export type WrappedRankItem = {
+  rank: number;
+  title: string;
+  subtitle?: string;
+  value: string;
+  tone?: "positive" | "negative";
+};
+
 export type WrappedSlide =
   | {
       kind: "intro";
@@ -202,19 +217,14 @@ export type WrappedSlide =
       accent?: string;
     }
   | {
-      kind: "stat";
-      label: string;
-      value: string;
-      hint?: string;
-      tone?: "positive" | "negative" | "neutral";
+      kind: "statsGroup";
+      heading?: string;
+      items: WrappedStatItem[];
     }
   | {
-      kind: "rank";
-      rank: number;
-      title: string;
-      subtitle?: string;
-      value: string;
-      tone?: "positive" | "negative";
+      kind: "rankList";
+      heading: string;
+      items: WrappedRankItem[];
     }
   | {
       kind: "outro";
@@ -222,10 +232,38 @@ export type WrappedSlide =
       subtitle: string;
     };
 
+const MAX_WRAPPED_SLIDES = 5;
+
 export function weeklyReportToSlides(
   report: WeeklyLedgerReport,
   formatMoney: (n: number, opts?: { showSign?: boolean }) => string,
 ): WrappedSlide[] {
+  const summaryItems: WrappedStatItem[] = [
+    {
+      label: "Income",
+      value: formatMoney(report.income),
+      tone: "positive",
+    },
+    {
+      label: "Expense",
+      value: formatMoney(report.expense),
+      tone: "negative",
+    },
+    {
+      label: "Net cashflow",
+      value: formatMoney(report.net, { showSign: true }),
+      tone: report.net >= 0 ? "positive" : "negative",
+    },
+  ];
+
+  if (report.biggestCategory) {
+    summaryItems.push({
+      label: `Top category · ${report.biggestCategory.label}`,
+      value: formatMoney(report.biggestCategory.amount),
+      hint: report.biggestCategory.type === "income" ? "Income" : "Expense",
+    });
+  }
+
   const slides: WrappedSlide[] = [
     {
       kind: "intro",
@@ -234,53 +272,37 @@ export function weeklyReportToSlides(
       accent: "ledger",
     },
     {
-      kind: "stat",
-      label: "Income",
-      value: formatMoney(report.income),
-      tone: "positive",
-    },
-    {
-      kind: "stat",
-      label: "Expense",
-      value: formatMoney(report.expense),
-      tone: "negative",
-    },
-    {
-      kind: "stat",
-      label: "Net cashflow",
-      value: formatMoney(report.net, { showSign: true }),
-      tone: report.net >= 0 ? "positive" : "negative",
+      kind: "statsGroup",
+      heading: "Week at a glance",
+      items: summaryItems,
     },
   ];
 
-  if (report.biggestCategory) {
+  if (report.topExpenses.length > 0) {
     slides.push({
-      kind: "stat",
-      label: `Top category · ${report.biggestCategory.label}`,
-      value: formatMoney(report.biggestCategory.amount),
-      hint: report.biggestCategory.type === "income" ? "Income" : "Expense",
+      kind: "rankList",
+      heading: "Top expenses",
+      items: report.topExpenses.map((item, index) => ({
+        rank: index + 1,
+        title: item.title,
+        subtitle: item.categoryLabel,
+        value: formatMoney(item.amountBase),
+        tone: "negative",
+      })),
     });
   }
 
-  for (const item of report.topExpenses) {
+  if (report.topIncome.length > 0) {
     slides.push({
-      kind: "rank",
-      rank: report.topExpenses.indexOf(item) + 1,
-      title: item.title,
-      subtitle: item.categoryLabel,
-      value: formatMoney(item.amountBase),
-      tone: "negative",
-    });
-  }
-
-  for (const item of report.topIncome) {
-    slides.push({
-      kind: "rank",
-      rank: report.topIncome.indexOf(item) + 1,
-      title: item.title,
-      subtitle: item.categoryLabel,
-      value: formatMoney(item.amountBase),
-      tone: "positive",
+      kind: "rankList",
+      heading: "Top income",
+      items: report.topIncome.map((item, index) => ({
+        rank: index + 1,
+        title: item.title,
+        subtitle: item.categoryLabel,
+        value: formatMoney(item.amountBase),
+        tone: "positive",
+      })),
     });
   }
 
@@ -290,7 +312,7 @@ export function weeklyReportToSlides(
     subtitle: "Keep logging — next recap drops Monday.",
   });
 
-  return slides;
+  return slides.slice(0, MAX_WRAPPED_SLIDES);
 }
 
 export function monthlyReportToSlides(
@@ -305,51 +327,57 @@ export function monthlyReportToSlides(
       accent: "networth",
     },
     {
-      kind: "stat",
-      label: "Net worth",
-      value: formatMoney(report.toNetWorth, { compact: true }),
-      hint: `From ${formatMoney(report.fromNetWorth, { compact: true })}`,
-    },
-    {
-      kind: "stat",
-      label: "Monthly change",
-      value: formatMoney(report.delta, { showSign: true, compact: true }),
-      hint: `${report.percent >= 0 ? "+" : ""}${report.percent.toFixed(1)}%`,
-      tone: report.delta >= 0 ? "positive" : "negative",
-    },
-    {
-      kind: "stat",
-      label: "Assets",
-      value: formatMoney(report.assetsDelta, { showSign: true, compact: true }),
-      tone: report.assetsDelta >= 0 ? "positive" : "negative",
-    },
-    {
-      kind: "stat",
-      label: "Liabilities",
-      value: formatMoney(report.liabilitiesDelta, { showSign: true, compact: true }),
-      tone: report.liabilitiesDelta <= 0 ? "positive" : "negative",
+      kind: "statsGroup",
+      heading: "Month at a glance",
+      items: [
+        {
+          label: "Net worth",
+          value: formatMoney(report.toNetWorth, { compact: true }),
+          hint: `From ${formatMoney(report.fromNetWorth, { compact: true })}`,
+        },
+        {
+          label: "Monthly change",
+          value: formatMoney(report.delta, { showSign: true, compact: true }),
+          hint: `${report.percent >= 0 ? "+" : ""}${report.percent.toFixed(1)}%`,
+          tone: report.delta >= 0 ? "positive" : "negative",
+        },
+        {
+          label: "Assets",
+          value: formatMoney(report.assetsDelta, { showSign: true, compact: true }),
+          tone: report.assetsDelta >= 0 ? "positive" : "negative",
+        },
+        {
+          label: "Liabilities",
+          value: formatMoney(report.liabilitiesDelta, { showSign: true, compact: true }),
+          tone: report.liabilitiesDelta <= 0 ? "positive" : "negative",
+        },
+      ],
     },
   ];
 
-  for (const mover of report.topGainers) {
+  if (report.topGainers.length > 0) {
     slides.push({
-      kind: "rank",
-      rank: report.topGainers.indexOf(mover) + 1,
-      title: mover.name,
-      subtitle: "Top gainer",
-      value: formatMoney(mover.delta, { showSign: true, compact: true }),
-      tone: "positive",
+      kind: "rankList",
+      heading: "Top gainers",
+      items: report.topGainers.map((mover, index) => ({
+        rank: index + 1,
+        title: mover.name,
+        value: formatMoney(mover.delta, { showSign: true, compact: true }),
+        tone: "positive",
+      })),
     });
   }
 
-  for (const mover of report.topLosers) {
+  if (report.topLosers.length > 0) {
     slides.push({
-      kind: "rank",
-      rank: report.topLosers.indexOf(mover) + 1,
-      title: mover.name,
-      subtitle: "Top mover down",
-      value: formatMoney(mover.delta, { showSign: true, compact: true }),
-      tone: "negative",
+      kind: "rankList",
+      heading: "Top movers down",
+      items: report.topLosers.map((mover, index) => ({
+        rank: index + 1,
+        title: mover.name,
+        value: formatMoney(mover.delta, { showSign: true, compact: true }),
+        tone: "negative",
+      })),
     });
   }
 
@@ -359,5 +387,5 @@ export function monthlyReportToSlides(
     subtitle: "Your next recap arrives on the 1st.",
   });
 
-  return slides;
+  return slides.slice(0, MAX_WRAPPED_SLIDES);
 }
