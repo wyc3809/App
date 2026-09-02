@@ -191,4 +191,130 @@ describe("worth store features", () => {
     expect(accounts[0].currentValue).toBe(-250);
     expect(valueEntries.some((e) => e.value === -250)).toBe(true);
   });
+
+  it("does not overwrite ledger rows when manually updating same-day balance", () => {
+    useWorthStore.getState().addAccount({
+      name: "Cash",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 1000,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 100,
+      currency: "HKD",
+      date: "2026-08-02",
+      title: "Lunch",
+      category: "food",
+      accountId,
+    });
+    useWorthStore.getState().upsertValueEntry({
+      accountId,
+      date: "2026-08-02",
+      value: 850,
+      note: "manual reconcile",
+    });
+    const { valueEntries, accounts } = useWorthStore.getState();
+    const dayRows = valueEntries.filter(
+      (e) => e.accountId === accountId && e.date === "2026-08-02",
+    );
+    expect(dayRows).toHaveLength(2);
+    expect(dayRows.some((e) => e.transactionId)).toBe(true);
+    expect(dayRows.some((e) => !e.transactionId && e.value === 850)).toBe(true);
+    expect(accounts[0].currentValue).toBe(850);
+  });
+
+  it("editing a manual entry keeps same-day ledger rows", () => {
+    useWorthStore.getState().addAccount({
+      name: "Cash",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 1000,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().upsertValueEntry({
+      accountId,
+      date: "2026-08-02",
+      value: 1000,
+      note: "opening",
+    });
+    const manualId = useWorthStore
+      .getState()
+      .valueEntries.find((e) => !e.transactionId && e.date === "2026-08-02")!.id;
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 50,
+      currency: "HKD",
+      date: "2026-08-02",
+      title: "Coffee",
+      category: "food",
+      accountId,
+    });
+    useWorthStore.getState().upsertValueEntry({
+      entryId: manualId,
+      accountId,
+      date: "2026-08-02",
+      value: 990,
+      note: "adjusted opening",
+    });
+    const dayRows = useWorthStore.getState().valueEntries.filter(
+      (e) => e.accountId === accountId && e.date === "2026-08-02",
+    );
+    expect(dayRows).toHaveLength(2);
+    expect(dayRows.some((e) => e.transactionId)).toBe(true);
+  });
+
+  it("updates linked ledger amount through updateTransaction", () => {
+    useWorthStore.getState().addAccount({
+      name: "Cash",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 1000,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 100,
+      currency: "HKD",
+      date: "2026-08-02",
+      title: "Lunch",
+      category: "food",
+      accountId,
+    });
+    const txId = useWorthStore.getState().transactions[0].id;
+    useWorthStore.getState().updateTransaction(txId, { amount: 150 });
+    expect(useWorthStore.getState().accounts[0].currentValue).toBe(850);
+  });
+
+  it("deletes linked ledger and restores account balance", () => {
+    useWorthStore.getState().addAccount({
+      name: "Cash",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 1000,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 100,
+      currency: "HKD",
+      date: "2026-08-02",
+      title: "Lunch",
+      category: "food",
+      accountId,
+    });
+    const txId = useWorthStore.getState().transactions[0].id;
+    useWorthStore.getState().deleteTransaction(txId);
+    expect(useWorthStore.getState().accounts[0].currentValue).toBe(1000);
+    expect(useWorthStore.getState().valueEntries.filter((e) => e.transactionId)).toHaveLength(0);
+  });
 });

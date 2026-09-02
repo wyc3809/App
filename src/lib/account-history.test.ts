@@ -48,6 +48,43 @@ describe("account value history", () => {
       true,
     );
     expect(points[0].changeAbsolute).toBe(-520000);
+    expect(points[0].signedValue).toBe(-851533.14);
+  });
+
+  it("uses per-point signed values after asset to liability flip", () => {
+    const points = buildAccountHistoryPoints(
+      [
+        {
+          id: "1",
+          accountId: "a1",
+          date: "2026-08-01",
+          value: 50,
+          markOnGraph: true,
+          createdAt: "2026-08-01T10:00:00.000Z",
+        },
+        {
+          id: "2",
+          accountId: "a1",
+          date: "2026-08-02",
+          value: 30,
+          note: "Expense · Big spend",
+          markOnGraph: true,
+          createdAt: "2026-08-02T10:00:00.000Z",
+          transactionId: "tx1",
+          delta: -80,
+          typeFlip: {
+            fromIsLiability: false,
+            fromCategory: "cash",
+            toIsLiability: true,
+            toCategory: "loan",
+          },
+        },
+      ],
+      "a1",
+      true,
+    );
+    expect(points[1].signedValue).toBe(50);
+    expect(points[0].signedValue).toBe(-30);
   });
 
   it("builds newest-first points with MoM deltas", () => {

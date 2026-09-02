@@ -38,9 +38,8 @@ export function HistoryEntrySheet({
 }: HistoryEntrySheetProps) {
   if (!open) return null;
 
-  const pointSigned = account.isLiability
-    ? -Math.abs(point.value)
-    : point.value;
+  const pointSigned = point.signedValue;
+  const showSign = pointSigned < 0;
   const good = account.isLiability
     ? (point.changeAbsolute ?? 0) <= 0
     : (point.changeAbsolute ?? 0) >= 0;
@@ -66,7 +65,7 @@ export function HistoryEntrySheet({
           >
             {formatMoney(pointSigned, account.currency, currencies, {
               privacy: settings.isPrivacyMode,
-              showSign: account.isLiability,
+              showSign,
             })}
           </p>
           {point.changeAbsolute != null && (

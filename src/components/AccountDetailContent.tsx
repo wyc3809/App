@@ -109,7 +109,7 @@ export function AccountDetailContent() {
       .filter((p) => p.markOnGraph)
       .map((p) => ({
         ...p,
-        chartValue: account?.isLiability ? -Math.abs(p.value) : p.value,
+        chartValue: p.signedValue,
       }));
   }, [history, range, account]);
 
@@ -132,9 +132,9 @@ export function AccountDetailContent() {
     );
   }
 
-  const signed = account.isLiability
-    ? -Math.abs(history[0]?.value ?? account.currentValue)
-    : (history[0]?.value ?? account.currentValue);
+  const signed = history[0]?.signedValue ?? (account.isLiability
+    ? -Math.abs(account.currentValue)
+    : account.currentValue);
   const latestChange = history[0];
   const changePositive = (latestChange?.changeAbsolute ?? 0) >= 0;
   const changeGood = account.isLiability
@@ -144,10 +144,7 @@ export function AccountDetailContent() {
   const startedOn = [...history].sort((a, b) => a.date.localeCompare(b.date))[0]?.date;
   const ath = history.reduce<(typeof history)[number] | null>((best, point) => {
     if (!best) return point;
-    if (account.isLiability) {
-      return point.value < best.value ? point : best;
-    }
-    return point.value > best.value ? point : best;
+    return point.signedValue > best.signedValue ? point : best;
   }, null);
 
   return (
@@ -323,10 +320,10 @@ export function AccountDetailContent() {
           <MetaChip
             label={account.isLiability ? "ATL" : "ATH"}
             value={`${ath.date.slice(5)} · ${formatMoney(
-              account.isLiability ? -Math.abs(ath.value) : ath.value,
+              ath.signedValue,
               account.currency,
               currencies,
-              { privacy: settings.isPrivacyMode, compact: true, showSign: account.isLiability },
+              { privacy: settings.isPrivacyMode, compact: true, showSign: ath.signedValue < 0 },
             )}`}
           />
         )}
@@ -347,9 +344,7 @@ export function AccountDetailContent() {
         ) : (
           <ul className="card-surface divide-y overflow-hidden" style={{ borderColor: "var(--border)" }}>
             {history.map((point) => {
-              const pointSigned = account.isLiability
-                ? -Math.abs(point.value)
-                : point.value;
+              const pointSigned = point.signedValue;
               const good = account.isLiability
                 ? (point.changeAbsolute ?? 0) <= 0
                 : (point.changeAbsolute ?? 0) >= 0;

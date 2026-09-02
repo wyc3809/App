@@ -17,7 +17,7 @@ export function Sparkline({
     .slice()
     .reverse()
     .map((p) => ({
-      v: isLiability ? -Math.abs(p.value) : p.value,
+      v: p.signedValue,
     }));
 
   if (points.length < 2) {

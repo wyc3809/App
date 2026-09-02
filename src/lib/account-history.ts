@@ -29,6 +29,8 @@ export interface ValueHistoryPoint {
   date: string;
   label: string;
   value: number;
+  /** Signed balance for UI (respects liability flips over time). */
+  signedValue: number;
   note?: string;
   markOnGraph: boolean;
   changeAbsolute: number | null;
@@ -76,6 +78,9 @@ export function buildAccountHistoryPoints(
           ? 0
           : (changeAbsolute / Math.abs(prevSigned)) * 100;
     const d = new Date(`${entry.date}T00:00:00`);
+    const displayIsLiability = entry.typeFlip
+      ? entry.typeFlip.toIsLiability
+      : isLiability;
     const point: ValueHistoryPoint = {
       entryId: entry.id,
       date: entry.date,
@@ -85,6 +90,7 @@ export function buildAccountHistoryPoints(
         year: "numeric",
       }),
       value: entry.value,
+      signedValue: storedBalanceAsSigned(entry.value, displayIsLiability),
       note: entry.note,
       markOnGraph: entry.markOnGraph,
       changeAbsolute,

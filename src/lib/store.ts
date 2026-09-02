@@ -180,6 +180,21 @@ function seedEntryForAccount(account: Account): AccountValueEntry {
   };
 }
 
+function nextCreatedAtForDate(
+  entries: AccountValueEntry[],
+  accountId: string,
+  date: string,
+): string {
+  const sameDay = entries.filter(
+    (e) => e.accountId === accountId && e.date === date,
+  );
+  if (sameDay.length === 0) return new Date().toISOString();
+  const latest = sameDay.reduce((max, e) =>
+    e.createdAt.localeCompare(max) > 0 ? e.createdAt : max,
+  sameDay[0].createdAt);
+  return new Date(new Date(latest).getTime() + 1).toISOString();
+}
+
 function writeValueOnDate(
   valueEntries: AccountValueEntry[],
   accountId: string,
@@ -342,6 +357,7 @@ function applyTransactionLink(
         : " · became asset"
       : "";
     const createdAt = new Date().toISOString();
+    const cascadeAnchor = { date: tx.date, createdAt };
     const toCategory = result.flipped
       ? categoryAfterTypeFlip(result.isLiability)
       : account.category;
@@ -367,7 +383,8 @@ function applyTransactionLink(
     nextEntries = [
       ...withoutSelf.map((e) => {
         if (e.accountId !== account.id) return e;
-        if (e.date <= tx.date) return e;
+        if (e.date < tx.date) return e;
+        if (e.date === tx.date && !isEntryAfter(e, cascadeAnchor)) return e;
         return {
           ...e,
           value: Math.max(0, Number((e.value + delta).toFixed(2))),
@@ -568,9 +585,14 @@ export const useWorthStore = create<WorthState>()(
           let valueEntries = s.valueEntries;
           if (patch.currentValue !== undefined || patch.asOfDate) {
             const date = target.asOfDate;
-            const value = target.currentValue;
+            const value = target.isLiability
+              ? Math.abs(target.currentValue)
+              : target.currentValue;
             const existing = valueEntries.find(
-              (e) => e.accountId === accountId && e.date === date,
+              (e) =>
+                e.accountId === accountId &&
+                e.date === date &&
+                !e.transactionId,
             );
             if (existing) {
               valueEntries = valueEntries.map((e) =>
@@ -691,26 +713,40 @@ export const useWorthStore = create<WorthState>()(
           const account = s.accounts.find((a) => a.id === accountId);
           if (!account) return s;
 
+          const storedValue = account.isLiability ? Math.abs(value) : value;
           let valueEntries = [...s.valueEntries];
           const noteValue = note?.trim() || undefined;
 
           if (entryId) {
-            valueEntries = valueEntries.filter(
-              (e) => e.id === entryId || !(e.accountId === accountId && e.date === date),
-            );
+            const target = valueEntries.find((e) => e.id === entryId);
+            if (!target || target.transactionId) return s;
             valueEntries = valueEntries.map((e) =>
               e.id === entryId
-                ? { ...e, date, value, note: noteValue, markOnGraph }
+                ? {
+                    ...e,
+                    date,
+                    value: storedValue,
+                    note: noteValue,
+                    markOnGraph,
+                  }
                 : e,
             );
           } else {
             const existing = valueEntries.find(
-              (e) => e.accountId === accountId && e.date === date,
+              (e) =>
+                e.accountId === accountId &&
+                e.date === date &&
+                !e.transactionId,
             );
             valueEntries = existing
               ? valueEntries.map((e) =>
                   e.id === existing.id
-                    ? { ...e, value, note: noteValue, markOnGraph }
+                    ? {
+                        ...e,
+                        value: storedValue,
+                        note: noteValue,
+                        markOnGraph,
+                      }
                     : e,
                 )
               : [
@@ -719,10 +755,10 @@ export const useWorthStore = create<WorthState>()(
                     id: id(),
                     accountId,
                     date,
-                    value,
+                    value: storedValue,
                     note: noteValue,
                     markOnGraph,
-                    createdAt: new Date().toISOString(),
+                    createdAt: nextCreatedAtForDate(valueEntries, accountId, date),
                   },
                 ];
           }
