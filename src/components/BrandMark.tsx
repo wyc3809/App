@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { readPublicAssetBase } from "@/lib/read-public-asset-base";
 
-/** In-app brand mark — same artwork as the WorthBook app icon (Maneki-neko + ledger). */
+/** In-app brand mark — full Maneki-neko mascot (header / splash). */
 export function BrandMark({ className = "h-10 w-10" }: { className?: string }) {
   const [base] = useState(readPublicAssetBase);
 
   return (
     <img
-      src={`${base}/icon-192.png`}
-      width={192}
-      height={192}
+      src={`${base}/mascot-full.png`}
+      width={128}
+      height={128}
       alt=""
-      className={`${className} rounded-[22%] object-cover`}
+      className={`${className} object-contain`}
       role="img"
       aria-hidden
     />
