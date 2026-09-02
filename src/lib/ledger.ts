@@ -101,6 +101,33 @@ export interface LedgerBalanceResult {
   signedDelta: number;
 }
 
+/**
+ * Liabilities store absolute magnitude (>= 0); legacy rows may be negative.
+ * Assets may store signed values (overdraft) for flip logic.
+ */
+export function balanceMagnitudeForLedger(
+  value: number,
+  isLiability: boolean,
+): number {
+  return isLiability ? Math.abs(value) : value;
+}
+
+/** Signed balance as shown in account UI. */
+export function storedBalanceAsSigned(
+  value: number,
+  isLiability: boolean,
+): number {
+  return isLiability ? -Math.abs(value) : value;
+}
+
+/** Convert internal ledger delta to a signed display change. */
+export function ledgerDeltaForDisplay(
+  delta: number,
+  isLiability: boolean,
+): number {
+  return isLiability ? -delta : delta;
+}
+
 export function applyLedgerDeltaToBalance(
   currentValue: number,
   isLiability: boolean,

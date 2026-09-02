@@ -96,7 +96,10 @@ export function AccountDetailContent() {
   >(null);
 
   const history = useMemo(
-    () => (account ? buildAccountHistoryPoints(valueEntries, account.id) : []),
+    () =>
+      account
+        ? buildAccountHistoryPoints(valueEntries, account.id, account.isLiability)
+        : [],
     [account, valueEntries],
   );
 

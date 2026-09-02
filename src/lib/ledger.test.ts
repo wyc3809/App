@@ -10,6 +10,15 @@ import {
 import type { AccountValueEntry, Transaction } from "./types";
 
 describe("ledger account linking", () => {
+  it("normalizes negative liability magnitudes before applying deltas", () => {
+    expect(applyLedgerDeltaToBalance(331533.14, true, "expense", 520000)).toEqual({
+      value: 851533.14,
+      isLiability: true,
+      flipped: false,
+      signedDelta: 520000,
+    });
+  });
+
   it("increases asset on income and decreases on expense", () => {
     expect(applyLedgerDeltaToBalance(1000, false, "income", 200)).toEqual({
       value: 1200,

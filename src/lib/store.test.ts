@@ -31,6 +31,61 @@ describe("worth store features", () => {
     expect(valueEntries.some((e) => e.accountId === accounts[0].id)).toBe(true);
   });
 
+  it("adds a ledger expense linked to a liability account", () => {
+    useWorthStore.getState().addAccount({
+      name: "Mortgage",
+      category: "loan",
+      isLiability: true,
+      currency: "HKD",
+      currentValue: 331533.14,
+      asOfDate: "2026-09-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 520000,
+      currency: "HKD",
+      date: "2026-09-02",
+      title: "Food",
+      category: "food",
+      accountId,
+    });
+    const { accounts, valueEntries } = useWorthStore.getState();
+    expect(accounts[0].currentValue).toBe(851533.14);
+    const linked = valueEntries.find((e) => e.transactionId);
+    expect(linked?.delta).toBe(520000);
+    expect(linked?.value).toBe(851533.14);
+  });
+
+  it("fixes legacy negative liability balances when linking ledger", () => {
+    useWorthStore.getState().addAccount({
+      name: "HSBC Savings",
+      category: "loan",
+      isLiability: true,
+      currency: "HKD",
+      currentValue: 331533.14,
+      asOfDate: "2026-09-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().upsertValueEntry({
+      accountId,
+      date: "2026-09-01",
+      value: -331533.14,
+      note: "legacy signed row",
+    });
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 520000,
+      currency: "HKD",
+      date: "2026-09-02",
+      title: "Food",
+      category: "food",
+      accountId,
+    });
+    const { accounts } = useWorthStore.getState();
+    expect(accounts[0].currentValue).toBe(851533.14);
+  });
+
   it("adds a ledger expense linked to an account", () => {
     useWorthStore.getState().addAccount({
       name: "Cash",

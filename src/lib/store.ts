@@ -19,6 +19,7 @@ import type { WorthBackupPayload } from "./import-backup";
 import type { CsvAccountRow, CsvTransactionRow } from "./import-csv";
 import {
   applyLedgerDeltaToBalance,
+  balanceMagnitudeForLedger,
   balanceOnDate,
   isEntryAfter,
   oppositeTransactionType,
@@ -151,7 +152,9 @@ function syncAccountFromEntries(
   const latest = mine[0];
   return {
     ...account,
-    currentValue: latest.value,
+    currentValue: account.isLiability
+      ? Math.abs(latest.value)
+      : latest.value,
     asOfDate: latest.date,
     updatedAt: new Date().toISOString(),
   };
@@ -278,11 +281,14 @@ function applyTransactionLink(
         account.currency,
         currencies,
       );
-      const base = balanceOnDate(
-        valueEntries,
-        account.id,
-        tx.date,
-        account.currentValue,
+      const base = balanceMagnitudeForLedger(
+        balanceOnDate(
+          valueEntries,
+          account.id,
+          tx.date,
+          account.currentValue,
+        ),
+        account.isLiability,
       );
       const result = applyLedgerDeltaToBalance(
         base,
@@ -313,11 +319,14 @@ function applyTransactionLink(
       account.currency,
       currencies,
     );
-    const base = balanceOnDate(
-      withoutSelf,
-      account.id,
-      tx.date,
-      account.currentValue,
+    const base = balanceMagnitudeForLedger(
+      balanceOnDate(
+        withoutSelf,
+        account.id,
+        tx.date,
+        account.currentValue,
+      ),
+      account.isLiability,
     );
     const result = applyLedgerDeltaToBalance(
       base,
@@ -340,7 +349,7 @@ function applyTransactionLink(
       id: id(),
       accountId: account.id,
       date: tx.date,
-      value: result.value,
+      value: result.isLiability ? Math.abs(result.value) : result.value,
       note: `${kind} · ${tx.title}${flipNote}`,
       markOnGraph: true,
       createdAt,

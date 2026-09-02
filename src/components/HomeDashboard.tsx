@@ -69,7 +69,11 @@ function AccountHomeRow({
   currencies: ReturnType<typeof useWorthStore.getState>["currencies"];
   privacy: boolean;
 }) {
-  const history = buildAccountHistoryPoints(valueEntries, account.id);
+  const history = buildAccountHistoryPoints(
+    valueEntries,
+    account.id,
+    account.isLiability,
+  );
   const latest = history[0];
   const signed = account.isLiability
     ? -Math.abs(account.currentValue)

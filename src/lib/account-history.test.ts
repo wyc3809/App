@@ -21,6 +21,35 @@ function entry(
 }
 
 describe("account value history", () => {
+  it("shows liability expense as a negative display delta", () => {
+    const points = buildAccountHistoryPoints(
+      [
+        {
+          id: "1",
+          accountId: "a1",
+          date: "2026-09-01",
+          value: 331533.14,
+          markOnGraph: true,
+          createdAt: "2026-09-01T10:00:00.000Z",
+        },
+        {
+          id: "2",
+          accountId: "a1",
+          date: "2026-09-02",
+          value: 851533.14,
+          note: "Expense · Food",
+          markOnGraph: true,
+          createdAt: "2026-09-02T10:00:00.000Z",
+          transactionId: "tx1",
+          delta: 520000,
+        },
+      ],
+      "a1",
+      true,
+    );
+    expect(points[0].changeAbsolute).toBe(-520000);
+  });
+
   it("builds newest-first points with MoM deltas", () => {
     const points = buildAccountHistoryPoints(
       [entry("2026-06-01", 100), entry("2026-07-01", 120), entry("2026-08-01", 150)],

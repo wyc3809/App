@@ -1,3 +1,7 @@
+import {
+  ledgerDeltaForDisplay,
+  storedBalanceAsSigned,
+} from "./ledger";
 import type { Account, AccountValueEntry, TimeRange } from "./types";
 
 export function getAccountEntries(
@@ -34,45 +38,67 @@ export interface ValueHistoryPoint {
   delta?: number;
 }
 
+function resolveInitialLiabilityState(
+  chronological: AccountValueEntry[],
+  currentIsLiability: boolean,
+): boolean {
+  let isLiability = currentIsLiability;
+  for (let i = chronological.length - 1; i >= 0; i -= 1) {
+    const flip = chronological[i].typeFlip;
+    if (flip) isLiability = flip.fromIsLiability;
+  }
+  return isLiability;
+}
+
 export function buildAccountHistoryPoints(
   entries: AccountValueEntry[],
   accountId: string,
+  currentIsLiability = false,
 ): ValueHistoryPoint[] {
   const chronological = getAccountEntries(entries, accountId).slice().reverse();
-  return chronological
-    .map((entry, index) => {
-      const prev = index > 0 ? chronological[index - 1] : null;
-      const changeAbsolute =
-        entry.delta != null
-          ? entry.delta
-          : prev
-            ? entry.value - prev.value
-            : null;
-      const changePercent =
-        changeAbsolute == null || prev == null
-          ? null
-          : prev.value === 0
-            ? 0
-            : (changeAbsolute / Math.abs(prev.value)) * 100;
-      const d = new Date(`${entry.date}T00:00:00`);
-      return {
-        entryId: entry.id,
-        date: entry.date,
-        label: d.toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
-        value: entry.value,
-        note: entry.note,
-        markOnGraph: entry.markOnGraph,
-        changeAbsolute,
-        changePercent,
-        transactionId: entry.transactionId,
-        delta: entry.delta,
-      };
-    })
-    .reverse();
+  let isLiability = resolveInitialLiabilityState(chronological, currentIsLiability);
+
+  const points = chronological.map((entry, index) => {
+    const prev = index > 0 ? chronological[index - 1] : null;
+    const prevSigned = prev
+      ? storedBalanceAsSigned(prev.value, isLiability)
+      : null;
+    const changeAbsolute =
+      entry.delta != null
+        ? ledgerDeltaForDisplay(entry.delta, isLiability)
+        : prevSigned != null
+          ? storedBalanceAsSigned(entry.value, isLiability) - prevSigned
+          : null;
+    const changePercent =
+      changeAbsolute == null || prevSigned == null
+        ? null
+        : prevSigned === 0
+          ? 0
+          : (changeAbsolute / Math.abs(prevSigned)) * 100;
+    const d = new Date(`${entry.date}T00:00:00`);
+    const point: ValueHistoryPoint = {
+      entryId: entry.id,
+      date: entry.date,
+      label: d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      value: entry.value,
+      note: entry.note,
+      markOnGraph: entry.markOnGraph,
+      changeAbsolute,
+      changePercent,
+      transactionId: entry.transactionId,
+      delta: entry.delta,
+    };
+    if (entry.typeFlip) {
+      isLiability = entry.typeFlip.toIsLiability;
+    }
+    return point;
+  });
+
+  return points.reverse();
 }
 
 export function filterHistoryByRange(

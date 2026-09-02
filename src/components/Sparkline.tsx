@@ -13,7 +13,7 @@ export function Sparkline({
   accountId: string;
   isLiability?: boolean;
 }) {
-  const points = buildAccountHistoryPoints(entries, accountId)
+  const points = buildAccountHistoryPoints(entries, accountId, isLiability ?? false)
     .slice()
     .reverse()
     .map((p) => ({
