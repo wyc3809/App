@@ -68,6 +68,21 @@ async function dismissIntro(page: Page) {
   await dismissWrappedReports(page);
 }
 
+/** Expand collapsed Assets/Liabilities groups until account rows are visible. */
+async function revealAccountRows(page: Page) {
+  for (let round = 0; round < 6; round++) {
+    const detailLink = page.locator('a[href*="/accounts/detail"]').first();
+    if (await detailLink.isVisible().catch(() => false)) return;
+
+    const collapsed = page.getByRole("button", { expanded: false });
+    const count = await collapsed.count();
+    if (count === 0) return;
+
+    await collapsed.first().click();
+    await page.waitForTimeout(250);
+  }
+}
+
 async function loadDemo(page: Page) {
   await page.goto("/");
   await waitForAppReady(page);
@@ -211,6 +226,7 @@ test.describe("WorthBook E2E", () => {
     await expect(addBtn).toBeInViewport();
     await addBtn.click();
     await expect(dialog).toHaveCount(0);
+    await revealAccountRows(page);
     await expect(page.getByText("Tap Test Bank")).toBeVisible();
   });
 
@@ -243,6 +259,7 @@ test.describe("WorthBook E2E", () => {
     await page.getByRole("link", { name: "Accounts" }).click();
     await expect(page.getByRole("heading", { name: "Accounts" })).toBeVisible();
 
+    await revealAccountRows(page);
     // Open first account detail (not the Accounts nav link)
     await page.locator('a[href*="/accounts/detail"]').first().click();
     await expect(page.getByRole("button", { name: /Update value/i })).toBeVisible();
