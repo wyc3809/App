@@ -1,9 +1,9 @@
 1:"$Sreact.fragment"
-2:I[47257,["/App/worthtracker/_next/static/chunks/2q8qoi2wudx78.js","/App/worthtracker/_next/static/chunks/1_w_yud8yqqgk.js","/App/worthtracker/_next/static/chunks/35qy0x8gqo8ti.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js"],"ClientPageRoot"]
-3:I[13399,["/App/worthtracker/_next/static/chunks/2q8qoi2wudx78.js","/App/worthtracker/_next/static/chunks/1_w_yud8yqqgk.js","/App/worthtracker/_next/static/chunks/35qy0x8gqo8ti.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/08d997juphch1.js"],"default"]
-6:I[97367,["/App/worthtracker/_next/static/chunks/2q8qoi2wudx78.js","/App/worthtracker/_next/static/chunks/1_w_yud8yqqgk.js","/App/worthtracker/_next/static/chunks/35qy0x8gqo8ti.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js"],"OutletBoundary"]
+2:I[47257,["/App/worthtracker/_next/static/chunks/2q8qoi2wudx78.js","/App/worthtracker/_next/static/chunks/2znsxbkd_w46a.js","/App/worthtracker/_next/static/chunks/35qy0x8gqo8ti.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js"],"ClientPageRoot"]
+3:I[13399,["/App/worthtracker/_next/static/chunks/2q8qoi2wudx78.js","/App/worthtracker/_next/static/chunks/2znsxbkd_w46a.js","/App/worthtracker/_next/static/chunks/35qy0x8gqo8ti.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/App/worthtracker/_next/static/chunks/08d997juphch1.js"],"default"]
+6:I[97367,["/App/worthtracker/_next/static/chunks/2q8qoi2wudx78.js","/App/worthtracker/_next/static/chunks/2znsxbkd_w46a.js","/App/worthtracker/_next/static/chunks/35qy0x8gqo8ti.js","/App/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js"],"OutletBoundary"]
 7:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/App/worthtracker/_next/static/chunks/08d997juphch1.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Ghos41SdOu-6uZJR_cn-0"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/App/worthtracker/_next/static/chunks/08d997juphch1.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"lj64_GdAmXBr2p4S6wlPO"}
 4:{}
 5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
 8:null
