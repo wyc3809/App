@@ -221,11 +221,16 @@ function parseTxnType(raw: string, amountRaw: string): TransactionType | null {
 
 function parseLedgerCategory(raw: string, type: TransactionType): LedgerCategory {
   const s = normHeader(raw);
+  if (s === "rent" && type === "income") return "rental";
   const aliases: Record<string, LedgerCategory> = {
     salary: "salary",
     wage: "salary",
     wages: "salary",
     bonus: "bonus",
+    rental: "rental",
+    rent_income: "rental",
+    allowance: "allowance",
+    stipend: "allowance",
     investment_return: "investment_return",
     investment: "investment_return",
     dividend: "investment_return",

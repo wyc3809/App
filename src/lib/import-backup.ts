@@ -173,6 +173,8 @@ function parseValueEntry(raw: unknown): AccountValueEntry | null {
 const LEDGER_CATEGORIES = new Set([
   "salary",
   "bonus",
+  "rental",
+  "allowance",
   "investment_return",
   "gift",
   "food",

@@ -8,6 +8,8 @@ import type {
 export const INCOME_CATEGORIES: { value: LedgerCategory; label: string }[] = [
   { value: "salary", label: "Salary" },
   { value: "bonus", label: "Bonus" },
+  { value: "rental", label: "Rental" },
+  { value: "allowance", label: "Allowance" },
   { value: "investment_return", label: "Investment return" },
   { value: "gift", label: "Gift" },
   { value: "transfer", label: "Transfer in" },
