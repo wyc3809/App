@@ -234,10 +234,10 @@ export type WrappedSlide =
 
 const MAX_WRAPPED_SLIDES = 5;
 
-export function weeklyReportToSlides(
+function weekStatsGroup(
   report: WeeklyLedgerReport,
   formatMoney: (n: number, opts?: { showSign?: boolean }) => string,
-): WrappedSlide[] {
+): WrappedSlide {
   const summaryItems: WrappedStatItem[] = [
     {
       label: "Income",
@@ -264,6 +264,162 @@ export function weeklyReportToSlides(
     });
   }
 
+  return {
+    kind: "statsGroup",
+    heading: "Week at a glance",
+    items: summaryItems,
+  };
+}
+
+function ledgerHighlightsList(
+  report: WeeklyLedgerReport,
+  formatMoney: (n: number, opts?: { showSign?: boolean }) => string,
+): WrappedSlide | null {
+  const items: WrappedRankItem[] = [];
+
+  for (const item of report.topExpenses.slice(0, 3)) {
+    items.push({
+      rank: items.length + 1,
+      title: item.title,
+      subtitle: item.categoryLabel,
+      value: formatMoney(item.amountBase),
+      tone: "negative",
+    });
+  }
+
+  for (const item of report.topIncome.slice(0, 2)) {
+    items.push({
+      rank: items.length + 1,
+      title: item.title,
+      subtitle: item.categoryLabel,
+      value: formatMoney(item.amountBase),
+      tone: "positive",
+    });
+  }
+
+  if (items.length === 0) return null;
+
+  return {
+    kind: "rankList",
+    heading: "Ledger highlights",
+    items,
+  };
+}
+
+function monthStatsGroup(
+  report: MonthlyNetWorthReport,
+  formatMoney: (n: number, opts?: { showSign?: boolean; compact?: boolean }) => string,
+): WrappedSlide {
+  return {
+    kind: "statsGroup",
+    heading: "Month at a glance",
+    items: [
+      {
+        label: "Net worth",
+        value: formatMoney(report.toNetWorth, { compact: true }),
+        hint: `From ${formatMoney(report.fromNetWorth, { compact: true })}`,
+      },
+      {
+        label: "Monthly change",
+        value: formatMoney(report.delta, { showSign: true, compact: true }),
+        hint: `${report.percent >= 0 ? "+" : ""}${report.percent.toFixed(1)}%`,
+        tone: report.delta >= 0 ? "positive" : "negative",
+      },
+      {
+        label: "Assets",
+        value: formatMoney(report.assetsDelta, { showSign: true, compact: true }),
+        tone: report.assetsDelta >= 0 ? "positive" : "negative",
+      },
+      {
+        label: "Liabilities",
+        value: formatMoney(report.liabilitiesDelta, { showSign: true, compact: true }),
+        tone: report.liabilitiesDelta <= 0 ? "positive" : "negative",
+      },
+    ],
+  };
+}
+
+function accountMoversList(
+  report: MonthlyNetWorthReport,
+  formatMoney: (n: number, opts?: { showSign?: boolean; compact?: boolean }) => string,
+): WrappedSlide | null {
+  const items: WrappedRankItem[] = [];
+
+  for (const mover of report.topGainers.slice(0, 3)) {
+    items.push({
+      rank: items.length + 1,
+      title: mover.name,
+      subtitle: "Top gainer",
+      value: formatMoney(mover.delta, { showSign: true, compact: true }),
+      tone: "positive",
+    });
+  }
+
+  for (const mover of report.topLosers.slice(0, 3)) {
+    items.push({
+      rank: items.length + 1,
+      title: mover.name,
+      subtitle: "Mover down",
+      value: formatMoney(mover.delta, { showSign: true, compact: true }),
+      tone: "negative",
+    });
+  }
+
+  if (items.length === 0) return null;
+
+  return {
+    kind: "rankList",
+    heading: "Account movers",
+    items,
+  };
+}
+
+/** Single Wrapped deck merging weekly ledger + monthly net worth (max 5 slides). */
+export function combinedReportToSlides(
+  weekly: WeeklyLedgerReport | null,
+  monthly: MonthlyNetWorthReport | null,
+  formatMoney: (n: number, opts?: { showSign?: boolean; compact?: boolean }) => string,
+): WrappedSlide[] | null {
+  if (!weekly && !monthly) return null;
+
+  const subtitleParts: string[] = [];
+  if (weekly) subtitleParts.push(`Week · ${weekly.periodLabel}`);
+  if (monthly) subtitleParts.push(`Month · ${monthly.periodLabel}`);
+
+  const slides: WrappedSlide[] = [
+    {
+      kind: "intro",
+      title: "Your WorthBook recap",
+      subtitle: subtitleParts.join("  ·  "),
+      accent: "combined",
+    },
+  ];
+
+  if (weekly) {
+    slides.push(weekStatsGroup(weekly, formatMoney));
+    const ledger = ledgerHighlightsList(weekly, formatMoney);
+    if (ledger) slides.push(ledger);
+  }
+
+  if (monthly) {
+    slides.push(monthStatsGroup(monthly, formatMoney));
+    const movers = accountMoversList(monthly, formatMoney);
+    if (movers) slides.push(movers);
+  }
+
+  slides.push({
+    kind: "outro",
+    title: "All wrapped",
+    subtitle: "Keep tracking — your next recap is on the way.",
+  });
+
+  return slides.slice(0, MAX_WRAPPED_SLIDES);
+}
+
+export function weeklyReportToSlides(
+  report: WeeklyLedgerReport,
+  formatMoney: (n: number, opts?: { showSign?: boolean }) => string,
+): WrappedSlide[] {
   const slides: WrappedSlide[] = [
     {
       kind: "intro",
@@ -271,40 +427,11 @@ export function weeklyReportToSlides(
       subtitle: report.periodLabel,
       accent: "ledger",
     },
-    {
-      kind: "statsGroup",
-      heading: "Week at a glance",
-      items: summaryItems,
-    },
+    weekStatsGroup(report, formatMoney),
   ];
 
-  if (report.topExpenses.length > 0) {
-    slides.push({
-      kind: "rankList",
-      heading: "Top expenses",
-      items: report.topExpenses.map((item, index) => ({
-        rank: index + 1,
-        title: item.title,
-        subtitle: item.categoryLabel,
-        value: formatMoney(item.amountBase),
-        tone: "negative",
-      })),
-    });
-  }
-
-  if (report.topIncome.length > 0) {
-    slides.push({
-      kind: "rankList",
-      heading: "Top income",
-      items: report.topIncome.map((item, index) => ({
-        rank: index + 1,
-        title: item.title,
-        subtitle: item.categoryLabel,
-        value: formatMoney(item.amountBase),
-        tone: "positive",
-      })),
-    });
-  }
+  const ledger = ledgerHighlightsList(report, formatMoney);
+  if (ledger) slides.push(ledger);
 
   slides.push({
     kind: "outro",
@@ -326,60 +453,11 @@ export function monthlyReportToSlides(
       subtitle: report.periodLabel,
       accent: "networth",
     },
-    {
-      kind: "statsGroup",
-      heading: "Month at a glance",
-      items: [
-        {
-          label: "Net worth",
-          value: formatMoney(report.toNetWorth, { compact: true }),
-          hint: `From ${formatMoney(report.fromNetWorth, { compact: true })}`,
-        },
-        {
-          label: "Monthly change",
-          value: formatMoney(report.delta, { showSign: true, compact: true }),
-          hint: `${report.percent >= 0 ? "+" : ""}${report.percent.toFixed(1)}%`,
-          tone: report.delta >= 0 ? "positive" : "negative",
-        },
-        {
-          label: "Assets",
-          value: formatMoney(report.assetsDelta, { showSign: true, compact: true }),
-          tone: report.assetsDelta >= 0 ? "positive" : "negative",
-        },
-        {
-          label: "Liabilities",
-          value: formatMoney(report.liabilitiesDelta, { showSign: true, compact: true }),
-          tone: report.liabilitiesDelta <= 0 ? "positive" : "negative",
-        },
-      ],
-    },
+    monthStatsGroup(report, formatMoney),
   ];
 
-  if (report.topGainers.length > 0) {
-    slides.push({
-      kind: "rankList",
-      heading: "Top gainers",
-      items: report.topGainers.map((mover, index) => ({
-        rank: index + 1,
-        title: mover.name,
-        value: formatMoney(mover.delta, { showSign: true, compact: true }),
-        tone: "positive",
-      })),
-    });
-  }
-
-  if (report.topLosers.length > 0) {
-    slides.push({
-      kind: "rankList",
-      heading: "Top movers down",
-      items: report.topLosers.map((mover, index) => ({
-        rank: index + 1,
-        title: mover.name,
-        value: formatMoney(mover.delta, { showSign: true, compact: true }),
-        tone: "negative",
-      })),
-    });
-  }
+  const movers = accountMoversList(report, formatMoney);
+  if (movers) slides.push(movers);
 
   slides.push({
     kind: "outro",

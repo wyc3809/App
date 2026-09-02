@@ -377,18 +377,10 @@ export default function SettingsPage() {
         <button
           type="button"
           className="btn-secondary w-full justify-start"
-          onClick={() => requestWrappedReport("weekly")}
+          onClick={() => requestWrappedReport()}
         >
-          <Receipt size={18} />
-          {t("settings.viewWeekly")}
-        </button>
-        <button
-          type="button"
-          className="btn-secondary w-full justify-start"
-          onClick={() => requestWrappedReport("monthly")}
-        >
-          <TrendingUp size={18} />
-          {t("settings.viewMonthly")}
+          <Sparkles size={18} />
+          {t("settings.viewRecap")}
         </button>
         <ToggleRow
           icon={<Receipt size={18} />}

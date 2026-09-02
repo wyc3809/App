@@ -89,9 +89,9 @@ interface WorthState {
   updateCurrencyRate: (code: string, rate: number) => void;
   setBaseCurrency: (code: string) => void;
 
-  /** Ephemeral — open wrapped report from Settings (not persisted). */
-  wrappedReportTrigger: "weekly" | "monthly" | null;
-  requestWrappedReport: (type: "weekly" | "monthly") => void;
+  /** Ephemeral — open combined wrapped report from Settings (not persisted). */
+  wrappedReportTrigger: boolean;
+  requestWrappedReport: () => void;
   clearWrappedReportTrigger: () => void;
   markWeeklyReportSeen: (weekKey: string) => void;
   markMonthlyReportSeen: (monthKey: string) => void;
@@ -411,7 +411,7 @@ export const useWorthStore = create<WorthState>()(
       currencies: DEFAULT_CURRENCIES,
       settings: defaultSettings,
       hydrated: false,
-      wrappedReportTrigger: null,
+      wrappedReportTrigger: false,
 
       setHydrated: (value) => set({ hydrated: value }),
 
@@ -914,8 +914,8 @@ export const useWorthStore = create<WorthState>()(
         });
       },
 
-      requestWrappedReport: (type) => set({ wrappedReportTrigger: type }),
-      clearWrappedReportTrigger: () => set({ wrappedReportTrigger: null }),
+      requestWrappedReport: () => set({ wrappedReportTrigger: true }),
+      clearWrappedReportTrigger: () => set({ wrappedReportTrigger: false }),
       markWeeklyReportSeen: (weekKey) => {
         set((s) => ({
           settings: { ...s.settings, lastWeeklyReportSeenKey: weekKey },
