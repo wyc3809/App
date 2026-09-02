@@ -99,8 +99,8 @@ export async function registerReportNotificationHandlers(): Promise<void> {
     const LocalNotifications = await loadLocalNotifications();
     await LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
       const id = event.notification.id;
-      if (id === WEEKLY_ID) useWorthStore.getState().requestWrappedReport("weekly");
-      if (id === MONTHLY_ID) useWorthStore.getState().requestWrappedReport("monthly");
+      if (id === WEEKLY_ID) useWorthStore.getState().requestWrappedReport();
+      if (id === MONTHLY_ID) useWorthStore.getState().requestWrappedReport();
     });
   } catch {
     /* ignore */

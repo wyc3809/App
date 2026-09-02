@@ -16,7 +16,9 @@ async function clearAppData(page: Page) {
 /** Dismiss Spotify-style Wrapped recaps when they block the shell. */
 async function dismissWrappedReports(page: Page) {
   for (let i = 0; i < 24; i++) {
-    const title = page.getByText(/Your week in WorthBook|Your month in WorthBook/i);
+    const title = page.getByText(
+      /Your WorthBook recap|Your week in WorthBook|Your month in WorthBook/i,
+    );
     if (!(await title.isVisible().catch(() => false))) return;
 
     const close = page.getByRole("button", { name: /^Close$/i });
@@ -41,7 +43,9 @@ async function waitForAppReady(page: Page) {
   await page.waitForFunction(
     () => {
       const nav = document.querySelector('[aria-label="Primary"]');
-      const wrapped = /Your (week|month) in WorthBook/.test(document.body.innerText);
+      const wrapped = /Your WorthBook recap|Your (week|month) in WorthBook/.test(
+        document.body.innerText,
+      );
       return Boolean(nav || wrapped);
     },
     { timeout: 20_000 },

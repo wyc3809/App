@@ -13,8 +13,7 @@ import {
 import {
   buildMonthlyNetWorthReport,
   buildWeeklyLedgerReport,
-  monthlyReportToSlides,
-  weeklyReportToSlides,
+  combinedReportToSlides,
   type WrappedRankItem,
   type WrappedSlide,
   type WrappedStatItem,
@@ -22,12 +21,13 @@ import {
 import { useWorthStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n/context";
 
-type ActiveReport = { type: "weekly" | "monthly"; slides: WrappedSlide[] };
+type ActiveReport = { slides: WrappedSlide[] };
 
 function renderSlideIcon(slide: WrappedSlide) {
   if (slide.kind === "intro") {
-    const Icon = slide.accent === "ledger" ? Receipt : TrendingUp;
-    return <Icon size={32} strokeWidth={2} />;
+    if (slide.accent === "ledger") return <Receipt size={32} strokeWidth={2} />;
+    if (slide.accent === "networth") return <TrendingUp size={32} strokeWidth={2} />;
+    return <Sparkles size={32} strokeWidth={2} />;
   }
   if (slide.kind === "outro") return <Sparkles size={32} strokeWidth={2} />;
   return null;
@@ -153,7 +153,6 @@ export function WrappedReportFlow() {
   const markMonthlySeen = useWorthStore((s) => s.markMonthlyReportSeen);
 
   const [active, setActive] = useState<ActiveReport | null>(null);
-  const [queue, setQueue] = useState<ActiveReport[]>([]);
   const [step, setStep] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const autoChecked = useRef(false);
@@ -169,24 +168,20 @@ export function WrappedReportFlow() {
     [settings.baseCurrency, settings.isPrivacyMode, currencies],
   );
 
-  const buildWeekly = useCallback((): ActiveReport | null => {
-    const range = previousIsoWeekRange(today);
-    const label = `${range.start} → ${range.end}`;
-    const report = buildWeeklyLedgerReport(
+  const buildCombined = useCallback((): ActiveReport | null => {
+    const weekRange = previousIsoWeekRange(today);
+    const weekLabel = `${weekRange.start} → ${weekRange.end}`;
+    const weekly = buildWeeklyLedgerReport(
       transactions,
       currencies,
-      range.start,
-      range.end,
-      range.key,
-      label,
+      weekRange.start,
+      weekRange.end,
+      weekRange.key,
+      weekLabel,
     );
-    if (!report) return null;
-    return { type: "weekly", slides: weeklyReportToSlides(report, money) };
-  }, [transactions, currencies, today, money]);
 
-  const buildMonthly = useCallback((): ActiveReport | null => {
     const month = previousMonthRange(today);
-    const report = buildMonthlyNetWorthReport(
+    const monthly = buildMonthlyNetWorthReport(
       snapshots,
       accounts,
       month.start,
@@ -194,9 +189,11 @@ export function WrappedReportFlow() {
       month.key,
       month.label,
     );
-    if (!report) return null;
-    return { type: "monthly", slides: monthlyReportToSlides(report, money) };
-  }, [snapshots, accounts, today, money]);
+
+    const slides = combinedReportToSlides(weekly, monthly, money);
+    if (!slides) return null;
+    return { slides };
+  }, [transactions, currencies, snapshots, accounts, today, money]);
 
   const openReport = useCallback((report: ActiveReport) => {
     setActive(report);
@@ -207,59 +204,41 @@ export function WrappedReportFlow() {
 
   useEffect(() => {
     if (!trigger) return;
-    const report = trigger === "weekly" ? buildWeekly() : buildMonthly();
+    const report = buildCombined();
     clearTrigger();
     if (report) openReport(report);
-  }, [trigger, buildWeekly, buildMonthly, clearTrigger, openReport]);
+  }, [trigger, buildCombined, clearTrigger, openReport]);
 
   useEffect(() => {
     if (!settings.onboardingCompleted || autoChecked.current) return;
     autoChecked.current = true;
 
-    const pending: ActiveReport[] = [];
     const weekKey = currentIsoWeekKey(today);
-    if (settings.lastWeeklyReportSeenKey !== weekKey) {
-      const weekly = buildWeekly();
-      if (weekly) pending.push(weekly);
-    }
     const monthKey = currentMonthKey(today);
-    if (settings.lastMonthlyReportSeenKey !== monthKey) {
-      const monthly = buildMonthly();
-      if (monthly) pending.push(monthly);
-    }
+    const weekPending = settings.lastWeeklyReportSeenKey !== weekKey;
+    const monthPending = settings.lastMonthlyReportSeenKey !== monthKey;
 
-    if (pending.length > 0) {
-      openReport(pending[0]);
-      if (pending.length > 1) setQueue(pending.slice(1));
-    }
+    if (!weekPending && !monthPending) return;
+
+    const combined = buildCombined();
+    if (combined) openReport(combined);
   }, [
     settings.onboardingCompleted,
     settings.lastWeeklyReportSeenKey,
     settings.lastMonthlyReportSeenKey,
-    buildWeekly,
-    buildMonthly,
+    buildCombined,
     openReport,
     today,
   ]);
 
   const finishReport = useCallback(() => {
     if (!active) return;
-    if (active.type === "weekly") {
-      markWeeklySeen(currentIsoWeekKey(today));
-    } else {
-      markMonthlySeen(currentMonthKey(today));
-    }
+    markWeeklySeen(currentIsoWeekKey(today));
+    markMonthlySeen(currentMonthKey(today));
     hapticSuccess();
-
-    if (queue.length > 0) {
-      const [next, ...rest] = queue;
-      setQueue(rest);
-      openReport(next);
-      return;
-    }
     setActive(null);
     setStep(0);
-  }, [active, queue, markWeeklySeen, markMonthlySeen, openReport, today]);
+  }, [active, markWeeklySeen, markMonthlySeen, today]);
 
   const advance = useCallback(() => {
     if (!active) return;
