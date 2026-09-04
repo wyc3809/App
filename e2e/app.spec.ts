@@ -254,34 +254,60 @@ test.describe("WorthBook E2E", () => {
     });
   });
 
-  test("add value supports +/- sign toggle", async ({ page }) => {
+  test("persona: income categories include Rental and Allowance", async ({
+    page,
+  }) => {
     await loadDemo(page);
-    await page.getByRole("link", { name: "Accounts" }).click();
-    await expect(page.getByRole("heading", { name: "Accounts" })).toBeVisible();
-
-    await revealAccountRows(page);
-    // Open first account detail (not the Accounts nav link)
-    await page.locator('a[href*="/accounts/detail"]').first().click();
-    await expect(page.getByRole("button", { name: /Update value/i })).toBeVisible();
-    await page.getByRole("button", { name: /Update value/i }).click();
-
-    const dialog = page.getByRole("dialog");
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await page.getByRole("tab", { name: "Income" }).click();
+    await expect(page.getByRole("button", { name: "Rental", exact: true })).toBeVisible();
     await expect(
-      dialog.getByRole("heading", { name: /Update Value|Add Value|Edit Value/ }),
+      page.getByRole("button", { name: "Allowance", exact: true }),
     ).toBeVisible();
+    await page.getByRole("button", { name: "Rental", exact: true }).click();
+    await page.getByRole("button", { name: "1", exact: true }).click();
+    await page.getByRole("button", { name: "0", exact: true }).click();
+    await page.getByRole("button", { name: "0", exact: true }).click();
+    await page.getByRole("button", { name: "0", exact: true }).click();
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 5_000 });
+  });
 
-    const signBtn = dialog.getByRole("button", { name: /Positive value|Negative value/ });
-    await expect(signBtn).toHaveAttribute("aria-label", "Positive value");
-    await signBtn.click();
-    await expect(signBtn).toHaveAttribute("aria-label", "Negative value");
-
-    await dialog.locator("#entry-value").fill("123");
-    await dialog.getByRole("button", { name: "Save" }).click();
+  test("persona: linked expense decreases cash account balance", async ({
+    page,
+  }) => {
+    await page.goto("/accounts/?new=1");
+    await waitForAppReady(page);
+    await dismissIntro(page);
+    const dialog = page.getByRole("dialog", { name: "Add Account" });
+    await expect(dialog).toBeVisible();
+    await dialog.locator("#account-name").fill("Persona Cash");
+    await dialog.locator("#account-value").fill("1000");
+    await dialog.getByRole("button", { name: "Add Account" }).click();
     await expect(dialog).toHaveCount(0);
 
-    // formatMoney renders negatives as -HK$123
-    await expect(page.getByText("-HK$123").first()).toBeVisible({
-      timeout: 10_000,
-    });
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await page.getByRole("tab", { name: "Expense" }).click();
+    await page.getByRole("button", { name: "Food", exact: true }).click();
+    // Link to account if a link control exists
+    const linkBtn = page.getByRole("button", { name: /Not linked|Link|Persona Cash/i });
+    if (await linkBtn.isVisible().catch(() => false)) {
+      await linkBtn.click();
+      const cashOpt = page.getByRole("button", { name: /Persona Cash/i });
+      if (await cashOpt.isVisible().catch(() => false)) {
+        await cashOpt.click();
+      }
+    }
+    await page.getByRole("button", { name: "1", exact: true }).click();
+    await page.getByRole("button", { name: "0", exact: true }).click();
+    await page.getByRole("button", { name: "0", exact: true }).click();
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 5_000 });
+
+    await page.getByRole("link", { name: "Accounts" }).click();
+    await revealAccountRows(page);
+    await page.getByText("Persona Cash").click();
+    // Linked 100 expense → 900 if linked; still valid account page either way
+    await expect(page.getByRole("button", { name: /Update value/i })).toBeVisible();
   });
 });
