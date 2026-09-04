@@ -254,6 +254,35 @@ test.describe("WorthBook E2E", () => {
     });
   });
 
+  test("add value supports +/- sign toggle", async ({ page }) => {
+    await loadDemo(page);
+    await page.getByRole("link", { name: "Accounts" }).click();
+    await expect(page.getByRole("heading", { name: "Accounts" })).toBeVisible();
+
+    await revealAccountRows(page);
+    await page.locator('a[href*="/accounts/detail"]').first().click();
+    await expect(page.getByRole("button", { name: /Update value/i })).toBeVisible();
+    await page.getByRole("button", { name: /Update value/i }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(
+      dialog.getByRole("heading", { name: /Update Value|Add Value|Edit Value/ }),
+    ).toBeVisible();
+
+    const signBtn = dialog.getByRole("button", { name: /Positive value|Negative value/ });
+    await expect(signBtn).toHaveAttribute("aria-label", "Positive value");
+    await signBtn.click();
+    await expect(signBtn).toHaveAttribute("aria-label", "Negative value");
+
+    await dialog.locator("#entry-value").fill("123");
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await expect(page.getByText("-HK$123").first()).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
   test("persona: income categories include Rental and Allowance", async ({
     page,
   }) => {
