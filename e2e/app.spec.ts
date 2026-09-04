@@ -331,12 +331,8 @@ test.describe("WorthBook E2E", () => {
     await page.getByRole("button", { name: "0", exact: true }).click();
     await page.getByRole("button", { name: "0", exact: true }).click();
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText("Saved")).toBeVisible({ timeout: 5_000 });
-
-    await page.getByRole("link", { name: "Accounts" }).click();
-    await revealAccountRows(page);
-    await page.getByText("Persona Cash").click();
-    // Linked 100 expense → 900 if linked; still valid account page either way
-    await expect(page.getByRole("button", { name: /Update value/i })).toBeVisible();
+    await expect(page.getByText(/Saved · updated Persona Cash/i)).toBeVisible({
+      timeout: 5_000,
+    });
   });
 });
