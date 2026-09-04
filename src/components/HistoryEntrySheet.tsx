@@ -40,9 +40,7 @@ export function HistoryEntrySheet({
 
   const pointSigned = point.signedValue;
   const showSign = pointSigned < 0;
-  const good = account.isLiability
-    ? (point.changeAbsolute ?? 0) <= 0
-    : (point.changeAbsolute ?? 0) >= 0;
+  const good = (point.changeAbsolute ?? 0) >= 0;
 
   return (
     <BottomSheet onClose={onClose} title="History" titleId="history-entry-title">
@@ -60,7 +58,7 @@ export function HistoryEntrySheet({
           <p
             className="mt-1 font-display text-2xl tabular-nums"
             style={{
-              color: account.isLiability ? "var(--negative)" : "var(--fg)",
+              color: pointSigned < 0 ? "var(--negative)" : "var(--fg)",
             }}
           >
             {formatMoney(pointSigned, account.currency, currencies, {

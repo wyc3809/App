@@ -47,8 +47,25 @@ Loan,liability,loan,HKD,5000,2026-08-01
     expect(result.transactions[1].accountName).toBe("Cash");
   });
 
-  it("rejects empty CSV", () => {
-    const result = parseWorthCsv("name,value\n");
-    expect(result.ok).toBe(false);
+  it("parses mortgage type as liability and payment as income", () => {
+    const accountsCsv = `name,type,currency,value,as_of_date
+HSBC Mortgage,mortgage,HKD,2000000,2026-08-01
+Amex,credit_card,HKD,8000,2026-08-01
+`;
+    const accounts = parseWorthCsv(accountsCsv);
+    expect(accounts.ok).toBe(true);
+    if (!accounts.ok) return;
+    expect(accounts.accounts[0].isLiability).toBe(true);
+    expect(accounts.accounts[0].category).toBe("mortgage");
+    expect(accounts.accounts[1].isLiability).toBe(true);
+    expect(accounts.accounts[1].category).toBe("credit_card");
+
+    const ledgerCsv = `date,type,amount,currency,title,category,account
+2026-08-02,payment,5000,HKD,Card payment,transfer,Amex
+`;
+    const ledger = parseWorthCsv(ledgerCsv);
+    expect(ledger.ok).toBe(true);
+    if (!ledger.ok) return;
+    expect(ledger.transactions[0].type).toBe("income");
   });
 });

@@ -8,6 +8,8 @@ import type {
 export const INCOME_CATEGORIES: { value: LedgerCategory; label: string }[] = [
   { value: "salary", label: "Salary" },
   { value: "bonus", label: "Bonus" },
+  { value: "rental", label: "Rental" },
+  { value: "allowance", label: "Allowance" },
   { value: "investment_return", label: "Investment return" },
   { value: "gift", label: "Gift" },
   { value: "transfer", label: "Transfer in" },
@@ -207,4 +209,72 @@ export function isEntryAfter(
   const d = a.date.localeCompare(b.date);
   if (d !== 0) return d > 0;
   return a.createdAt.localeCompare(b.createdAt) > 0;
+}
+
+/**
+ * Liability flag as of `date` (inclusive of typeFlips on that day).
+ * Reconstructs initial state from typeFlip metadata, then walks forward.
+ */
+export function liabilityStateOnDate(
+  entries: AccountValueEntry[],
+  accountId: string,
+  date: string,
+  currentIsLiability: boolean,
+): boolean {
+  const chronological = entries
+    .filter((e) => e.accountId === accountId)
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt),
+    );
+
+  let isLiability = currentIsLiability;
+  for (let i = chronological.length - 1; i >= 0; i -= 1) {
+    const flip = chronological[i].typeFlip;
+    if (flip) isLiability = flip.fromIsLiability;
+  }
+
+  for (const entry of chronological) {
+    if (entry.date > date) break;
+    if (entry.typeFlip) isLiability = entry.typeFlip.toIsLiability;
+  }
+  return isLiability;
+}
+
+/**
+ * Liability flag immediately before applying a mutation at `date`/`createdAt`.
+ * Entries on the same day with later createdAt are ignored.
+ */
+export function liabilityStateBefore(
+  entries: AccountValueEntry[],
+  accountId: string,
+  date: string,
+  currentIsLiability: boolean,
+  beforeCreatedAt?: string,
+): boolean {
+  const chronological = entries
+    .filter((e) => e.accountId === accountId)
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt),
+    );
+
+  let isLiability = currentIsLiability;
+  for (let i = chronological.length - 1; i >= 0; i -= 1) {
+    const flip = chronological[i].typeFlip;
+    if (flip) isLiability = flip.fromIsLiability;
+  }
+
+  for (const entry of chronological) {
+    if (entry.date > date) break;
+    if (
+      entry.date === date &&
+      beforeCreatedAt &&
+      entry.createdAt.localeCompare(beforeCreatedAt) >= 0
+    ) {
+      break;
+    }
+    if (entry.typeFlip) isLiability = entry.typeFlip.toIsLiability;
+  }
+  return isLiability;
 }

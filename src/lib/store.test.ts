@@ -317,4 +317,97 @@ describe("worth store features", () => {
     expect(useWorthStore.getState().accounts[0].currentValue).toBe(1000);
     expect(useWorthStore.getState().valueEntries.filter((e) => e.transactionId)).toHaveLength(0);
   });
+
+  it("persona power user: backdated expense uses pre-flip asset math", () => {
+    useWorthStore.getState().addAccount({
+      name: "Cash",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 100,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 150,
+      currency: "HKD",
+      date: "2026-08-10",
+      title: "Overdraft",
+      category: "other",
+      accountId,
+    });
+    expect(useWorthStore.getState().accounts[0].isLiability).toBe(true);
+    expect(useWorthStore.getState().accounts[0].currentValue).toBe(50);
+
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 10,
+      currency: "HKD",
+      date: "2026-08-05",
+      title: "Snack",
+      category: "food",
+      accountId,
+    });
+    // Pre-flip asset: 100 - 10 = 90, then later flip still on top of cascade.
+    // Latest after Aug 10 flip row cascaded: 50 + (-10) = 40 liability.
+    const state = useWorthStore.getState();
+    const snack = state.valueEntries.find((e) => e.note?.includes("Snack"));
+    expect(snack?.value).toBe(90);
+    expect(snack?.delta).toBe(-10);
+    expect(state.accounts[0].isLiability).toBe(true);
+    expect(state.accounts[0].currentValue).toBe(40);
+  });
+
+  it("persona debtor: card payment as income reduces debt", () => {
+    useWorthStore.getState().addAccount({
+      name: "Amex",
+      category: "credit_card",
+      isLiability: true,
+      currency: "HKD",
+      currentValue: 5000,
+      asOfDate: "2026-08-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().addTransaction({
+      type: "income",
+      amount: 2000,
+      currency: "HKD",
+      date: "2026-08-15",
+      title: "Card payment",
+      category: "transfer",
+      accountId,
+    });
+    expect(useWorthStore.getState().accounts[0].currentValue).toBe(3000);
+  });
+
+  it("persona investor: backdated snapshot uses history not live totals", () => {
+    useWorthStore.getState().addAccount({
+      name: "Broker",
+      category: "investment",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: 1000,
+      asOfDate: "2026-07-01",
+    });
+    const accountId = useWorthStore.getState().accounts[0].id;
+    useWorthStore.getState().upsertValueEntry({
+      accountId,
+      date: "2026-08-01",
+      value: 2000,
+    });
+    useWorthStore.getState().addTransaction({
+      type: "expense",
+      amount: 100,
+      currency: "HKD",
+      date: "2026-07-15",
+      title: "Fee",
+      category: "other",
+      accountId,
+    });
+    const snap = useWorthStore
+      .getState()
+      .snapshots.find((s) => s.date === "2026-07-15");
+    expect(snap?.netWorthBaseCurrency).toBe(900);
+  });
 });

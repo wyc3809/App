@@ -3,11 +3,13 @@
 import { useMemo, useState, type PointerEvent, type ReactNode } from "react";
 import {
   Briefcase,
+  Building2,
   Bus,
   Calendar,
   Clapperboard,
   Delete,
   Gift,
+  HandCoins,
   HeartPulse,
   Home,
   Link2,
@@ -46,6 +48,8 @@ const CATEGORY_META: Record<
   utilities: { icon: Zap, tint: "#06b6d4", short: "Utilities" },
   salary: { icon: Briefcase, tint: "#0f7a4c", short: "Salary" },
   bonus: { icon: Sparkles, tint: "#f59e0b", short: "Bonus" },
+  rental: { icon: Building2, tint: "#f97316", short: "Rental" },
+  allowance: { icon: HandCoins, tint: "#6366f1", short: "Allowance" },
   investment_return: { icon: PiggyBank, tint: "#3b82f6", short: "Invest" },
   gift: { icon: Gift, tint: "#ec4899", short: "Gift" },
   transfer: { icon: Wallet, tint: "#64748b", short: "Transfer" },

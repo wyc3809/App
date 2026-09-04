@@ -137,9 +137,7 @@ export function AccountDetailContent() {
     : account.currentValue);
   const latestChange = history[0];
   const changePositive = (latestChange?.changeAbsolute ?? 0) >= 0;
-  const changeGood = account.isLiability
-    ? (latestChange?.changeAbsolute ?? 0) <= 0
-    : changePositive;
+  const changeGood = changePositive;
 
   const startedOn = [...history].sort((a, b) => a.date.localeCompare(b.date))[0]?.date;
   const ath = history.reduce<(typeof history)[number] | null>((best, point) => {
@@ -203,7 +201,7 @@ export function AccountDetailContent() {
           <h1 className="font-display text-3xl tabular-nums tracking-tight">
             {formatMoney(signed, account.currency, currencies, {
               privacy: settings.isPrivacyMode,
-              showSign: account.isLiability,
+              showSign: signed < 0,
             })}
           </h1>
           {latestChange?.changePercent != null && (
@@ -345,9 +343,7 @@ export function AccountDetailContent() {
           <ul className="card-surface divide-y overflow-hidden" style={{ borderColor: "var(--border)" }}>
             {history.map((point) => {
               const pointSigned = point.signedValue;
-              const good = account.isLiability
-                ? (point.changeAbsolute ?? 0) <= 0
-                : (point.changeAbsolute ?? 0) >= 0;
+              const good = (point.changeAbsolute ?? 0) >= 0;
               const linkedTx = resolveLedgerTransaction(
                 transactions,
                 account.id,
@@ -384,12 +380,12 @@ export function AccountDetailContent() {
                         <p
                           className="font-semibold tabular-nums"
                           style={{
-                            color: account.isLiability ? "var(--negative)" : "var(--fg)",
+                            color: pointSigned < 0 ? "var(--negative)" : "var(--fg)",
                           }}
                         >
                           {formatMoney(pointSigned, account.currency, currencies, {
                             privacy: settings.isPrivacyMode,
-                            showSign: account.isLiability,
+                            showSign: pointSigned < 0,
                           })}
                         </p>
                         {point.changeAbsolute != null && (
