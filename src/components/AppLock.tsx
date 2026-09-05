@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Fingerprint, Lock } from "lucide-react";
 import {
   authenticateBiometric,
@@ -9,9 +9,15 @@ import {
 import { useWorthStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n/context";
 
+/** Ignore brief inactive blips (Face ID sheet, Control Center, etc.). */
+const BACKGROUND_RELOCK_MS = 2000;
+/** Suppress appStateChange right after verifyIdentity returns. */
+const UNLOCK_COOLDOWN_MS = 750;
+
 /**
  * Full-screen lock when biometric preference is on (native Face ID / Touch ID).
- * Re-locks when the app returns from background. Skips on web builds.
+ * Re-locks after a real background stay — not when the Face ID sheet makes
+ * the app briefly inactive (that used to loop unlock → inactive → unlock).
  */
 export function AppLock({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
@@ -22,17 +28,38 @@ export function AppLock({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(!enabled);
 
+  const unlockingRef = useRef(false);
+  const backgroundedAtRef = useRef<number | null>(null);
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+    };
+  }, []);
+
   const unlock = useCallback(async () => {
+    if (unlockingRef.current) return;
+    unlockingRef.current = true;
     setBusy(true);
     setError(null);
-    const ok = await authenticateBiometric("Unlock WorthBook");
-    setBusy(false);
-    if (ok) {
-      setLocked(false);
-    } else {
-      setError(t("appLock.failed"));
+    try {
+      const ok = await authenticateBiometric("Unlock WorthBook");
+      if (ok) {
+        setLocked(false);
+      } else {
+        setError(t("appLock.failed"));
+      }
+    } finally {
+      setBusy(false);
+      // Face ID dismiss still fires appStateChange; ignore it briefly.
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = setTimeout(() => {
+        unlockingRef.current = false;
+        cooldownTimerRef.current = null;
+      }, UNLOCK_COOLDOWN_MS);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +87,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, unlock, updateSettings, t]);
+  }, [enabled, unlock, updateSettings]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -69,14 +96,35 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     void (async () => {
       try {
         const { App } = await import("@capacitor/app");
-        const handle = await App.addListener("appStateChange", ({ isActive }) => {
-          if (!isActive) {
+        const handle = await App.addListener(
+          "appStateChange",
+          ({ isActive }) => {
+            if (!isActive) {
+              // Face ID / system UI also marks the app inactive — do not lock yet.
+              if (unlockingRef.current) return;
+              backgroundedAtRef.current = Date.now();
+              return;
+            }
+
+            // Became active again
+            if (unlockingRef.current) {
+              backgroundedAtRef.current = null;
+              return;
+            }
+
+            const bgAt = backgroundedAtRef.current;
+            backgroundedAtRef.current = null;
+            const awayMs = bgAt ? Date.now() - bgAt : 0;
+
+            // Brief inactive (Face ID sheet, notification shade) — stay put.
+            if (awayMs < BACKGROUND_RELOCK_MS) return;
+
+            // Real background stay — require biometrics again.
             setLocked(true);
             setError(null);
-          } else {
             void unlock();
-          }
-        });
+          },
+        );
         remove = () => {
           void handle.remove();
         };
