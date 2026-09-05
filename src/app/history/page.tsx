@@ -86,17 +86,27 @@ export default function LedgerPage() {
 
   return (
     <div className="space-y-3 pb-4">
-      <header className="flex items-baseline justify-between gap-2 animate-fade-up">
-        <h1 className="font-display text-2xl leading-none">Ledger</h1>
-        <p
-          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
-          style={{ color: "var(--fg-subtle)" }}
-        >
-          Bookkeeping
-        </p>
-      </header>
+      {/* First-viewport block: header + entry fill the main area; records sit below. */}
+      <div
+        className="flex flex-col gap-3"
+        style={{
+          minHeight:
+            "calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 1.25rem)",
+        }}
+      >
+        <header className="flex shrink-0 items-baseline justify-between gap-2 animate-fade-up">
+          <h1 className="font-display text-xl leading-none">Ledger</h1>
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+            style={{ color: "var(--fg-subtle)" }}
+          >
+            Bookkeeping
+          </p>
+        </header>
 
-      <LedgerQuickEntry />
+        {/* Entry grows to fill remaining first-viewport height; keypad pins to bottom. */}
+        <LedgerQuickEntry />
+      </div>
 
       <section className="space-y-2 animate-fade-up" aria-label="Cashflow summary">
         <div className="flex items-center justify-between gap-2">
