@@ -89,7 +89,11 @@ export function BottomSheet({
         : null;
 
     const prevOverflow = document.body.style.overflow;
+    const prevOverflowX = document.body.style.overflowX;
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
     document.body.style.overflow = "hidden";
+    document.body.style.overflowX = "hidden";
+    document.documentElement.style.overflowX = "hidden";
 
     const sheet = sheetRef.current;
     const focusTarget =
@@ -109,6 +113,8 @@ export function BottomSheet({
 
     return () => {
       document.body.style.overflow = prevOverflow;
+      document.body.style.overflowX = prevOverflowX;
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
       document.removeEventListener("keydown", onKeyDown);
       previousFocusRef.current?.focus();
     };
@@ -117,7 +123,7 @@ export function BottomSheet({
   if (!mounted) return null;
 
   const panelClassName =
-    "sheet-enter relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl outline-none sm:max-h-[min(92dvh,40rem)] sm:rounded-3xl";
+    "sheet-enter relative z-10 flex w-full max-w-lg flex-col overflow-hidden overflow-x-hidden rounded-t-3xl outline-none sm:max-h-[min(92dvh,40rem)] sm:rounded-3xl";
   const panelStyle = {
     background: "var(--bg-elevated)",
     border: "1px solid var(--border)",
@@ -163,7 +169,7 @@ export function BottomSheet({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+      <div className="min-h-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4">
         {children}
       </div>
 
@@ -180,12 +186,12 @@ export function BottomSheet({
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-end justify-center sm:items-center"
-      style={{ zIndex }}
+      className="fixed inset-0 flex max-w-[100vw] items-end justify-center overflow-x-hidden sm:items-center"
+      style={{ zIndex, touchAction: "pan-y" }}
     >
       <button
         type="button"
-        className="sheet-backdrop-enter absolute inset-0 backdrop-blur-[2px]"
+        className="sheet-backdrop-enter absolute inset-0 z-0 backdrop-blur-[2px]"
         style={{ background: "var(--overlay)" }}
         aria-label={t("common.close")}
         onClick={onClose}

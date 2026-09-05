@@ -235,7 +235,7 @@ function AddValueDialog({
 
           {showDatePicker && (
             <input
-              className="field"
+              className="field field-date"
               type="date"
               value={asOfDate}
               max={todayISO()}

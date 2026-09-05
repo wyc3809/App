@@ -70,7 +70,8 @@ export function IntroductionFlow() {
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex flex-col"
+      /* Above bottom sheets (z≈100) so Skip / CTAs stay tappable during first-run. */
+      className="fixed inset-0 z-[120] flex flex-col"
       style={{ background: "var(--bg)" }}
       role="dialog"
       aria-modal="true"

@@ -27,7 +27,8 @@ function AccountsContent() {
   /** Local dismiss so Cancel works even if router.replace is slow on static hosts. */
   const [queryNewDismissed, setQueryNewDismissed] = useState(false);
 
-  const openFromQuery = searchParams.get("new") === "1" && !queryNewDismissed;
+  const openFromQuery =
+    searchParams.get("new") === "1" && !queryNewDismissed;
   const formOpen = manualOpen || openFromQuery;
 
   const closeForm = () => {

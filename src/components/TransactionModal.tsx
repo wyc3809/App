@@ -176,7 +176,7 @@ function TransactionDialog({
           </div>
 
           <div className="grid grid-cols-[1.4fr_0.8fr] gap-2">
-            <div>
+            <div className="min-w-0">
               <label className="label" htmlFor="tx-amount">
                 Amount
               </label>
@@ -195,7 +195,7 @@ function TransactionDialog({
               />
               {errors.amount ? <p className="field-error">{errors.amount}</p> : null}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="label" htmlFor="tx-currency">
                 Currency
               </label>
@@ -221,7 +221,7 @@ function TransactionDialog({
             <input
               id="tx-date"
               type="date"
-              className="field"
+              className="field field-date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required

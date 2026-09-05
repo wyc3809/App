@@ -58,13 +58,34 @@ async function waitForAppReady(page: Page) {
 
 /** Dismiss first-run intro overlay when present (fresh localStorage). */
 async function dismissIntro(page: Page) {
+  const intro = page.getByRole("dialog", { name: /Welcome to WorthBook/i });
   const skip = page.getByRole("button", { name: /^Skip$/i });
-  if (await skip.isVisible().catch(() => false)) {
-    await skip.click();
-    await expect(
-      page.getByRole("dialog", { name: "Welcome to WorthBook" }),
-    ).toHaveCount(0);
+
+  // Fresh installs mount intro after Zustand rehydrates — wait briefly.
+  await skip.waitFor({ state: "visible", timeout: 5_000 }).catch(() => undefined);
+
+  if (
+    (await intro.isVisible().catch(() => false)) ||
+    (await skip.isVisible().catch(() => false))
+  ) {
+    await skip.click({ force: true });
+    await expect(intro).toHaveCount(0, { timeout: 10_000 });
+    await expect(skip).toHaveCount(0, { timeout: 5_000 });
+    // Ensure persist flushed before any subsequent navigation.
+    await page.waitForFunction(() => {
+      try {
+        const raw = localStorage.getItem("worthtracker-v1");
+        if (!raw) return false;
+        const parsed = JSON.parse(raw) as {
+          state?: { settings?: { onboardingCompleted?: boolean } };
+        };
+        return parsed.state?.settings?.onboardingCompleted === true;
+      } catch {
+        return false;
+      }
+    });
   }
+
   await dismissWrappedReports(page);
 }
 
@@ -92,6 +113,17 @@ async function loadDemo(page: Page) {
     timeout: 15_000,
   });
   await dismissWrappedReports(page);
+}
+
+/** Open the Add Account sheet after onboarding is out of the way. */
+async function openAddAccountSheet(page: Page) {
+  await page.goto("/accounts/");
+  await waitForAppReady(page);
+  await dismissIntro(page);
+  // Intro is z-120 and would intercept the Accounts "Add" button if still mounted.
+  await expect(page.getByRole("button", { name: /^Skip$/i })).toHaveCount(0);
+  await page.getByRole("button", { name: /^Add$/i }).click();
+  await expect(page.getByRole("dialog", { name: "Add Account" })).toBeVisible();
 }
 
 test.describe("WorthBook E2E", () => {
@@ -191,11 +223,8 @@ test.describe("WorthBook E2E", () => {
   });
 
   test("add account cancel closes the sheet", async ({ page }) => {
-    await page.goto("/accounts/?new=1");
-    await waitForAppReady(page);
-    await dismissIntro(page);
+    await openAddAccountSheet(page);
     const dialog = page.getByRole("dialog", { name: "Add Account" });
-    await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Add Account" })).toBeInViewport();
     await page.getByRole("button", { name: "Cancel" }).first().click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -204,11 +233,8 @@ test.describe("WorthBook E2E", () => {
   test("add account sheet keeps actions tappable and fields at 16px", async ({
     page,
   }) => {
-    await page.goto("/accounts/?new=1");
-    await waitForAppReady(page);
-    await dismissIntro(page);
+    await openAddAccountSheet(page);
     const dialog = page.getByRole("dialog", { name: "Add Account" });
-    await expect(dialog).toBeVisible();
 
     const addBtn = dialog.getByRole("button", { name: "Add Account" });
     await expect(addBtn).toBeInViewport();
@@ -228,6 +254,61 @@ test.describe("WorthBook E2E", () => {
     await expect(dialog).toHaveCount(0);
     await revealAccountRows(page);
     await expect(page.getByText("Tap Test Bank")).toBeVisible();
+  });
+
+  test("pages and sheets do not allow horizontal page scroll", async ({
+    page,
+  }) => {
+    const assertNoHorizontalOverflow = async () => {
+      const metrics = await page.evaluate(() => {
+        const doc = document.documentElement;
+        const body = document.body;
+        const main = document.querySelector(".app-main");
+        const dialog = document.querySelector('[role="dialog"]');
+        return {
+          doc: { scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth },
+          body: { scrollWidth: body.scrollWidth, clientWidth: body.clientWidth },
+          main: main
+            ? {
+                scrollWidth: (main as HTMLElement).scrollWidth,
+                clientWidth: (main as HTMLElement).clientWidth,
+              }
+            : null,
+          dialog: dialog
+            ? {
+                scrollWidth: (dialog as HTMLElement).scrollWidth,
+                clientWidth: (dialog as HTMLElement).clientWidth,
+              }
+            : null,
+        };
+      });
+      expect(metrics.doc.scrollWidth).toBeLessThanOrEqual(
+        metrics.doc.clientWidth + 1,
+      );
+      expect(metrics.body.scrollWidth).toBeLessThanOrEqual(
+        metrics.body.clientWidth + 1,
+      );
+      if (metrics.main) {
+        expect(metrics.main.scrollWidth).toBeLessThanOrEqual(
+          metrics.main.clientWidth + 1,
+        );
+      }
+      if (metrics.dialog) {
+        expect(metrics.dialog.scrollWidth).toBeLessThanOrEqual(
+          metrics.dialog.clientWidth + 1,
+        );
+      }
+    };
+
+    for (const route of ["/", "/accounts/", "/history/", "/graphs/", "/settings/"]) {
+      await page.goto(route);
+      await waitForAppReady(page);
+      await dismissIntro(page);
+      await assertNoHorizontalOverflow();
+    }
+
+    await openAddAccountSheet(page);
+    await assertNoHorizontalOverflow();
   });
 
   test("imports ledger CSV from settings", async ({ page }) => {

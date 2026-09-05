@@ -1,8 +1,11 @@
 import UIKit
 import Capacitor
 
-/// Pins the WKWebView so rubber-band overscroll cannot reveal native black edges.
-final class AppBridgeViewController: CAPBridgeViewController {
+/// Pins the WKWebView so rubber-band overscroll cannot reveal native black edges,
+/// and clamps sideways page-drag so the shell never pans horizontally.
+final class AppBridgeViewController: CAPBridgeViewController, UIScrollViewDelegate {
+    private weak var forwardedScrollDelegate: UIScrollViewDelegate?
+
     override public func capacitorDidLoad() {
         super.capacitorDidLoad()
         hardenWebViewScroll()
@@ -18,12 +21,47 @@ final class AppBridgeViewController: CAPBridgeViewController {
         scrollView.bounces = false
         scrollView.alwaysBounceVertical = false
         scrollView.alwaysBounceHorizontal = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.isDirectionalLockEnabled = true
         scrollView.contentInsetAdjustmentBehavior = .never
         // Match light --bg (#f5f7f6); residual flash should never be black.
         let bg = UIColor(red: 245 / 255, green: 247 / 255, blue: 246 / 255, alpha: 1)
         webView?.backgroundColor = bg
         webView?.isOpaque = true
         scrollView.backgroundColor = bg
+
+        // Clamp horizontal offset even if CSS content briefly overflows.
+        if scrollView.delegate !== self {
+            forwardedScrollDelegate = scrollView.delegate
+            scrollView.delegate = self
+        }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView.contentOffset.x != 0 {
+            scrollView.contentOffset.x = 0
+        }
+        forwardedScrollDelegate?.scrollViewDidScroll?(scrollView)
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        forwardedScrollDelegate?.scrollViewDidEndDragging?(scrollView, willDecelerate: decelerate)
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        forwardedScrollDelegate?.scrollViewDidEndDecelerating?(scrollView)
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        forwardedScrollDelegate?.scrollViewWillBeginDragging?(scrollView)
+    }
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        forwardedScrollDelegate?.scrollViewDidZoom?(scrollView)
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        forwardedScrollDelegate?.viewForZooming?(in: scrollView)
     }
 }
 
