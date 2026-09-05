@@ -52,12 +52,16 @@ export function FilterSheet({ open, value, onChange, onClose }: FilterSheetProps
         <>
           <button
             type="button"
-            className="btn-secondary flex-1"
+            className="btn-secondary min-h-11 flex-1"
             onClick={() => onChange(DEFAULT_HOME_FILTER)}
           >
             Reset
           </button>
-          <button type="button" className="btn-primary flex-1" onClick={onClose}>
+          <button
+            type="button"
+            className="btn-primary min-h-11 flex-1"
+            onClick={onClose}
+          >
             Apply
           </button>
         </>

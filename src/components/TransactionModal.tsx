@@ -121,17 +121,17 @@ function TransactionDialog({
   };
 
   return (
-    <form onSubmit={submit}>
-      <BottomSheet
-        onClose={onClose}
-        title={initial ? t("txForm.editTitle") : t("txForm.addTitle")}
-        titleId="tx-modal-title"
-        footer={
-          <button type="submit" className="btn-primary w-full justify-center">
-            {initial ? t("common.saveChanges") : t("txForm.addTitle")}
-          </button>
-        }
-      >
+    <BottomSheet
+      onClose={onClose}
+      onSubmit={submit}
+      title={initial ? t("txForm.editTitle") : t("txForm.addTitle")}
+      titleId="tx-modal-title"
+      footer={
+        <button type="submit" className="btn-primary min-h-11 w-full justify-center">
+          {initial ? t("common.saveChanges") : t("txForm.addTitle")}
+        </button>
+      }
+    >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             {(["expense", "income"] as const).map((t) => (
@@ -292,7 +292,6 @@ function TransactionDialog({
             />
           </div>
         </div>
-      </BottomSheet>
-    </form>
+    </BottomSheet>
   );
 }

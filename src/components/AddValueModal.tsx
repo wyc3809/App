@@ -120,27 +120,27 @@ function AddValueDialog({
   const isNegative = sign < 0;
 
   return (
-    <form onSubmit={submit}>
-      <BottomSheet
-        onClose={onClose}
-        title={initial ? t("valueForm.editTitle") : t("valueForm.addTitle")}
-        titleId="add-value-title"
-        headerStart={
-          <button
-            type="button"
-            className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
-            style={{ color: "var(--fg-muted)" }}
-            onClick={onClose}
-          >
-            {t("common.cancel")}
-          </button>
-        }
-        footer={
-          <button type="submit" className="btn-primary w-full justify-center">
-            {t("common.save")}
-          </button>
-        }
-      >
+    <BottomSheet
+      onClose={onClose}
+      onSubmit={submit}
+      title={initial ? t("valueForm.editTitle") : t("valueForm.addTitle")}
+      titleId="add-value-title"
+      headerStart={
+        <button
+          type="button"
+          className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
+          style={{ color: "var(--fg-muted)" }}
+          onClick={onClose}
+        >
+          {t("common.cancel")}
+        </button>
+      }
+      footer={
+        <button type="submit" className="btn-primary min-h-11 w-full justify-center">
+          {t("common.save")}
+        </button>
+      }
+    >
         <div className="space-y-4">
           <div>
             <label className="label" htmlFor="entry-value">
@@ -276,7 +276,6 @@ function AddValueDialog({
             Mark on graph
           </label>
         </div>
-      </BottomSheet>
-    </form>
+    </BottomSheet>
   );
 }

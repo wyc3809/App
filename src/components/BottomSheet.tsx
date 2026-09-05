@@ -6,7 +6,9 @@ import {
   useId,
   useRef,
   useState,
+  type FormEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -25,6 +27,12 @@ interface BottomSheetProps {
   zIndex?: number;
   /** Show the default close (X) control. */
   showClose?: boolean;
+  /**
+   * When set, the sheet panel is a <form>. Footer `type="submit"` buttons must
+   * live inside the portaled panel — wrapping <form> around BottomSheet breaks
+   * submit after createPortal moves the button to document.body.
+   */
+  onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
 const FOCUSABLE =
@@ -34,7 +42,7 @@ const FOCUSABLE =
  * Full-screen overlay + bottom sheet that:
  * - covers the viewport with a tappable backdrop (no safe-area “holes”)
  * - keeps header/footer pinned while the body scrolls
- * - sits above the app bottom nav
+ * - sits above the app bottom nav (portaled to document.body)
  */
 export function BottomSheet({
   onClose,
@@ -45,15 +53,13 @@ export function BottomSheet({
   headerStart,
   zIndex = 100,
   showClose = true,
+  onSubmit,
 }: BottomSheetProps) {
   const { t } = useI18n();
-  const sheetRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement | HTMLFormElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const titleFallbackId = useId();
   const resolvedTitleId = title ? titleId : titleFallbackId;
-  // Portal to document.body so the sheet is not trapped under `.app-tabbar`.
-  // Inside `.app-main` (overflow scroll), WebKit anchors `position: fixed` to
-  // that container — the tab bar sibling then paints over Cancel/Confirm.
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -110,6 +116,68 @@ export function BottomSheet({
 
   if (!mounted) return null;
 
+  const panelClassName =
+    "sheet-enter relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl outline-none sm:max-h-[min(92dvh,40rem)] sm:rounded-3xl";
+  const panelStyle = {
+    background: "var(--bg-elevated)",
+    border: "1px solid var(--border)",
+    maxHeight: "calc(100dvh - var(--safe-top) - 0.5rem)",
+    marginTop: "var(--safe-top)",
+    paddingBottom: "var(--safe-bottom)",
+  } as const;
+
+  const panelBody = (
+    <>
+      {(title || headerStart || showClose) && (
+        <div
+          className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex min-w-[3rem] items-center justify-start">
+            {headerStart ?? <span className="w-11" aria-hidden />}
+          </div>
+          {title ? (
+            <h2 id={resolvedTitleId} className="font-display text-lg">
+              {title}
+            </h2>
+          ) : (
+            <span id={resolvedTitleId} className="sr-only">
+              {t("common.dialog")}
+            </span>
+          )}
+          <div className="flex min-w-[3rem] items-center justify-end">
+            {showClose ? (
+              <button
+                type="button"
+                className="btn-ghost inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
+                style={{ background: "var(--bg-muted)" }}
+                onClick={onClose}
+                aria-label={t("common.close")}
+              >
+                <X size={18} />
+              </button>
+            ) : (
+              <span className="w-11" aria-hidden />
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+        {children}
+      </div>
+
+      {footer ? (
+        <div
+          className="relative z-20 flex shrink-0 gap-2 border-t px-5 py-3"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {footer}
+        </div>
+      ) : null}
+    </>
+  );
+
   return createPortal(
     <div
       className="fixed inset-0 flex items-end justify-center sm:items-center"
@@ -122,71 +190,36 @@ export function BottomSheet({
         aria-label={t("common.close")}
         onClick={onClose}
       />
-      <div
-        ref={sheetRef}
-        tabIndex={-1}
-        className="sheet-enter relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl outline-none sm:max-h-[min(92dvh,40rem)] sm:rounded-3xl"
-        style={{
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-          maxHeight: "calc(100dvh - var(--safe-top) - 0.5rem)",
-          marginTop: "var(--safe-top)",
-          paddingBottom: "var(--safe-bottom)",
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={resolvedTitleId}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        {(title || headerStart || showClose) && (
-          <div
-            className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <div className="flex min-w-[3rem] items-center justify-start">
-              {headerStart ?? <span className="w-11" aria-hidden />}
-            </div>
-            {title ? (
-              <h2 id={resolvedTitleId} className="font-display text-lg">
-                {title}
-              </h2>
-            ) : (
-              <span id={resolvedTitleId} className="sr-only">
-                {t("common.dialog")}
-              </span>
-            )}
-            <div className="flex min-w-[3rem] items-center justify-end">
-              {showClose ? (
-                <button
-                  type="button"
-                  className="btn-ghost inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
-                  style={{ background: "var(--bg-muted)" }}
-                  onClick={onClose}
-                  aria-label={t("common.close")}
-                >
-                  <X size={18} />
-                </button>
-              ) : (
-                <span className="w-11" aria-hidden />
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          {children}
+      {onSubmit ? (
+        <form
+          ref={sheetRef as RefObject<HTMLFormElement>}
+          tabIndex={-1}
+          className={panelClassName}
+          style={panelStyle}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={resolvedTitleId}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onSubmit={onSubmit}
+        >
+          {panelBody}
+        </form>
+      ) : (
+        <div
+          ref={sheetRef as RefObject<HTMLDivElement>}
+          tabIndex={-1}
+          className={panelClassName}
+          style={panelStyle}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={resolvedTitleId}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {panelBody}
         </div>
-
-        {footer ? (
-          <div
-            className="flex shrink-0 gap-2 border-t px-5 py-3"
-            style={{ borderColor: "var(--border)" }}
-          >
-            {footer}
-          </div>
-        ) : null}
-      </div>
+      )}
     </div>,
     document.body,
   );

@@ -40,6 +40,10 @@ export function formatDateLabel(isoDate: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+export function todayISO(now: Date = new Date()): string {
+  // Local calendar date — UTC slice breaks HTML date `max` near midnight in +TZ.
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }

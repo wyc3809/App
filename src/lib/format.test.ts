@@ -36,4 +36,10 @@ describe("format", () => {
     expect(formatDateLabel("2026-08-04")).toMatch(/Aug/);
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  it("uses the local calendar day for todayISO", () => {
+    // 2026-09-05 01:30 in UTC+8 is still 2026-09-04 in UTC
+    const localMorning = new Date(2026, 8, 5, 1, 30, 0);
+    expect(todayISO(localMorning)).toBe("2026-09-05");
+  });
 });

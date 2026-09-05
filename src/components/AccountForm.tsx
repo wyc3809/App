@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ASSET_TYPES, LIABILITY_TYPES } from "@/lib/categories";
 import { BottomSheet } from "@/components/BottomSheet";
+import { todayISO } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n/context";
 import { hapticSuccess } from "@/lib/haptic";
@@ -62,7 +63,7 @@ function AccountFormDialog({
     initial ? String(initial.currentValue) : "",
   );
   const [asOfDate, setAsOfDate] = useState(
-    initial?.asOfDate ?? new Date().toISOString().slice(0, 10),
+    initial?.asOfDate ?? todayISO(),
   );
   const [institutionName, setInstitutionName] = useState(
     initial?.institutionName ?? "",
@@ -114,30 +115,30 @@ function AccountFormDialog({
   };
 
   return (
-    <form onSubmit={submit}>
-      <BottomSheet
-        onClose={onClose}
-        title={initial ? t("accountForm.editTitle") : t("accountForm.addTitle")}
-        titleId="account-form-title"
-        headerStart={
-          <button
-            type="button"
-            className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
-            style={{ color: "var(--fg-muted)" }}
-            onClick={onClose}
-          >
-            {t("common.cancel")}
-          </button>
-        }
-        footer={
-          <button
-            type="submit"
-            className="btn-primary w-full justify-center"
-          >
-            {initial ? t("common.saveChanges") : t("accountForm.addTitle")}
-          </button>
-        }
-      >
+    <BottomSheet
+      onClose={onClose}
+      onSubmit={submit}
+      title={initial ? t("accountForm.editTitle") : t("accountForm.addTitle")}
+      titleId="account-form-title"
+      headerStart={
+        <button
+          type="button"
+          className="min-h-11 min-w-[4.5rem] rounded-xl px-3 text-sm font-semibold"
+          style={{ color: "var(--fg-muted)" }}
+          onClick={onClose}
+        >
+          {t("common.cancel")}
+        </button>
+      }
+      footer={
+        <button
+          type="submit"
+          className="btn-primary min-h-11 w-full justify-center"
+        >
+          {initial ? t("common.saveChanges") : t("accountForm.addTitle")}
+        </button>
+      }
+    >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -252,7 +253,7 @@ function AccountFormDialog({
                 className="field"
                 type="date"
                 value={asOfDate}
-                max={new Date().toISOString().slice(0, 10)}
+                max={todayISO()}
                 onChange={(e) => {
                   setAsOfDate(e.target.value);
                   if (errors.date) setErrors((prev) => ({ ...prev, date: undefined }));
@@ -293,7 +294,6 @@ function AccountFormDialog({
             />
           </div>
         </div>
-      </BottomSheet>
-    </form>
+    </BottomSheet>
   );
 }

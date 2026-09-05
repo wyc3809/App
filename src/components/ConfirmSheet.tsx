@@ -34,12 +34,16 @@ export function ConfirmSheet({
       zIndex={100}
       footer={
         <>
-          <button type="button" className="btn-secondary flex-1" onClick={onClose}>
+          <button
+            type="button"
+            className="btn-secondary min-h-11 flex-1"
+            onClick={onClose}
+          >
             {cancelLabel}
           </button>
           <button
             type="button"
-            className="btn-primary flex-1"
+            className="btn-primary min-h-11 flex-1"
             style={
               danger
                 ? { background: "var(--danger)", color: "#fff" }
