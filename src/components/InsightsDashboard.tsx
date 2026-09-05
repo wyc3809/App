@@ -32,6 +32,7 @@ import { CashflowBarChart } from "@/components/CashflowBarChart";
 import { LedgerCalendarHeatmap } from "@/components/LedgerCalendarHeatmap";
 import { LedgerCategoryInsight } from "@/components/LedgerCategoryInsight";
 import { TrendChart } from "@/components/TrendChart";
+import { CHART_FOCUS } from "@/lib/chart-config";
 import {
   buildAssetsLiabilitiesTrend,
   buildInsightGrowthBars,
@@ -271,7 +272,7 @@ export function InsightsDashboard() {
             {growthBars.length === 0 ? (
               <Empty message="Need at least two periods of history for growth bars." />
             ) : (
-              <div className="mt-3 h-72 w-full">
+              <div className="chart-panel mt-3 h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={growthBars}
@@ -281,6 +282,7 @@ export function InsightsDashboard() {
                       left: 0,
                       bottom: showBarLabels && hasNegativeGrowth ? 36 : 8,
                     }}
+                    {...CHART_FOCUS}
                   >
                     <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
                     <XAxis
@@ -414,11 +416,12 @@ export function InsightsDashboard() {
             {alTrend.length < 2 ? (
               <Empty message="Need more history to chart assets vs liabilities." />
             ) : (
-              <div className="mt-3 h-56 w-full">
+              <div className="chart-panel mt-3 h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={alTrend}
                     margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+                    {...CHART_FOCUS}
                   >
                     <defs>
                       <linearGradient id="insAssets" x1="0" y1="0" x2="0" y2="1">
@@ -512,9 +515,13 @@ function SummaryCard({
   return (
     <div className="card-surface relative min-w-[9.5rem] flex-1 overflow-hidden px-3.5 py-3">
       {sparkline && sparkline.length > 1 && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-40">
+        <div className="chart-panel pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-40">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparkline} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={sparkline}
+              margin={{ top: 8, right: 0, left: 0, bottom: 0 }}
+              {...CHART_FOCUS}
+            >
               <defs>
                 <linearGradient id="sumSpark" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--positive)" stopOpacity={0.5} />

@@ -25,19 +25,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <main className="px-4">{children}</main>
+      {/* Only this region scrolls — tab bar stays pinned (no rubber-band black gaps). */}
+      <main className="app-main px-4">{children}</main>
 
-      <nav
-        className="fixed bottom-0 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t px-3 pt-2"
-        style={{
-          background: "color-mix(in srgb, var(--bg-elevated) 94%, transparent)",
-          borderColor: "var(--border)",
-          backdropFilter: "blur(18px)",
-          paddingBottom: "calc(8px + var(--safe-bottom))",
-          boxShadow: "0 -8px 24px rgba(0,0,0,0.04)",
-        }}
-        aria-label="Primary"
-      >
+      <nav className="app-tabbar z-40" aria-label="Primary">
         <ul className="grid grid-cols-4 gap-1">
           {NAV.map(({ href, labelKey, icon: Icon }) => {
             const active =

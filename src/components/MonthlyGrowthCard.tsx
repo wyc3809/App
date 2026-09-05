@@ -20,7 +20,7 @@ import {
   filterMonthlySeriesByRange,
 } from "@/lib/growth";
 import { formatMoney, formatPercent } from "@/lib/format";
-import { CHART_ANIMATION } from "@/lib/chart-config";
+import { CHART_ANIMATION, CHART_FOCUS } from "@/lib/chart-config";
 import { useWorthStore } from "@/lib/store";
 
 export function MonthlyGrowthCard() {
@@ -95,9 +95,13 @@ export function MonthlyGrowthCard() {
           MoM change will appear after you have snapshots across multiple months.
         </p>
       ) : (
-        <div className="h-44 w-full">
+        <div className="chart-panel h-44 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+              {...CHART_FOCUS}
+            >
               <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="label"

@@ -18,9 +18,11 @@ const config: CapacitorConfig = {
     },
   },
   ios: {
-    contentInset: "automatic",
+    // Avoid WebView content insets fighting our CSS safe-area + shell scroll.
+    contentInset: "never",
     preferredContentMode: "mobile",
-    backgroundColor: "#0d1110",
+    // Match light --bg so any residual bounce does not flash native black.
+    backgroundColor: "#f5f7f6",
   },
 };
 

@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { CHART_FOCUS } from "@/lib/chart-config";
 import { buildMonthlyCashflowBars } from "@/lib/graph-series";
 import { formatMoney } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
@@ -54,9 +55,13 @@ export function CashflowBarChart() {
           Add ledger income or expense to see the bar chart.
         </div>
       ) : (
-        <div className="h-64 w-full">
+        <div className="chart-panel h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+            <BarChart
+              data={data}
+              margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+              {...CHART_FOCUS}
+            >
               <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="label"

@@ -2,6 +2,7 @@
 
 import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { buildAccountHistoryPoints } from "@/lib/account-history";
+import { CHART_FOCUS } from "@/lib/chart-config";
 import type { AccountValueEntry } from "@/lib/types";
 
 export function Sparkline({
@@ -37,9 +38,13 @@ export function Sparkline({
   const stroke = good ? "var(--positive)" : "var(--negative)";
 
   return (
-    <div className="h-8 w-12">
+    <div className="chart-panel h-8 w-12">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+        <LineChart
+          data={points}
+          margin={{ top: 2, right: 0, left: 0, bottom: 2 }}
+          {...CHART_FOCUS}
+        >
           <Line
             type="monotone"
             dataKey="v"

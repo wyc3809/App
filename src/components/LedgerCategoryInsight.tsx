@@ -32,6 +32,7 @@ import {
   categoryBarsForChart,
   type CategoryBreakdownRow,
 } from "@/lib/ledger-category-breakdown";
+import { CHART_FOCUS } from "@/lib/chart-config";
 import { formatMoney } from "@/lib/format";
 import {
   ledgerPeriodShortLabel,
@@ -189,12 +190,13 @@ export function LedgerCategoryInsight() {
               : `No ${focus} in this ${ledgerPeriodShortLabel(period).toLowerCase()} window.`}
           </div>
         ) : (
-          <div className="h-56 w-full">
+          <div className="chart-panel h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartBars}
                 layout="vertical"
                 margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
+                {...CHART_FOCUS}
               >
                 <CartesianGrid stroke="var(--chart-grid)" horizontal={false} />
                 <XAxis

@@ -30,6 +30,7 @@ import { AccountForm } from "@/components/AccountForm";
 import { HistoryEntrySheet } from "@/components/HistoryEntrySheet";
 import { TransactionModal } from "@/components/TransactionModal";
 import { categoryLabel } from "@/lib/categories";
+import { CHART_FOCUS } from "@/lib/chart-config";
 import {
   buildAccountHistoryPoints,
   filterHistoryByRange,
@@ -234,9 +235,13 @@ export function AccountDetailContent() {
             Add dated values to see the trend.
           </div>
         ) : (
-          <div className="h-48 w-full">
+          <div className="chart-panel h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartPoints} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+              <AreaChart
+                data={chartPoints}
+                margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+                {...CHART_FOCUS}
+              >
                 <defs>
                   <linearGradient id="acctFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />

@@ -43,7 +43,7 @@ import {
 } from "@/lib/net-worth-series";
 import { useWorthStore } from "@/lib/store";
 import type { Account } from "@/lib/types";
-import { CHART_ANIMATION } from "@/lib/chart-config";
+import { CHART_ANIMATION, CHART_FOCUS } from "@/lib/chart-config";
 import { useI18n } from "@/lib/i18n/context";
 import { hapticTap } from "@/lib/haptic";
 
@@ -377,11 +377,16 @@ export function HomeDashboard() {
           </div>
         ) : (
           <ChartErrorBoundary>
-          <div className="h-52 w-full" role="img" aria-label={t("home.netWorthProfile")}>
+          <div
+            className="chart-panel h-52 w-full"
+            role="img"
+            aria-label={t("home.netWorthProfile")}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData.points}
                 margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+                {...CHART_FOCUS}
               >
                 <defs>
                   <linearGradient id="homeNwFill" x1="0" y1="0" x2="0" y2="1">

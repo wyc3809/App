@@ -61,16 +61,40 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body {
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+  /* Lock document so only .app-main rubber-bands (and we disable that too). */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
   color: var(--fg);
-  background: var(--bg);
   font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: 100dvh;
   text-rendering: optimizeLegibility;
+  /* App chrome: no text selection / callouts (inputs re-enabled below) */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 h1,
@@ -83,9 +107,63 @@ h3,
 
 @layer components {
   .app-shell {
-    @apply relative mx-auto min-h-dvh w-full max-w-lg;
-    padding-top: calc(16px + var(--safe-top));
-    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+    @apply relative mx-auto flex w-full max-w-lg flex-col;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--bg);
+    padding-top: calc(12px + var(--safe-top));
+  }
+
+  .app-main {
+    @apply min-h-0 flex-1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 16px;
+  }
+
+  .app-tabbar {
+    @apply shrink-0 border-t px-3 pt-2;
+    background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+    border-color: var(--border);
+    backdrop-filter: blur(18px);
+    padding-bottom: calc(8px + var(--safe-bottom));
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Recharts: kill focus ring / selection chrome on tap */
+  .recharts-wrapper,
+  .recharts-wrapper:focus,
+  .recharts-wrapper:focus-visible,
+  .recharts-surface,
+  .recharts-surface:focus,
+  .recharts-surface:focus-visible,
+  .chart-panel,
+  .chart-panel:focus,
+  .chart-panel:focus-visible,
+  .chart-panel svg,
+  .chart-panel svg:focus,
+  .chart-panel svg:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .recharts-wrapper,
+  .recharts-wrapper *,
+  .chart-panel,
+  .chart-panel * {
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none;
+  }
+
+  .recharts-wrapper svg,
+  .chart-panel svg {
+    outline: none !important;
   }
 
   .eyebrow {

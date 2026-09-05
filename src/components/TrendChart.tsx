@@ -15,7 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { filterSnapshotsByRange } from "@/lib/calculations";
-import { CHART_ANIMATION } from "@/lib/chart-config";
+import { CHART_ANIMATION, CHART_FOCUS } from "@/lib/chart-config";
 import {
   buildMonthlyGrowthSeries,
   filterMonthlySeriesByRange,
@@ -133,9 +133,13 @@ export function TrendChart() {
       {data.length === 0 ? (
         <EmptyChart message="Take a snapshot to start your net worth history." />
       ) : (
-        <div className="h-64 w-full">
+        <div className="chart-panel h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={data}
+              margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+              {...CHART_FOCUS}
+            >
               <defs>
                 {activeKeys.map((key) => (
                   <linearGradient key={key} id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1">
