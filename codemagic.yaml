@@ -46,6 +46,26 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
+      - name: Bump iOS build number (avoid ASC duplicate upload)
+        script: |
+          set -euo pipefail
+          cd ios/App
+          # Prefer latest TestFlight/App Store build; fall back to Codemagic counter.
+          # Argument may be numeric Apple ID or bundle id (CLI accepts both).
+          TF="$(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" --platform IOS 2>/dev/null || true)"
+          AS="$(app-store-connect get-latest-app-store-build-number "$BUNDLE_ID" --platform IOS 2>/dev/null || true)"
+          TF="${TF:-0}"
+          AS="${AS:-0}"
+          [[ "$TF" =~ ^[0-9]+$ ]] || TF=0
+          [[ "$AS" =~ ^[0-9]+$ ]] || AS=0
+          NEXT=$(( TF > AS ? TF + 1 : AS + 1 ))
+          if [[ "${PROJECT_BUILD_NUMBER:-0}" =~ ^[0-9]+$ ]] && [ "$PROJECT_BUILD_NUMBER" -gt "$NEXT" ]; then
+            NEXT="$PROJECT_BUILD_NUMBER"
+          fi
+          # Floor so we never re-upload a prior successful build 1 / 2.
+          if [ "$NEXT" -lt 3 ]; then NEXT=3; fi
+          agvtool new-version -all "$NEXT"
+          echo "CFBundleVersion set to $NEXT (TestFlight=$TF AppStore=$AS Codemagic=${PROJECT_BUILD_NUMBER:-n/a})"
       - name: Build ipa
         script: |
           # Capacitor 8 iOS uses SPM (CapApp-SPM), not CocoaPods

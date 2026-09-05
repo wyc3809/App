@@ -37,6 +37,8 @@ Two options are wired in this repo:
 
 On success, the IPA is uploaded to **TestFlight**. Install the TestFlight app on your iPhone and accept the invite.
 
+Each Codemagic build auto-bumps `CFBundleVersion` above the latest TestFlight / App Store build so Apple does not reject a duplicate binary. If **Publishing failed** still appears, open the build log’s Publishing section: auth errors (`Unable to authenticate` / `-19209`) are often transient — retry; also accept any pending Apple Developer agreements in App Store Connect.
+
 ### 3. Day-to-day
 
 Push to `main` (or press **Start build**). No Mac required.
