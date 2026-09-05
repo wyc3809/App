@@ -157,6 +157,8 @@ export const en: MessageTree = {
     rateInvalid: "Enter a rate greater than zero",
   },
   reports: {
+    emptyTitle: "Not enough data yet",
+    emptyBody: "Add ledger entries or update account values across at least two dates, then try View Recap again.",
     close: "Close",
     next: "Next",
     done: "Done",

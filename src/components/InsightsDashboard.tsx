@@ -27,12 +27,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { BottomSheet } from "@/components/BottomSheet";
 import { AllocationChart } from "@/components/AllocationChart";
 import { CashflowBarChart } from "@/components/CashflowBarChart";
 import { LedgerCalendarHeatmap } from "@/components/LedgerCalendarHeatmap";
 import { LedgerCategoryInsight } from "@/components/LedgerCategoryInsight";
 import { TrendChart } from "@/components/TrendChart";
-import { CHART_FOCUS } from "@/lib/chart-config";
+import { CHART_FOCUS,
+  CHART_TOOLTIP_STYLE,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_CURSOR} from "@/lib/chart-config";
 import {
   buildAssetsLiabilitiesTrend,
   buildInsightGrowthBars,
@@ -112,6 +117,7 @@ export function InsightsDashboard() {
   const [granularity, setGranularity] = useState<InsightGranularity>("monthly");
   const [range, setRange] = useState<InsightRange>("6M");
   const [chartId, setChartId] = useState<ChartId>("growth");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const summary = useMemo(
     () => computeInsightSummary(snapshots, range),
@@ -146,8 +152,8 @@ export function InsightsDashboard() {
         <button
           type="button"
           className="btn-ghost absolute right-0"
-          aria-label="Reset range to 6M"
-          onClick={() => setRange("6M")}
+          aria-label="Open insights filter"
+          onClick={() => setFilterOpen(true)}
         >
           <Filter size={18} />
         </button>
@@ -300,12 +306,10 @@ export function InsightsDashboard() {
                       tickFormatter={compactAxis}
                     />
                     <Tooltip
-                      contentStyle={{
-                        background: "var(--bg-elevated)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        color: "var(--fg)",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                       formatter={(value, _n, item) => {
                         const pct = item?.payload?.percent as number | undefined;
                         const moneyLabel = privacy
@@ -449,12 +453,10 @@ export function InsightsDashboard() {
                       tickFormatter={compactAxis}
                     />
                     <Tooltip
-                      contentStyle={{
-                        background: "var(--bg-elevated)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        color: "var(--fg)",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                       formatter={(value, name) => [
                         privacy
                           ? "••••••"
@@ -493,6 +495,73 @@ export function InsightsDashboard() {
         {chartId === "calendar" && <LedgerCalendarHeatmap />}
         {chartId === "trend" && <TrendChart />}
       </div>
+      {filterOpen ? (
+        <BottomSheet
+          onClose={() => setFilterOpen(false)}
+          title="Insights filter"
+          titleId="insights-filter-title"
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn-secondary min-h-11 flex-1"
+                onClick={() => {
+                  setGranularity("monthly");
+                  setRange("6M");
+                }}
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                className="btn-primary min-h-11 flex-1"
+                onClick={() => setFilterOpen(false)}
+              >
+                Apply
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-5">
+            <div>
+              <p className="label">Granularity</p>
+              <div className="flex flex-wrap gap-1">
+                {GRANULARITIES.map((g) => {
+                  const active = granularity === g.value;
+                  return (
+                    <button
+                      key={g.value}
+                      type="button"
+                      className={`chip ${active ? "chip-active" : ""}`}
+                      onClick={() => setGranularity(g.value)}
+                    >
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="label">Range</p>
+              <div className="flex flex-wrap gap-1">
+                {INSIGHT_RANGES.map((r) => {
+                  const active = range === r.value;
+                  return (
+                    <button
+                      key={r.value}
+                      type="button"
+                      className={`chip ${active ? "chip-active" : ""}`}
+                      onClick={() => setRange(r.value)}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </BottomSheet>
+      ) : null}
     </div>
   );
 }
@@ -577,6 +646,8 @@ function Empty({ message }: { message: string }) {
       style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}
     >
       {message}
+
+
     </div>
   );
 }

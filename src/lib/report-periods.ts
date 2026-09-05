@@ -69,3 +69,35 @@ export function previousMonthRange(todayISO: string): {
 export function currentMonthKey(todayISO: string): string {
   return todayISO.slice(0, 7);
 }
+
+
+
+export function currentIsoWeekRange(todayISO: string): {
+  key: string;
+  start: string;
+  end: string;
+} {
+  const today = parseISO(todayISO);
+  const range = isoWeekRangeForDate(today);
+  return {
+    key: isoWeekKeyFromDate(today),
+    ...range,
+  };
+}
+
+export function currentMonthRange(todayISO: string): {
+  key: string;
+  start: string;
+  end: string;
+  label: string;
+} {
+  const today = parseISO(todayISO);
+  const start = startOfMonth(today);
+  const end = endOfMonth(today);
+  return {
+    key: monthKeyFromDate(today),
+    start: format(start, "yyyy-MM-dd"),
+    end: format(end, "yyyy-MM-dd"),
+    label: today.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+  };
+}

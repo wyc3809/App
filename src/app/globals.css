@@ -10,6 +10,7 @@
   --fg-muted: #5f6b64;
   --fg-subtle: #8b9690;
   --border: rgba(15, 20, 18, 0.08);
+  --border-subtle: rgba(15, 20, 18, 0.06);
   --accent: #16a34a;
   --accent-hover: #15803d;
   --accent-soft: rgba(22, 163, 74, 0.12);
@@ -39,6 +40,7 @@
   --fg-muted: #a3ada7;
   --fg-subtle: #727d76;
   --border: rgba(244, 247, 245, 0.08);
+  --border-subtle: rgba(244, 247, 245, 0.06);
   --accent: #22c55e;
   --accent-hover: #16a34a;
   --accent-soft: rgba(34, 197, 94, 0.14);
@@ -221,6 +223,55 @@ h3,
   .chart-panel svg {
     outline: none !important;
   }
+
+  /* Recharts dark-mode: kill default white plot wash + black tooltip text */
+  .recharts-default-tooltip {
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--fg) !important;
+    box-shadow: var(--shadow-soft) !important;
+  }
+
+  .recharts-tooltip-label,
+  .recharts-tooltip-item,
+  .recharts-tooltip-item-name,
+  .recharts-tooltip-item-value,
+  .recharts-tooltip-item-separator {
+    color: var(--fg) !important;
+  }
+
+  .recharts-tooltip-cursor {
+    fill: var(--bg-muted) !important;
+    opacity: 0.55;
+  }
+
+  .recharts-cartesian-grid-bg {
+    fill: transparent !important;
+  }
+
+  .chart-panel,
+  .recharts-wrapper,
+  .recharts-surface {
+    background: transparent !important;
+  }
+
+  .dark .recharts-tooltip-cursor {
+    fill: color-mix(in srgb, var(--fg) 10%, transparent) !important;
+  }
+
+  /* Ledger keypad keys: keep contrast in dark mode (light-mode size already applied) */
+  .dark .ledger-keypad-key {
+    background: color-mix(in srgb, var(--bg-elevated) 70%, var(--fg) 8%) !important;
+    color: var(--fg) !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .dark .ledger-keypad-key-primary {
+    background: var(--accent) !important;
+    color: var(--accent-fg) !important;
+    box-shadow: none !important;
+  }
+
 
   .eyebrow {
     @apply text-[11px] font-bold uppercase tracking-[0.16em];

@@ -5,7 +5,11 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { computeAllocation } from "@/lib/calculations";
-import { CHART_ANIMATION, CHART_FOCUS } from "@/lib/chart-config";
+import { CHART_ANIMATION, CHART_FOCUS,
+  CHART_TOOLTIP_STYLE,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_CURSOR} from "@/lib/chart-config";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
 
@@ -65,11 +69,10 @@ export function AllocationChart() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                   formatter={(value, name) => [
                     settings.isPrivacyMode
                       ? "••••••"

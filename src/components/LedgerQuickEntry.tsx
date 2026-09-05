@@ -485,12 +485,12 @@ function KeypadKey({
     <button
       type="button"
       aria-label={ariaLabel}
-      className={`flex h-11 touch-manipulation items-center justify-center rounded-xl text-base font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-12 sm:text-lg ${className}`}
+      className={`ledger-keypad-key ${primary ? "ledger-keypad-key-primary" : ""} flex h-11 touch-manipulation items-center justify-center rounded-xl text-base font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-12 sm:text-lg ${className}`}
       style={{
         background: primary ? "var(--accent)" : "var(--bg-elevated)",
-        color: primary ? "#04140c" : "var(--fg)",
+        color: primary ? "var(--accent-fg)" : "var(--fg)",
         boxShadow: primary ? "none" : "0 1px 0 rgba(0,0,0,0.04)",
-      }}
+}}
       onPointerDown={handlePointerDown}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

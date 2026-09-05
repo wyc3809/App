@@ -20,7 +20,11 @@ import {
   filterMonthlySeriesByRange,
 } from "@/lib/growth";
 import { formatMoney, formatPercent } from "@/lib/format";
-import { CHART_ANIMATION, CHART_FOCUS } from "@/lib/chart-config";
+import { CHART_ANIMATION, CHART_FOCUS,
+  CHART_TOOLTIP_STYLE,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_CURSOR} from "@/lib/chart-config";
 import { useWorthStore } from "@/lib/store";
 
 export function MonthlyGrowthCard() {
@@ -123,12 +127,10 @@ export function MonthlyGrowthCard() {
                 }
               />
               <Tooltip
-                contentStyle={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  color: "var(--fg)",
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                 formatter={(value, _name, item) => {
                   const percent = item?.payload?.percent as number | undefined;
                   const money = privacy

@@ -11,7 +11,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CHART_FOCUS } from "@/lib/chart-config";
+import { CHART_FOCUS,
+  CHART_TOOLTIP_STYLE,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_CURSOR} from "@/lib/chart-config";
 import { buildMonthlyCashflowBars } from "@/lib/graph-series";
 import { formatMoney } from "@/lib/format";
 import { useWorthStore } from "@/lib/store";
@@ -79,12 +83,10 @@ export function CashflowBarChart() {
                 }
               />
               <Tooltip
-                contentStyle={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  color: "var(--fg)",
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                 formatter={(value, name) => [
                   settings.isPrivacyMode
                     ? "••••••"

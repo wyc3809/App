@@ -30,7 +30,11 @@ import { AccountForm } from "@/components/AccountForm";
 import { HistoryEntrySheet } from "@/components/HistoryEntrySheet";
 import { TransactionModal } from "@/components/TransactionModal";
 import { categoryLabel } from "@/lib/categories";
-import { CHART_FOCUS } from "@/lib/chart-config";
+import { CHART_FOCUS,
+  CHART_TOOLTIP_STYLE,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_CURSOR} from "@/lib/chart-config";
 import {
   buildAccountHistoryPoints,
   filterHistoryByRange,
@@ -277,11 +281,10 @@ export function AccountDetailContent() {
                   }
                 />
                 <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                   formatter={(value) => [
                     settings.isPrivacyMode
                       ? "••••••"

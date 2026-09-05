@@ -41,7 +41,11 @@ import {
 } from "@/lib/net-worth-series";
 import { useWorthStore } from "@/lib/store";
 import type { Account } from "@/lib/types";
-import { CHART_ANIMATION, CHART_FOCUS } from "@/lib/chart-config";
+import { CHART_ANIMATION, CHART_FOCUS,
+  CHART_TOOLTIP_STYLE,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_CURSOR} from "@/lib/chart-config";
 import { useI18n } from "@/lib/i18n/context";
 import { hapticTap } from "@/lib/haptic";
 
@@ -414,11 +418,10 @@ export function HomeDashboard() {
                   }
                 />
                 <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                      itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                      labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                      cursor={CHART_CURSOR}
                   labelFormatter={(_, payload) => {
                     const row = payload?.[0]?.payload as
                       | { date?: string }

@@ -120,6 +120,8 @@ export type TranslationKey =
   | "settings.monthlyNotifications"
   | "settings.monthlyNotificationsDesc"
   | "settings.reportsNativeHint"
+  | "reports.emptyTitle"
+  | "reports.emptyBody"
   | "reports.close"
   | "reports.next"
   | "reports.done"

@@ -156,6 +156,8 @@ export const zhHans: MessageTree = {
     rateInvalid: "请输入大于零的汇率",
   },
   reports: {
+    emptyTitle: "暂时数据不足",
+    emptyBody: "请先记账，或更新账户价值（至少两个日期），再试 View Recap。",
     close: "关闭",
     next: "下一步",
     done: "完成",

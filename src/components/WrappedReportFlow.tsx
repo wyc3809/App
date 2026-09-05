@@ -6,7 +6,9 @@ import { formatMoney, todayISO } from "@/lib/format";
 import { hapticSuccess, hapticTap } from "@/lib/haptic";
 import {
   currentIsoWeekKey,
+  currentIsoWeekRange,
   currentMonthKey,
+  currentMonthRange,
   previousIsoWeekRange,
   previousMonthRange,
 } from "@/lib/report-periods";
@@ -153,6 +155,7 @@ export function WrappedReportFlow() {
   const markMonthlySeen = useWorthStore((s) => s.markMonthlyReportSeen);
 
   const [active, setActive] = useState<ActiveReport | null>(null);
+  const [emptyOpen, setEmptyOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const autoChecked = useRef(false);
@@ -169,26 +172,42 @@ export function WrappedReportFlow() {
   );
 
   const buildCombined = useCallback((): ActiveReport | null => {
-    const weekRange = previousIsoWeekRange(today);
-    const weekLabel = `${weekRange.start} → ${weekRange.end}`;
-    const weekly = buildWeeklyLedgerReport(
-      transactions,
-      currencies,
-      weekRange.start,
-      weekRange.end,
-      weekRange.key,
-      weekLabel,
-    );
+    const tryWeekly = (range: { key: string; start: string; end: string }) => {
+      const label = `${range.start} → ${range.end}`;
+      return buildWeeklyLedgerReport(
+        transactions,
+        currencies,
+        range.start,
+        range.end,
+        range.key,
+        label,
+      );
+    };
 
-    const month = previousMonthRange(today);
-    const monthly = buildMonthlyNetWorthReport(
-      snapshots,
-      accounts,
-      month.start,
-      month.end,
-      month.key,
-      month.label,
-    );
+    const tryMonthly = (range: {
+      key: string;
+      start: string;
+      end: string;
+      label: string;
+    }) =>
+      buildMonthlyNetWorthReport(
+        snapshots,
+        accounts,
+        range.start,
+        range.end,
+        range.key,
+        range.label,
+      );
+
+    // Prefer previous period; fall back to current week/month so View Recap
+    // still works when the user only has recent data.
+    const weekly =
+      tryWeekly(previousIsoWeekRange(today)) ??
+      tryWeekly(currentIsoWeekRange(today));
+
+    const monthly =
+      tryMonthly(previousMonthRange(today)) ??
+      tryMonthly(currentMonthRange(today));
 
     const slides = combinedReportToSlides(weekly, monthly, money);
     if (!slides) return null;
@@ -206,7 +225,12 @@ export function WrappedReportFlow() {
     if (!trigger) return;
     const report = buildCombined();
     clearTrigger();
-    if (report) openReport(report);
+    if (report) {
+      setEmptyOpen(false);
+      openReport(report);
+    } else {
+      setEmptyOpen(true);
+    }
   }, [trigger, buildCombined, clearTrigger, openReport]);
 
   useEffect(() => {
@@ -254,6 +278,52 @@ export function WrappedReportFlow() {
   const slide = active?.slides[step];
   const progress = active ? ((step + 1) / active.slides.length) * 100 : 0;
 
+  if (emptyOpen && !active) {
+    return (
+      <div
+        className="fixed inset-0 z-[110] flex flex-col"
+        style={{ background: "var(--bg)" }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wrapped-empty-title"
+      >
+        <header
+          className="flex shrink-0 items-center justify-end px-4 pt-4"
+          style={{ paddingTop: "calc(16px + var(--safe-top))" }}
+        >
+          <button
+            type="button"
+            className="btn-ghost text-sm font-semibold"
+            onClick={() => setEmptyOpen(false)}
+          >
+            {t("reports.close")}
+          </button>
+        </header>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            <Sparkles size={28} strokeWidth={2} />
+          </div>
+          <h1 id="wrapped-empty-title" className="font-display text-2xl leading-tight">
+            {t("reports.emptyTitle")}
+          </h1>
+          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+            {t("reports.emptyBody")}
+          </p>
+          <button
+            type="button"
+            className="btn-primary mt-4 w-full max-w-xs justify-center"
+            onClick={() => setEmptyOpen(false)}
+          >
+            {t("reports.done")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!active || !slide) return null;
 
   const slideIcon = renderSlideIcon(slide);
@@ -261,7 +331,7 @@ export function WrappedReportFlow() {
 
   return (
     <div
-      className="fixed inset-0 z-[85] flex flex-col"
+      className="fixed inset-0 z-[110] flex flex-col"
       style={{ background: "var(--bg)" }}
       role="dialog"
       aria-modal="true"

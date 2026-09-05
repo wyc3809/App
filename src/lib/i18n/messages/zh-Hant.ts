@@ -156,6 +156,8 @@ export const zhHant: MessageTree = {
     rateInvalid: "請輸入大於零的匯率",
   },
   reports: {
+    emptyTitle: "暫時未夠資料",
+    emptyBody: "請先記帳，或更新帳戶價值（至少兩個日期），再試 View Recap。",
     close: "關閉",
     next: "下一步",
     done: "完成",
