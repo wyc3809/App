@@ -195,8 +195,7 @@ export function LedgerQuickEntry() {
         </div>
       </div>
 
-      {/* Spacer grows so meta + keypad stay pinned to the panel bottom.
-          Categories stay in a compact, scrollable strip above. */}
+      {/* Categories — compact strip; keypad grows below to fill the panel */}
       <div className="min-h-0 shrink overflow-y-auto overscroll-contain px-2 pt-1">
         <div className="grid grid-cols-4 gap-0.5">
           {categories.map((c) => {
@@ -239,8 +238,6 @@ export function LedgerQuickEntry() {
           })}
         </div>
       </div>
-
-      <div className="min-h-2 flex-1" aria-hidden />
 
       {/* Meta + amount — stay above keypad */}
       <div className="shrink-0 space-y-1.5 px-2.5 pb-1.5 pt-1">
@@ -362,15 +359,15 @@ export function LedgerQuickEntry() {
         )}
       </div>
 
-      {/* Keypad pinned at the bottom of the first viewport */}
+      {/* Keypad grows to fill remaining panel height — pins to bottom of first viewport */}
       <div
-        className="shrink-0 px-2 pb-2 pt-1.5"
+        className="flex min-h-0 flex-1 flex-col px-2 pb-2 pt-1.5"
         style={{
           background:
             "color-mix(in srgb, var(--accent-soft) 55%, var(--bg-muted))",
         }}
       >
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid min-h-0 flex-1 grid-cols-4 grid-rows-4 gap-1.5">
           {NUM_KEYS.slice(0, 3).map((k) => (
             <KeypadKey
               key={k}
@@ -379,7 +376,7 @@ export function LedgerQuickEntry() {
             />
           ))}
           <KeypadKey
-            label={<Delete size={20} />}
+            label={<Delete size={22} />}
             ariaLabel="Backspace"
             onPress={() => setExpr((e) => backspace(e))}
           />
@@ -464,7 +461,7 @@ function KeypadKey({
     <button
       type="button"
       aria-label={ariaLabel}
-      className={`flex h-[3.6rem] touch-manipulation items-center justify-center rounded-2xl text-xl font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-16 ${className}`}
+      className={`flex h-full min-h-14 touch-manipulation items-center justify-center rounded-2xl text-xl font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 ${className}`}
       style={{
         background: primary ? "var(--accent)" : "var(--bg-elevated)",
         color: primary ? "#04140c" : "var(--fg)",
