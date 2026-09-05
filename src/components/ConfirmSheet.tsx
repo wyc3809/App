@@ -31,7 +31,7 @@ export function ConfirmSheet({
       onClose={onClose}
       title={title}
       titleId="confirm-sheet-title"
-      zIndex={80}
+      zIndex={100}
       footer={
         <>
           <button type="button" className="btn-secondary flex-1" onClick={onClose}>

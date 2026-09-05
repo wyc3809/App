@@ -5,8 +5,10 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/context";
 
@@ -41,7 +43,7 @@ export function BottomSheet({
   children,
   footer,
   headerStart,
-  zIndex = 70,
+  zIndex = 100,
   showClose = true,
 }: BottomSheetProps) {
   const { t } = useI18n();
@@ -49,6 +51,13 @@ export function BottomSheet({
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const titleFallbackId = useId();
   const resolvedTitleId = title ? titleId : titleFallbackId;
+  // Portal to document.body so the sheet is not trapped under `.app-tabbar`.
+  // Inside `.app-main` (overflow scroll), WebKit anchors `position: fixed` to
+  // that container — the tab bar sibling then paints over Cancel/Confirm.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const trapFocus = useCallback((event: KeyboardEvent) => {
     if (event.key !== "Tab" || !sheetRef.current) return;
@@ -99,7 +108,9 @@ export function BottomSheet({
     };
   }, [onClose, trapFocus]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 flex items-end justify-center sm:items-center"
       style={{ zIndex }}
@@ -176,6 +187,7 @@ export function BottomSheet({
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
