@@ -141,7 +141,7 @@ export function HistoryEntrySheet({
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                className="btn-secondary flex-1"
+                className="btn-secondary min-h-11 flex-1"
                 onClick={() => onEditLedger(linkedTx)}
               >
                 <Pencil size={16} />
@@ -150,7 +150,7 @@ export function HistoryEntrySheet({
               {canDelete && (
                 <button
                   type="button"
-                  className="btn-ghost flex-1"
+                  className="btn-ghost min-h-11 flex-1"
                   style={{ color: "var(--danger)" }}
                   onClick={() => onDeleteLedger(linkedTx)}
                 >
@@ -172,7 +172,7 @@ export function HistoryEntrySheet({
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                className="btn-secondary flex-1"
+                className="btn-secondary min-h-11 flex-1"
                 onClick={onEditValue}
               >
                 <Pencil size={16} />
@@ -181,7 +181,7 @@ export function HistoryEntrySheet({
               {canDelete && (
                 <button
                   type="button"
-                  className="btn-ghost flex-1"
+                  className="btn-ghost min-h-11 flex-1"
                   style={{ color: "var(--danger)" }}
                   onClick={onDeleteValue}
                 >

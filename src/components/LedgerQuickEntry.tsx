@@ -373,7 +373,7 @@ export function LedgerQuickEntry() {
         <div className="shrink-0 px-2.5 pb-2.5 pt-1">
           <button
             type="button"
-            className="btn-primary w-full"
+            className="btn-primary min-h-11 w-full"
             onClick={() => {
               setKeypadOpen(true);
               setFlash(null);

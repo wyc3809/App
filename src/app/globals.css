@@ -185,7 +185,7 @@ h3,
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98];
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98];
     background: var(--accent);
     color: var(--accent-fg);
   }
@@ -204,14 +204,14 @@ h3,
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98];
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98];
     background: var(--bg-muted);
     color: var(--fg);
     border: 1px solid var(--border);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition;
+    @apply inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition;
     color: var(--fg-muted);
   }
 
@@ -221,7 +221,7 @@ h3,
   }
 
   .btn-icon {
-    @apply inline-flex h-10 w-10 items-center justify-center rounded-xl transition;
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-xl transition;
     color: var(--fg-muted);
     background: var(--bg-muted);
     border: 1px solid var(--border);

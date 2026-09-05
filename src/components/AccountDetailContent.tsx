@@ -426,16 +426,16 @@ export function AccountDetailContent() {
       </section>
 
       <div
-        className="fixed left-1/2 z-30 flex w-full max-w-lg -translate-x-1/2 gap-2 px-4 pb-2 pt-2"
+        className="pointer-events-none fixed left-1/2 z-30 flex w-full max-w-lg -translate-x-1/2 gap-2 px-4 pb-2 pt-6"
         style={{
           /* Sit above the bottom nav — do not overlap it (overlap steals taps) */
           bottom: "calc(var(--nav-height) + var(--safe-bottom))",
-          background: "linear-gradient(transparent, var(--bg) 28%)",
+          background: "linear-gradient(transparent, var(--bg) 40%)",
         }}
       >
         <button
           type="button"
-          className="btn-secondary flex-1"
+          className="btn-secondary pointer-events-auto min-h-11 flex-1"
           onClick={() => {
             setEditingTx(null);
             setLedgerOpen(true);
@@ -446,7 +446,7 @@ export function AccountDetailContent() {
         </button>
         <button
           type="button"
-          className="btn-primary flex-1"
+          className="btn-primary pointer-events-auto min-h-11 flex-1"
           onClick={() => setAddOpen(true)}
         >
           <Plus size={18} />

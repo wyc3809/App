@@ -170,7 +170,8 @@ function TransactionDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={type === "income" ? "Salary, gift…" : "Lunch, rent…"}
-              required
+              /* Optional — submit() defaults empty titles to Income/Expense.
+                 Keeping `required` blocked Save with a silent HTML5 failure. */
             />
           </div>
 
