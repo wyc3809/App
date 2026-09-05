@@ -65,8 +65,13 @@ html,
 body {
   height: 100%;
   max-height: 100dvh;
+  max-width: 100%;
   overflow: hidden;
+  overflow-x: hidden;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  /* Native-app feel: vertical pan only — no sideways page drag. */
+  touch-action: pan-y;
   background: var(--bg);
   /* Lock document so only .app-main rubber-bands (and we disable that too). */
   position: fixed;
@@ -87,6 +92,29 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-user-drag: none;
+}
+
+/* CSS grid items default to min-width:auto and can force page-wide overflow
+   (especially native date/select controls on iOS). */
+.grid > * {
+  min-width: 0;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+input[type="week"],
+select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 input,
@@ -110,17 +138,24 @@ h3,
     @apply relative mx-auto flex w-full max-w-lg flex-col;
     height: 100dvh;
     max-height: 100dvh;
+    max-width: min(100%, 32rem);
     overflow: hidden;
+    overflow-x: hidden;
     overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
     background: var(--bg);
     padding-top: calc(12px + var(--safe-top));
   }
 
   .app-main {
     @apply min-h-0 flex-1;
+    max-width: 100%;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 16px;
   }
@@ -233,10 +268,11 @@ h3,
   }
 
   .field {
-    @apply w-full rounded-xl px-3 py-3 text-base outline-none transition;
+    @apply w-full min-w-0 max-w-full rounded-xl px-3 py-3 text-base outline-none transition;
     background: var(--bg-muted);
     border: 1px solid var(--border);
     color: var(--fg);
+    box-sizing: border-box;
   }
 
   .field:focus {
@@ -277,6 +313,10 @@ h3,
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* Contain sideways fling so it does not drag the whole page.
+       Keep pan-y so vertical scrolling still works when the gesture starts on chips. */
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
   }
 
   .chip-scroll::-webkit-scrollbar {

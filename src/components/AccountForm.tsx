@@ -185,7 +185,7 @@ function AccountFormDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="min-w-0">
               <label className="label" htmlFor="account-category">
                 {t("accountForm.category")}
               </label>
@@ -202,7 +202,7 @@ function AccountFormDialog({
                 ))}
               </select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="label" htmlFor="account-currency">
                 {t("accountForm.currency")}
               </label>
@@ -222,7 +222,7 @@ function AccountFormDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="min-w-0">
               <label className="label" htmlFor="account-value">
                 {t("accountForm.currentValue")}
               </label>
@@ -244,7 +244,7 @@ function AccountFormDialog({
               />
               {errors.value ? <p className="field-error">{errors.value}</p> : null}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="label" htmlFor="account-asof">
                 {t("accountForm.asOfDate")}
               </label>

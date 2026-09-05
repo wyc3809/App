@@ -58,12 +58,16 @@ async function waitForAppReady(page: Page) {
 
 /** Dismiss first-run intro overlay when present (fresh localStorage). */
 async function dismissIntro(page: Page) {
-  const skip = page.getByRole("button", { name: /^Skip$/i });
-  if (await skip.isVisible().catch(() => false)) {
-    await skip.click();
-    await expect(
-      page.getByRole("dialog", { name: "Welcome to WorthBook" }),
-    ).toHaveCount(0);
+  const intro = page.getByRole("dialog", { name: /Welcome to WorthBook/i });
+  if (await intro.isVisible().catch(() => false)) {
+    // Click Skip inside the dialog so the full-screen backdrop cannot intercept.
+    await intro.getByRole("button", { name: /^Skip$/i }).click();
+    await expect(intro).toHaveCount(0);
+  } else {
+    const skip = page.getByRole("button", { name: /^Skip$/i });
+    if (await skip.isVisible().catch(() => false)) {
+      await skip.click();
+    }
   }
   await dismissWrappedReports(page);
 }
@@ -228,6 +232,66 @@ test.describe("WorthBook E2E", () => {
     await expect(dialog).toHaveCount(0);
     await revealAccountRows(page);
     await expect(page.getByText("Tap Test Bank")).toBeVisible();
+  });
+
+  test("pages and sheets do not allow horizontal page scroll", async ({
+    page,
+  }) => {
+    const assertNoHorizontalOverflow = async () => {
+      const metrics = await page.evaluate(() => {
+        const doc = document.documentElement;
+        const body = document.body;
+        const main = document.querySelector(".app-main");
+        const dialog = document.querySelector('[role="dialog"]');
+        return {
+          doc: { scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth },
+          body: { scrollWidth: body.scrollWidth, clientWidth: body.clientWidth },
+          main: main
+            ? {
+                scrollWidth: (main as HTMLElement).scrollWidth,
+                clientWidth: (main as HTMLElement).clientWidth,
+              }
+            : null,
+          dialog: dialog
+            ? {
+                scrollWidth: (dialog as HTMLElement).scrollWidth,
+                clientWidth: (dialog as HTMLElement).clientWidth,
+              }
+            : null,
+        };
+      });
+      expect(metrics.doc.scrollWidth).toBeLessThanOrEqual(
+        metrics.doc.clientWidth + 1,
+      );
+      expect(metrics.body.scrollWidth).toBeLessThanOrEqual(
+        metrics.body.clientWidth + 1,
+      );
+      if (metrics.main) {
+        expect(metrics.main.scrollWidth).toBeLessThanOrEqual(
+          metrics.main.clientWidth + 1,
+        );
+      }
+      if (metrics.dialog) {
+        expect(metrics.dialog.scrollWidth).toBeLessThanOrEqual(
+          metrics.dialog.clientWidth + 1,
+        );
+      }
+    };
+
+    for (const route of ["/", "/accounts/", "/history/", "/graphs/", "/settings/"]) {
+      await page.goto(route);
+      await waitForAppReady(page);
+      await dismissIntro(page);
+      await assertNoHorizontalOverflow();
+    }
+
+    await page.goto("/accounts/?new=1");
+    await waitForAppReady(page);
+    await dismissIntro(page);
+    await expect(
+      page.getByRole("dialog", { name: "Add Account" }),
+    ).toBeVisible();
+    await assertNoHorizontalOverflow();
   });
 
   test("imports ledger CSV from settings", async ({ page }) => {

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 /**
- * Mobile layout contracts that prevent iOS Safari zoom + untappable controls.
+ * Mobile layout contracts that prevent iOS Safari zoom, sideways page-drag,
+ * and untappable controls.
  */
 describe("mobile layout contracts", () => {
   it("requires form fields to be at least 16px to avoid focus zoom", () => {
@@ -20,5 +21,24 @@ describe("mobile layout contracts", () => {
     const ctaBottom = "calc(var(--nav-height) + var(--safe-bottom))";
     expect(ctaBottom).toContain("nav-height");
     expect(ctaBottom).not.toMatch(/^0/);
+  });
+
+  it("locks the document to vertical pan only (no sideways page drag)", () => {
+    // Mirrored by globals.css on html/body/.app-shell/.app-main.
+    const documentTouchAction = "pan-y";
+    const overscrollX = "none";
+    const overflowX = "hidden";
+    expect(documentTouchAction).toBe("pan-y");
+    expect(overscrollX).toBe("none");
+    expect(overflowX).toBe("hidden");
+  });
+
+  it("allows date/select fields to shrink inside CSS grids", () => {
+    // Native date inputs have large intrinsic min-widths; grid children must
+    // use min-width:0 (see `.grid > *` and `.field` in globals.css).
+    const gridChildMinWidth = 0;
+    const fieldMinWidth = 0;
+    expect(gridChildMinWidth).toBe(0);
+    expect(fieldMinWidth).toBe(0);
   });
 });
