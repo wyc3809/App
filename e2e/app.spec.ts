@@ -98,6 +98,17 @@ async function loadDemo(page: Page) {
   await dismissWrappedReports(page);
 }
 
+/** Open the Add Account sheet after onboarding is out of the way. */
+async function openAddAccountSheet(page: Page) {
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dismissIntro(page);
+  await page.goto("/accounts/");
+  await waitForAppReady(page);
+  await page.getByRole("button", { name: /^Add$/i }).click();
+  await expect(page.getByRole("dialog", { name: "Add Account" })).toBeVisible();
+}
+
 test.describe("WorthBook E2E", () => {
   test.beforeEach(async ({ page }) => {
     await clearAppData(page);
@@ -195,13 +206,8 @@ test.describe("WorthBook E2E", () => {
   });
 
   test("add account cancel closes the sheet", async ({ page }) => {
-    await page.goto("/");
-    await waitForAppReady(page);
-    await dismissIntro(page);
-    await page.goto("/accounts/?new=1");
-    await waitForAppReady(page);
+    await openAddAccountSheet(page);
     const dialog = page.getByRole("dialog", { name: "Add Account" });
-    await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Add Account" })).toBeInViewport();
     await page.getByRole("button", { name: "Cancel" }).first().click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -210,13 +216,8 @@ test.describe("WorthBook E2E", () => {
   test("add account sheet keeps actions tappable and fields at 16px", async ({
     page,
   }) => {
-    await page.goto("/");
-    await waitForAppReady(page);
-    await dismissIntro(page);
-    await page.goto("/accounts/?new=1");
-    await waitForAppReady(page);
+    await openAddAccountSheet(page);
     const dialog = page.getByRole("dialog", { name: "Add Account" });
-    await expect(dialog).toBeVisible();
 
     const addBtn = dialog.getByRole("button", { name: "Add Account" });
     await expect(addBtn).toBeInViewport();
@@ -289,11 +290,7 @@ test.describe("WorthBook E2E", () => {
       await assertNoHorizontalOverflow();
     }
 
-    await page.goto("/accounts/?new=1");
-    await waitForAppReady(page);
-    await expect(
-      page.getByRole("dialog", { name: "Add Account" }),
-    ).toBeVisible();
+    await openAddAccountSheet(page);
     await assertNoHorizontalOverflow();
   });
 
