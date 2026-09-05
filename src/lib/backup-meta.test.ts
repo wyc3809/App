@@ -8,10 +8,10 @@ import {
 describe("backup-meta", () => {
   const now = Date.parse("2026-08-04T12:00:00.000Z");
 
-  it("reminds when never backed up or stale", () => {
-    expect(shouldRemindBackup(null, now)).toBe(true);
-    expect(shouldRemindBackup(undefined, now)).toBe(true);
-    expect(shouldRemindBackup("2026-07-01T00:00:00.000Z", now)).toBe(true);
+  it("does not auto-remind (banner removed; Settings export only)", () => {
+    expect(shouldRemindBackup(null, now)).toBe(false);
+    expect(shouldRemindBackup(undefined, now)).toBe(false);
+    expect(shouldRemindBackup("2026-07-01T00:00:00.000Z", now)).toBe(false);
     expect(shouldRemindBackup("2026-08-01T00:00:00.000Z", now)).toBe(false);
   });
 

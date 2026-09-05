@@ -152,7 +152,7 @@ export const zhHans: MessageTree = {
     privacyTitle: "隐私模式",
     privacyDesc: "以圆点遮盖余额",
     reportsTitle: "结算回顾",
-    reportsDesc: "记账与净资产合并一份 Spotify 式回顾 — 新周或新月首次打开时自动弹出。",
+    reportsDesc: "记账与净资产合并一份回顾 — 新周或新月首次打开时自动弹出。",
     viewRecap: "查看回顾",
     weeklyNotifications: "每周提醒",
     weeklyNotificationsDesc: "周一早上 — 打开记账 Wrapped",

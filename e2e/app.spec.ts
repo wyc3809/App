@@ -13,7 +13,7 @@ async function clearAppData(page: Page) {
   });
 }
 
-/** Dismiss Spotify-style Wrapped recaps when they block the shell. */
+/** Dismiss auto-shown Wrapped recaps when they block the shell. */
 async function dismissWrappedReports(page: Page) {
   for (let i = 0; i < 24; i++) {
     const title = page.getByText(

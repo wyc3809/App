@@ -153,7 +153,7 @@ export const en: MessageTree = {
     privacyTitle: "Privacy mode",
     privacyDesc: "Mask balances with dots",
     reportsTitle: "Wrapped recaps",
-    reportsDesc: "One Spotify-style recap for ledger and net worth — auto-show when a new week or month starts.",
+    reportsDesc: "One combined recap for ledger and net worth — auto-show when a new week or month starts.",
     viewRecap: "View recap",
     weeklyNotifications: "Weekly reminder",
     weeklyNotificationsDesc: "Monday morning — open your ledger Wrapped",

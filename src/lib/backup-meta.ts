@@ -1,16 +1,14 @@
 import type { UserSettings } from "./types";
 
-/** Remind users to export if they never backed up, or last backup is older than this. */
+/** Remind users to export — disabled; backup stays available in Settings only. */
 export const BACKUP_REMIND_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
 
 export function shouldRemindBackup(
-  lastBackupAt: string | null | undefined,
-  nowMs: number = Date.now(),
+  _lastBackupAt: string | null | undefined,
+  _nowMs: number = Date.now(),
 ): boolean {
-  if (!lastBackupAt) return true;
-  const t = Date.parse(lastBackupAt);
-  if (Number.isNaN(t)) return true;
-  return nowMs - t >= BACKUP_REMIND_AFTER_MS;
+  // No auto banner (including first launch). Users export from Settings.
+  return false;
 }
 
 export function formatLastBackupLabel(

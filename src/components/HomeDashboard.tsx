@@ -24,13 +24,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BackupReminder } from "@/components/BackupReminder";
 import { BrandMark } from "@/components/BrandMark";
 import { ChartErrorBoundary } from "@/components/ChartErrorBoundary";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { FilterSheet, DEFAULT_HOME_FILTER, type HomeFilterState } from "@/components/FilterSheet";
 import { Sparkline } from "@/components/Sparkline";
-import { shouldRemindBackup } from "@/lib/backup-meta";
 import { buildAccountHistoryPoints, relativeUpdateLabel } from "@/lib/account-history";
 import { computeTotals } from "@/lib/calculations";
 import { toBaseCurrency } from "@/lib/currencies";
@@ -149,14 +147,9 @@ export function HomeDashboard() {
   const [filter, setFilter] = useState<HomeFilterState>(DEFAULT_HOME_FILTER);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDemo, setConfirmDemo] = useState(false);
-  const [backupDismissed, setBackupDismissed] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<AccountGroup | null>(null);
   const showOnboarding =
     !settings.onboardingCompleted && accounts.length === 0;
-  const showBackupReminder =
-    !backupDismissed &&
-    !showOnboarding &&
-    shouldRemindBackup(settings.lastBackupAt);
 
   const totals = computeTotals(accounts, currencies);
   const privacy = settings.isPrivacyMode;
@@ -326,13 +319,6 @@ export function HomeDashboard() {
           </Link>
         </div>
       </header>
-
-      {showBackupReminder ? (
-        <BackupReminder
-          lastBackupAt={settings.lastBackupAt}
-          onDismiss={() => setBackupDismissed(true)}
-        />
-      ) : null}
 
       <section className="hero-card relative z-0 animate-fade-up px-4 py-3.5 text-center">
         <p
