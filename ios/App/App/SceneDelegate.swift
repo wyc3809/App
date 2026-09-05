@@ -3,7 +3,7 @@ import Capacitor
 
 /// Pins the WKWebView so rubber-band overscroll cannot reveal native black edges.
 final class AppBridgeViewController: CAPBridgeViewController {
-    override open func capacitorDidLoad() {
+    override public func capacitorDidLoad() {
         super.capacitorDidLoad()
         hardenWebViewScroll()
     }
