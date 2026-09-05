@@ -46,12 +46,6 @@ export const zhHans: MessageTree = {
     noAccounts: "尚无账户",
     addFirstAccount: "添加第一个账户",
   },
-  backup: {
-    title: "导出备份",
-    body: "{lastBackup}。数据只保存在此浏览器 — 导出 JSON 以便清除存储后还原。",
-    action: "前往设置 →",
-    dismiss: "关闭备份提醒",
-  },
   appLock: {
     title: "WorthBook 已锁定",
     unlock: "使用生物识别解锁",

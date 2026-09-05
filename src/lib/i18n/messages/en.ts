@@ -47,12 +47,6 @@ export const en: MessageTree = {
     noAccounts: "No accounts yet",
     addFirstAccount: "Add your first account",
   },
-  backup: {
-    title: "Export a backup",
-    body: "{lastBackup}. Data stays in this browser — export JSON so you can restore if storage is cleared.",
-    action: "Go to Settings →",
-    dismiss: "Dismiss backup reminder",
-  },
   appLock: {
     title: "WorthBook is locked",
     unlock: "Unlock with biometrics",

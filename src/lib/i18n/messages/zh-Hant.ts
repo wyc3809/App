@@ -46,12 +46,6 @@ export const zhHant: MessageTree = {
     noAccounts: "尚未有帳戶",
     addFirstAccount: "新增第一個帳戶",
   },
-  backup: {
-    title: "匯出備份",
-    body: "{lastBackup}。資料只儲存在此瀏覽器 — 匯出 JSON 以便清除儲存後還原。",
-    action: "前往設定 →",
-    dismiss: "關閉備份提醒",
-  },
   appLock: {
     title: "WorthBook 已鎖定",
     unlock: "以生物辨識解鎖",

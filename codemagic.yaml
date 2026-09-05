@@ -62,8 +62,8 @@ workflows:
           if [[ "${PROJECT_BUILD_NUMBER:-0}" =~ ^[0-9]+$ ]] && [ "$PROJECT_BUILD_NUMBER" -gt "$NEXT" ]; then
             NEXT="$PROJECT_BUILD_NUMBER"
           fi
-          # Floor so we never re-upload a prior successful build 1 / 2.
-          if [ "$NEXT" -lt 3 ]; then NEXT=3; fi
+          # Floor so we never re-upload a prior successful build ≤3.
+          if [ "$NEXT" -lt 4 ]; then NEXT=4; fi
           agvtool new-version -all "$NEXT"
           echo "CFBundleVersion set to $NEXT (TestFlight=$TF AppStore=$AS Codemagic=${PROJECT_BUILD_NUMBER:-n/a})"
       - name: Build ipa
