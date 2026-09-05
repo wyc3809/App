@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Plus,
   Receipt,
-  Sparkles,
   WalletCards,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n/context";
@@ -46,7 +45,6 @@ export function IntroductionFlow() {
   const { t } = useI18n();
   const accounts = useWorthStore((s) => s.accounts);
   const settings = useWorthStore((s) => s.settings);
-  const loadDemoData = useWorthStore((s) => s.loadDemoData);
   const completeOnboarding = useWorthStore((s) => s.completeOnboarding);
 
   const [step, setStep] = useState(0);
@@ -57,11 +55,6 @@ export function IntroductionFlow() {
   if (!open) return null;
 
   const finish = () => completeOnboarding();
-
-  const loadDemo = () => {
-    loadDemoData();
-    finish();
-  };
 
   const goLedger = () => {
     finish();
@@ -117,14 +110,6 @@ export function IntroductionFlow() {
             <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--fg-muted)" }}>
               {t("intro.welcome.subtitle")}
             </p>
-            <button
-              type="button"
-              className="btn-primary mt-8 w-full justify-start"
-              onClick={loadDemo}
-            >
-              <Sparkles size={18} />
-              {t("intro.welcome.loadDemo")}
-            </button>
           </div>
         )}
 
@@ -210,14 +195,6 @@ export function IntroductionFlow() {
               >
                 <Receipt size={18} />
                 {t("intro.start.openLedger")}
-              </button>
-              <button
-                type="button"
-                className="btn-secondary w-full justify-start"
-                onClick={loadDemo}
-              >
-                <Sparkles size={18} />
-                {t("intro.start.loadDemo")}
               </button>
               <button
                 type="button"

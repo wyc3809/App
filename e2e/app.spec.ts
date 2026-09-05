@@ -107,8 +107,13 @@ async function revealAccountRows(page: Page) {
 async function loadDemo(page: Page) {
   await page.goto("/");
   await waitForAppReady(page);
-  // First-run onboarding sheet (replaces empty-state confirm dialog)
-  await page.getByRole("button", { name: /Load demo portfolio/i }).click();
+  // Seed demo via store hook (UI entry points for demo load were removed).
+  await page.waitForFunction(
+    () => typeof (window as unknown as { __worthLoadDemo?: () => void }).__worthLoadDemo === "function",
+  );
+  await page.evaluate(() => {
+    (window as unknown as { __worthLoadDemo: () => void }).__worthLoadDemo();
+  });
   await expect(page.getByText(/Net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });

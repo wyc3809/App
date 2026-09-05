@@ -35,10 +35,9 @@ export const en: MessageTree = {
     netWorthProfile: "Net Worth Profile",
     assets: "Assets",
     liabilities: "Liabilities",
-    chartEmptyNoAccounts: "Add accounts or load demo data to see your net worth trend.",
+    chartEmptyNoAccounts: "Add accounts to see your net worth trend.",
     chartEmptyNeedData: "Take snapshots / update values to build the chart.",
     settings: "Settings",
-    loadDemo: "Load demo data",
     filter: "Filter",
     addAccount: "Add account",
     moreOptions: "More options",
@@ -89,7 +88,6 @@ export const en: MessageTree = {
       title: "Welcome to WorthBook",
       subtitle:
         "Track net worth, accounts, and day-to-day ledger entries — offline and private on this device.",
-      loadDemo: "Load demo portfolio",
     },
     features: {
       title: "What you can do",
@@ -124,7 +122,6 @@ export const en: MessageTree = {
       subtitle: "Pick any path — you can change everything later in Settings.",
       addAccount: "Add your first account",
       openLedger: "Open Ledger",
-      loadDemo: "Load demo portfolio",
       skip: "Start empty",
     },
   },

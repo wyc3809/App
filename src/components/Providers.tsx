@@ -134,6 +134,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     settings.monthlyReportNotifications,
   ]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!navigator.webdriver) return;
+    const w = window as Window & { __worthLoadDemo?: () => void };
+    w.__worthLoadDemo = () => useWorthStore.getState().loadDemoData();
+    return () => {
+      delete w.__worthLoadDemo;
+    };
+  }, []);
+
   if (!hydrated) {
     return <LoadingSplash />;
   }

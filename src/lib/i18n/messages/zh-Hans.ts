@@ -34,10 +34,9 @@ export const zhHans: MessageTree = {
     netWorthProfile: "净资产概览",
     assets: "资产",
     liabilities: "负债",
-    chartEmptyNoAccounts: "添加账户或加载演示数据以查看净资产趋势。",
+    chartEmptyNoAccounts: "添加账户以查看净资产趋势。",
     chartEmptyNeedData: "更新余额或创建快照以生成图表。",
     settings: "设置",
-    loadDemo: "加载演示数据",
     filter: "筛选",
     addAccount: "添加账户",
     moreOptions: "更多选项",
@@ -88,7 +87,6 @@ export const zhHans: MessageTree = {
       title: "欢迎使用 WorthBook",
       subtitle:
         "离线追踪净资产、账户和日常记账 — 数据只保存在此设备，不会上传。",
-      loadDemo: "加载演示组合",
     },
     features: {
       title: "主要功能",
@@ -123,7 +121,6 @@ export const zhHans: MessageTree = {
       subtitle: "选任何一条路都可以 — 之后可在设置更改。",
       addAccount: "添加第一个账户",
       openLedger: "打开记账",
-      loadDemo: "加载演示组合",
       skip: "空白开始",
     },
   },

@@ -34,10 +34,9 @@ export const zhHant: MessageTree = {
     netWorthProfile: "淨資產概覽",
     assets: "資產",
     liabilities: "負債",
-    chartEmptyNoAccounts: "新增帳戶或載入示範資料以查看淨資產趨勢。",
+    chartEmptyNoAccounts: "新增帳戶以查看淨資產趨勢。",
     chartEmptyNeedData: "更新結餘或建立快照以生成圖表。",
     settings: "設定",
-    loadDemo: "載入示範資料",
     filter: "篩選",
     addAccount: "新增帳戶",
     moreOptions: "更多選項",
@@ -88,7 +87,6 @@ export const zhHant: MessageTree = {
       title: "歡迎使用 WorthBook",
       subtitle:
         "離線追蹤淨資產、帳戶同日常記帳 — 資料只儲存在此裝置，唔會上傳。",
-      loadDemo: "載入示範組合",
     },
     features: {
       title: "主要功能",
@@ -123,7 +121,6 @@ export const zhHant: MessageTree = {
       subtitle: "揀任何一條路都得 — 之後可喺設定更改。",
       addAccount: "新增第一個帳戶",
       openLedger: "開啟記帳",
-      loadDemo: "載入示範組合",
       skip: "空白開始",
     },
   },

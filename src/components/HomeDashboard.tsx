@@ -143,14 +143,11 @@ export function HomeDashboard() {
   const snapshots = useWorthStore((s) => s.snapshots);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
-  const loadDemoData = useWorthStore((s) => s.loadDemoData);
-  const completeOnboarding = useWorthStore((s) => s.completeOnboarding);
 
   const [range, setRange] = useState<(typeof RANGES)[number]>("ALL");
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState<HomeFilterState>(DEFAULT_HOME_FILTER);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmDemo, setConfirmDemo] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<AccountGroup | null>(null);
   const showOnboarding =
     !settings.onboardingCompleted && accounts.length === 0;
@@ -286,17 +283,6 @@ export function HomeDashboard() {
                     <Settings2 size={16} style={{ color: "var(--fg-muted)" }} />
                     {t("home.settings")}
                   </Link>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-[var(--bg-muted)]"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setConfirmDemo(true);
-                    }}
-                  >
-                    <Sparkles size={16} style={{ color: "var(--fg-muted)" }} />
-                    {t("home.loadDemo")}
-                  </button>
                 </div>
               </>
             )}
@@ -481,15 +467,12 @@ export function HomeDashboard() {
             <div>
               <p className="font-semibold">{t("home.addFirstAccount")}</p>
               <p className="mt-1" style={{ color: "var(--fg-muted)" }}>
-                Or load a sample portfolio to explore the app.
+                Add your first account to start tracking net worth.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link href="/accounts/?new=1" className="btn-primary" onClick={() => hapticTap()}>
                   {t("home.addAccount")}
                 </Link>
-                <button type="button" className="btn-secondary" onClick={() => { hapticTap(); setConfirmDemo(true); }}>
-                  {t("home.loadDemo")}
-                </button>
               </div>
             </div>
           </div>
@@ -654,18 +637,6 @@ export function HomeDashboard() {
           </div>
         )}
       </section>
-
-      <ConfirmSheet
-        open={confirmDemo}
-        title="Load demo portfolio?"
-        message="Demo data replaces your current local data on this device."
-        confirmLabel="Load demo"
-        onConfirm={() => {
-          loadDemoData();
-          completeOnboarding();
-        }}
-        onClose={() => setConfirmDemo(false)}
-      />
 
       <FilterSheet
         open={filterOpen}

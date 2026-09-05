@@ -41,7 +41,6 @@ import { useWorthStore } from "@/lib/store";
 import type { UserSettings } from "@/lib/types";
 
 type PendingConfirm =
-  | { kind: "demo" }
   | { kind: "reset" }
   | {
       kind: "import-json";
@@ -68,7 +67,6 @@ export default function SettingsPage() {
   const updateSettings = useWorthStore((s) => s.updateSettings);
   const updateCurrencyRate = useWorthStore((s) => s.updateCurrencyRate);
   const setBaseCurrency = useWorthStore((s) => s.setBaseCurrency);
-  const loadDemoData = useWorthStore((s) => s.loadDemoData);
   const resetAll = useWorthStore((s) => s.resetAll);
   const importBackup = useWorthStore((s) => s.importBackup);
   const importCsvData = useWorthStore((s) => s.importCsvData);
@@ -197,10 +195,7 @@ export default function SettingsPage() {
 
   const runPending = () => {
     if (!pending) return;
-    if (pending.kind === "demo") {
-      loadDemoData();
-      setImportMessage("Demo portfolio loaded.");
-    } else if (pending.kind === "reset") {
+    if (pending.kind === "reset") {
       resetAll();
       setImportMessage("All local data cleared.");
     } else if (pending.kind === "import-json") {
@@ -230,14 +225,6 @@ export default function SettingsPage() {
   const confirmCopy = (() => {
     if (!pending) {
       return { title: "", message: "", confirmLabel: "Confirm", danger: false };
-    }
-    if (pending.kind === "demo") {
-      return {
-        title: "Load demo portfolio?",
-        message: "Demo data replaces your current local data.",
-        confirmLabel: "Load demo",
-        danger: false,
-      };
     }
     if (pending.kind === "reset") {
       return {
@@ -586,15 +573,6 @@ export default function SettingsPage() {
             {importError}
           </p>
         )}
-
-        <button
-          type="button"
-          className="btn-secondary w-full"
-          onClick={() => setPending({ kind: "demo" })}
-        >
-          <Sparkles size={18} />
-          Load demo portfolio
-        </button>
 
         <button
           type="button"
