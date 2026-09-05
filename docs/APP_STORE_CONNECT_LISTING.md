@@ -262,7 +262,7 @@ WorthBook 首次上架：私密淨值追蹤、多幣別帳戶、連結記帳、�
 
 - [ ] Privacy URL opens: https://wyc3809.github.io/App/worthtracker/privacy/
 - [ ] Support email inbox works (or replaced)
-- [ ] Icon `app-store/icon-1024-maneki-neko.png` uploaded (no transparency)
+- [ ] Icon `app-store/icon-1024-connect.png` uploaded (opaque RGB)
 - [ ] Screenshots 6.7" + 6.1" uploaded
 - [ ] Age rating completed → 4+
 - [ ] App Privacy → Data Not Collected
