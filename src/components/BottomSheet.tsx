@@ -191,7 +191,7 @@ export function BottomSheet({
     >
       <button
         type="button"
-        className="sheet-backdrop-enter absolute inset-0 backdrop-blur-[2px]"
+        className="sheet-backdrop-enter absolute inset-0 z-0 backdrop-blur-[2px]"
         style={{ background: "var(--overlay)" }}
         aria-label={t("common.close")}
         onClick={onClose}

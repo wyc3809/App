@@ -20,6 +20,7 @@ function AccountsContent() {
   const accounts = useWorthStore((s) => s.accounts);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
+  const onboardingDone = settings.onboardingCompleted;
 
   const [manualOpen, setManualOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -27,7 +28,9 @@ function AccountsContent() {
   /** Local dismiss so Cancel works even if router.replace is slow on static hosts. */
   const [queryNewDismissed, setQueryNewDismissed] = useState(false);
 
-  const openFromQuery = searchParams.get("new") === "1" && !queryNewDismissed;
+  // Wait until first-run intro is done so its Skip CTA is not covered by this sheet.
+  const openFromQuery =
+    onboardingDone && searchParams.get("new") === "1" && !queryNewDismissed;
   const formOpen = manualOpen || openFromQuery;
 
   const closeForm = () => {

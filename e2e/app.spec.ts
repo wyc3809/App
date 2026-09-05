@@ -59,16 +59,16 @@ async function waitForAppReady(page: Page) {
 /** Dismiss first-run intro overlay when present (fresh localStorage). */
 async function dismissIntro(page: Page) {
   const intro = page.getByRole("dialog", { name: /Welcome to WorthBook/i });
+  const skip = page.getByRole("button", { name: /^Skip$/i });
+
   if (await intro.isVisible().catch(() => false)) {
-    // Click Skip inside the dialog so the full-screen backdrop cannot intercept.
-    await intro.getByRole("button", { name: /^Skip$/i }).click();
-    await expect(intro).toHaveCount(0);
-  } else {
-    const skip = page.getByRole("button", { name: /^Skip$/i });
-    if (await skip.isVisible().catch(() => false)) {
-      await skip.click();
-    }
+    // force: true covers the race where Add Account (?new=1) briefly stacks above intro.
+    await intro.getByRole("button", { name: /^Skip$/i }).click({ force: true });
+    await expect(intro).toHaveCount(0, { timeout: 10_000 });
+  } else if (await skip.isVisible().catch(() => false)) {
+    await skip.click({ force: true });
   }
+
   await dismissWrappedReports(page);
 }
 
@@ -195,9 +195,11 @@ test.describe("WorthBook E2E", () => {
   });
 
   test("add account cancel closes the sheet", async ({ page }) => {
-    await page.goto("/accounts/?new=1");
+    await page.goto("/");
     await waitForAppReady(page);
     await dismissIntro(page);
+    await page.goto("/accounts/?new=1");
+    await waitForAppReady(page);
     const dialog = page.getByRole("dialog", { name: "Add Account" });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Add Account" })).toBeInViewport();
@@ -208,9 +210,11 @@ test.describe("WorthBook E2E", () => {
   test("add account sheet keeps actions tappable and fields at 16px", async ({
     page,
   }) => {
-    await page.goto("/accounts/?new=1");
+    await page.goto("/");
     await waitForAppReady(page);
     await dismissIntro(page);
+    await page.goto("/accounts/?new=1");
+    await waitForAppReady(page);
     const dialog = page.getByRole("dialog", { name: "Add Account" });
     await expect(dialog).toBeVisible();
 
@@ -287,7 +291,6 @@ test.describe("WorthBook E2E", () => {
 
     await page.goto("/accounts/?new=1");
     await waitForAppReady(page);
-    await dismissIntro(page);
     await expect(
       page.getByRole("dialog", { name: "Add Account" }),
     ).toBeVisible();
