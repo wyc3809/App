@@ -78,9 +78,7 @@ function AccountHomeRow({
   const signed = account.isLiability
     ? -Math.abs(account.currentValue)
     : account.currentValue;
-  const good = account.isLiability
-    ? (latest?.changeAbsolute ?? 0) <= 0
-    : (latest?.changeAbsolute ?? 0) >= 0;
+  const good = (latest?.changeAbsolute ?? 0) >= 0;
 
   return (
     <li>

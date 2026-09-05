@@ -22,6 +22,8 @@ import {
   balanceMagnitudeForLedger,
   balanceOnDate,
   isEntryAfter,
+  liabilityStateBefore,
+  liabilityStateOnDate,
   oppositeTransactionType,
 } from "./ledger";
 import { categoryAfterTypeFlip } from "./categories";
@@ -102,16 +104,27 @@ function buildSnapshot(
   accounts: Account[],
   currencies: Currency[],
   date: string,
+  valueEntries: AccountValueEntry[] = [],
 ): HistoricalSnapshot {
   let totalAssets = 0;
   let totalLiabilities = 0;
   const accountBalances = accounts.map((a) => {
-    const base = toBaseCurrency(a.currentValue, a.currency, currencies);
-    if (a.isLiability) totalLiabilities += base;
+    const hasHistory = valueEntries.some(
+      (e) => e.accountId === a.id && e.date <= date,
+    );
+    const raw = hasHistory
+      ? balanceOnDate(valueEntries, a.id, date, a.currentValue)
+      : a.currentValue;
+    const isLiability = hasHistory
+      ? liabilityStateOnDate(valueEntries, a.id, date, a.isLiability)
+      : a.isLiability;
+    const magnitude = isLiability ? Math.abs(raw) : raw;
+    const base = toBaseCurrency(magnitude, a.currency, currencies);
+    if (isLiability) totalLiabilities += base;
     else totalAssets += base;
     return {
       accountId: a.id,
-      balance: a.currentValue,
+      balance: magnitude,
       currency: a.currency,
     };
   });
@@ -131,8 +144,9 @@ function upsertSnapshot(
   accounts: Account[],
   currencies: Currency[],
   date: string,
+  valueEntries: AccountValueEntry[] = [],
 ): HistoricalSnapshot[] {
-  const next = buildSnapshot(accounts, currencies, date);
+  const next = buildSnapshot(accounts, currencies, date, valueEntries);
   return [...snapshots.filter((s) => s.date !== date), next].sort((a, b) =>
     a.date.localeCompare(b.date),
   );
@@ -241,7 +255,7 @@ function cascadeAdjustAfterRemoval(
       if (!isEntryAfter(e, removed)) return e;
       return {
         ...e,
-        value: Math.max(0, Number((e.value - delta).toFixed(2))),
+        value: Number((e.value - delta).toFixed(2)),
       };
     });
 }
@@ -296,6 +310,12 @@ function applyTransactionLink(
         account.currency,
         currencies,
       );
+      const asOfLiability = liabilityStateBefore(
+        valueEntries,
+        account.id,
+        tx.date,
+        account.isLiability,
+      );
       const base = balanceMagnitudeForLedger(
         balanceOnDate(
           valueEntries,
@@ -303,11 +323,11 @@ function applyTransactionLink(
           tx.date,
           account.currentValue,
         ),
-        account.isLiability,
+        asOfLiability,
       );
       const result = applyLedgerDeltaToBalance(
         base,
-        account.isLiability,
+        asOfLiability,
         oppositeTransactionType(tx.type),
         amountInAccount,
       );
@@ -315,7 +335,7 @@ function applyTransactionLink(
         valueEntries,
         account.id,
         tx.date,
-        result.value,
+        result.isLiability ? Math.abs(result.value) : result.value,
         undefined,
       );
       if (result.flipped) {
@@ -334,6 +354,12 @@ function applyTransactionLink(
       account.currency,
       currencies,
     );
+    const asOfLiability = liabilityStateBefore(
+      withoutSelf,
+      account.id,
+      tx.date,
+      account.isLiability,
+    );
     const base = balanceMagnitudeForLedger(
       balanceOnDate(
         withoutSelf,
@@ -341,11 +367,11 @@ function applyTransactionLink(
         tx.date,
         account.currentValue,
       ),
-      account.isLiability,
+      asOfLiability,
     );
     const result = applyLedgerDeltaToBalance(
       base,
-      account.isLiability,
+      asOfLiability,
       tx.type,
       amountInAccount,
     );
@@ -358,9 +384,18 @@ function applyTransactionLink(
       : "";
     const createdAt = new Date().toISOString();
     const cascadeAnchor = { date: tx.date, createdAt };
+    const fromCategory = asOfLiability
+      ? account.isLiability
+        ? account.category
+        : categoryAfterTypeFlip(true)
+      : account.isLiability
+        ? categoryAfterTypeFlip(false)
+        : account.category;
     const toCategory = result.flipped
       ? categoryAfterTypeFlip(result.isLiability)
-      : account.category;
+      : asOfLiability === account.isLiability
+        ? account.category
+        : categoryAfterTypeFlip(result.isLiability);
     const newEntry: AccountValueEntry = {
       id: id(),
       accountId: account.id,
@@ -373,8 +408,8 @@ function applyTransactionLink(
       delta,
       typeFlip: result.flipped
         ? {
-            fromIsLiability: account.isLiability,
-            fromCategory: account.category,
+            fromIsLiability: asOfLiability,
+            fromCategory,
             toIsLiability: result.isLiability,
             toCategory,
           }
@@ -387,18 +422,26 @@ function applyTransactionLink(
         if (e.date === tx.date && !isEntryAfter(e, cascadeAnchor)) return e;
         return {
           ...e,
-          value: Math.max(0, Number((e.value + delta).toFixed(2))),
+          value: Number((e.value + delta).toFixed(2)),
         };
       }),
       newEntry,
     ];
-    if (result.flipped) {
-      workingAccount = {
-        ...account,
-        isLiability: result.isLiability,
-        category: toCategory,
-      };
-    }
+    // Current type follows the latest history state after this mutation.
+    const latestLiability = liabilityStateOnDate(
+      nextEntries,
+      account.id,
+      "9999-12-31",
+      result.isLiability,
+    );
+    workingAccount = {
+      ...account,
+      isLiability: latestLiability,
+      category:
+        latestLiability === account.isLiability
+          ? account.category
+          : categoryAfterTypeFlip(latestLiability),
+    };
   }
 
   const synced = syncAccountFromEntries(workingAccount, nextEntries);
@@ -409,7 +452,13 @@ function applyTransactionLink(
   return {
     accounts: nextAccounts,
     valueEntries: nextEntries,
-    snapshots: upsertSnapshot(snapshots, nextAccounts, currencies, tx.date),
+    snapshots: upsertSnapshot(
+      snapshots,
+      nextAccounts,
+      currencies,
+      tx.date,
+      nextEntries,
+    ),
   };
 }
 
@@ -562,7 +611,13 @@ export const useWorthStore = create<WorthState>()(
           return {
             accounts,
             valueEntries,
-            snapshots: upsertSnapshot(s.snapshots, accounts, s.currencies, asOfDate),
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              accounts,
+              s.currencies,
+              asOfDate,
+              valueEntries,
+            ),
           };
         });
       },
@@ -622,6 +677,7 @@ export const useWorthStore = create<WorthState>()(
               accounts,
               s.currencies,
               target.asOfDate,
+              valueEntries,
             ),
           };
         });
@@ -696,6 +752,7 @@ export const useWorthStore = create<WorthState>()(
               synced,
               s.currencies,
               todayISO(),
+              valueEntries,
             ),
           };
         });
@@ -771,7 +828,13 @@ export const useWorthStore = create<WorthState>()(
           return {
             accounts,
             valueEntries,
-            snapshots: upsertSnapshot(s.snapshots, accounts, s.currencies, date),
+            snapshots: upsertSnapshot(
+              s.snapshots,
+              accounts,
+              s.currencies,
+              date,
+              valueEntries,
+            ),
           };
         });
       },
@@ -800,6 +863,7 @@ export const useWorthStore = create<WorthState>()(
               accounts,
               s.currencies,
               synced.asOfDate || todayISO(),
+              valueEntries,
             ),
           };
         });
@@ -911,10 +975,16 @@ export const useWorthStore = create<WorthState>()(
       },
 
       takeSnapshot: (date) => {
-        const { accounts, currencies, snapshots } = get();
+        const { accounts, currencies, snapshots, valueEntries } = get();
         const snapDate = date ?? todayISO();
         set({
-          snapshots: upsertSnapshot(snapshots, accounts, currencies, snapDate),
+          snapshots: upsertSnapshot(
+            snapshots,
+            accounts,
+            currencies,
+            snapDate,
+            valueEntries,
+          ),
         });
       },
 

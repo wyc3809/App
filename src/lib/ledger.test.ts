@@ -5,9 +5,45 @@ import {
   computeLedgerTotals,
   filterTransactionsByPeriod,
   ledgerPeriodStart,
+  liabilityStateBefore,
+  liabilityStateOnDate,
   oppositeTransactionType,
 } from "./ledger";
 import type { AccountValueEntry, Transaction } from "./types";
+
+describe("liabilityStateOnDate", () => {
+  it("walks typeFlip metadata for historical liability state", () => {
+    const entries: AccountValueEntry[] = [
+      {
+        id: "1",
+        accountId: "a",
+        date: "2026-08-01",
+        value: 100,
+        markOnGraph: true,
+        createdAt: "2026-08-01T00:00:00.000Z",
+      },
+      {
+        id: "2",
+        accountId: "a",
+        date: "2026-08-10",
+        value: 50,
+        markOnGraph: true,
+        createdAt: "2026-08-10T00:00:00.000Z",
+        transactionId: "tx1",
+        delta: -150,
+        typeFlip: {
+          fromIsLiability: false,
+          fromCategory: "cash",
+          toIsLiability: true,
+          toCategory: "loan",
+        },
+      },
+    ];
+    expect(liabilityStateOnDate(entries, "a", "2026-08-01", true)).toBe(false);
+    expect(liabilityStateOnDate(entries, "a", "2026-08-10", true)).toBe(true);
+    expect(liabilityStateBefore(entries, "a", "2026-08-05", true)).toBe(false);
+  });
+});
 
 describe("ledger account linking", () => {
   it("normalizes negative liability magnitudes before applying deltas", () => {

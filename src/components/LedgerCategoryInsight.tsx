@@ -3,9 +3,11 @@
 import { useMemo, useState, type ComponentType } from "react";
 import {
   Briefcase,
+  Building2,
   Bus,
   Clapperboard,
   Gift,
+  HandCoins,
   HeartPulse,
   Home,
   PiggyBank,
@@ -54,6 +56,8 @@ const ICONS: Record<LedgerCategory, ComponentType<{ size?: number; strokeWidth?:
   utilities: Zap,
   salary: Briefcase,
   bonus: Sparkles,
+  rental: Building2,
+  allowance: HandCoins,
   investment_return: PiggyBank,
   gift: Gift,
   transfer: Wallet,

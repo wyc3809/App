@@ -1,5 +1,5 @@
 import { toBaseCurrency } from "./currencies";
-import { balanceOnDate } from "./ledger";
+import { balanceOnDate, liabilityStateOnDate } from "./ledger";
 import type {
   Account,
   AccountValueEntry,
@@ -67,8 +67,15 @@ export function buildNetWorthSeries(
       if (!hasHistory) continue;
       any = true;
       const bal = balanceOnDate(valueEntries, account.id, date, account.currentValue);
-      const base = toBaseCurrency(bal, account.currency, currencies);
-      if (account.isLiability) totalLiabilities += base;
+      const isLiability = liabilityStateOnDate(
+        valueEntries,
+        account.id,
+        date,
+        account.isLiability,
+      );
+      const magnitude = isLiability ? Math.abs(bal) : bal;
+      const base = toBaseCurrency(magnitude, account.currency, currencies);
+      if (isLiability) totalLiabilities += base;
       else totalAssets += base;
     }
 

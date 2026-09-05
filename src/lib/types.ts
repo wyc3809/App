@@ -99,6 +99,8 @@ export type TransactionType = "income" | "expense";
 export type LedgerCategory =
   | "salary"
   | "bonus"
+  | "rental"
+  | "allowance"
   | "investment_return"
   | "gift"
   | "food"

@@ -168,7 +168,7 @@ function parseLiabilityFlag(raw: string, category?: string): boolean | null {
     if (category && ASSET_SET.has(normHeader(category))) return false;
     return null;
   }
-  if (["liability", "liabilities", "debt", "loan", "1", "true", "yes", "l"].includes(s)) {
+  if (["liability", "liabilities", "debt", "loan", "mortgage", "credit_card", "creditcard", "1", "true", "yes", "l"].includes(s)) {
     return true;
   }
   if (["asset", "assets", "0", "false", "no", "a"].includes(s)) {
@@ -212,8 +212,11 @@ function parseAccountCategory(raw: string, isLiability: boolean): AccountCategor
 
 function parseTxnType(raw: string, amountRaw: string): TransactionType | null {
   const s = raw.trim().toLowerCase();
-  if (["income", "in", "credit", "deposit", "earn", "+"].includes(s)) return "income";
-  if (["expense", "out", "debit", "spend", "payment", "-"].includes(s)) return "expense";
+  // "payment" = debt payment / money in → income (reduces liability when linked)
+  if (["income", "in", "credit", "deposit", "earn", "payment", "repayment", "+"].includes(s)) {
+    return "income";
+  }
+  if (["expense", "out", "debit", "spend", "-"].includes(s)) return "expense";
   if (amountRaw.trim().startsWith("-")) return "expense";
   if (amountRaw.trim().startsWith("+")) return "income";
   return null;
@@ -221,11 +224,16 @@ function parseTxnType(raw: string, amountRaw: string): TransactionType | null {
 
 function parseLedgerCategory(raw: string, type: TransactionType): LedgerCategory {
   const s = normHeader(raw);
+  if (s === "rent" && type === "income") return "rental";
   const aliases: Record<string, LedgerCategory> = {
     salary: "salary",
     wage: "salary",
     wages: "salary",
     bonus: "bonus",
+    rental: "rental",
+    rent_income: "rental",
+    allowance: "allowance",
+    stipend: "allowance",
     investment_return: "investment_return",
     investment: "investment_return",
     dividend: "investment_return",
@@ -384,11 +392,11 @@ export function parseWorthCsv(text: string): CsvParseResult {
       }
       const catRaw = cell(row, categoryIdx);
       const kindRaw = cell(row, kindIdx);
-      let isLiability = parseLiabilityFlag(kindRaw, catRaw);
+      let isLiability = parseLiabilityFlag(kindRaw, catRaw || kindRaw);
       if (isLiability === null) {
-        isLiability = LIABILITY_SET.has(normHeader(catRaw));
+        isLiability = LIABILITY_SET.has(normHeader(catRaw || kindRaw));
       }
-      const category = parseAccountCategory(catRaw, isLiability);
+      const category = parseAccountCategory(catRaw || kindRaw, isLiability);
       const currency = (cell(row, currencyIdx) || "HKD").toUpperCase();
       const asOfDate =
         parseCsvDate(cell(row, asOfIdx), todayISO()) ?? todayISO();

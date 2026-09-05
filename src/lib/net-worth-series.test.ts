@@ -82,4 +82,30 @@ describe("net worth series from value history", () => {
       "2026-08-03",
     ]);
   });
+
+  it("counts pre-flip balances as assets after later type flip", () => {
+    const accounts = [account("cash", 50, true)];
+    const entries: AccountValueEntry[] = [
+      entry("cash", "2026-08-01", 100),
+      {
+        id: "flip",
+        accountId: "cash",
+        date: "2026-08-10",
+        value: 50,
+        markOnGraph: true,
+        createdAt: "2026-08-10T00:00:00.000Z",
+        transactionId: "tx1",
+        delta: -150,
+        typeFlip: {
+          fromIsLiability: false,
+          fromCategory: "cash",
+          toIsLiability: true,
+          toCategory: "loan",
+        },
+      },
+    ];
+    const series = buildNetWorthSeries(accounts, entries, DEFAULT_CURRENCIES);
+    expect(series.find((p) => p.date === "2026-08-01")?.netWorth).toBe(100);
+    expect(series.find((p) => p.date === "2026-08-10")?.netWorth).toBe(-50);
+  });
 });
