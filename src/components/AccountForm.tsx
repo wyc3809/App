@@ -221,48 +221,49 @@ function AccountFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0">
-              <label className="label" htmlFor="account-value">
-                {t("accountForm.currentValue")}
-              </label>
-              <input
-                id="account-value"
-                className="field"
-                type="number"
-                min="0"
-                step="any"
-                inputMode="decimal"
-                value={currentValue}
-                onChange={(e) => {
-                  setCurrentValue(e.target.value);
-                  if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
-                }}
-                placeholder="0"
-                aria-invalid={Boolean(errors.value)}
-                required
-              />
-              {errors.value ? <p className="field-error">{errors.value}</p> : null}
-            </div>
-            <div className="min-w-0">
-              <label className="label" htmlFor="account-asof">
-                {t("accountForm.asOfDate")}
-              </label>
-              <input
-                id="account-asof"
-                className="field"
-                type="date"
-                value={asOfDate}
-                max={todayISO()}
-                onChange={(e) => {
-                  setAsOfDate(e.target.value);
-                  if (errors.date) setErrors((prev) => ({ ...prev, date: undefined }));
-                }}
-                aria-invalid={Boolean(errors.date)}
-                required
-              />
-              {errors.date ? <p className="field-error">{errors.date}</p> : null}
-            </div>
+          {/* Date inputs have a large intrinsic min-width on iOS — keep them
+              full-bleed instead of half-width so they cannot spill past the sheet. */}
+          <div>
+            <label className="label" htmlFor="account-value">
+              {t("accountForm.currentValue")}
+            </label>
+            <input
+              id="account-value"
+              className="field"
+              type="number"
+              min="0"
+              step="any"
+              inputMode="decimal"
+              value={currentValue}
+              onChange={(e) => {
+                setCurrentValue(e.target.value);
+                if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
+              }}
+              placeholder="0"
+              aria-invalid={Boolean(errors.value)}
+              required
+            />
+            {errors.value ? <p className="field-error">{errors.value}</p> : null}
+          </div>
+
+          <div className="min-w-0">
+            <label className="label" htmlFor="account-asof">
+              {t("accountForm.asOfDate")}
+            </label>
+            <input
+              id="account-asof"
+              className="field field-date"
+              type="date"
+              value={asOfDate}
+              max={todayISO()}
+              onChange={(e) => {
+                setAsOfDate(e.target.value);
+                if (errors.date) setErrors((prev) => ({ ...prev, date: undefined }));
+              }}
+              aria-invalid={Boolean(errors.date)}
+              required
+            />
+            {errors.date ? <p className="field-error">{errors.date}</p> : null}
           </div>
           <p className="-mt-2 text-xs" style={{ color: "var(--fg-subtle)" }}>
             {t("accountForm.asOfHint")}

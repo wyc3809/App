@@ -113,8 +113,29 @@ input[type="time"],
 input[type="month"],
 input[type="week"],
 select {
+  display: block;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* iOS Safari date controls have a large intrinsic width; force them to shrink
+   inside grids/sheets so they never spill past the viewport edge. */
+.field-date,
+input.field[type="date"],
+input.field[type="datetime-local"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 input,

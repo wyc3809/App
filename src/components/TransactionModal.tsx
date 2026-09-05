@@ -221,7 +221,7 @@ function TransactionDialog({
             <input
               id="tx-date"
               type="date"
-              className="field"
+              className="field field-date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required

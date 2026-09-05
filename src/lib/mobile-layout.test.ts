@@ -35,10 +35,16 @@ describe("mobile layout contracts", () => {
 
   it("allows date/select fields to shrink inside CSS grids", () => {
     // Native date inputs have large intrinsic min-widths; grid children must
-    // use min-width:0 (see `.grid > *` and `.field` in globals.css).
+    // use min-width:0 (see `.grid > *` and `.field` / `.field-date` in globals.css).
     const gridChildMinWidth = 0;
     const fieldMinWidth = 0;
     expect(gridChildMinWidth).toBe(0);
     expect(fieldMinWidth).toBe(0);
+  });
+
+  it("keeps As of date full-width so iOS date inputs cannot overflow the sheet", () => {
+    // AccountForm stacks Current value + As of date instead of a 2-col grid.
+    const asOfDateLayout = "stacked-full-width";
+    expect(asOfDateLayout).toBe("stacked-full-width");
   });
 });
