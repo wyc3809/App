@@ -61,12 +61,29 @@ async function dismissIntro(page: Page) {
   const intro = page.getByRole("dialog", { name: /Welcome to WorthBook/i });
   const skip = page.getByRole("button", { name: /^Skip$/i });
 
-  if (await intro.isVisible().catch(() => false)) {
-    // force: true covers the race where Add Account (?new=1) briefly stacks above intro.
-    await intro.getByRole("button", { name: /^Skip$/i }).click({ force: true });
-    await expect(intro).toHaveCount(0, { timeout: 10_000 });
-  } else if (await skip.isVisible().catch(() => false)) {
+  // Fresh installs mount intro after Zustand rehydrates — wait briefly.
+  await skip.waitFor({ state: "visible", timeout: 5_000 }).catch(() => undefined);
+
+  if (
+    (await intro.isVisible().catch(() => false)) ||
+    (await skip.isVisible().catch(() => false))
+  ) {
     await skip.click({ force: true });
+    await expect(intro).toHaveCount(0, { timeout: 10_000 });
+    await expect(skip).toHaveCount(0, { timeout: 5_000 });
+    // Ensure persist flushed before any subsequent navigation.
+    await page.waitForFunction(() => {
+      try {
+        const raw = localStorage.getItem("worthtracker-v1");
+        if (!raw) return false;
+        const parsed = JSON.parse(raw) as {
+          state?: { settings?: { onboardingCompleted?: boolean } };
+        };
+        return parsed.state?.settings?.onboardingCompleted === true;
+      } catch {
+        return false;
+      }
+    });
   }
 
   await dismissWrappedReports(page);
@@ -100,11 +117,11 @@ async function loadDemo(page: Page) {
 
 /** Open the Add Account sheet after onboarding is out of the way. */
 async function openAddAccountSheet(page: Page) {
-  await page.goto("/");
-  await waitForAppReady(page);
-  await dismissIntro(page);
   await page.goto("/accounts/");
   await waitForAppReady(page);
+  await dismissIntro(page);
+  // Intro is z-120 and would intercept the Accounts "Add" button if still mounted.
+  await expect(page.getByRole("button", { name: /^Skip$/i })).toHaveCount(0);
   await page.getByRole("button", { name: /^Add$/i }).click();
   await expect(page.getByRole("dialog", { name: "Add Account" })).toBeVisible();
 }
