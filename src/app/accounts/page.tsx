@@ -20,7 +20,7 @@ function AccountsContent() {
   const accounts = useWorthStore((s) => s.accounts);
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
-  const onboardingDone = settings.onboardingCompleted;
+  const onboardingDone = settings.onboardingCompleted === true;
 
   const [manualOpen, setManualOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
