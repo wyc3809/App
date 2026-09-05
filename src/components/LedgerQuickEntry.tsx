@@ -148,21 +148,13 @@ export function LedgerQuickEntry() {
     }
   }, [date]);
 
-  /* Fill nearly the full main viewport so the keypad sits at the bottom edge;
-   * cashflow summary + records stay below the fold (scroll to reveal). */
-  const panelHeight =
-    "calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 3.25rem)";
-
   return (
     <section
-      className="flex flex-col overflow-hidden rounded-[1.25rem] animate-fade-up"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.25rem] animate-fade-up"
       style={{
         background: "var(--bg-elevated)",
         border: "1px solid var(--border)",
         boxShadow: "var(--shadow-soft)",
-        height: panelHeight,
-        maxHeight: panelHeight,
-        minHeight: panelHeight,
       }}
       aria-label="Quick ledger entry"
     >
@@ -203,8 +195,9 @@ export function LedgerQuickEntry() {
         </div>
       </div>
 
-      {/* Categories — scrolls if needed; keypad below stays pinned */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-1">
+      {/* Spacer grows so meta + keypad stay pinned to the panel bottom.
+          Categories stay in a compact, scrollable strip above. */}
+      <div className="min-h-0 shrink overflow-y-auto overscroll-contain px-2 pt-1">
         <div className="grid grid-cols-4 gap-0.5">
           {categories.map((c) => {
             const meta = CATEGORY_META[c.value];
@@ -246,6 +239,8 @@ export function LedgerQuickEntry() {
           })}
         </div>
       </div>
+
+      <div className="min-h-2 flex-1" aria-hidden />
 
       {/* Meta + amount — stay above keypad */}
       <div className="shrink-0 space-y-1.5 px-2.5 pb-1.5 pt-1">
@@ -469,7 +464,7 @@ function KeypadKey({
     <button
       type="button"
       aria-label={ariaLabel}
-      className={`flex h-14 touch-manipulation items-center justify-center rounded-2xl text-lg font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-16 sm:text-xl ${className}`}
+      className={`flex h-[3.6rem] touch-manipulation items-center justify-center rounded-2xl text-xl font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-16 ${className}`}
       style={{
         background: primary ? "var(--accent)" : "var(--bg-elevated)",
         color: primary ? "#04140c" : "var(--fg)",
