@@ -87,7 +87,7 @@ export default function LedgerPage() {
   return (
     <div className="space-y-3 pb-4">
       <header className="flex items-baseline justify-between gap-2 animate-fade-up">
-        <h1 className="font-display text-2xl leading-none">Ledger</h1>
+        <h1 className="font-display text-xl leading-none">Ledger</h1>
         <p
           className="text-[10px] font-semibold uppercase tracking-[0.14em]"
           style={{ color: "var(--fg-subtle)" }}
@@ -96,6 +96,7 @@ export default function LedgerPage() {
         </p>
       </header>
 
+      {/* Entry fills the first viewport; summary + records are below the fold. */}
       <LedgerQuickEntry />
 
       <section className="space-y-2 animate-fade-up" aria-label="Cashflow summary">

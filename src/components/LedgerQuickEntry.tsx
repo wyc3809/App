@@ -59,8 +59,8 @@ const CATEGORY_META: Record<
 const NUM_KEYS = ["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "00"] as const;
 
 /**
- * Quick-entry panel sized to keep the full numeric keypad visible above the
- * bottom nav on first paint. Categories scroll if they overflow.
+ * Quick-entry panel fills the first viewport so the numeric keypad sits at the
+ * bottom edge; cashflow / records stay below the fold. Categories scroll if needed.
  */
 export function LedgerQuickEntry() {
   const accounts = useWorthStore((s) => s.accounts);
@@ -76,7 +76,6 @@ export function LedgerQuickEntry() {
   const [accountId, setAccountId] = useState("");
   const [pickingAccount, setPickingAccount] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
-  const [keypadOpen, setKeypadOpen] = useState(true);
 
   const categories = ledgerCategoriesFor(type);
   const linkedAccount = accounts.find((a) => a.id === accountId);
@@ -109,7 +108,6 @@ export function LedgerQuickEntry() {
     if (value === null || value <= 0) {
       haptic("warning");
       setFlash("Enter an amount");
-      setKeypadOpen(true);
       return;
     }
 
@@ -135,7 +133,6 @@ export function LedgerQuickEntry() {
       : " · ledger only (no account link)";
     resetForm();
     setFlash(`Saved${linkNote}`);
-    setKeypadOpen(false);
     setPickingAccount(false);
     window.setTimeout(() => setFlash(null), 1800);
   };
@@ -151,6 +148,11 @@ export function LedgerQuickEntry() {
     }
   }, [date]);
 
+  /* Fill nearly the full main viewport so the keypad sits at the bottom edge;
+   * cashflow summary + records stay below the fold (scroll to reveal). */
+  const panelHeight =
+    "calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 3.25rem)";
+
   return (
     <section
       className="flex flex-col overflow-hidden rounded-[1.25rem] animate-fade-up"
@@ -158,15 +160,14 @@ export function LedgerQuickEntry() {
         background: "var(--bg-elevated)",
         border: "1px solid var(--border)",
         boxShadow: "var(--shadow-soft)",
-        /* Fit above bottom nav + page chrome so all 4 keypad rows stay visible */
-        maxHeight:
-          "calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 4.75rem)",
-        minHeight: "min(32rem, calc(100dvh - var(--nav-height) - var(--safe-top) - var(--safe-bottom) - 4.75rem))",
+        height: panelHeight,
+        maxHeight: panelHeight,
+        minHeight: panelHeight,
       }}
       aria-label="Quick ledger entry"
     >
       {/* Type tabs */}
-      <div className="shrink-0 px-2.5 pt-2">
+      <div className="shrink-0 px-2.5 pt-1.5">
         <div
           className="grid grid-cols-2 gap-1 rounded-xl p-0.5"
           style={{ background: "var(--bg-muted)" }}
@@ -184,7 +185,7 @@ export function LedgerQuickEntry() {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className="rounded-lg px-2 py-1.5 text-sm font-semibold transition"
+                className="rounded-lg px-2 py-1 text-sm font-semibold transition"
                 style={{
                   background: active
                     ? value === "income"
@@ -203,8 +204,8 @@ export function LedgerQuickEntry() {
       </div>
 
       {/* Categories — scrolls if needed; keypad below stays pinned */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-1.5">
-        <div className="grid grid-cols-4 gap-1">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-1">
+        <div className="grid grid-cols-4 gap-0.5">
           {categories.map((c) => {
             const meta = CATEGORY_META[c.value];
             const Icon = meta.icon;
@@ -213,7 +214,7 @@ export function LedgerQuickEntry() {
               <button
                 key={c.value}
                 type="button"
-                className="flex flex-col items-center gap-0.5 rounded-xl px-0.5 py-1 transition"
+                className="flex flex-col items-center gap-0.5 rounded-xl px-0.5 py-0.5 transition"
                 style={{
                   background: selected
                     ? "color-mix(in srgb, var(--accent-soft) 70%, transparent)"
@@ -226,13 +227,13 @@ export function LedgerQuickEntry() {
                 aria-pressed={selected}
               >
                 <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl"
                   style={{
                     background: `color-mix(in srgb, ${meta.tint} 18%, var(--bg-muted))`,
                     color: meta.tint,
                   }}
                 >
-                  <Icon size={18} strokeWidth={2.1} />
+                  <Icon size={16} strokeWidth={2.1} />
                 </span>
                 <span
                   className="max-w-full truncate text-[10px] font-medium leading-tight"
@@ -344,17 +345,15 @@ export function LedgerQuickEntry() {
             placeholder="Note…"
             aria-label="Note"
           />
-          <button
-            type="button"
+          <span
             className="shrink-0 text-base font-semibold tabular-nums"
             style={{
               color: type === "income" ? "var(--positive)" : "var(--negative)",
             }}
-            onClick={() => setKeypadOpen(true)}
-            aria-label="Edit amount"
+            aria-label="Amount"
           >
             {formatKeypadDisplay(expr, symbol)}
-          </button>
+          </span>
         </div>
         {flash && (
           <p
@@ -368,29 +367,15 @@ export function LedgerQuickEntry() {
         )}
       </div>
 
-      {/* Keypad collapses after a successful save to free space for history */}
-      {!keypadOpen ? (
-        <div className="shrink-0 px-2.5 pb-2.5 pt-1">
-          <button
-            type="button"
-            className="btn-primary min-h-11 w-full"
-            onClick={() => {
-              setKeypadOpen(true);
-              setFlash(null);
-            }}
-          >
-            Add another
-          </button>
-        </div>
-      ) : (
+      {/* Keypad pinned at the bottom of the first viewport */}
       <div
-        className="shrink-0 px-1.5 pb-1.5 pt-1"
+        className="shrink-0 px-2 pb-2 pt-1.5"
         style={{
           background:
             "color-mix(in srgb, var(--accent-soft) 55%, var(--bg-muted))",
         }}
       >
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-4 gap-1.5">
           {NUM_KEYS.slice(0, 3).map((k) => (
             <KeypadKey
               key={k}
@@ -399,7 +384,7 @@ export function LedgerQuickEntry() {
             />
           ))}
           <KeypadKey
-            label={<Delete size={16} />}
+            label={<Delete size={20} />}
             ariaLabel="Backspace"
             onPress={() => setExpr((e) => backspace(e))}
           />
@@ -413,7 +398,7 @@ export function LedgerQuickEntry() {
           ))}
           <KeypadKey
             label="＋－×÷"
-            className="text-[10px] tracking-tight"
+            className="text-xs tracking-tight"
             onPress={() => {
               setExpr((e) => {
                 const last = e.slice(-1);
@@ -448,7 +433,6 @@ export function LedgerQuickEntry() {
           <KeypadKey label="Done" primary hapticKind={false} onPress={submit} />
         </div>
       </div>
-      )}
     </section>
   );
 }
@@ -485,7 +469,7 @@ function KeypadKey({
     <button
       type="button"
       aria-label={ariaLabel}
-      className={`flex h-11 touch-manipulation items-center justify-center rounded-xl text-base font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-12 sm:text-lg ${className}`}
+      className={`flex h-14 touch-manipulation items-center justify-center rounded-2xl text-lg font-semibold transition-[transform,background-color] duration-75 active:scale-[0.94] active:brightness-95 sm:h-16 sm:text-xl ${className}`}
       style={{
         background: primary ? "var(--accent)" : "var(--bg-elevated)",
         color: primary ? "#04140c" : "var(--fg)",
