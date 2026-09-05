@@ -291,6 +291,27 @@ export default function SettingsPage() {
         <h2 className="font-display text-lg">{t("settings.display")}</h2>
 
         <div>
+          <label className="label" htmlFor="display-name">
+            {t("settings.displayName")}
+          </label>
+          <input
+            id="display-name"
+            type="text"
+            className="field mt-1.5"
+            value={settings.displayName ?? ""}
+            onChange={(e) =>
+              updateSettings({ displayName: e.target.value.slice(0, 40) })
+            }
+            placeholder={t("settings.displayNamePlaceholder")}
+            autoComplete="nickname"
+            maxLength={40}
+          />
+          <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
+            {t("settings.displayNameHint")}
+          </p>
+        </div>
+
+        <div>
           <p className="label">{t("settings.language")}</p>
           <SegmentControl
             value={locale}

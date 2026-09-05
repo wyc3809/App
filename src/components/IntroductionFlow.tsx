@@ -46,15 +46,30 @@ export function IntroductionFlow() {
   const accounts = useWorthStore((s) => s.accounts);
   const settings = useWorthStore((s) => s.settings);
   const completeOnboarding = useWorthStore((s) => s.completeOnboarding);
+  const updateSettings = useWorthStore((s) => s.updateSettings);
 
   const [step, setStep] = useState(0);
+  const [displayName, setDisplayName] = useState(settings.displayName ?? "");
 
   const open =
     !settings.onboardingCompleted && accounts.length === 0;
 
   if (!open) return null;
 
-  const finish = () => completeOnboarding();
+  const saveDisplayName = () => {
+    const name = displayName.trim().slice(0, 40);
+    if (name) updateSettings({ displayName: name });
+  };
+
+  const finish = () => {
+    saveDisplayName();
+    completeOnboarding();
+  };
+
+  const goNext = () => {
+    if (step === 0) saveDisplayName();
+    setStep((s) => s + 1);
+  };
 
   const goLedger = () => {
     finish();
@@ -110,6 +125,26 @@ export function IntroductionFlow() {
             <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--fg-muted)" }}>
               {t("intro.welcome.subtitle")}
             </p>
+            <label className="mt-8 block">
+              <span className="label">{t("intro.welcome.nameLabel")}</span>
+              <input
+                type="text"
+                className="field mt-1.5"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={t("intro.welcome.namePlaceholder")}
+                autoComplete="nickname"
+                autoFocus
+                maxLength={40}
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    goNext();
+                  }
+                }}
+              />
+            </label>
           </div>
         )}
 
@@ -231,7 +266,7 @@ export function IntroductionFlow() {
             <button
               type="button"
               className="btn-primary flex-1"
-              onClick={() => setStep((s) => s + 1)}
+              onClick={goNext}
             >
               {t("intro.next")}
             </button>

@@ -84,9 +84,10 @@ export const zhHans: MessageTree = {
     next: "下一步",
     back: "上一步",
     welcome: {
-      title: "欢迎使用 WorthBook",
-      subtitle:
-        "离线追踪净资产、账户和日常记账 — 数据只保存在此设备，不会上传。",
+      title: "我应该怎么称呼你？",
+      subtitle: "这个名字会显示在主页左上角，之后可以在设置中更改。",
+      nameLabel: "你的称呼",
+      namePlaceholder: "例如：小明",
     },
     features: {
       title: "主要功能",
@@ -128,6 +129,9 @@ export const zhHans: MessageTree = {
     eyebrow: "偏好设置",
     title: "设置",
     subtitle: "离线优先。你的余额不会离开此浏览器。",
+    displayName: "显示名称",
+    displayNameHint: "显示在主页左上角，取代 WorthBook。",
+    displayNamePlaceholder: "你的称呼",
     display: "显示",
     language: "语言",
     languageEn: "English",

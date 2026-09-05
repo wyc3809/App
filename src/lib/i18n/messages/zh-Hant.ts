@@ -84,9 +84,10 @@ export const zhHant: MessageTree = {
     next: "下一步",
     back: "上一步",
     welcome: {
-      title: "歡迎使用 WorthBook",
-      subtitle:
-        "離線追蹤淨資產、帳戶同日常記帳 — 資料只儲存在此裝置，唔會上傳。",
+      title: "我應該點樣稱呼你？",
+      subtitle: "呢個名會顯示喺主頁左上角，之後可以喺設定更改。",
+      nameLabel: "你的稱呼",
+      namePlaceholder: "例如：阿明",
     },
     features: {
       title: "主要功能",
@@ -128,6 +129,9 @@ export const zhHant: MessageTree = {
     eyebrow: "偏好設定",
     title: "設定",
     subtitle: "離線優先。你的結餘唔會離開此瀏覽器。",
+    displayName: "顯示名稱",
+    displayNameHint: "顯示喺主頁左上角，取代 WorthBook。",
+    displayNamePlaceholder: "你的稱呼",
     display: "顯示",
     language: "語言",
     languageEn: "English",

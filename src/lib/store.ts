@@ -470,6 +470,7 @@ const defaultSettings: UserSettings = {
   locale: "en",
   lastBackupAt: null,
   onboardingCompleted: false,
+  displayName: "",
   lastWeeklyReportSeenKey: null,
   lastMonthlyReportSeenKey: null,
   weeklyReportNotifications: true,
@@ -1044,7 +1045,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 8,
+      version: 9,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -1133,6 +1134,17 @@ export const useWorthStore = create<WorthState>()(
             lastMonthlyReportSeenKey: state.settings?.lastMonthlyReportSeenKey ?? null,
             weeklyReportNotifications: state.settings?.weeklyReportNotifications ?? true,
             monthlyReportNotifications: state.settings?.monthlyReportNotifications ?? true,
+          };
+        }
+
+        if (version < 9) {
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            displayName:
+              typeof state.settings?.displayName === "string"
+                ? state.settings.displayName
+                : "",
           };
         }
 

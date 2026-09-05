@@ -85,9 +85,10 @@ export const en: MessageTree = {
     next: "Next",
     back: "Back",
     welcome: {
-      title: "Welcome to WorthBook",
-      subtitle:
-        "Track net worth, accounts, and day-to-day ledger entries — offline and private on this device.",
+      title: "What should I call you?",
+      subtitle: "This name appears on your Home screen — you can change it later in Settings.",
+      nameLabel: "Your name",
+      namePlaceholder: "e.g. Alex",
     },
     features: {
       title: "What you can do",
@@ -129,6 +130,9 @@ export const en: MessageTree = {
     eyebrow: "Preferences",
     title: "Settings",
     subtitle: "Offline-first. Your balances never leave this browser.",
+    displayName: "Display name",
+    displayNameHint: "Shown on the Home screen instead of WorthBook.",
+    displayNamePlaceholder: "Your name",
     display: "Display",
     language: "Language",
     languageEn: "English",

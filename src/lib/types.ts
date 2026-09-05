@@ -82,6 +82,8 @@ export interface UserSettings {
   lastBackupAt?: string | null;
   /** First-run onboarding completed or dismissed. */
   onboardingCompleted?: boolean;
+  /** Preferred name shown on Home instead of the app brand. */
+  displayName?: string;
   /** ISO week key when weekly ledger recap was last shown (YYYY-Www). */
   lastWeeklyReportSeenKey?: string | null;
   /** Month key when monthly net worth recap was last shown (YYYY-MM). */

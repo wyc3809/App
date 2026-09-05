@@ -243,6 +243,9 @@ function parseSettings(raw: unknown): UserSettings | null {
     ...(typeof raw.onboardingCompleted === "boolean"
       ? { onboardingCompleted: raw.onboardingCompleted }
       : {}),
+    ...(typeof raw.displayName === "string"
+      ? { displayName: raw.displayName.slice(0, 40) }
+      : {}),
   };
 }
 

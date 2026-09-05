@@ -242,8 +242,10 @@ export function HomeDashboard() {
           <div className="flex h-11 w-11 shrink-0 items-center justify-center">
             <BrandMark className="h-11 w-11" />
           </div>
-          <div>
-            <p className="font-display text-xl leading-tight tracking-tight">WorthBook</p>
+          <div className="min-w-0">
+            <p className="truncate font-display text-xl leading-tight tracking-tight">
+              {settings.displayName?.trim() || "WorthBook"}
+            </p>
             <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
               {greeting(t)}
             </p>
