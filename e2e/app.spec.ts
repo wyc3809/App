@@ -58,7 +58,7 @@ async function waitForAppReady(page: Page) {
 
 /** Dismiss first-run intro overlay when present (fresh localStorage). */
 async function dismissIntro(page: Page) {
-  const intro = page.getByRole("dialog", { name: /Welcome to WorthBook/i });
+  const intro = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: /^Skip$/i }) });
   const skip = page.getByRole("button", { name: /^Skip$/i });
 
   // Fresh installs mount intro after Zustand rehydrates — wait briefly.

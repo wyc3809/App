@@ -149,8 +149,6 @@ export function HomeDashboard() {
   const [filter, setFilter] = useState<HomeFilterState>(DEFAULT_HOME_FILTER);
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<AccountGroup | null>(null);
-  const showOnboarding =
-    !settings.onboardingCompleted && accounts.length === 0;
 
   const totals = computeTotals(accounts, currencies);
   const privacy = settings.isPrivacyMode;

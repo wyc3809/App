@@ -82,6 +82,15 @@ export interface UserSettings {
   lastBackupAt?: string | null;
   /** First-run onboarding completed or dismissed. */
   onboardingCompleted?: boolean;
+  /**
+   * Guided first-run tour step. Ignored when `onboardingCompleted` is true.
+   * welcome → add_asset → add_expense → sample_report → done
+   */
+  onboardingStep?:
+    | "welcome"
+    | "add_asset"
+    | "add_expense"
+    | "sample_report";
   /** Preferred name shown on Home instead of the app brand. */
   displayName?: string;
   /** ISO week key when weekly ledger recap was last shown (YYYY-Www). */

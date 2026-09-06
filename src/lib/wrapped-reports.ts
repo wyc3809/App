@@ -467,3 +467,88 @@ export function monthlyReportToSlides(
 
   return slides.slice(0, MAX_WRAPPED_SLIDES);
 }
+
+
+export type SampleOnboardingCopy = {
+  introTitle: string;
+  introSubtitle: string;
+  weekHeading: string;
+  income: string;
+  expense: string;
+  net: string;
+  highlightsHeading: string;
+  sampleExpenseTitle: string;
+  sampleExpenseCategory: string;
+  sampleIncomeTitle: string;
+  sampleIncomeCategory: string;
+  monthHeading: string;
+  netWorth: string;
+  change: string;
+  outroTitle: string;
+  outroSubtitle: string;
+};
+
+/** Fixed demo slides for first-run onboarding (does not touch user data). */
+export function buildSampleOnboardingSlides(
+  formatMoney: (n: number, opts?: { showSign?: boolean }) => string,
+  copy: SampleOnboardingCopy,
+): WrappedSlide[] {
+  return [
+    {
+      kind: "intro",
+      title: copy.introTitle,
+      subtitle: copy.introSubtitle,
+      accent: "combined",
+    },
+    {
+      kind: "statsGroup",
+      heading: copy.weekHeading,
+      items: [
+        { label: copy.income, value: formatMoney(12800), tone: "positive" },
+        { label: copy.expense, value: formatMoney(3420), tone: "negative" },
+        {
+          label: copy.net,
+          value: formatMoney(9380, { showSign: true }),
+          tone: "positive",
+        },
+      ],
+    },
+    {
+      kind: "rankList",
+      heading: copy.highlightsHeading,
+      items: [
+        {
+          rank: 1,
+          title: copy.sampleExpenseTitle,
+          subtitle: copy.sampleExpenseCategory,
+          value: formatMoney(420),
+          tone: "negative",
+        },
+        {
+          rank: 2,
+          title: copy.sampleIncomeTitle,
+          subtitle: copy.sampleIncomeCategory,
+          value: formatMoney(12800),
+          tone: "positive",
+        },
+      ],
+    },
+    {
+      kind: "statsGroup",
+      heading: copy.monthHeading,
+      items: [
+        { label: copy.netWorth, value: formatMoney(286400), tone: "neutral" },
+        {
+          label: copy.change,
+          value: formatMoney(12400, { showSign: true }),
+          tone: "positive",
+        },
+      ],
+    },
+    {
+      kind: "outro",
+      title: copy.outroTitle,
+      subtitle: copy.outroSubtitle,
+    },
+  ];
+}

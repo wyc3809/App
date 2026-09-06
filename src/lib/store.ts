@@ -89,6 +89,9 @@ interface WorthState {
   /** Stamp last successful JSON export for backup reminders. */
   markBackupNow: () => void;
   completeOnboarding: () => void;
+  setOnboardingStep: (
+    step: NonNullable<UserSettings["onboardingStep"]>,
+  ) => void;
   updateCurrencyRate: (code: string, rate: number) => void;
   setBaseCurrency: (code: string) => void;
 
@@ -96,6 +99,10 @@ interface WorthState {
   wrappedReportTrigger: boolean;
   requestWrappedReport: () => void;
   clearWrappedReportTrigger: () => void;
+  /** Ephemeral — open sample onboarding Wrapped slides (not persisted). */
+  sampleWrappedReportTrigger: boolean;
+  requestSampleWrappedReport: () => void;
+  clearSampleWrappedReportTrigger: () => void;
   markWeeklyReportSeen: (weekKey: string) => void;
   markMonthlyReportSeen: (monthKey: string) => void;
 }
@@ -470,6 +477,7 @@ const defaultSettings: UserSettings = {
   locale: "en",
   lastBackupAt: null,
   onboardingCompleted: false,
+  onboardingStep: "welcome",
   displayName: "",
   lastWeeklyReportSeenKey: null,
   lastMonthlyReportSeenKey: null,
@@ -488,6 +496,7 @@ export const useWorthStore = create<WorthState>()(
       settings: defaultSettings,
       hydrated: false,
       wrappedReportTrigger: false,
+      sampleWrappedReportTrigger: false,
 
       setHydrated: (value) => set({ hydrated: value }),
 
@@ -1008,7 +1017,17 @@ export const useWorthStore = create<WorthState>()(
 
       completeOnboarding: () => {
         set((s) => ({
-          settings: { ...s.settings, onboardingCompleted: true },
+          settings: {
+            ...s.settings,
+            onboardingCompleted: true,
+            onboardingStep: "welcome",
+          },
+        }));
+      },
+
+      setOnboardingStep: (step) => {
+        set((s) => ({
+          settings: { ...s.settings, onboardingStep: step },
         }));
       },
 
@@ -1032,6 +1051,10 @@ export const useWorthStore = create<WorthState>()(
 
       requestWrappedReport: () => set({ wrappedReportTrigger: true }),
       clearWrappedReportTrigger: () => set({ wrappedReportTrigger: false }),
+      requestSampleWrappedReport: () =>
+        set({ sampleWrappedReportTrigger: true }),
+      clearSampleWrappedReportTrigger: () =>
+        set({ sampleWrappedReportTrigger: false }),
       markWeeklyReportSeen: (weekKey) => {
         set((s) => ({
           settings: { ...s.settings, lastWeeklyReportSeenKey: weekKey },
@@ -1045,7 +1068,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -1145,6 +1168,17 @@ export const useWorthStore = create<WorthState>()(
               typeof state.settings?.displayName === "string"
                 ? state.settings.displayName
                 : "",
+          };
+        }
+
+        if (version < 10) {
+          const completed = state.settings?.onboardingCompleted === true;
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            onboardingStep: completed
+              ? "welcome"
+              : state.settings?.onboardingStep ?? "welcome",
           };
         }
 

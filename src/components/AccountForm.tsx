@@ -14,6 +14,10 @@ interface AccountFormProps {
   onClose: () => void;
   initial?: Account | null;
   defaultLiability?: boolean;
+  /** Called after a successful create/update (before onClose). */
+  onSaved?: () => void;
+  /** BottomSheet stacking order — raise above onboarding overlays. */
+  zIndex?: number;
 }
 
 export function AccountForm({
@@ -21,6 +25,8 @@ export function AccountForm({
   onClose,
   initial,
   defaultLiability = false,
+  onSaved,
+  zIndex,
 }: AccountFormProps) {
   if (!open) return null;
 
@@ -30,6 +36,8 @@ export function AccountForm({
       onClose={onClose}
       initial={initial}
       defaultLiability={defaultLiability}
+      onSaved={onSaved}
+      zIndex={zIndex}
     />
   );
 }
@@ -38,10 +46,14 @@ function AccountFormDialog({
   onClose,
   initial,
   defaultLiability,
+  onSaved,
+  zIndex,
 }: {
   onClose: () => void;
   initial?: Account | null;
   defaultLiability: boolean;
+  onSaved?: () => void;
+  zIndex?: number;
 }) {
   const currencies = useWorthStore((s) => s.currencies);
   const settings = useWorthStore((s) => s.settings);
@@ -111,6 +123,7 @@ function AccountFormDialog({
     if (initial) updateAccount(initial.id, payload);
     else addAccount(payload);
     hapticSuccess();
+    onSaved?.();
     onClose();
   };
 
@@ -120,6 +133,7 @@ function AccountFormDialog({
       onSubmit={submit}
       title={initial ? t("accountForm.editTitle") : t("accountForm.addTitle")}
       titleId="account-form-title"
+      zIndex={zIndex}
       headerStart={
         <button
           type="button"

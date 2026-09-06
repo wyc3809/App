@@ -264,7 +264,7 @@ describe("wrapped slide decks", () => {
     expect(combined).not.toBeNull();
     expect(combined!.length).toBeLessThanOrEqual(5);
     expect(combined![0].kind).toBe("intro");
-    expect(combined![0].title).toBe("Your WorthBook recap");
+    expect(combined![0]).toMatchObject({ kind: "intro", title: "Your WorthBook recap" });
     expect(combined!.some((s) => s.kind === "statsGroup")).toBe(true);
     expect(combined!.some((s) => s.kind === "rankList")).toBe(true);
   });
