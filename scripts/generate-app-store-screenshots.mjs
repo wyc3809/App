@@ -6,9 +6,9 @@
  *   node scripts/generate-app-store-screenshots.mjs
  *
  * Outputs under app-store/screenshots/:
- *   raw/                 — device UI captures
- *   6.7/{en,zh-Hant}/    — 1290×2796 marketing frames
- *   6.1/{en,zh-Hant}/    — 1179×2556 marketing frames
+ *   raw/                 — device UI captures (1206×2622)
+ *   6.7/{en,zh-Hant}/    — 1206×2622 marketing frames (iPhone 6.3"/6.5" slot)
+ *   6.1/{en,zh-Hant}/    — 1179×2556 marketing frames (iPhone 6.1" slot)
  */
 import { createServer } from "node:http";
 import {
@@ -27,7 +27,9 @@ const STATIC = join(ROOT, "out");
 const OUT = join(ROOT, "app-store", "screenshots");
 
 const SIZE = {
-  "6.7": { w: 1290, h: 2796 },
+  // App Store Connect accepted portrait sizes (see error for this listing slot):
+  // 1206×2622, 1179×2556 (and their landscape swaps).
+  "6.7": { w: 1206, h: 2622 },
   "6.1": { w: 1179, h: 2556 },
 };
 
@@ -350,12 +352,23 @@ async function bootApp(page) {
 
 async function composeFrame({ sizeKey, locale, copy, rawPng, destPath }) {
   const { w, h } = SIZE[sizeKey];
-  // Leave a taller headline band so copy never overlaps the phone.
-  const frameTop = Math.round(h * 0.225);
-  const frameBottom = Math.round(h * 0.055);
-  const frameSide = Math.round(w * 0.11);
-  const phoneW = w - frameSide * 2;
+  // Headline band up top. Match phone aspect to the capture and use
+  // fit:"contain" so the bottom tab bar is never cropped.
+  const frameTop = Math.round(h * 0.195);
+  const frameBottom = Math.round(h * 0.035);
   const phoneH = h - frameTop - frameBottom;
+  const meta = await sharp(rawPng).metadata();
+  const rawW = meta.width || w;
+  const rawH = meta.height || h;
+  const rawAspect = rawW / rawH;
+  let phoneW = Math.round(phoneH * rawAspect);
+  let frameSide = Math.round((w - phoneW) / 2);
+  // Keep a minimum side margin if the derived phone is too wide.
+  const minSide = Math.round(w * 0.06);
+  if (frameSide < minSide) {
+    frameSide = minSide;
+    phoneW = w - frameSide * 2;
+  }
   const radius = Math.round(phoneW * 0.12);
   const bezel = Math.round(phoneW * 0.018);
   const innerW = phoneW - bezel * 2;
@@ -364,8 +377,14 @@ async function composeFrame({ sizeKey, locale, copy, rawPng, destPath }) {
 
   const bgSvg = frameBackgroundSvg(w, h, copy, locale);
 
+  // Prefer fitting the full screen (incl. tab bar). Contain avoids cropping
+  // when 6.1" target aspect differs slightly from the 1206×2622 raw capture.
   const resizedScreen = await sharp(rawPng)
-    .resize(innerW, innerH, { fit: "cover", position: "top" })
+    .resize(innerW, innerH, {
+      fit: "contain",
+      position: "centre",
+      background: { r: 245, g: 247, b: 246, alpha: 1 },
+    })
     .png()
     .toBuffer();
 
@@ -452,8 +471,9 @@ async function main() {
   }
 
   const browser = await chromium.launch({ headless: true });
+  // 402×874 @3x → 1206×2622 (App Store Connect accepted size)
   const context = await browser.newContext({
-    viewport: { width: 430, height: 932 },
+    viewport: { width: 402, height: 874 },
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
