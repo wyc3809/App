@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "screenshots:app-store": "node scripts/generate-app-store-screenshots.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
