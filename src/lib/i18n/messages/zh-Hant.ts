@@ -107,6 +107,15 @@ export const zhHant: MessageTree = {
       cta: "加入第一筆支出",
       skip: "暫時略過",
     },
+    insights: {
+      title: "點樣睇 Insights 圖表",
+      subtitle: "Insights 分頁會將帳戶同記帳變成圖表 — 增長、現金流、配置等等。",
+      tip1: "之後喺底部選單㩒 Insights 就可以入去。",
+      tip2: "頂部可以切換圖表類型（增長、現金流、配置…）。",
+      tip3: "你愈更新結餘同支出，圖表就會愈齊全。",
+      cta: "明白",
+      skip: "暫時略過",
+    },
     report: {
       title: "睇下報告點樣出",
       subtitle: "每個星期同每個月，WorthBook 會根據你嘅資料整一份 Wrapped 風格回顧。下面係範例。",

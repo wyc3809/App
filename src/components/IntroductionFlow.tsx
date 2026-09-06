@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Receipt, Sparkles, WalletCards } from "lucide-react";
+import { ChartNoAxesColumnIncreasing, Plus, Receipt, Sparkles, WalletCards } from "lucide-react";
 import { AccountForm } from "@/components/AccountForm";
 import { TransactionModal } from "@/components/TransactionModal";
 import { useI18n } from "@/lib/i18n/context";
@@ -15,6 +15,7 @@ const TOUR_STEPS: OnboardingStep[] = [
   "welcome",
   "add_asset",
   "add_expense",
+  "view_insights",
   "sample_report",
 ];
 
@@ -28,7 +29,7 @@ function useIsClient() {
 
 /**
  * Guided first-run tour:
- * welcome (name) → first asset → first expense → sample Wrapped report.
+ * welcome → first asset → first expense → Insights charts → sample Wrapped report.
  * Portaled to document.body so it is never clipped by AppShell overflow.
  */
 export function IntroductionFlow() {
@@ -76,7 +77,7 @@ export function IntroductionFlow() {
     saveDisplayName();
     const hasExpense = transactions.some((tx) => tx.type === "expense");
     if (accounts.length > 0 && hasExpense) {
-      setOnboardingStep("sample_report");
+      setOnboardingStep("view_insights");
     } else if (accounts.length > 0) {
       setOnboardingStep("add_expense");
     } else {
@@ -85,7 +86,8 @@ export function IntroductionFlow() {
   };
 
   const skipAsset = () => setOnboardingStep("add_expense");
-  const skipExpense = () => setOnboardingStep("sample_report");
+  const skipExpense = () => setOnboardingStep("view_insights");
+  const continueFromInsights = () => setOnboardingStep("sample_report");
 
   const openSampleReport = () => {
     // Sample report opens at z-130 above this tour (z-120).
@@ -276,6 +278,55 @@ export function IntroductionFlow() {
           </div>
         )}
 
+        {step === "view_insights" && (
+          <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+            >
+              <ChartNoAxesColumnIncreasing size={24} strokeWidth={2.25} />
+            </span>
+            <h1
+              id="intro-title"
+              className="mt-4 font-display text-3xl leading-tight"
+            >
+              {t("intro.insights.title")}
+            </h1>
+            <p
+              className="mt-3 text-sm leading-relaxed"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {t("intro.insights.subtitle")}
+            </p>
+            <ul
+              className="mt-6 space-y-2 text-sm leading-relaxed"
+              style={{ color: "var(--fg)" }}
+            >
+              <li>• {t("intro.insights.tip1")}</li>
+              <li>• {t("intro.insights.tip2")}</li>
+              <li>• {t("intro.insights.tip3")}</li>
+            </ul>
+            <button
+              type="button"
+              className="btn-primary mt-8 flex min-h-12 w-full items-center justify-center gap-2"
+              onClick={continueFromInsights}
+            >
+              <ChartNoAxesColumnIncreasing size={18} />
+              {t("intro.insights.cta")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost mt-2 min-h-11 w-full"
+              onClick={continueFromInsights}
+            >
+              {t("intro.insights.skip")}
+            </button>
+          </div>
+        )}
+
         {step === "sample_report" && (
           <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
             <span
@@ -337,7 +388,7 @@ export function IntroductionFlow() {
         zIndex={140}
         onSaved={() => {
           setExpenseFormOpen(false);
-          setOnboardingStep("sample_report");
+          setOnboardingStep("view_insights");
         }}
       />
     </div>

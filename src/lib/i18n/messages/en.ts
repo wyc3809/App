@@ -108,6 +108,15 @@ export const en: MessageTree = {
       cta: "Add first expense",
       skip: "Skip for now",
     },
+    insights: {
+      title: "Read your Insights charts",
+      subtitle: "The Insights tab turns your accounts and ledger into charts — growth, cashflow, allocation, and more.",
+      tip1: "Open Insights from the bottom tab bar anytime.",
+      tip2: "Switch chart types along the top (growth, cashflow, allocation…).",
+      tip3: "Charts fill in as you keep updating balances and expenses.",
+      cta: "Got it",
+      skip: "Skip for now",
+    },
     report: {
       title: "See how reports work",
       subtitle: "Each week and month, WorthBook builds a Wrapped-style recap from your data. Here’s a sample.",

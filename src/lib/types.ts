@@ -84,12 +84,13 @@ export interface UserSettings {
   onboardingCompleted?: boolean;
   /**
    * Guided first-run tour step. Ignored when `onboardingCompleted` is true.
-   * welcome → add_asset → add_expense → sample_report → done
+   * welcome → add_asset → add_expense → view_insights → sample_report → done
    */
   onboardingStep?:
     | "welcome"
     | "add_asset"
     | "add_expense"
+    | "view_insights"
     | "sample_report";
   /** Preferred name shown on Home instead of the app brand. */
   displayName?: string;
