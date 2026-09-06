@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { ChartNoAxesColumnIncreasing, Plus, Receipt, Sparkles, WalletCards } from "lucide-react";
+import {
+  ChartNoAxesColumnIncreasing,
+  Plus,
+  Receipt,
+  Sparkles,
+  WalletCards,
+} from "lucide-react";
 import { AccountForm } from "@/components/AccountForm";
 import { TransactionModal } from "@/components/TransactionModal";
 import { useI18n } from "@/lib/i18n/context";
@@ -29,8 +35,8 @@ function useIsClient() {
 
 /**
  * Guided first-run tour:
- * welcome → first asset → first expense → Insights charts → sample Wrapped report.
- * Portaled to document.body so it is never clipped by AppShell overflow.
+ * welcome → first asset → first expense → Insights tips → sample Wrapped report.
+ * Portaled to document.body so AppShell overflow never clips the CTA.
  */
 export function IntroductionFlow() {
   const { t } = useI18n();
@@ -95,6 +101,7 @@ export function IntroductionFlow() {
   };
 
   const stepIndex = Math.max(0, TOUR_STEPS.indexOf(step));
+  const showWelcomeFooter = step === "welcome";
 
   const overlay = (
     <div
@@ -115,7 +122,8 @@ export function IntroductionFlow() {
               className="h-1.5 rounded-full transition-all"
               style={{
                 width: i === stepIndex ? "1.25rem" : "0.375rem",
-                background: i === stepIndex ? "var(--accent)" : "var(--bg-muted)",
+                background:
+                  i === stepIndex ? "var(--accent)" : "var(--bg-muted)",
               }}
             />
           ))}
@@ -170,13 +178,7 @@ export function IntroductionFlow() {
                 }}
               />
             </label>
-            <button
-              type="button"
-              className="btn-primary mt-6 min-h-12 w-full"
-              onClick={nextAfterWelcome}
-            >
-              {t("intro.next")}
-            </button>
+            {/* Next lives only in the sticky footer below — avoids duplicate CTAs. */}
           </div>
         )}
 
@@ -368,6 +370,27 @@ export function IntroductionFlow() {
           </div>
         )}
       </div>
+
+      {showWelcomeFooter ? (
+        <footer
+          className="shrink-0 border-t px-6 pt-3"
+          style={{
+            borderColor: "var(--border)",
+            background: "var(--bg)",
+            paddingBottom: "calc(12px + var(--safe-bottom))",
+          }}
+        >
+          <div className="mx-auto max-w-md">
+            <button
+              type="button"
+              className="btn-primary min-h-12 w-full"
+              onClick={nextAfterWelcome}
+            >
+              {t("intro.next")}
+            </button>
+          </div>
+        </footer>
+      ) : null}
 
       <AccountForm
         open={assetFormOpen}
