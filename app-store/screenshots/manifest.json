@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-09-06T16:30:24.161Z",
+  "theme": "light",
+  "sizes": {
+    "6.7": {
+      "w": 1290,
+      "h": 2796
+    },
+    "6.1": {
+      "w": 1179,
+      "h": 2556
+    }
+  },
+  "uploadOrder": [
+    "01-home.png",
+    "02-ledger.png",
+    "03-insights.png"
+  ],
+  "slides": [
+    {
+      "id": "01-home",
+      "path": "/",
+      "headlines": {
+        "en": {
+          "eyebrow": "NET WORTH",
+          "title": "See your full picture",
+          "subtitle": "Assets, debts, and growth — private on your iPhone."
+        },
+        "zh-Hant": {
+          "eyebrow": "淨值一覽",
+          "title": "一眼睇晒身家",
+          "subtitle": "資產、負債與趨勢——資料只留在你部手機。"
+        }
+      }
+    },
+    {
+      "id": "02-ledger",
+      "path": "/history/",
+      "headlines": {
+        "en": {
+          "eyebrow": "LEDGER",
+          "title": "Log spending in seconds",
+          "subtitle": "Quick entry that links back to your accounts."
+        },
+        "zh-Hant": {
+          "eyebrow": "日常記帳",
+          "title": "幾秒記低一筆",
+          "subtitle": "快捷記帳，可連結帳戶，同步反映淨值。"
+        }
+      }
+    },
+    {
+      "id": "03-insights",
+      "path": "/graphs/",
+      "headlines": {
+        "en": {
+          "eyebrow": "INSIGHTS",
+          "title": "Charts that stay offline",
+          "subtitle": "Trends & allocation — no cloud, no ads, no account."
+        },
+        "zh-Hant": {
+          "eyebrow": "洞察圖表",
+          "title": "離線圖表一樣清楚",
+          "subtitle": "趨勢與配置——無雲端、無廣告、唔使註冊。"
+        }
+      }
+    }
+  ]
+}
