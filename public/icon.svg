@@ -1,16 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="WorthBook">
   <defs>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0A0E0C" flood-opacity="0.18"/>
-    </filter>
+    <radialGradient id="bg" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#1A3A2C"/>
+      <stop offset="55%" stop-color="#101814"/>
+      <stop offset="100%" stop-color="#0A0E0C"/>
+    </radialGradient>
     <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#1A2420"/>
       <stop offset="100%" stop-color="#0D1411"/>
     </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
   </defs>
 
-  <!-- Light background — matches iOS / PWA app icon -->
-  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <ellipse cx="256" cy="300" rx="168" ry="128" fill="#0F7A4C" opacity="0.18"/>
 
   <g filter="url(#shadow)">
     <!-- Open book -->
@@ -30,7 +35,7 @@
     <circle cx="344" cy="226" r="12" fill="#3DCF8E"/>
     <circle cx="344" cy="226" r="5" fill="#0D1110" opacity="0.35"/>
 
-    <!-- Cat head -->
+    <!-- Cat head (#3 style) -->
     <ellipse cx="256" cy="168" rx="78" ry="72" fill="#F7F7F5"/>
     <path d="M196 148 L178 108 L212 126 Z" fill="#F7F7F5" stroke="#E7C4C4" stroke-width="3" stroke-linejoin="round"/>
     <path d="M316 148 L334 108 L300 126 Z" fill="#F7F7F5" stroke="#E7C4C4" stroke-width="3" stroke-linejoin="round"/>
@@ -43,7 +48,7 @@
     <ellipse cx="256" cy="178" rx="8" ry="10" fill="#DC2626"/>
     <path d="M244 188c8 10 24 10 32 0" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none"/>
 
-    <!-- Whiskers -->
+    <!-- Normal whiskers -->
     <path d="M188 168h-36M188 182h-40M188 196h-36" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
     <path d="M324 168h36M324 182h40M324 196h36" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
 
