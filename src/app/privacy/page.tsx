@@ -65,12 +65,11 @@ export default function PrivacyPage() {
           <a
             className="font-medium"
             style={{ color: "var(--accent)" }}
-            href="mailto:support@worthbook.app"
+            href="mailto:support@worthbook.online"
           >
-            support@worthbook.app
+            support@worthbook.online
           </a>
-          . Replace this address before App Store submission if you use a
-          different inbox.
+          .
         </p>
         <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
           Last updated: 6 Aug 2026 · WorthBook v1.2
