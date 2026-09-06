@@ -4,11 +4,24 @@ Ready-to-upload **light-mode** marketing screenshots for **App Store Connect**.
 
 > Captured in light theme. Marketing headlines stay in the top band so they never overlap the phone UI.
 
+## Accepted sizes (this listing slot)
+
+App Store Connect for this app expects one of:
+
+| Orientation | Size |
+|-------------|------|
+| Portrait | **1206 × 2622** |
+| Landscape | 2622 × 1206 |
+| Portrait | **1179 × 2556** |
+| Landscape | 2556 × 1179 |
+
+We ship the two portrait sizes below.
+
 ## Upload these (recommended first)
 
-### iPhone 6.5" / 6.7" (1284 × 2778) — required for modern iPhones
+### 1206 × 2622 — `app-store/screenshots/6.7/`
 
-English (`app-store/screenshots/6.7/en/`):
+English (`6.7/en/`):
 
 | Order | File | Message |
 |------:|------|---------|
@@ -16,7 +29,7 @@ English (`app-store/screenshots/6.7/en/`):
 | 2 | `02-ledger.png` | Log spending in seconds |
 | 3 | `03-insights.png` | Charts that stay offline |
 
-Traditional Chinese (`app-store/screenshots/6.7/zh-Hant/`):
+Traditional Chinese (`6.7/zh-Hant/`):
 
 | Order | File | Message |
 |------:|------|---------|
@@ -24,21 +37,19 @@ Traditional Chinese (`app-store/screenshots/6.7/zh-Hant/`):
 | 2 | `02-ledger.png` | 幾秒記低一筆 |
 | 3 | `03-insights.png` | 離線圖表一樣清楚 |
 
-### iPhone 6.1" (1179 × 2556)
+### 1179 × 2556 — `app-store/screenshots/6.1/`
 
-Same three files under `app-store/screenshots/6.1/{en,zh-Hant}/`.
+Same three files under `6.1/{en,zh-Hant}/`.
 
-In App Store Connect → your app → **iOS App** → version → **Previews and Screenshots**:
+In App Store Connect → **Previews and Screenshots**:
 
-1. Select **6.7" Display** → upload the three `6.7/en` images in order.
-2. If you localized **繁體中文**, switch locale and upload `6.7/zh-Hant`.
-3. Repeat for **6.1" Display** (or let Connect derive media where allowed).
-
-Apple requires **at least one** screenshot per size class; **3** is a strong first set.
+1. Upload the three `6.7/en` images (**1206 × 2622**) into the size class that accepts that dimension.
+2. If you localized **繁體中文**, upload `6.7/zh-Hant`.
+3. For the **1179 × 2556** class, upload `6.1/{locale}/`.
 
 ## Also included
 
-- `raw/` — unframed device captures (for redesigning headlines later)
+- `raw/` — unframed device captures (1206 × 2622)
 - `manifest.json` — generation metadata
 - Regenerator: `scripts/generate-app-store-screenshots.mjs`
 
@@ -56,5 +67,3 @@ Track net worth, accounts, and a daily ledger — 100% on your iPhone. No accoun
 
 **推廣文字：**  
 追蹤淨值、帳戶與日常記帳——資料只留在你的 iPhone。無需註冊、無雲端。
-
-Full copy-paste pack (keywords, privacy answers, review notes) lives in PR #45 / `docs/APP_STORE_CONNECT_LISTING.md` when merged.
