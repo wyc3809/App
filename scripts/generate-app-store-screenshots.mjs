@@ -161,7 +161,7 @@ function wrapLines(text, locale, maxChars) {
   return lines.slice(0, 3);
 }
 
-/** Light marketing backdrop; copy stays in the top band only. */
+/** Pure white marketing backdrop — title + subtitle only (no green eyebrow / footer). */
 function frameBackgroundSvg(w, h, copy, locale) {
   const titleLines = wrapLines(copy.title, locale, locale === "zh" ? 9 : 16);
   const subLines = wrapLines(copy.subtitle, locale, locale === "zh" ? 15 : 32);
@@ -170,17 +170,18 @@ function frameBackgroundSvg(w, h, copy, locale) {
       ? "'WenQuanYi Micro Hei','Droid Sans Fallback',sans-serif"
       : "ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif";
 
-  const eyebrowY = Math.round(h * 0.042);
-  const titleY = Math.round(h * 0.072);
-  const titleSize = Math.round(h * 0.032);
-  const titleLineH = Math.round(h * 0.038);
-  const eyebrowSize = Math.round(h * 0.014);
-  const subSize = Math.round(h * 0.0155);
-  const subLineH = Math.round(h * 0.021);
-  const subY = titleY + titleLines.length * titleLineH + Math.round(h * 0.01);
-  // Phone starts ~23% down — never let subtitle cross that line.
-  const textFloor = Math.round(h * 0.205);
-  const clampedSubY = Math.min(subY, textFloor - subLineH * Math.max(subLines.length, 1));
+  // More top space without eyebrow/footer labels.
+  const titleY = Math.round(h * 0.055);
+  const titleSize = Math.round(h * 0.036);
+  const titleLineH = Math.round(h * 0.042);
+  const subSize = Math.round(h * 0.0165);
+  const subLineH = Math.round(h * 0.022);
+  const subY = titleY + titleLines.length * titleLineH + Math.round(h * 0.012);
+  const textFloor = Math.round(h * 0.2);
+  const clampedSubY = Math.min(
+    subY,
+    textFloor - subLineH * Math.max(subLines.length, 1),
+  );
 
   const titleTspans = titleLines
     .map(
@@ -200,28 +201,17 @@ function frameBackgroundSvg(w, h, copy, locale) {
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="55%" stop-color="#f5faf7"/>
-      <stop offset="100%" stop-color="#eef7f2"/>
+      <stop offset="70%" stop-color="#f8fbf9"/>
+      <stop offset="100%" stop-color="#f3faf6"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="12%" r="42%">
-      <stop offset="0%" stop-color="#bbf7d0" stop-opacity="0.35"/>
-      <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
   </defs>
   <rect width="${w}" height="${h}" fill="url(#bg)"/>
-  <rect width="${w}" height="${h}" fill="url(#glow)"/>
-  <text x="50%" y="${eyebrowY}" text-anchor="middle"
-        font-family="${font}" font-size="${eyebrowSize}" font-weight="700"
-        letter-spacing="0.16em" fill="#16a34a">${esc(copy.eyebrow)}</text>
   <text x="50%" y="${titleY}" text-anchor="middle"
         font-family="${font}" font-size="${titleSize}" font-weight="800"
         fill="#111827">${titleTspans}</text>
   <text x="50%" y="${clampedSubY}" text-anchor="middle"
         font-family="${font}" font-size="${subSize}" font-weight="500"
         fill="#4b5563">${subTspans}</text>
-  <text x="50%" y="${Math.round(h * 0.965)}" text-anchor="middle"
-        font-family="${font}" font-size="${Math.round(h * 0.012)}" font-weight="600"
-        letter-spacing="0.14em" fill="#9ca3af">WORTHBOOK</text>
 </svg>`;
 }
 

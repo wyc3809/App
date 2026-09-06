@@ -33,7 +33,7 @@ export function NetWorthHero() {
         <button
           type="button"
           className="inline-flex h-10 w-10 items-center justify-center rounded-xl transition"
-          style={{ background: "rgba(255,255,255,0.16)", color: "var(--hero-fg)" }}
+          style={{ background: "var(--hero-chip)", color: "var(--hero-fg)" }}
           aria-label={privacy ? "Show balances" : "Hide balances"}
           onClick={() => updateSettings({ isPrivacyMode: !privacy })}
         >
@@ -78,7 +78,7 @@ export function NetWorthHero() {
       <div className="mt-5 grid grid-cols-2 gap-3">
         <div
           className="rounded-2xl p-3"
-          style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.12)" }}
+          style={{ background: "var(--hero-chip)", border: "1px solid var(--hero-chip-border)" }}
         >
           <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--hero-muted)" }}>
             Assets
@@ -92,7 +92,7 @@ export function NetWorthHero() {
         </div>
         <div
           className="rounded-2xl p-3"
-          style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.12)" }}
+          style={{ background: "var(--hero-chip)", border: "1px solid var(--hero-chip-border)" }}
         >
           <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--hero-muted)" }}>
             Liabilities
@@ -131,8 +131,9 @@ function GrowthPill({
     <div
       className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
       style={{
-        background: muted ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.2)",
+        background: "var(--hero-chip)",
         color: "var(--hero-fg)",
+        opacity: muted ? 0.85 : 1,
       }}
     >
       {positive ? <TrendingUp size={15} /> : <TrendingDown size={15} />}

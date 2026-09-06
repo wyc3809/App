@@ -15,9 +15,12 @@
   --accent-hover: #15803d;
   --accent-soft: rgba(22, 163, 74, 0.12);
   --accent-fg: #ffffff;
-  --hero-bg: linear-gradient(145deg, #16a34a 0%, #059669 100%);
-  --hero-fg: #ffffff;
-  --hero-muted: rgba(255, 255, 255, 0.78);
+  /* Light mode: soft mint card + dark text (reads as light UI, not a dark slab) */
+  --hero-bg: linear-gradient(160deg, #f0fdf4 0%, #dcfce7 55%, #bbf7d0 100%);
+  --hero-fg: #14532d;
+  --hero-muted: rgba(20, 83, 45, 0.62);
+  --hero-chip: rgba(22, 163, 74, 0.12);
+  --hero-chip-border: rgba(22, 163, 74, 0.18);
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.1);
   --positive: #16a34a;
@@ -48,6 +51,8 @@
   --hero-bg: linear-gradient(145deg, #15803d 0%, #059669 100%);
   --hero-fg: #ffffff;
   --hero-muted: rgba(255, 255, 255, 0.76);
+  --hero-chip: rgba(255, 255, 255, 0.14);
+  --hero-chip-border: rgba(255, 255, 255, 0.12);
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.12);
   --positive: #4ade80;
