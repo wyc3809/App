@@ -50,20 +50,17 @@ export function IntroductionFlow() {
   const [displayName, setDisplayName] = useState(settings.displayName ?? "");
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
-  const [viewingSample, setViewingSample] = useState(false);
 
   useEffect(() => {
-    if (!open || !isClient || viewingSample) return;
+    if (!open || !isClient) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, [open, isClient, viewingSample]);
+  }, [open, isClient]);
 
   if (!open || !isClient) return null;
-  // Sample Wrapped overlay takes the screen (z-130); hide this sheet.
-  if (viewingSample) return null;
 
   const saveDisplayName = () => {
     const name = displayName.trim().slice(0, 40);
@@ -91,7 +88,7 @@ export function IntroductionFlow() {
   const skipExpense = () => setOnboardingStep("sample_report");
 
   const openSampleReport = () => {
-    setViewingSample(true);
+    // Sample report opens at z-130 above this tour (z-120).
     requestSampleWrappedReport();
   };
 
