@@ -137,10 +137,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!navigator.webdriver) return;
-    const w = window as Window & { __worthLoadDemo?: () => void };
-    w.__worthLoadDemo = () => useWorthStore.getState().loadDemoData();
+    const w = window as Window & {
+      __worthLoadDemo?: () => void;
+      __worthSetTheme?: (theme: "light" | "dark" | "system") => void;
+    };
+    w.__worthLoadDemo = () => {
+      const store = useWorthStore.getState();
+      store.loadDemoData();
+      // App Store screenshot runs always want an unambiguous light UI.
+      store.updateSettings({ theme: "light" });
+    };
+    w.__worthSetTheme = (theme) => {
+      useWorthStore.getState().updateSettings({ theme });
+    };
     return () => {
       delete w.__worthLoadDemo;
+      delete w.__worthSetTheme;
     };
   }, []);
 

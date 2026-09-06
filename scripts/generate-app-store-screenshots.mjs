@@ -199,56 +199,60 @@ function frameBackgroundSvg(w, h, copy, locale) {
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f7fbf8"/>
-      <stop offset="40%" stop-color="#eaf7f0"/>
-      <stop offset="100%" stop-color="#d9efe4"/>
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f5faf7"/>
+      <stop offset="100%" stop-color="#eef7f2"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="16%" r="48%">
-      <stop offset="0%" stop-color="#86efac" stop-opacity="0.5"/>
-      <stop offset="60%" stop-color="#bbf7d0" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    <radialGradient id="glow" cx="50%" cy="12%" r="42%">
+      <stop offset="0%" stop-color="#bbf7d0" stop-opacity="0.35"/>
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="${w}" height="${h}" fill="url(#bg)"/>
   <rect width="${w}" height="${h}" fill="url(#glow)"/>
-  <circle cx="${Math.round(w * 0.08)}" cy="${Math.round(h * 0.9)}" r="${Math.round(w * 0.28)}" fill="#bbf7d0" opacity="0.4"/>
-  <circle cx="${Math.round(w * 0.94)}" cy="${Math.round(h * 0.28)}" r="${Math.round(w * 0.22)}" fill="#86efac" opacity="0.25"/>
   <text x="50%" y="${eyebrowY}" text-anchor="middle"
         font-family="${font}" font-size="${eyebrowSize}" font-weight="700"
-        letter-spacing="0.16em" fill="#15803d">${esc(copy.eyebrow)}</text>
+        letter-spacing="0.16em" fill="#16a34a">${esc(copy.eyebrow)}</text>
   <text x="50%" y="${titleY}" text-anchor="middle"
         font-family="${font}" font-size="${titleSize}" font-weight="800"
-        fill="#0f1713">${titleTspans}</text>
+        fill="#111827">${titleTspans}</text>
   <text x="50%" y="${clampedSubY}" text-anchor="middle"
         font-family="${font}" font-size="${subSize}" font-weight="500"
-        fill="#4d6357">${subTspans}</text>
+        fill="#4b5563">${subTspans}</text>
   <text x="50%" y="${Math.round(h * 0.965)}" text-anchor="middle"
         font-family="${font}" font-size="${Math.round(h * 0.012)}" font-weight="600"
-        letter-spacing="0.14em" fill="#6b7f74">WORTHBOOK</text>
+        letter-spacing="0.14em" fill="#9ca3af">WORTHBOOK</text>
 </svg>`;
 }
 
 async function forceLightInPage(page) {
   await page.evaluate(() => {
-    document.documentElement.classList.remove("dark");
-    try {
-      const raw = localStorage.getItem("worthtracker-v1");
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      const state = parsed.state ?? parsed;
-      if (state?.settings) {
-        state.settings.theme = "light";
-        localStorage.setItem("worthtracker-v1", JSON.stringify(parsed));
+    const w = window;
+    if (typeof w.__worthSetTheme === "function") {
+      w.__worthSetTheme("light");
+    } else {
+      try {
+        const raw = localStorage.getItem("worthtracker-v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const state = parsed.state ?? parsed;
+          if (state?.settings) {
+            state.settings.theme = "light";
+            localStorage.setItem("worthtracker-v1", JSON.stringify(parsed));
+          }
+        }
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
     }
+    document.documentElement.classList.remove("dark");
   });
-  // Trigger ThemeProvider by dispatching storage + a tiny delay for paint.
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("storage"));
-  });
-  await page.waitForTimeout(200);
+  await page.waitForFunction(
+    () => !document.documentElement.classList.contains("dark"),
+    null,
+    { timeout: 10_000 },
+  );
+  await page.waitForTimeout(250);
 }
 
 async function bootApp(page) {
