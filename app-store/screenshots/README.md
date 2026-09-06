@@ -1,6 +1,8 @@
 # App Store screenshots — WorthBook
 
-Ready-to-upload marketing screenshots for **App Store Connect**.
+Ready-to-upload **light-mode** marketing screenshots for **App Store Connect**.
+
+> Captured in light theme. Marketing headlines stay in the top band so they never overlap the phone UI.
 
 ## Upload these (recommended first)
 

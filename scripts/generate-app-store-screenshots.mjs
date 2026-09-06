@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate App Store Connect screenshots + marketing frames for WorthBook.
+ * Generate App Store Connect screenshots + marketing frames for WorthBook (light mode).
  *
  *   npm run build
  *   node scripts/generate-app-store-screenshots.mjs
@@ -129,81 +129,129 @@ function esc(s) {
     .replaceAll('"', "&quot;");
 }
 
-function wrapTitle(title, locale) {
+function wrapLines(text, locale, maxChars) {
+  const s = String(text).trim();
+  if (!s) return [];
   if (locale === "zh") {
-    if (title.length <= 8) return [title];
-    const mid = Math.ceil(title.length / 2);
-    return [title.slice(0, mid), title.slice(mid)];
+    if (s.length <= maxChars) return [s];
+    const lines = [];
+    let cur = "";
+    for (const ch of s) {
+      cur += ch;
+      if (cur.length >= maxChars) {
+        lines.push(cur);
+        cur = "";
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines.slice(0, 3);
   }
-  if (title.length <= 18) return [title];
-  const words = title.split(/\s+/);
+  if (s.length <= maxChars) return [s];
+  const words = s.split(/\s+/);
   const lines = [];
   let cur = "";
   for (const w of words) {
     const next = cur ? `${cur} ${w}` : w;
-    if (next.length > 18 && cur) {
+    if (next.length > maxChars && cur) {
       lines.push(cur);
       cur = w;
     } else cur = next;
   }
   if (cur) lines.push(cur);
-  return lines.slice(0, 2);
+  return lines.slice(0, 3);
 }
 
+/** Light marketing backdrop; copy stays in the top band only. */
 function frameBackgroundSvg(w, h, copy, locale) {
-  const lines = wrapTitle(copy.title, locale);
+  const titleLines = wrapLines(copy.title, locale, locale === "zh" ? 9 : 16);
+  const subLines = wrapLines(copy.subtitle, locale, locale === "zh" ? 15 : 32);
   const font =
     locale === "zh"
       ? "'WenQuanYi Micro Hei','Droid Sans Fallback',sans-serif"
       : "ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif";
+
+  const eyebrowY = Math.round(h * 0.042);
   const titleY = Math.round(h * 0.072);
-  const lineH = Math.round(h * 0.042);
-  const titleSize = Math.round(h * 0.038);
-  const eyebrowSize = Math.round(h * 0.016);
-  const subSize = Math.round(h * 0.0175);
-  const subY = titleY + lines.length * lineH + Math.round(h * 0.014);
-  const tspans = lines
+  const titleSize = Math.round(h * 0.032);
+  const titleLineH = Math.round(h * 0.038);
+  const eyebrowSize = Math.round(h * 0.014);
+  const subSize = Math.round(h * 0.0155);
+  const subLineH = Math.round(h * 0.021);
+  const subY = titleY + titleLines.length * titleLineH + Math.round(h * 0.01);
+  // Phone starts ~23% down — never let subtitle cross that line.
+  const textFloor = Math.round(h * 0.205);
+  const clampedSubY = Math.min(subY, textFloor - subLineH * Math.max(subLines.length, 1));
+
+  const titleTspans = titleLines
     .map(
       (line, i) =>
-        `<tspan x="50%" dy="${i === 0 ? 0 : lineH}">${esc(line)}</tspan>`,
+        `<tspan x="50%" dy="${i === 0 ? 0 : titleLineH}">${esc(line)}</tspan>`,
+    )
+    .join("");
+  const subTspans = subLines
+    .map(
+      (line, i) =>
+        `<tspan x="50%" dy="${i === 0 ? 0 : subLineH}">${esc(line)}</tspan>`,
     )
     .join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#07140f"/>
-      <stop offset="45%" stop-color="#0c1f17"/>
-      <stop offset="100%" stop-color="#10261c"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7fbf8"/>
+      <stop offset="40%" stop-color="#eaf7f0"/>
+      <stop offset="100%" stop-color="#d9efe4"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="28%" r="55%">
-      <stop offset="0%" stop-color="#22c55e" stop-opacity="0.28"/>
-      <stop offset="55%" stop-color="#16a34a" stop-opacity="0.08"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    <radialGradient id="glow" cx="50%" cy="16%" r="48%">
+      <stop offset="0%" stop-color="#86efac" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#bbf7d0" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="${w}" height="${h}" fill="url(#bg)"/>
   <rect width="${w}" height="${h}" fill="url(#glow)"/>
-  <circle cx="${Math.round(w * 0.12)}" cy="${Math.round(h * 0.82)}" r="${Math.round(w * 0.28)}" fill="#14532d" opacity="0.35"/>
-  <circle cx="${Math.round(w * 0.9)}" cy="${Math.round(h * 0.18)}" r="${Math.round(w * 0.22)}" fill="#166534" opacity="0.25"/>
-  <text x="50%" y="${Math.round(h * 0.048)}" text-anchor="middle"
+  <circle cx="${Math.round(w * 0.08)}" cy="${Math.round(h * 0.9)}" r="${Math.round(w * 0.28)}" fill="#bbf7d0" opacity="0.4"/>
+  <circle cx="${Math.round(w * 0.94)}" cy="${Math.round(h * 0.28)}" r="${Math.round(w * 0.22)}" fill="#86efac" opacity="0.25"/>
+  <text x="50%" y="${eyebrowY}" text-anchor="middle"
         font-family="${font}" font-size="${eyebrowSize}" font-weight="700"
-        letter-spacing="0.18em" fill="#4ade80">${esc(copy.eyebrow)}</text>
+        letter-spacing="0.16em" fill="#15803d">${esc(copy.eyebrow)}</text>
   <text x="50%" y="${titleY}" text-anchor="middle"
         font-family="${font}" font-size="${titleSize}" font-weight="800"
-        fill="#f4f7f5">${tspans}</text>
-  <text x="50%" y="${subY}" text-anchor="middle"
+        fill="#0f1713">${titleTspans}</text>
+  <text x="50%" y="${clampedSubY}" text-anchor="middle"
         font-family="${font}" font-size="${subSize}" font-weight="500"
-        fill="#a3ada7">${esc(copy.subtitle)}</text>
+        fill="#4d6357">${subTspans}</text>
   <text x="50%" y="${Math.round(h * 0.965)}" text-anchor="middle"
-        font-family="${font}" font-size="${Math.round(h * 0.014)}" font-weight="600"
-        letter-spacing="0.12em" fill="#727d76">WORTHBOOK</text>
+        font-family="${font}" font-size="${Math.round(h * 0.012)}" font-weight="600"
+        letter-spacing="0.14em" fill="#6b7f74">WORTHBOOK</text>
 </svg>`;
 }
 
+async function forceLightInPage(page) {
+  await page.evaluate(() => {
+    document.documentElement.classList.remove("dark");
+    try {
+      const raw = localStorage.getItem("worthtracker-v1");
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const state = parsed.state ?? parsed;
+      if (state?.settings) {
+        state.settings.theme = "light";
+        localStorage.setItem("worthtracker-v1", JSON.stringify(parsed));
+      }
+    } catch {
+      /* ignore */
+    }
+  });
+  // Trigger ThemeProvider by dispatching storage + a tiny delay for paint.
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("storage"));
+  });
+  await page.waitForTimeout(200);
+}
+
 async function bootApp(page) {
-  // Init scripts re-run on every navigation — only wipe storage once.
   await page.addInitScript(() => {
     try {
       if (!sessionStorage.getItem("__wb_shot_seeded")) {
@@ -213,20 +261,17 @@ async function bootApp(page) {
     } catch {
       /* ignore */
     }
-    document.documentElement.classList.add("dark");
+    document.documentElement.classList.remove("dark");
   });
 
   await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
 
-  // Hook is only installed under Playwright (navigator.webdriver).
   await page.waitForFunction(
     () => typeof window.__worthLoadDemo === "function",
     null,
     { timeout: 30_000 },
   );
 
-  // Wait until zustand persist has finished its first rehydrate write.
-  // Calling loadDemo earlier can be overwritten by empty rehydration.
   await page.waitForFunction(
     () => {
       try {
@@ -242,10 +287,8 @@ async function bootApp(page) {
 
   await page.evaluate(() => {
     window.__worthLoadDemo?.();
-    document.documentElement.classList.add("dark");
   });
 
-  // Confirm demo accounts persisted and onboarding is marked complete.
   await page.waitForFunction(
     () => {
       try {
@@ -266,7 +309,28 @@ async function bootApp(page) {
     { timeout: 30_000 },
   );
 
-  // Intro / Wrapped overlays should be gone; dismiss if any linger.
+  // Persist light theme, then reload so ThemeProvider picks it up from store.
+  await page.evaluate(() => {
+    document.documentElement.classList.remove("dark");
+    try {
+      const raw = localStorage.getItem("worthtracker-v1");
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const state = parsed.state ?? parsed;
+      if (state?.settings) {
+        state.settings.theme = "light";
+        localStorage.setItem("worthtracker-v1", JSON.stringify(parsed));
+      }
+    } catch {
+      /* ignore */
+    }
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector('[aria-label="Primary"]', { timeout: 20_000 });
+  await page.evaluate(() => {
+    document.documentElement.classList.remove("dark");
+  });
+
   for (let i = 0; i < 10; i++) {
     const skip = page.getByRole("button", { name: /skip|略過|跳過/i });
     const close = page.getByRole("button", {
@@ -286,14 +350,16 @@ async function bootApp(page) {
   }
 
   await page.waitForSelector('[aria-label="Primary"]', { timeout: 20_000 });
-  await page.waitForTimeout(500);
+  await forceLightInPage(page);
+  await page.waitForTimeout(400);
 }
 
 async function composeFrame({ sizeKey, locale, copy, rawPng, destPath }) {
   const { w, h } = SIZE[sizeKey];
-  const frameTop = Math.round(h * 0.2);
-  const frameBottom = Math.round(h * 0.06);
-  const frameSide = Math.round(w * 0.1);
+  // Leave a taller headline band so copy never overlaps the phone.
+  const frameTop = Math.round(h * 0.225);
+  const frameBottom = Math.round(h * 0.055);
+  const frameSide = Math.round(w * 0.11);
   const phoneW = w - frameSide * 2;
   const phoneH = h - frameTop - frameBottom;
   const radius = Math.round(phoneW * 0.12);
@@ -323,8 +389,8 @@ async function composeFrame({ sizeKey, locale, copy, rawPng, destPath }) {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${phoneW}" height="${phoneH}">
       <defs>
         <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#2a2f2c"/>
-          <stop offset="100%" stop-color="#121614"/>
+          <stop offset="0%" stop-color="#e8ece9"/>
+          <stop offset="100%" stop-color="#c5cdc8"/>
         </linearGradient>
       </defs>
       <rect width="${phoneW}" height="${phoneH}" rx="${radius}" ry="${radius}" fill="url(#bezel)"/>
@@ -344,12 +410,12 @@ async function composeFrame({ sizeKey, locale, copy, rawPng, destPath }) {
         input: Buffer.from(
           `<svg xmlns="http://www.w3.org/2000/svg" width="${phoneW + 40}" height="${phoneH + 40}">
             <rect x="20" y="24" width="${phoneW}" height="${phoneH}" rx="${radius}" ry="${radius}"
-                  fill="rgba(0,0,0,0.45)"/>
+                  fill="rgba(15,23,19,0.18)"/>
           </svg>`,
         ),
       },
     ])
-    .blur(18)
+    .blur(16)
     .png()
     .toBuffer();
 
@@ -397,14 +463,14 @@ async function main() {
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
-    colorScheme: "dark",
+    colorScheme: "light",
     locale: "en-US",
     baseURL: baseUrl,
   });
   const page = await context.newPage();
   page.setDefaultTimeout(60_000);
 
-  console.log("Preparing demo session…");
+  console.log("Preparing light-mode demo session…");
   await bootApp(page);
 
   const rawBuffers = {};
@@ -412,19 +478,44 @@ async function main() {
     console.log("Capturing", slide.id, slide.path);
     await page.goto(slide.path, { waitUntil: "networkidle" });
     await page.evaluate(() => {
-      document.documentElement.classList.add("dark");
-      // Re-apply demo if a navigation somehow wiped state.
+      document.documentElement.classList.remove("dark");
       try {
         const raw = localStorage.getItem("worthtracker-v1");
         const parsed = raw ? JSON.parse(raw) : null;
         const state = parsed?.state ?? parsed;
         if (!state?.accounts?.length) window.__worthLoadDemo?.();
+        if (state?.settings) {
+          state.settings.theme = "light";
+          localStorage.setItem("worthtracker-v1", JSON.stringify(parsed));
+        }
       } catch {
         window.__worthLoadDemo?.();
       }
     });
+    await forceLightInPage(page);
     await page.waitForSelector('[aria-label="Primary"]', { timeout: 20_000 });
-    await page.waitForTimeout(900);
+
+    // Insights: nudge scroll so the growth chart is the hero (avoids cramped metric chips).
+    if (slide.id === "03-insights") {
+      await page.evaluate(() => {
+        const main =
+          document.querySelector("main") ||
+          document.querySelector("[data-scroll]") ||
+          document.scrollingElement;
+        if (main && "scrollTop" in main) main.scrollTop = 72;
+        document.documentElement.classList.remove("dark");
+      });
+      await page.waitForTimeout(400);
+    }
+
+    await page.waitForTimeout(700);
+    const isDark = await page.evaluate(() =>
+      document.documentElement.classList.contains("dark"),
+    );
+    if (isDark) {
+      await forceLightInPage(page);
+      await page.waitForTimeout(300);
+    }
     const buf = await page.screenshot({ type: "png", fullPage: false });
     rawBuffers[slide.id] = buf;
     const rawPath = join(OUT, "raw", `${slide.id}.png`);
@@ -435,7 +526,7 @@ async function main() {
   await browser.close();
   if (server) server.close();
 
-  console.log("Compositing marketing frames…");
+  console.log("Compositing light marketing frames…");
   for (const slide of SLIDES) {
     for (const sizeKey of Object.keys(SIZE)) {
       await composeFrame({
@@ -460,6 +551,7 @@ async function main() {
     JSON.stringify(
       {
         generatedAt: new Date().toISOString(),
+        theme: "light",
         sizes: SIZE,
         uploadOrder: ["01-home.png", "02-ledger.png", "03-insights.png"],
         slides: SLIDES.map((s) => ({
