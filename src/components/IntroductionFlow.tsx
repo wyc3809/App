@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ChartNoAxesColumnIncreasing,
   LayoutDashboard,
@@ -21,16 +22,25 @@ const FEATURES = [
   { key: "accounts" as const, icon: WalletCards },
   { key: "ledger" as const, icon: Receipt },
   { key: "insights" as const, icon: ChartNoAxesColumnIncreasing },
-];
+] as const;
 
 const FEATURE_COPY: Record<
   (typeof FEATURES)[number]["key"],
   { title: TranslationKey; desc: TranslationKey }
 > = {
   home: { title: "intro.features.home.title", desc: "intro.features.home.desc" },
-  accounts: { title: "intro.features.accounts.title", desc: "intro.features.accounts.desc" },
-  ledger: { title: "intro.features.ledger.title", desc: "intro.features.ledger.desc" },
-  insights: { title: "intro.features.insights.title", desc: "intro.features.insights.desc" },
+  accounts: {
+    title: "intro.features.accounts.title",
+    desc: "intro.features.accounts.desc",
+  },
+  ledger: {
+    title: "intro.features.ledger.title",
+    desc: "intro.features.ledger.desc",
+  },
+  insights: {
+    title: "intro.features.insights.title",
+    desc: "intro.features.insights.desc",
+  },
 };
 
 const LEDGER_STEPS: TranslationKey[] = [
@@ -40,6 +50,11 @@ const LEDGER_STEPS: TranslationKey[] = [
   "intro.ledger.step4",
 ];
 
+/**
+ * First-run onboarding overlay.
+ * Portaled to document.body so it is never clipped by AppShell's
+ * overflow:hidden main / tab bar — otherwise the Next footer disappears.
+ */
 export function IntroductionFlow() {
   const router = useRouter();
   const { t } = useI18n();
@@ -50,11 +65,24 @@ export function IntroductionFlow() {
 
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState(settings.displayName ?? "");
+  const [mounted, setMounted] = useState(false);
 
-  const open =
-    !settings.onboardingCompleted && accounts.length === 0;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  if (!open) return null;
+  const open = !settings.onboardingCompleted && accounts.length === 0;
+
+  useEffect(() => {
+    if (!open || !mounted) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, mounted]);
+
+  if (!open || !mounted) return null;
 
   const saveDisplayName = () => {
     const name = displayName.trim().slice(0, 40);
@@ -68,17 +96,20 @@ export function IntroductionFlow() {
 
   const goNext = () => {
     if (step === 0) saveDisplayName();
-    setStep((s) => s + 1);
+    setStep((s) => Math.min(s + 1, STEPS - 1));
   };
+
+  const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const goLedger = () => {
     finish();
     router.push("/history/");
   };
 
-  return (
+  const showStepFooter = step < STEPS - 1;
+
+  const overlay = (
     <div
-      /* Above bottom sheets (z≈100) so Skip / CTAs stay tappable during first-run. */
       className="fixed inset-0 z-[120] flex flex-col"
       style={{ background: "var(--bg)" }}
       role="dialog"
@@ -110,7 +141,7 @@ export function IntroductionFlow() {
         </button>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-4 pt-6">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-4 pt-6">
         {step === 0 && (
           <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
             <p
@@ -119,10 +150,16 @@ export function IntroductionFlow() {
             >
               WorthBook
             </p>
-            <h1 id="intro-title" className="mt-2 font-display text-3xl leading-tight">
+            <h1
+              id="intro-title"
+              className="mt-2 font-display text-3xl leading-tight"
+            >
               {t("intro.welcome.title")}
             </h1>
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--fg-muted)" }}>
+            <p
+              className="mt-3 text-sm leading-relaxed"
+              style={{ color: "var(--fg-muted)" }}
+            >
               {t("intro.welcome.subtitle")}
             </p>
             <label className="mt-8 block">
@@ -145,6 +182,14 @@ export function IntroductionFlow() {
                 }}
               />
             </label>
+            {/* Inline Next so the CTA stays visible when the iOS keyboard is open */}
+            <button
+              type="button"
+              className="btn-primary mt-6 min-h-12 w-full"
+              onClick={goNext}
+            >
+              {t("intro.next")}
+            </button>
           </div>
         )}
 
@@ -164,13 +209,21 @@ export function IntroductionFlow() {
                 >
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                    style={{
+                      background: "var(--accent-soft)",
+                      color: "var(--accent)",
+                    }}
                   >
                     <Icon size={20} strokeWidth={2.25} />
                   </span>
                   <div className="min-w-0">
-                    <p className="font-semibold">{t(FEATURE_COPY[key].title)}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed" style={{ color: "var(--fg-muted)" }}>
+                    <p className="font-semibold">
+                      {t(FEATURE_COPY[key].title)}
+                    </p>
+                    <p
+                      className="mt-0.5 text-sm leading-relaxed"
+                      style={{ color: "var(--fg-muted)" }}
+                    >
                       {t(FEATURE_COPY[key].desc)}
                     </p>
                   </div>
@@ -193,11 +246,17 @@ export function IntroductionFlow() {
                 <li key={stepKey} className="flex gap-3">
                   <span
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                    style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                    style={{
+                      background: "var(--accent-soft)",
+                      color: "var(--accent)",
+                    }}
                   >
                     {index + 1}
                   </span>
-                  <p className="pt-1 text-sm leading-relaxed" style={{ color: "var(--fg)" }}>
+                  <p
+                    className="pt-1 text-sm leading-relaxed"
+                    style={{ color: "var(--fg)" }}
+                  >
                     {t(stepKey)}
                   </p>
                 </li>
@@ -217,7 +276,7 @@ export function IntroductionFlow() {
             <div className="mt-6 space-y-3">
               <Link
                 href="/accounts/?new=1"
-                className="btn-primary flex w-full items-center justify-start gap-2"
+                className="btn-primary flex min-h-12 w-full items-center justify-start gap-2"
                 onClick={finish}
               >
                 <Plus size={18} />
@@ -225,7 +284,7 @@ export function IntroductionFlow() {
               </Link>
               <button
                 type="button"
-                className="btn-secondary w-full justify-start"
+                className="btn-secondary min-h-12 w-full justify-start"
                 onClick={goLedger}
               >
                 <Receipt size={18} />
@@ -233,7 +292,7 @@ export function IntroductionFlow() {
               </button>
               <button
                 type="button"
-                className="btn-ghost w-full"
+                className="btn-ghost min-h-12 w-full"
                 onClick={finish}
               >
                 {t("intro.start.skip")}
@@ -243,29 +302,28 @@ export function IntroductionFlow() {
         )}
       </div>
 
-      {step < 3 && (
+      {showStepFooter && (
         <footer
-          className="shrink-0 border-t px-6 py-4"
+          className="shrink-0 border-t px-6 pt-3"
           style={{
             borderColor: "var(--border)",
-            paddingBottom: "calc(16px + var(--safe-bottom))",
+            background: "var(--bg)",
+            paddingBottom: "calc(12px + var(--safe-bottom))",
           }}
         >
           <div className="mx-auto flex max-w-md gap-3">
             {step > 0 ? (
               <button
                 type="button"
-                className="btn-secondary flex-1"
-                onClick={() => setStep((s) => s - 1)}
+                className="btn-secondary min-h-12 flex-1"
+                onClick={goBack}
               >
                 {t("intro.back")}
               </button>
-            ) : (
-              <div className="flex-1" />
-            )}
+            ) : null}
             <button
               type="button"
-              className="btn-primary flex-1"
+              className="btn-primary min-h-12 flex-1"
               onClick={goNext}
             >
               {t("intro.next")}
@@ -275,4 +333,6 @@ export function IntroductionFlow() {
       )}
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }

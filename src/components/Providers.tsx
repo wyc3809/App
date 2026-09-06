@@ -153,11 +153,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <LocaleSync />
       <AppLock>
         <AppShell>
-          <IntroductionFlow />
-          <WrappedReportFlow />
           {storageWarn ? <StorageWarning /> : null}
           {children}
         </AppShell>
+        {/* Outside AppShell so overlays are not clipped by main/tab-bar overflow */}
+        <IntroductionFlow />
+        <WrappedReportFlow />
       </AppLock>
     </ThemeProvider>
   );
