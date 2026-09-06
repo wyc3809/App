@@ -6,8 +6,8 @@
  *   node scripts/generate-app-store-screenshots.mjs
  *
  * Outputs under app-store/screenshots/:
- *   raw/                 — device UI captures
- *   6.7/{en,zh-Hant}/    — 1290×2796 marketing frames
+ *   raw/                 — device UI captures (1284×2778)
+ *   6.7/{en,zh-Hant}/    — 1284×2778 marketing frames (iPhone 6.5"/6.7")
  *   6.1/{en,zh-Hant}/    — 1179×2556 marketing frames
  */
 import { createServer } from "node:http";
@@ -27,7 +27,8 @@ const STATIC = join(ROOT, "out");
 const OUT = join(ROOT, "app-store", "screenshots");
 
 const SIZE = {
-  "6.7": { w: 1290, h: 2796 },
+  // App Store Connect — iPhone 6.5" / 6.7" Display (portrait): 1284 × 2778
+  "6.7": { w: 1284, h: 2778 },
   "6.1": { w: 1179, h: 2556 },
 };
 
@@ -452,8 +453,9 @@ async function main() {
   }
 
   const browser = await chromium.launch({ headless: true });
+  // 428×926 @3x → 1284×2778 (matches App Store 6.5"/6.7" slot)
   const context = await browser.newContext({
-    viewport: { width: 430, height: 932 },
+    viewport: { width: 428, height: 926 },
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,

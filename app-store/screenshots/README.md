@@ -6,7 +6,7 @@ Ready-to-upload **light-mode** marketing screenshots for **App Store Connect**.
 
 ## Upload these (recommended first)
 
-### iPhone 6.7" (1290 × 2796) — required for modern iPhones
+### iPhone 6.5" / 6.7" (1284 × 2778) — required for modern iPhones
 
 English (`app-store/screenshots/6.7/en/`):
 
