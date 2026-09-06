@@ -14,6 +14,7 @@ import {
 } from "@/lib/report-periods";
 import {
   buildMonthlyNetWorthReport,
+  buildSampleOnboardingSlides,
   buildWeeklyLedgerReport,
   combinedReportToSlides,
   type WrappedRankItem,
@@ -153,11 +154,15 @@ export function WrappedReportFlow() {
   const clearTrigger = useWorthStore((s) => s.clearWrappedReportTrigger);
   const markWeeklySeen = useWorthStore((s) => s.markWeeklyReportSeen);
   const markMonthlySeen = useWorthStore((s) => s.markMonthlyReportSeen);
+  const sampleTrigger = useWorthStore((s) => s.sampleWrappedReportTrigger);
+  const clearSampleTrigger = useWorthStore((s) => s.clearSampleWrappedReportTrigger);
+  const completeOnboarding = useWorthStore((s) => s.completeOnboarding);
 
   const [active, setActive] = useState<ActiveReport | null>(null);
   const [emptyOpen, setEmptyOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [animKey, setAnimKey] = useState(0);
+  const [isSample, setIsSample] = useState(false);
   const autoChecked = useRef(false);
 
   const today = todayISO();
@@ -234,6 +239,34 @@ export function WrappedReportFlow() {
   }, [trigger, buildCombined, clearTrigger, openReport]);
 
   useEffect(() => {
+    if (!sampleTrigger) return;
+    clearSampleTrigger();
+    const slides = buildSampleOnboardingSlides(money, {
+      introTitle: t("intro.sample.introTitle"),
+      introSubtitle: t("intro.sample.introSubtitle"),
+      weekHeading: t("intro.sample.weekHeading"),
+      income: t("intro.sample.income"),
+      expense: t("intro.sample.expense"),
+      net: t("intro.sample.net"),
+      highlightsHeading: t("intro.sample.highlightsHeading"),
+      sampleExpenseTitle: t("intro.sample.sampleExpenseTitle"),
+      sampleExpenseCategory: t("intro.sample.sampleExpenseCategory"),
+      sampleIncomeTitle: t("intro.sample.sampleIncomeTitle"),
+      sampleIncomeCategory: t("intro.sample.sampleIncomeCategory"),
+      monthHeading: t("intro.sample.monthHeading"),
+      netWorth: t("intro.sample.netWorth"),
+      change: t("intro.sample.change"),
+      outroTitle: t("intro.sample.outroTitle"),
+      outroSubtitle: t("intro.sample.outroSubtitle"),
+    });
+    /* eslint-disable react-hooks/set-state-in-effect -- store trigger opens overlay (same as wrappedReportTrigger) */
+    setEmptyOpen(false);
+    setIsSample(true);
+    openReport({ slides });
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [sampleTrigger, clearSampleTrigger, money, openReport, t]);
+
+  useEffect(() => {
     if (!settings.onboardingCompleted || autoChecked.current) return;
     autoChecked.current = true;
 
@@ -257,12 +290,19 @@ export function WrappedReportFlow() {
 
   const finishReport = useCallback(() => {
     if (!active) return;
+    hapticSuccess();
+    if (isSample) {
+      completeOnboarding();
+      setIsSample(false);
+      setActive(null);
+      setStep(0);
+      return;
+    }
     markWeeklySeen(currentIsoWeekKey(today));
     markMonthlySeen(currentMonthKey(today));
-    hapticSuccess();
     setActive(null);
     setStep(0);
-  }, [active, markWeeklySeen, markMonthlySeen, today]);
+  }, [active, isSample, completeOnboarding, markWeeklySeen, markMonthlySeen, today]);
 
   const advance = useCallback(() => {
     if (!active) return;
@@ -281,7 +321,7 @@ export function WrappedReportFlow() {
   if (emptyOpen && !active) {
     return (
       <div
-        className="fixed inset-0 z-[110] flex flex-col"
+        className={`fixed inset-0 flex flex-col ${isSample ? "z-[130]" : "z-[110]"}`}
         style={{ background: "var(--bg)" }}
         role="dialog"
         aria-modal="true"
@@ -331,7 +371,7 @@ export function WrappedReportFlow() {
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex flex-col"
+      className={`fixed inset-0 flex flex-col ${isSample ? "z-[130]" : "z-[110]"}`}
       style={{ background: "var(--bg)" }}
       role="dialog"
       aria-modal="true"

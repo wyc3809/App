@@ -1,88 +1,73 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import {
   ChartNoAxesColumnIncreasing,
-  LayoutDashboard,
   Plus,
   Receipt,
+  Sparkles,
   WalletCards,
 } from "lucide-react";
+import { AccountForm } from "@/components/AccountForm";
+import { TransactionModal } from "@/components/TransactionModal";
 import { useI18n } from "@/lib/i18n/context";
-import type { TranslationKey } from "@/lib/i18n";
 import { useWorthStore } from "@/lib/store";
+import type { UserSettings } from "@/lib/types";
 
-const STEPS = 4;
+type OnboardingStep = NonNullable<UserSettings["onboardingStep"]>;
 
-const FEATURES = [
-  { key: "home" as const, icon: LayoutDashboard },
-  { key: "accounts" as const, icon: WalletCards },
-  { key: "ledger" as const, icon: Receipt },
-  { key: "insights" as const, icon: ChartNoAxesColumnIncreasing },
-] as const;
-
-const FEATURE_COPY: Record<
-  (typeof FEATURES)[number]["key"],
-  { title: TranslationKey; desc: TranslationKey }
-> = {
-  home: { title: "intro.features.home.title", desc: "intro.features.home.desc" },
-  accounts: {
-    title: "intro.features.accounts.title",
-    desc: "intro.features.accounts.desc",
-  },
-  ledger: {
-    title: "intro.features.ledger.title",
-    desc: "intro.features.ledger.desc",
-  },
-  insights: {
-    title: "intro.features.insights.title",
-    desc: "intro.features.insights.desc",
-  },
-};
-
-const LEDGER_STEPS: TranslationKey[] = [
-  "intro.ledger.step1",
-  "intro.ledger.step2",
-  "intro.ledger.step3",
-  "intro.ledger.step4",
+const TOUR_STEPS: OnboardingStep[] = [
+  "welcome",
+  "add_asset",
+  "add_expense",
+  "view_insights",
+  "sample_report",
 ];
 
+function subscribe() {
+  return () => {};
+}
+
+function useIsClient() {
+  return useSyncExternalStore(subscribe, () => true, () => false);
+}
+
 /**
- * First-run onboarding overlay.
- * Portaled to document.body so it is never clipped by AppShell's
- * overflow:hidden main / tab bar — otherwise the Next footer disappears.
+ * Guided first-run tour:
+ * welcome → first asset → first expense → Insights tips → sample Wrapped report.
+ * Portaled to document.body so AppShell overflow never clips the CTA.
  */
 export function IntroductionFlow() {
-  const router = useRouter();
   const { t } = useI18n();
   const accounts = useWorthStore((s) => s.accounts);
+  const transactions = useWorthStore((s) => s.transactions);
   const settings = useWorthStore((s) => s.settings);
   const completeOnboarding = useWorthStore((s) => s.completeOnboarding);
+  const setOnboardingStep = useWorthStore((s) => s.setOnboardingStep);
   const updateSettings = useWorthStore((s) => s.updateSettings);
+  const requestSampleWrappedReport = useWorthStore(
+    (s) => s.requestSampleWrappedReport,
+  );
 
-  const [step, setStep] = useState(0);
+  const step: OnboardingStep = settings.onboardingStep ?? "welcome";
+  const open = !settings.onboardingCompleted;
+  const isClient = useIsClient();
+
   const [displayName, setDisplayName] = useState(settings.displayName ?? "");
-  const [mounted, setMounted] = useState(false);
+  const [assetFormOpen, setAssetFormOpen] = useState(false);
+  const [expenseFormOpen, setExpenseFormOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const open = !settings.onboardingCompleted && accounts.length === 0;
-
-  useEffect(() => {
-    if (!open || !mounted) return;
+    if (!open || !isClient) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, [open, mounted]);
+  }, [open, isClient]);
 
-  if (!open || !mounted) return null;
+  if (!open || !isClient) return null;
 
   const saveDisplayName = () => {
     const name = displayName.trim().slice(0, 40);
@@ -94,19 +79,29 @@ export function IntroductionFlow() {
     completeOnboarding();
   };
 
-  const goNext = () => {
-    if (step === 0) saveDisplayName();
-    setStep((s) => Math.min(s + 1, STEPS - 1));
+  const nextAfterWelcome = () => {
+    saveDisplayName();
+    const hasExpense = transactions.some((tx) => tx.type === "expense");
+    if (accounts.length > 0 && hasExpense) {
+      setOnboardingStep("view_insights");
+    } else if (accounts.length > 0) {
+      setOnboardingStep("add_expense");
+    } else {
+      setOnboardingStep("add_asset");
+    }
   };
 
-  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+  const skipAsset = () => setOnboardingStep("add_expense");
+  const skipExpense = () => setOnboardingStep("view_insights");
+  const continueFromInsights = () => setOnboardingStep("sample_report");
 
-  const goLedger = () => {
-    finish();
-    router.push("/history/");
+  const openSampleReport = () => {
+    // Sample report opens at z-130 above this tour (z-120).
+    requestSampleWrappedReport();
   };
 
-  const showStepFooter = step < STEPS - 1;
+  const stepIndex = Math.max(0, TOUR_STEPS.indexOf(step));
+  const showWelcomeFooter = step === "welcome";
 
   const overlay = (
     <div
@@ -121,13 +116,14 @@ export function IntroductionFlow() {
         style={{ paddingTop: "calc(16px + var(--safe-top))" }}
       >
         <div className="flex gap-1.5" aria-hidden>
-          {Array.from({ length: STEPS }, (_, i) => (
+          {TOUR_STEPS.map((key, i) => (
             <span
-              key={i}
+              key={key}
               className="h-1.5 rounded-full transition-all"
               style={{
-                width: i === step ? "1.25rem" : "0.375rem",
-                background: i === step ? "var(--accent)" : "var(--bg-muted)",
+                width: i === stepIndex ? "1.25rem" : "0.375rem",
+                background:
+                  i === stepIndex ? "var(--accent)" : "var(--bg-muted)",
               }}
             />
           ))}
@@ -142,7 +138,7 @@ export function IntroductionFlow() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-4 pt-6">
-        {step === 0 && (
+        {step === "welcome" && (
           <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
             <p
               className="text-xs font-semibold uppercase tracking-[0.14em]"
@@ -177,132 +173,205 @@ export function IntroductionFlow() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    goNext();
+                    nextAfterWelcome();
                   }
                 }}
               />
             </label>
-            {/* Inline Next so the CTA stays visible when the iOS keyboard is open */}
+            {/* Next lives only in the sticky footer below — avoids duplicate CTAs. */}
+          </div>
+        )}
+
+        {step === "add_asset" && (
+          <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+            >
+              <WalletCards size={24} strokeWidth={2.25} />
+            </span>
+            <h1
+              id="intro-title"
+              className="mt-4 font-display text-3xl leading-tight"
+            >
+              {t("intro.asset.title")}
+            </h1>
+            <p
+              className="mt-3 text-sm leading-relaxed"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {t("intro.asset.subtitle")}
+            </p>
+            <ul
+              className="mt-6 space-y-2 text-sm leading-relaxed"
+              style={{ color: "var(--fg)" }}
+            >
+              <li>• {t("intro.asset.tip1")}</li>
+              <li>• {t("intro.asset.tip2")}</li>
+              <li>• {t("intro.asset.tip3")}</li>
+            </ul>
             <button
               type="button"
-              className="btn-primary mt-6 min-h-12 w-full"
-              onClick={goNext}
+              className="btn-primary mt-8 flex min-h-12 w-full items-center justify-center gap-2"
+              onClick={() => setAssetFormOpen(true)}
             >
-              {t("intro.next")}
+              <Plus size={18} />
+              {t("intro.asset.cta")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost mt-2 min-h-11 w-full"
+              onClick={skipAsset}
+            >
+              {t("intro.asset.skip")}
             </button>
           </div>
         )}
 
-        {step === 1 && (
-          <div className="animate-fade-up mx-auto w-full max-w-md">
-            <h1 id="intro-title" className="font-display text-3xl leading-tight">
-              {t("intro.features.title")}
+        {step === "add_expense" && (
+          <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+            >
+              <Receipt size={24} strokeWidth={2.25} />
+            </span>
+            <h1
+              id="intro-title"
+              className="mt-4 font-display text-3xl leading-tight"
+            >
+              {t("intro.expense.title")}
             </h1>
-            <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-              {t("intro.features.subtitle")}
+            <p
+              className="mt-3 text-sm leading-relaxed"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {t("intro.expense.subtitle")}
             </p>
-            <ul className="mt-6 space-y-3">
-              {FEATURES.map(({ key, icon: Icon }) => (
-                <li
-                  key={key}
-                  className="card-surface flex items-start gap-3 p-4"
-                >
-                  <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                    style={{
-                      background: "var(--accent-soft)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    <Icon size={20} strokeWidth={2.25} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-semibold">
-                      {t(FEATURE_COPY[key].title)}
-                    </p>
-                    <p
-                      className="mt-0.5 text-sm leading-relaxed"
-                      style={{ color: "var(--fg-muted)" }}
-                    >
-                      {t(FEATURE_COPY[key].desc)}
-                    </p>
-                  </div>
-                </li>
-              ))}
+            <ul
+              className="mt-6 space-y-2 text-sm leading-relaxed"
+              style={{ color: "var(--fg)" }}
+            >
+              <li>• {t("intro.expense.tip1")}</li>
+              <li>• {t("intro.expense.tip2")}</li>
+              <li>• {t("intro.expense.tip3")}</li>
             </ul>
+            <button
+              type="button"
+              className="btn-primary mt-8 flex min-h-12 w-full items-center justify-center gap-2"
+              onClick={() => setExpenseFormOpen(true)}
+            >
+              <Plus size={18} />
+              {t("intro.expense.cta")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost mt-2 min-h-11 w-full"
+              onClick={skipExpense}
+            >
+              {t("intro.expense.skip")}
+            </button>
           </div>
         )}
 
-        {step === 2 && (
-          <div className="animate-fade-up mx-auto w-full max-w-md">
-            <h1 id="intro-title" className="font-display text-3xl leading-tight">
-              {t("intro.ledger.title")}
+        {step === "view_insights" && (
+          <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+            >
+              <ChartNoAxesColumnIncreasing size={24} strokeWidth={2.25} />
+            </span>
+            <h1
+              id="intro-title"
+              className="mt-4 font-display text-3xl leading-tight"
+            >
+              {t("intro.insights.title")}
             </h1>
-            <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-              {t("intro.ledger.subtitle")}
+            <p
+              className="mt-3 text-sm leading-relaxed"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {t("intro.insights.subtitle")}
             </p>
-            <ol className="mt-6 space-y-4">
-              {LEDGER_STEPS.map((stepKey, index) => (
-                <li key={stepKey} className="flex gap-3">
-                  <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                    style={{
-                      background: "var(--accent-soft)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    {index + 1}
-                  </span>
-                  <p
-                    className="pt-1 text-sm leading-relaxed"
-                    style={{ color: "var(--fg)" }}
-                  >
-                    {t(stepKey)}
-                  </p>
-                </li>
-              ))}
-            </ol>
+            <ul
+              className="mt-6 space-y-2 text-sm leading-relaxed"
+              style={{ color: "var(--fg)" }}
+            >
+              <li>• {t("intro.insights.tip1")}</li>
+              <li>• {t("intro.insights.tip2")}</li>
+              <li>• {t("intro.insights.tip3")}</li>
+            </ul>
+            <button
+              type="button"
+              className="btn-primary mt-8 flex min-h-12 w-full items-center justify-center gap-2"
+              onClick={continueFromInsights}
+            >
+              <ChartNoAxesColumnIncreasing size={18} />
+              {t("intro.insights.cta")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost mt-2 min-h-11 w-full"
+              onClick={continueFromInsights}
+            >
+              {t("intro.insights.skip")}
+            </button>
           </div>
         )}
 
-        {step === 3 && (
-          <div className="animate-fade-up mx-auto w-full max-w-md">
-            <h1 id="intro-title" className="font-display text-3xl leading-tight">
-              {t("intro.start.title")}
+        {step === "sample_report" && (
+          <div className="animate-fade-up mx-auto flex w-full max-w-md flex-col">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+            >
+              <Sparkles size={24} strokeWidth={2.25} />
+            </span>
+            <h1
+              id="intro-title"
+              className="mt-4 font-display text-3xl leading-tight"
+            >
+              {t("intro.report.title")}
             </h1>
-            <p className="mt-2 text-sm" style={{ color: "var(--fg-muted)" }}>
-              {t("intro.start.subtitle")}
+            <p
+              className="mt-3 text-sm leading-relaxed"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {t("intro.report.subtitle")}
             </p>
-            <div className="mt-6 space-y-3">
-              <Link
-                href="/accounts/?new=1"
-                className="btn-primary flex min-h-12 w-full items-center justify-start gap-2"
-                onClick={finish}
-              >
-                <Plus size={18} />
-                {t("intro.start.addAccount")}
-              </Link>
-              <button
-                type="button"
-                className="btn-secondary min-h-12 w-full justify-start"
-                onClick={goLedger}
-              >
-                <Receipt size={18} />
-                {t("intro.start.openLedger")}
-              </button>
-              <button
-                type="button"
-                className="btn-ghost min-h-12 w-full"
-                onClick={finish}
-              >
-                {t("intro.start.skip")}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn-primary mt-8 flex min-h-12 w-full items-center justify-center gap-2"
+              onClick={openSampleReport}
+            >
+              <Sparkles size={18} />
+              {t("intro.report.cta")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost mt-2 min-h-11 w-full"
+              onClick={finish}
+            >
+              {t("intro.report.skip")}
+            </button>
           </div>
         )}
       </div>
 
-      {showStepFooter && (
+      {showWelcomeFooter ? (
         <footer
           className="shrink-0 border-t px-6 pt-3"
           style={{
@@ -311,26 +380,40 @@ export function IntroductionFlow() {
             paddingBottom: "calc(12px + var(--safe-bottom))",
           }}
         >
-          <div className="mx-auto flex max-w-md gap-3">
-            {step > 0 ? (
-              <button
-                type="button"
-                className="btn-secondary min-h-12 flex-1"
-                onClick={goBack}
-              >
-                {t("intro.back")}
-              </button>
-            ) : null}
+          <div className="mx-auto max-w-md">
             <button
               type="button"
-              className="btn-primary min-h-12 flex-1"
-              onClick={goNext}
+              className="btn-primary min-h-12 w-full"
+              onClick={nextAfterWelcome}
             >
               {t("intro.next")}
             </button>
           </div>
         </footer>
-      )}
+      ) : null}
+
+      <AccountForm
+        open={assetFormOpen}
+        onClose={() => setAssetFormOpen(false)}
+        defaultLiability={false}
+        zIndex={140}
+        onSaved={() => {
+          setAssetFormOpen(false);
+          setOnboardingStep("add_expense");
+        }}
+      />
+
+      <TransactionModal
+        open={expenseFormOpen}
+        onClose={() => setExpenseFormOpen(false)}
+        defaultType="expense"
+        defaultAccountId={accounts[0]?.id}
+        zIndex={140}
+        onSaved={() => {
+          setExpenseFormOpen(false);
+          setOnboardingStep("view_insights");
+        }}
+      />
     </div>
   );
 

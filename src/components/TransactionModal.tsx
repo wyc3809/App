@@ -15,23 +15,35 @@ interface TransactionModalProps {
   initial?: Transaction | null;
   /** Pre-select this account when creating a new entry. */
   defaultAccountId?: string;
+  /** Force expense/income when creating (ignored when editing). */
+  defaultType?: TransactionType;
   onClose: () => void;
+  /** Called after a successful create/update (before onClose). */
+  onSaved?: () => void;
+  /** BottomSheet stacking order — raise above onboarding overlays. */
+  zIndex?: number;
 }
 
 export function TransactionModal({
   open,
   initial = null,
   defaultAccountId,
+  defaultType,
   onClose,
+  onSaved,
+  zIndex,
 }: TransactionModalProps) {
   if (!open) return null;
 
   return (
     <TransactionDialog
-      key={initial?.id ?? `new-tx-${defaultAccountId ?? "none"}`}
+      key={initial?.id ?? `new-tx-${defaultAccountId ?? "none"}-${defaultType ?? "any"}`}
       initial={initial}
       defaultAccountId={defaultAccountId}
+      defaultType={defaultType}
       onClose={onClose}
+      onSaved={onSaved}
+      zIndex={zIndex}
     />
   );
 }
@@ -39,11 +51,17 @@ export function TransactionModal({
 function TransactionDialog({
   initial,
   defaultAccountId,
+  defaultType,
   onClose,
+  onSaved,
+  zIndex,
 }: {
   initial: Transaction | null;
   defaultAccountId?: string;
+  defaultType?: TransactionType;
   onClose: () => void;
+  onSaved?: () => void;
+  zIndex?: number;
 }) {
   const accounts = useWorthStore((s) => s.accounts);
   const currencies = useWorthStore((s) => s.currencies);
@@ -55,7 +73,9 @@ function TransactionDialog({
   const presetAccountId = initial?.accountId ?? defaultAccountId ?? "";
   const presetAccount = accounts.find((a) => a.id === presetAccountId);
 
-  const [type, setType] = useState<TransactionType>(initial?.type ?? "expense");
+  const [type, setType] = useState<TransactionType>(
+    initial?.type ?? defaultType ?? "expense",
+  );
   const [title, setTitle] = useState(initial?.title ?? "");
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(
@@ -63,7 +83,8 @@ function TransactionDialog({
   );
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [category, setCategory] = useState<LedgerCategory>(
-    initial?.category ?? (initial?.type === "income" ? "salary" : "food"),
+    initial?.category ??
+      ((initial?.type ?? defaultType) === "income" ? "salary" : "food"),
   );
   const [accountId, setAccountId] = useState(presetAccountId);
   const [note, setNote] = useState(initial?.note ?? "");
@@ -117,11 +138,13 @@ function TransactionDialog({
       addTransaction(payload);
     }
     hapticSuccess();
+    onSaved?.();
     onClose();
   };
 
   return (
     <BottomSheet
+      zIndex={zIndex}
       onClose={onClose}
       onSubmit={submit}
       title={initial ? t("txForm.editTitle") : t("txForm.addTitle")}
