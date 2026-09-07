@@ -62,7 +62,7 @@ Do **not** use `npm run build:pages` for the native shell — that injects `/wor
 - [ ] Privacy Policy URL — `https://worthbook.online/worthtracker/privacy/`
 - [ ] Support URL — `https://worthbook.online/worthtracker/privacy/`
 - [ ] Marketing URL (optional) — `https://worthbook.online/worthtracker/`
-- [ ] Support email — `support@worthbook.online` (forward inbox at your DNS host)
+- [ ] Support email — `bbip21h@gmail.com`
 - [ ] Screenshots (6.7" + 6.1" iPhone)
 - [ ] Age rating (likely 4+)
 - [ ] App Privacy labels — **Data Not Collected** only if you add no analytics SDKs
