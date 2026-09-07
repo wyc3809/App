@@ -123,15 +123,9 @@ DNS + HTTPS 通咗先填：
 
 ---
 
-## E. （可選）電郵轉發
+## E. Support contact
 
-Privacy 頁聯絡係 `support@worthbook.online`。
-
-喺 Spaceship 搵 **Email forwarding** / **Email**（如果有）：
-
-- 建立：`support@worthbook.online` → 轉去你平常用嘅 Gmail／電郵  
-
-如果 Spaceship 冇電郵服務，可以用 ImprovMX / Cloudflare Email Routing 之後再設。
+Privacy 頁聯絡電郵：`bbip21h@gmail.com`（mailto）
 
 ---
 

@@ -65,9 +65,9 @@ export default function PrivacyPage() {
           <a
             className="font-medium"
             style={{ color: "var(--accent)" }}
-            href="mailto:support@worthbook.online"
+            href="mailto:bbip21h@gmail.com"
           >
-            support@worthbook.online
+            bbip21h@gmail.com
           </a>
           .
         </p>

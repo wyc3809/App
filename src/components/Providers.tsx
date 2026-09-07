@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { LoadingSplash } from "@/components/LoadingSplash";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -67,6 +68,9 @@ function StorageWarning() {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isPrivacyPage =
+    pathname === "/privacy" || pathname === "/privacy/" || pathname.endsWith("/privacy/");
   const hydrated = useWorthStore((s) => s.hydrated);
   const setHydrated = useWorthStore((s) => s.setHydrated);
   const resyncAccounts = useWorthStore((s) => s.resyncAccounts);
@@ -160,18 +164,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return <LoadingSplash />;
   }
 
-  return (
+  const shell = (
     <ThemeProvider>
       <LocaleSync />
-      <AppLock>
-        <AppShell>
-          {storageWarn ? <StorageWarning /> : null}
-          {children}
-        </AppShell>
-        {/* Outside AppShell so overlays are not clipped by main/tab-bar overflow */}
-        <IntroductionFlow />
-        <WrappedReportFlow />
-      </AppLock>
+      <AppShell>
+        {storageWarn ? <StorageWarning /> : null}
+        {children}
+      </AppShell>
+      {/* Outside AppShell so overlays are not clipped by main/tab-bar overflow.
+          Skip onboarding on Privacy — App Store Support URL must be readable. */}
+      {!isPrivacyPage ? <IntroductionFlow /> : null}
+      {!isPrivacyPage ? <WrappedReportFlow /> : null}
     </ThemeProvider>
   );
+
+  // Privacy is a public Support URL — never gate it behind Face ID / welcome tour.
+  if (isPrivacyPage) {
+    return shell;
+  }
+
+  return <AppLock>{shell}</AppLock>;
 }

@@ -10,6 +10,7 @@ Use with the screenshots in `app-store/screenshots/`.
 | Privacy Policy URL | `https://worthbook.online/worthtracker/privacy/` |
 | Marketing URL | `https://worthbook.online/worthtracker/` (or leave blank) |
 | Copyright | `2026 WorthBook` |
+| Support email (on Privacy page) | `bbip21h@gmail.com` |
 
 DNS setup: `docs/CUSTOM_DOMAIN.md`.
 
