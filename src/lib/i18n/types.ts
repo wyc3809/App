@@ -58,6 +58,7 @@ export type TranslationKey =
   | "accountForm.optional"
   | "accountForm.nameRequired"
   | "accountForm.valueRequired"
+  | "accountForm.valueSignHint"
   | "valueForm.addTitle"
   | "valueForm.editTitle"
   | "valueForm.amountRequired"

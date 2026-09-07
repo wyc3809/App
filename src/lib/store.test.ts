@@ -171,7 +171,7 @@ describe("worth store features", () => {
     expect(useWorthStore.getState().accounts[0].currentValue).toBe(100);
   });
 
-  it("upserts a negative value entry for signed balances", () => {
+  it("upserts a negative value entry and flips asset to liability", () => {
     useWorthStore.getState().addAccount({
       name: "Cash",
       category: "cash",
@@ -188,8 +188,25 @@ describe("worth store features", () => {
       note: "overdraft",
     });
     const { accounts, valueEntries } = useWorthStore.getState();
-    expect(accounts[0].currentValue).toBe(-250);
-    expect(valueEntries.some((e) => e.value === -250)).toBe(true);
+    expect(accounts[0].isLiability).toBe(true);
+    expect(accounts[0].category).toBe("loan");
+    expect(accounts[0].currentValue).toBe(250);
+    expect(valueEntries.some((e) => e.value === 250 && e.typeFlip)).toBe(true);
+  });
+
+  it("creates an asset with a negative balance as a liability", () => {
+    useWorthStore.getState().addAccount({
+      name: "HSBC",
+      category: "cash",
+      isLiability: false,
+      currency: "HKD",
+      currentValue: -800,
+      asOfDate: "2026-08-01",
+    });
+    const account = useWorthStore.getState().accounts[0];
+    expect(account.isLiability).toBe(true);
+    expect(account.currentValue).toBe(800);
+    expect(account.category).toBe("loan");
   });
 
   it("does not overwrite ledger rows when manually updating same-day balance", () => {

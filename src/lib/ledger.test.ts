@@ -7,9 +7,85 @@ import {
   ledgerPeriodStart,
   liabilityStateBefore,
   liabilityStateOnDate,
+  normalizeEnteredBalance,
+  normalizeSignedDisplayBalance,
   oppositeTransactionType,
 } from "./ledger";
 import type { AccountValueEntry, Transaction } from "./types";
+
+describe("normalizeEnteredBalance", () => {
+  it("keeps positive asset balances as assets", () => {
+    expect(normalizeEnteredBalance(1200, false, "cash")).toEqual({
+      isLiability: false,
+      value: 1200,
+      category: "cash",
+      flipped: false,
+      signedPosition: 1200,
+    });
+  });
+
+  it("turns a negative asset balance into a liability", () => {
+    expect(normalizeEnteredBalance(-250, false, "cash")).toEqual({
+      isLiability: true,
+      value: 250,
+      category: "loan",
+      flipped: true,
+      signedPosition: -250,
+    });
+  });
+
+  it("keeps positive liability magnitudes as liabilities", () => {
+    expect(normalizeEnteredBalance(500, true, "loan")).toEqual({
+      isLiability: true,
+      value: 500,
+      category: "loan",
+      flipped: false,
+      signedPosition: -500,
+    });
+  });
+
+  it("keeps legacy negative liability magnitudes as liabilities", () => {
+    expect(normalizeEnteredBalance(-331533.14, true, "loan")).toEqual({
+      isLiability: true,
+      value: 331533.14,
+      category: "loan",
+      flipped: false,
+      signedPosition: -331533.14,
+    });
+  });
+});
+
+describe("normalizeSignedDisplayBalance", () => {
+  it("keeps liability magnitude when signed display is positive", () => {
+    expect(normalizeSignedDisplayBalance(500, true, "loan")).toEqual({
+      isLiability: true,
+      value: 500,
+      category: "loan",
+      flipped: false,
+      signedPosition: -500,
+    });
+  });
+
+  it("keeps liability magnitude when signed display is negative (legacy)", () => {
+    expect(normalizeSignedDisplayBalance(-331533.14, true, "loan")).toEqual({
+      isLiability: true,
+      value: 331533.14,
+      category: "loan",
+      flipped: false,
+      signedPosition: -331533.14,
+    });
+  });
+
+  it("flips an asset to a liability when signed display is negative", () => {
+    expect(normalizeSignedDisplayBalance(-250, false, "cash")).toEqual({
+      isLiability: true,
+      value: 250,
+      category: "loan",
+      flipped: true,
+      signedPosition: -250,
+    });
+  });
+});
 
 describe("liabilityStateOnDate", () => {
   it("walks typeFlip metadata for historical liability state", () => {

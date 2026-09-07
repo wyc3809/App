@@ -4,6 +4,12 @@ import { useState } from "react";
 import { ASSET_TYPES, LIABILITY_TYPES } from "@/lib/categories";
 import { BottomSheet } from "@/components/BottomSheet";
 import { todayISO } from "@/lib/format";
+import {
+  combineSignedAmount,
+  flipAmountSign,
+  type AmountSign,
+} from "@/lib/signed-amount";
+import { normalizeEnteredBalance } from "@/lib/ledger";
 import { useWorthStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n/context";
 import { hapticSuccess } from "@/lib/haptic";
@@ -61,9 +67,19 @@ function AccountFormDialog({
   const updateAccount = useWorthStore((s) => s.updateAccount);
   const { t } = useI18n();
 
-  const [isLiability, setIsLiability] = useState(
-    initial?.isLiability ?? defaultLiability,
-  );
+  const seedLiability = initial?.isLiability ?? defaultLiability;
+  const seed = initial
+    ? {
+        magnitude: String(Math.abs(initial.currentValue)),
+        sign: (initial.isLiability
+          ? 1
+          : initial.currentValue < 0
+            ? -1
+            : 1) as AmountSign,
+      }
+    : { magnitude: "", sign: 1 as AmountSign };
+
+  const [isLiability, setIsLiability] = useState(seedLiability);
   const [name, setName] = useState(initial?.name ?? "");
   const [category, setCategory] = useState<AccountCategory>(
     initial?.category ?? (defaultLiability ? "loan" : "cash"),
@@ -71,9 +87,8 @@ function AccountFormDialog({
   const [currency, setCurrency] = useState(
     initial?.currency ?? settings.baseCurrency,
   );
-  const [currentValue, setCurrentValue] = useState(
-    initial ? String(initial.currentValue) : "",
-  );
+  const [magnitude, setMagnitude] = useState(seed.magnitude === "0" && !initial ? "" : seed.magnitude);
+  const [sign, setSign] = useState<AmountSign>(seed.sign);
   const [asOfDate, setAsOfDate] = useState(
     initial?.asOfDate ?? todayISO(),
   );
@@ -90,6 +105,7 @@ function AccountFormDialog({
 
   const setLiabilityMode = (next: boolean) => {
     setIsLiability(next);
+    setSign(1);
     const types = next ? LIABILITY_TYPES : ASSET_TYPES;
     if (!types.some((t) => t.value === category)) {
       setCategory(types[0].value);
@@ -99,9 +115,12 @@ function AccountFormDialog({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const nextErrors: typeof errors = {};
-    const value = Number(currentValue);
+    const entered = combineSignedAmount(
+      magnitude,
+      isLiability ? 1 : sign,
+    );
     if (!name.trim()) nextErrors.name = t("accountForm.nameRequired");
-    if (Number.isNaN(value) || value < 0) nextErrors.value = t("accountForm.valueRequired");
+    if (entered === null) nextErrors.value = t("accountForm.valueRequired");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) nextErrors.date = t("common.invalidDate");
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -109,12 +128,22 @@ function AccountFormDialog({
     }
     setErrors({});
 
+    const rawEntered = isLiability
+      ? Math.abs(entered as number)
+      : (entered as number);
+
+    const normalized = normalizeEnteredBalance(
+      rawEntered,
+      isLiability,
+      resolvedCategory,
+    );
+
     const payload = {
       name: name.trim(),
-      category: resolvedCategory,
-      isLiability,
+      category: normalized.category,
+      isLiability: normalized.isLiability,
       currency,
-      currentValue: value,
+      currentValue: normalized.value,
       asOfDate,
       institutionName: institutionName.trim() || undefined,
       note: note.trim() || undefined,
@@ -126,6 +155,8 @@ function AccountFormDialog({
     onSaved?.();
     onClose();
   };
+
+  const isNegative = !isLiability && sign < 0;
 
   return (
     <BottomSheet
@@ -194,12 +225,13 @@ function AccountFormDialog({
               placeholder={t("accountForm.namePlaceholder")}
               aria-invalid={Boolean(errors.name)}
               required
+              autoFocus
             />
             {errors.name ? <p className="field-error">{errors.name}</p> : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0">
+            <div>
               <label className="label" htmlFor="account-category">
                 {t("accountForm.category")}
               </label>
@@ -216,7 +248,7 @@ function AccountFormDialog({
                 ))}
               </select>
             </div>
-            <div className="min-w-0">
+            <div>
               <label className="label" htmlFor="account-currency">
                 {t("accountForm.currency")}
               </label>
@@ -235,29 +267,48 @@ function AccountFormDialog({
             </div>
           </div>
 
-          {/* Date inputs have a large intrinsic min-width on iOS — keep them
-              full-bleed instead of half-width so they cannot spill past the sheet. */}
           <div>
             <label className="label" htmlFor="account-value">
               {t("accountForm.currentValue")}
             </label>
-            <input
-              id="account-value"
-              className="field"
-              type="number"
-              min="0"
-              step="any"
-              inputMode="decimal"
-              value={currentValue}
-              onChange={(e) => {
-                setCurrentValue(e.target.value);
-                if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
-              }}
-              placeholder="0"
-              aria-invalid={Boolean(errors.value)}
-              required
-            />
+            <div className="grid grid-cols-[3.25rem_1fr] gap-2">
+              <button
+                type="button"
+                className="field flex items-center justify-center px-0 text-lg font-bold tabular-nums"
+                style={{
+                  color: isNegative ? "var(--danger)" : "var(--positive)",
+                  background: isNegative
+                    ? "var(--danger-soft)"
+                    : "var(--accent-soft)",
+                }}
+                aria-label={isNegative ? "Negative value" : "Positive value"}
+                aria-pressed={isNegative}
+                title="Toggle + / −"
+                onClick={() => setSign((s) => flipAmountSign(s))}
+              >
+                {isNegative ? "−" : "+"}
+              </button>
+              <input
+                id="account-value"
+                className="field"
+                type="number"
+                min="0"
+                step="any"
+                inputMode="decimal"
+                value={magnitude}
+                onChange={(e) => {
+                  setMagnitude(e.target.value.replace(/^-/, ""));
+                  if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
+                }}
+                placeholder="0"
+                aria-invalid={Boolean(errors.value)}
+                required
+              />
+            </div>
             {errors.value ? <p className="field-error">{errors.value}</p> : null}
+            <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
+              {t("accountForm.valueSignHint")}
+            </p>
           </div>
 
           <div className="min-w-0">

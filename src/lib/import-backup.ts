@@ -60,7 +60,7 @@ function parseAccount(raw: unknown): Account | null {
   if (typeof raw.category !== "string") return null;
   if (typeof raw.isLiability !== "boolean") return null;
   if (typeof raw.currency !== "string" || !raw.currency) return null;
-  if (!isFiniteNumber(raw.currentValue) || raw.currentValue < 0) return null;
+  if (!isFiniteNumber(raw.currentValue)) return null;
   if (typeof raw.updatedAt !== "string") return null;
   if (typeof raw.createdAt !== "string") return null;
 
@@ -68,20 +68,34 @@ function parseAccount(raw: unknown): Account | null {
   const okCategory = raw.isLiability
     ? LIABILITY_CATEGORIES.has(category)
     : ASSET_CATEGORIES.has(category);
-  if (!okCategory) return null;
+  if (!okCategory && !(raw.currentValue < 0 && !raw.isLiability)) return null;
 
   const asOfDate =
     typeof raw.asOfDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.asOfDate)
       ? raw.asOfDate
       : raw.createdAt.slice(0, 10);
 
+  // Negative asset balances → liability (overdraft), matching runtime rules.
+  let isLiability = raw.isLiability;
+  let currentValue = raw.currentValue;
+  let resolvedCategory = category;
+  if (!isLiability && currentValue < 0) {
+    isLiability = true;
+    currentValue = Math.abs(currentValue);
+    resolvedCategory = LIABILITY_CATEGORIES.has(category) ? category : "loan";
+  } else if (isLiability) {
+    currentValue = Math.abs(currentValue);
+  }
+  if (isLiability && !LIABILITY_CATEGORIES.has(resolvedCategory)) return null;
+  if (!isLiability && !ASSET_CATEGORIES.has(resolvedCategory)) return null;
+
   return {
     id: raw.id,
     name: raw.name.trim(),
-    category,
-    isLiability: raw.isLiability,
+    category: resolvedCategory,
+    isLiability,
     currency: raw.currency,
-    currentValue: raw.currentValue,
+    currentValue,
     asOfDate,
     institutionName:
       typeof raw.institutionName === "string" ? raw.institutionName : undefined,
@@ -129,7 +143,7 @@ function parseValueEntry(raw: unknown): AccountValueEntry | null {
   if (typeof raw.id !== "string" || !raw.id) return null;
   if (typeof raw.accountId !== "string" || !raw.accountId) return null;
   if (typeof raw.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) return null;
-  if (!isFiniteNumber(raw.value) || raw.value < 0) return null;
+  if (!isFiniteNumber(raw.value)) return null;
   if (typeof raw.createdAt !== "string") return null;
 
   let typeFlip: AccountValueEntry["typeFlip"];

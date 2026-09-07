@@ -66,7 +66,8 @@ export const zhHans: MessageTree = {
     note: "备注",
     optional: "选填",
     nameRequired: "请输入账户名称",
-    valueRequired: "请输入有效余额（0 或以上）",
+    valueRequired: "请输入有效余额",
+    valueSignHint: "资产可填负数（透支）。负数资产会自动存为负债。",
   },
   valueForm: {
     addTitle: "更新余额",
