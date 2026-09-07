@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Landmark, WalletCards } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ASSET_TYPES, LIABILITY_TYPES, categoryColor } from "@/lib/categories";
-import { toBaseCurrency } from "@/lib/currencies";
+import {
+  buildCategoryGroups,
+  type CategoryGroup,
+} from "@/lib/account-groups";
 import { formatMoney } from "@/lib/format";
 import { hapticTap } from "@/lib/haptic";
 import { useWorthStore } from "@/lib/store";
@@ -16,55 +18,6 @@ interface AccountListProps {
 }
 
 type TopGroup = "assets" | "liabilities";
-
-interface CategoryGroup {
-  category: AccountCategory;
-  label: string;
-  color: string;
-  isLiability: boolean;
-  items: Account[];
-  total: number;
-}
-
-function buildCategoryGroups(
-  accounts: Account[],
-  currencies: ReturnType<typeof useWorthStore.getState>["currencies"],
-): CategoryGroup[] {
-  const order: AccountCategory[] = [
-    ...ASSET_TYPES.map((t) => t.value),
-    ...LIABILITY_TYPES.map((t) => t.value),
-  ];
-
-  const byCategory = new Map<AccountCategory, Account[]>();
-  for (const account of accounts) {
-    const list = byCategory.get(account.category) ?? [];
-    list.push(account);
-    byCategory.set(account.category, list);
-  }
-
-  return order
-    .filter((cat) => byCategory.has(cat))
-    .map((category) => {
-      const items = (byCategory.get(category) ?? []).sort((a, b) => {
-        const av = toBaseCurrency(a.currentValue, a.currency, currencies);
-        const bv = toBaseCurrency(b.currentValue, b.currency, currencies);
-        return bv - av;
-      });
-      const total = items.reduce(
-        (sum, a) => sum + toBaseCurrency(a.currentValue, a.currency, currencies),
-        0,
-      );
-      const meta = [...ASSET_TYPES, ...LIABILITY_TYPES].find((t) => t.value === category);
-      return {
-        category,
-        label: meta?.label ?? category,
-        color: categoryColor(category),
-        isLiability: items[0]?.isLiability ?? false,
-        items,
-        total,
-      };
-    });
-}
 
 export function AccountList({ filter = "all", categories = [] }: AccountListProps) {
   const accounts = useWorthStore((s) => s.accounts);
