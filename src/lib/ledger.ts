@@ -1,4 +1,6 @@
+import { categoryAfterTypeFlip } from "./categories";
 import type {
+  AccountCategory,
   AccountValueEntry,
   LedgerCategory,
   Transaction,
@@ -157,6 +159,138 @@ export function applyLedgerDeltaToBalance(
     isLiability: !isLiability,
     flipped: true,
     signedDelta,
+  };
+}
+
+/**
+ * Convert a form/API entered number into a signed net position.
+ * - Asset mode: entered value is already signed (overdraft allowed).
+ * - Liability mode: absolute value is amount owed (legacy negatives kept as debt).
+ */
+export function enteredBalanceToSignedPosition(
+  entered: number,
+  preferredIsLiability: boolean,
+): number {
+  if (!Number.isFinite(entered)) return 0;
+  if (preferredIsLiability) {
+    return -Math.abs(entered);
+  }
+  return entered;
+}
+
+export interface NormalizedAccountBalance {
+  isLiability: boolean;
+  /** Stored balance: liability magnitude >= 0; asset may be 0+. */
+  value: number;
+  category: AccountCategory;
+  flipped: boolean;
+  /** Signed net position used for classification (+ asset / − liability). */
+  signedPosition: number;
+}
+
+/**
+ * Classify a balance by signed position and pick stored fields.
+ *
+ * Rules:
+ * - Asset + negative → liability (overdraft)
+ * - Liability + any (incl. legacy negative) → liability magnitude
+ * - Liability edited to an explicit negative via signed UI is handled by
+ *   callers passing preferredIsLiability=false after interpreting the sign,
+ *   or by `normalizeSignedDisplayBalance`.
+ */
+export function normalizeEnteredBalance(
+  entered: number,
+  preferredIsLiability: boolean,
+  preferredCategory: AccountCategory,
+): NormalizedAccountBalance {
+  if (!Number.isFinite(entered)) {
+    return {
+      isLiability: preferredIsLiability,
+      value: 0,
+      category: preferredCategory,
+      flipped: false,
+      signedPosition: 0,
+    };
+  }
+
+  // Asset overdraft → liability
+  if (!preferredIsLiability && entered < 0) {
+    return {
+      isLiability: true,
+      value: Math.abs(entered),
+      category: categoryAfterTypeFlip(true),
+      flipped: true,
+      signedPosition: entered,
+    };
+  }
+
+  // Liability form / legacy: always store magnitude as debt
+  if (preferredIsLiability) {
+    return {
+      isLiability: true,
+      value: Math.abs(entered),
+      category: preferredCategory,
+      flipped: false,
+      signedPosition: -Math.abs(entered),
+    };
+  }
+
+  // Non-negative asset
+  return {
+    isLiability: false,
+    value: entered,
+    category: preferredCategory,
+    flipped: false,
+    signedPosition: entered,
+  };
+}
+
+/**
+ * Normalize a signed amount from Update Value (+/− control).
+ * - Asset + negative → liability (overdraft)
+ * - Liability → always keep as liability magnitude (legacy signed rows included)
+ */
+export function normalizeSignedDisplayBalance(
+  signedDisplay: number,
+  currentIsLiability: boolean,
+  currentCategory: AccountCategory,
+): NormalizedAccountBalance {
+  if (!Number.isFinite(signedDisplay)) {
+    return {
+      isLiability: currentIsLiability,
+      value: 0,
+      category: currentCategory,
+      flipped: false,
+      signedPosition: 0,
+    };
+  }
+
+  if (currentIsLiability) {
+    return {
+      isLiability: true,
+      value: Math.abs(signedDisplay),
+      category: currentCategory,
+      flipped: false,
+      signedPosition: -Math.abs(signedDisplay),
+    };
+  }
+
+  if (signedDisplay < 0) {
+    return {
+      isLiability: true,
+      value: Math.abs(signedDisplay),
+      category: categoryAfterTypeFlip(true),
+      flipped: true,
+      signedPosition: signedDisplay,
+    };
+  }
+
+  return {
+    isLiability: false,
+    value: signedDisplay,
+    category: currentCategory,
+    flipped: false,
+    signedPosition: signedDisplay,
   };
 }
 

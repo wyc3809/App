@@ -24,6 +24,8 @@ import {
   isEntryAfter,
   liabilityStateBefore,
   liabilityStateOnDate,
+  normalizeEnteredBalance,
+  normalizeSignedDisplayBalance,
   oppositeTransactionType,
 } from "./ledger";
 import { categoryAfterTypeFlip } from "./categories";
@@ -171,6 +173,18 @@ function syncAccountFromEntries(
     );
   if (mine.length === 0) return account;
   const latest = mine[0];
+  if (latest.typeFlip) {
+    return {
+      ...account,
+      isLiability: latest.typeFlip.toIsLiability,
+      category: latest.typeFlip.toCategory,
+      currentValue: latest.typeFlip.toIsLiability
+        ? Math.abs(latest.value)
+        : latest.value,
+      asOfDate: latest.date,
+      updatedAt: new Date().toISOString(),
+    };
+  }
   return {
     ...account,
     currentValue: account.isLiability
@@ -607,8 +621,16 @@ export const useWorthStore = create<WorthState>()(
       addAccount: (input) => {
         const now = new Date().toISOString();
         const asOfDate = input.asOfDate || todayISO();
+        const normalized = normalizeEnteredBalance(
+          input.currentValue,
+          input.isLiability,
+          input.category,
+        );
         const account: Account = {
           ...input,
+          isLiability: normalized.isLiability,
+          category: normalized.category,
+          currentValue: normalized.value,
           asOfDate,
           id: id(),
           createdAt: now,
@@ -634,25 +656,55 @@ export const useWorthStore = create<WorthState>()(
 
       updateAccount: (accountId, patch) => {
         set((s) => {
+          const prev = s.accounts.find((a) => a.id === accountId);
+          if (!prev) return s;
+
+          const merged = {
+            ...prev,
+            ...patch,
+            asOfDate: patch.asOfDate ?? prev.asOfDate ?? todayISO(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          const shouldNormalize =
+            patch.currentValue !== undefined ||
+            patch.isLiability !== undefined ||
+            patch.category !== undefined;
+
+          const normalized = shouldNormalize
+            ? normalizeEnteredBalance(
+                merged.currentValue,
+                merged.isLiability,
+                merged.category,
+              )
+            : null;
+
+          const target: Account = normalized
+            ? {
+                ...merged,
+                isLiability: normalized.isLiability,
+                category: normalized.category,
+                currentValue: normalized.value,
+              }
+            : merged;
+
           const accounts = s.accounts.map((a) =>
-            a.id === accountId
-              ? {
-                  ...a,
-                  ...patch,
-                  asOfDate: patch.asOfDate ?? a.asOfDate ?? todayISO(),
-                  updatedAt: new Date().toISOString(),
-                }
-              : a,
+            a.id === accountId ? target : a,
           );
-          const target = accounts.find((a) => a.id === accountId);
-          if (!target) return { accounts };
 
           let valueEntries = s.valueEntries;
           if (patch.currentValue !== undefined || patch.asOfDate) {
             const date = target.asOfDate;
-            const value = target.isLiability
-              ? Math.abs(target.currentValue)
-              : target.currentValue;
+            const value = target.currentValue;
+            const typeFlip =
+              normalized?.flipped && prev
+                ? {
+                    fromIsLiability: prev.isLiability,
+                    fromCategory: prev.category,
+                    toIsLiability: target.isLiability,
+                    toCategory: target.category,
+                  }
+                : undefined;
             const existing = valueEntries.find(
               (e) =>
                 e.accountId === accountId &&
@@ -661,7 +713,14 @@ export const useWorthStore = create<WorthState>()(
             );
             if (existing) {
               valueEntries = valueEntries.map((e) =>
-                e.id === existing.id ? { ...e, value, note: patch.note ?? e.note } : e,
+                e.id === existing.id
+                  ? {
+                      ...e,
+                      value,
+                      note: patch.note ?? e.note,
+                      typeFlip: typeFlip ?? e.typeFlip,
+                    }
+                  : e,
               );
             } else {
               valueEntries = [
@@ -674,6 +733,7 @@ export const useWorthStore = create<WorthState>()(
                   note: patch.note,
                   markOnGraph: true,
                   createdAt: new Date().toISOString(),
+                  typeFlip,
                 },
               ];
             }
@@ -780,7 +840,21 @@ export const useWorthStore = create<WorthState>()(
           const account = s.accounts.find((a) => a.id === accountId);
           if (!account) return s;
 
-          const storedValue = account.isLiability ? Math.abs(value) : value;
+          const normalized = normalizeSignedDisplayBalance(
+            value,
+            account.isLiability,
+            account.category,
+          );
+          const storedValue = normalized.value;
+          const typeFlip = normalized.flipped
+            ? {
+                fromIsLiability: account.isLiability,
+                fromCategory: account.category,
+                toIsLiability: normalized.isLiability,
+                toCategory: normalized.category,
+              }
+            : undefined;
+
           let valueEntries = [...s.valueEntries];
           const noteValue = note?.trim() || undefined;
 
@@ -795,6 +869,7 @@ export const useWorthStore = create<WorthState>()(
                     value: storedValue,
                     note: noteValue,
                     markOnGraph,
+                    typeFlip: typeFlip ?? e.typeFlip,
                   }
                 : e,
             );
@@ -813,6 +888,7 @@ export const useWorthStore = create<WorthState>()(
                         value: storedValue,
                         note: noteValue,
                         markOnGraph,
+                        typeFlip: typeFlip ?? e.typeFlip,
                       }
                     : e,
                 )
@@ -826,11 +902,19 @@ export const useWorthStore = create<WorthState>()(
                     note: noteValue,
                     markOnGraph,
                     createdAt: nextCreatedAtForDate(valueEntries, accountId, date),
+                    typeFlip,
                   },
                 ];
           }
 
-          const synced = syncAccountFromEntries(account, valueEntries);
+          const accountAfterType = normalized.flipped
+            ? {
+                ...account,
+                isLiability: normalized.isLiability,
+                category: normalized.category,
+              }
+            : account;
+          const synced = syncAccountFromEntries(accountAfterType, valueEntries);
           const accounts = s.accounts.map((a) =>
             a.id === accountId ? synced : a,
           );
