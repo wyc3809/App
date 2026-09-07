@@ -63,10 +63,11 @@ Do **not** use `npm run build:pages` for the native shell — that injects `/wor
 - [ ] Support URL — `https://worthbook.online/worthtracker/privacy/`
 - [ ] Marketing URL (optional) — `https://worthbook.online/worthtracker/`
 - [ ] Support email — `bbip21h@gmail.com`
-- [ ] Screenshots (6.7" + 6.1" iPhone)
+- [ ] Screenshots (**iPhone only** — no iPad shots needed when device family is iPhone)
 - [ ] Age rating (likely 4+)
 - [ ] App Privacy labels — **Data Not Collected** only if you add no analytics SDKs
-- [ ] Remove placeholder support email before shipping if unused
+
+> The Xcode target uses `TARGETED_DEVICE_FAMILY = 1` (iPhone). After that change, upload a **new build** so Connect stops asking for 13″ iPad screenshots.
 
 ## Android (optional)
 
