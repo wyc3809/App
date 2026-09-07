@@ -607,7 +607,7 @@ export default function SettingsPage() {
       </section>
 
       <p className="px-1 pb-2 text-center text-xs" style={{ color: "var(--fg-subtle)" }}>
-        WorthBook v1.2 · Local-only wealth tracking
+        WorthBook v1.0 · Local-only wealth tracking
       </p>
     </div>
   );
