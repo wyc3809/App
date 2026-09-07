@@ -43,6 +43,8 @@ jobs:
           cp -a out/. _site/worthtracker/
           touch _site/worthtracker/.nojekyll
           touch _site/.nojekyll
+          # Custom domain (DNS must point here — see docs/CUSTOM_DOMAIN.md)
+          printf '%s\n' 'worthbook.online' > _site/CNAME
 
       - name: Deploy with peaceiris (branch publish)
         uses: peaceiris/actions-gh-pages@v4

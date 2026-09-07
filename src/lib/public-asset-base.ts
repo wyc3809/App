@@ -4,7 +4,7 @@
  */
 export function getPublicAssetBase(): string {
   if (process.env.GITHUB_PAGES === "true") {
-    return process.env.PAGES_BASE_PATH || "/App/worthtracker";
+    return process.env.PAGES_BASE_PATH || "/worthtracker";
   }
   return "";
 }

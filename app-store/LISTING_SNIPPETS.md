@@ -2,6 +2,17 @@
 
 Use with the screenshots in `app-store/screenshots/`.
 
+## App Store Connect URLs
+
+| Field | Value |
+|--------|--------|
+| Support URL | `https://worthbook.online/worthtracker/privacy/` |
+| Privacy Policy URL | `https://worthbook.online/worthtracker/privacy/` |
+| Marketing URL | `https://worthbook.online/worthtracker/` (or leave blank) |
+| Copyright | `2026 WorthBook` |
+
+DNS setup: `docs/CUSTOM_DOMAIN.md`.
+
 ## Name / subtitle
 
 | Field | EN | 繁中 |

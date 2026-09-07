@@ -46,7 +46,7 @@ The `ios/` Xcode project is committed. Re-run `npx cap add ios` only if you dele
 npm run build:native && npx cap sync ios
 ```
 
-Do **not** use `npm run build:pages` for the native shell — that injects `/App/worthtracker` basePath for GitHub Pages only.
+Do **not** use `npm run build:pages` for the native shell — that injects `/worthtracker` basePath for GitHub Pages / worthbook.online only.
 
 ## Native features wired in JS
 
@@ -59,8 +59,10 @@ Do **not** use `npm run build:pages` for the native shell — that injects `/App
 
 ## App Store Connect extras (manual)
 
-- [ ] Privacy Policy URL — e.g. `https://wyc3809.github.io/App/worthtracker/privacy/`
-- [ ] Support URL / email (`support@worthbook.app` placeholder in Privacy page)
+- [ ] Privacy Policy URL — `https://worthbook.online/worthtracker/privacy/`
+- [ ] Support URL — `https://worthbook.online/worthtracker/privacy/`
+- [ ] Marketing URL (optional) — `https://worthbook.online/worthtracker/`
+- [ ] Support email — `support@worthbook.online` (forward inbox at your DNS host)
 - [ ] Screenshots (6.7" + 6.1" iPhone)
 - [ ] Age rating (likely 4+)
 - [ ] App Privacy labels — **Data Not Collected** only if you add no analytics SDKs

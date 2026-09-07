@@ -60,15 +60,15 @@ See **[docs/APP_STORE.md](docs/APP_STORE.md)**. No Mac? Use **[docs/IOS-CLOUD-BU
 
 ### GitHub Pages (separate from the game)
 
-WorthBook is published under a **dedicated subpath** so it does not overwrite the game at `/App/`:
+WorthBook is published under a **dedicated subpath** so it does not overwrite other content on the Pages site:
 
-**https://wyc3809.github.io/App/worthtracker/**
+**https://worthbook.online/worthtracker/**
 
 ```bash
-npm run build:pages   # static export → ./out (basePath /App/worthtracker)
+npm run build:pages   # static export → ./out (basePath /worthtracker)
 ```
 
-The Actions workflow deploys only into `gh-pages/worthtracker/` with `keep_files: true`.
+The Actions workflow deploys into `gh-pages/worthtracker/` and writes `CNAME` for `worthbook.online`. See `docs/CUSTOM_DOMAIN.md` for DNS.
 
 ### Other hosts
 
