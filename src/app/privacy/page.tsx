@@ -72,7 +72,7 @@ export default function PrivacyPage() {
           .
         </p>
         <p className="text-xs" style={{ color: "var(--fg-subtle)" }}>
-          Last updated: 6 Aug 2026 · WorthBook v1.2
+          Last updated: 7 Sep 2026 · WorthBook v1.0
         </p>
       </section>
     </div>
