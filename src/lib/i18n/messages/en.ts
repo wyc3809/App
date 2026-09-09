@@ -70,11 +70,14 @@ export const en: MessageTree = {
     valueRequired: "Enter a valid balance",
     valueSignHint:
       "Assets can be negative (overdraft). A negative asset balance is saved as a liability.",
+    liabilityValueHint: "Enter the outstanding balance as a positive amount.",
   },
   valueForm: {
     addTitle: "Update Value",
     editTitle: "Edit Value",
     amountRequired: "Enter a valid amount",
+    amountSignHint: "Tap + / − to set a positive or negative balance.",
+    liabilityAmountHint: "Enter the outstanding balance as a positive amount.",
   },
   txForm: {
     addTitle: "Add Entry",

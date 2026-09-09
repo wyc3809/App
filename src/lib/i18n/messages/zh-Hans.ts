@@ -68,11 +68,14 @@ export const zhHans: MessageTree = {
     nameRequired: "请输入账户名称",
     valueRequired: "请输入有效余额",
     valueSignHint: "资产可填负数（透支）。负数资产会自动存为负债。",
+    liabilityValueHint: "请输入尚欠金额（正数即可，无需负号）。",
   },
   valueForm: {
     addTitle: "更新余额",
     editTitle: "编辑余额",
     amountRequired: "请输入有效金额",
+    amountSignHint: "点 + / − 设置正数或负数余额。",
+    liabilityAmountHint: "请输入尚欠金额（正数即可，无需负号）。",
   },
   txForm: {
     addTitle: "添加记账",

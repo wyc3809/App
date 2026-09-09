@@ -68,11 +68,14 @@ export const zhHant: MessageTree = {
     nameRequired: "請輸入帳戶名稱",
     valueRequired: "請輸入有效結餘",
     valueSignHint: "資產可填負數（透支）。負數資產會自動存成負債。",
+    liabilityValueHint: "請輸入尚欠金額（正數即可，唔使填負號）。",
   },
   valueForm: {
     addTitle: "更新結餘",
     editTitle: "編輯結餘",
     amountRequired: "請輸入有效金額",
+    amountSignHint: "撳 + / − 設定正數或負數結餘。",
+    liabilityAmountHint: "請輸入尚欠金額（正數即可，唔使填負號）。",
   },
   txForm: {
     addTitle: "新增記帳",

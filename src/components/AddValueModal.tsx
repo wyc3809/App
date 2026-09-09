@@ -54,10 +54,14 @@ function AddValueDialog({
   const currencies = useWorthStore((s) => s.currencies);
   const { t } = useI18n();
 
-  const seed = splitSignedAmount(initial?.value ?? account.currentValue);
+  const seed = splitSignedAmount(
+    Math.abs(initial?.value ?? account.currentValue),
+  );
   const [currency, setCurrency] = useState(account.currency);
   const [magnitude, setMagnitude] = useState(seed.magnitude);
-  const [sign, setSign] = useState<AmountSign>(seed.sign);
+  const [sign, setSign] = useState<AmountSign>(
+    account.isLiability ? 1 : seed.sign,
+  );
   const [asOfDate, setAsOfDate] = useState(initial?.date ?? todayISO());
   const [showDatePicker, setShowDatePicker] = useState(
     Boolean(initial && initial.date !== todayISO()),
@@ -66,21 +70,23 @@ function AddValueDialog({
   const [markOnGraph, setMarkOnGraph] = useState(initial?.markOnGraph ?? true);
   const [errors, setErrors] = useState<{ amount?: string; date?: string }>({});
 
+  const entrySign: AmountSign = account.isLiability ? 1 : sign;
+
   const onCurrencyChange = (nextCode: string) => {
     if (nextCode === currency) return;
-    const amount = combineSignedAmount(magnitude, sign);
+    const amount = combineSignedAmount(magnitude, entrySign);
     if (amount !== null) {
       const converted = convertAmount(amount, currency, nextCode, currencies);
       const next = splitSignedAmount(Number(converted.toFixed(2)));
       setMagnitude(next.magnitude);
-      setSign(next.sign);
+      if (!account.isLiability) setSign(next.sign);
     }
     setCurrency(nextCode);
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = combineSignedAmount(magnitude, sign);
+    const amount = combineSignedAmount(magnitude, entrySign);
     const nextErrors: typeof errors = {};
     if (amount === null) nextErrors.amount = t("valueForm.amountRequired");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) nextErrors.date = t("common.invalidDate");
@@ -90,7 +96,9 @@ function AddValueDialog({
     }
     setErrors({});
 
-    const resolvedAmount = amount as number;
+    const resolvedAmount = account.isLiability
+      ? Math.abs(amount as number)
+      : (amount as number);
 
     if (currency !== account.currency) {
       changeAccountCurrency(account.id, currency);
@@ -117,7 +125,7 @@ function AddValueDialog({
           year: "numeric",
         });
 
-  const isNegative = sign < 0;
+  const isNegative = !account.isLiability && sign < 0;
 
   return (
     <BottomSheet
@@ -146,23 +154,31 @@ function AddValueDialog({
             <label className="label" htmlFor="entry-value">
               Value
             </label>
-            <div className="grid grid-cols-[3.25rem_1fr_6.5rem] gap-2">
-              <button
-                type="button"
-                className="field flex items-center justify-center px-0 text-lg font-bold tabular-nums"
-                style={{
-                  color: isNegative ? "var(--danger)" : "var(--positive)",
-                  background: isNegative
-                    ? "var(--danger-soft)"
-                    : "var(--accent-soft)",
-                }}
-                aria-label={isNegative ? "Negative value" : "Positive value"}
-                aria-pressed={isNegative}
-                title="Toggle + / −"
-                onClick={() => setSign((s) => flipAmountSign(s))}
-              >
-                {isNegative ? "−" : "+"}
-              </button>
+            <div
+              className={
+                account.isLiability
+                  ? "grid grid-cols-[1fr_6.5rem] gap-2"
+                  : "grid grid-cols-[3.25rem_1fr_6.5rem] gap-2"
+              }
+            >
+              {!account.isLiability ? (
+                <button
+                  type="button"
+                  className="field flex items-center justify-center px-0 text-lg font-bold tabular-nums"
+                  style={{
+                    color: isNegative ? "var(--danger)" : "var(--positive)",
+                    background: isNegative
+                      ? "var(--danger-soft)"
+                      : "var(--accent-soft)",
+                  }}
+                  aria-label={isNegative ? "Negative value" : "Positive value"}
+                  aria-pressed={isNegative}
+                  title="Toggle + / −"
+                  onClick={() => setSign((s) => flipAmountSign(s))}
+                >
+                  {isNegative ? "−" : "+"}
+                </button>
+              ) : null}
               <input
                 id="entry-value"
                 className="field"
@@ -200,7 +216,9 @@ function AddValueDialog({
             </div>
             {errors.amount ? <p className="field-error">{errors.amount}</p> : null}
             <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
-              Tap + / − to set a positive or negative balance.
+              {account.isLiability
+                ? t("valueForm.liabilityAmountHint")
+                : t("valueForm.amountSignHint")}
             </p>
             {currency !== account.currency && (
               <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>

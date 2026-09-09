@@ -5,6 +5,7 @@ import {
   chartDomainForRange,
   filterNetWorthSeries,
   rangeCutoffISO,
+  withYtdComparisonAnchor,
 } from "./net-worth-series";
 import type { Account, AccountValueEntry } from "./types";
 
@@ -107,5 +108,51 @@ describe("net worth series from value history", () => {
     const series = buildNetWorthSeries(accounts, entries, DEFAULT_CURRENCIES);
     expect(series.find((p) => p.date === "2026-08-01")?.netWorth).toBe(100);
     expect(series.find((p) => p.date === "2026-08-10")?.netWorth).toBe(-50);
+  });
+
+  it("anchors a single mid-year point against YTD (Jan 1 → today)", () => {
+    const accounts = [account("cash", 15000)];
+    const entries = [entry("cash", "2026-09-07", 15000)];
+    const series = buildNetWorthSeries(accounts, entries, DEFAULT_CURRENCIES);
+    expect(series).toHaveLength(1);
+
+    const now = new Date("2026-09-07T12:00:00.000Z");
+    const anchored = withYtdComparisonAnchor(
+      series,
+      accounts,
+      entries,
+      DEFAULT_CURRENCIES,
+      [],
+      now,
+    );
+    expect(anchored).toEqual([
+      { date: "2026-01-01", netWorth: 0 },
+      { date: "2026-09-07", netWorth: 15000 },
+    ]);
+  });
+
+  it("YTD anchor uses carry-forward when history exists before Jan 1", () => {
+    const accounts = [account("cash", 200)];
+    const entries = [
+      entry("cash", "2025-06-01", 100),
+      entry("cash", "2026-09-01", 200),
+    ];
+    const series = buildNetWorthSeries(accounts, entries, DEFAULT_CURRENCIES);
+    const now = new Date("2026-09-07T12:00:00.000Z");
+    const filtered = filterNetWorthSeries(series, "YTD", now);
+    // Only one point inside YTD window after filter of full series... actually both?
+    // 2025-06-01 filtered out, only 2026-09-01
+    expect(filtered).toHaveLength(1);
+
+    const anchored = withYtdComparisonAnchor(
+      filtered,
+      accounts,
+      entries,
+      DEFAULT_CURRENCIES,
+      [],
+      now,
+    );
+    expect(anchored[0]).toEqual({ date: "2026-01-01", netWorth: 100 });
+    expect(anchored[1]).toEqual({ date: "2026-09-01", netWorth: 200 });
   });
 });
