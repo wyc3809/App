@@ -1,9 +1,9 @@
 1:"$Sreact.fragment"
-2:I[47257,["/worthtracker/_next/static/chunks/3vr5nenals8ex.js","/worthtracker/_next/static/chunks/3ciridzzfqev2.js","/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/worthtracker/_next/static/chunks/1ip0ebcme5j82.js"],"ClientPageRoot"]
-3:I[59041,["/worthtracker/_next/static/chunks/3vr5nenals8ex.js","/worthtracker/_next/static/chunks/3ciridzzfqev2.js","/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/worthtracker/_next/static/chunks/1ip0ebcme5j82.js","/worthtracker/_next/static/chunks/25btyucy7nnb4.js"],"default"]
-6:I[97367,["/worthtracker/_next/static/chunks/3vr5nenals8ex.js","/worthtracker/_next/static/chunks/3ciridzzfqev2.js","/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/worthtracker/_next/static/chunks/1ip0ebcme5j82.js"],"OutletBoundary"]
+2:I[47257,["/worthtracker/_next/static/chunks/0jvqtonxzyoj4.js","/worthtracker/_next/static/chunks/01s7u9355x3rh.js","/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/worthtracker/_next/static/chunks/0mgmpms_ueb6_.js"],"ClientPageRoot"]
+3:I[59041,["/worthtracker/_next/static/chunks/0jvqtonxzyoj4.js","/worthtracker/_next/static/chunks/01s7u9355x3rh.js","/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/worthtracker/_next/static/chunks/0mgmpms_ueb6_.js","/worthtracker/_next/static/chunks/25btyucy7nnb4.js"],"default"]
+6:I[97367,["/worthtracker/_next/static/chunks/0jvqtonxzyoj4.js","/worthtracker/_next/static/chunks/01s7u9355x3rh.js","/worthtracker/_next/static/chunks/1-8s9_t85wwr4.js","/worthtracker/_next/static/chunks/0mgmpms_ueb6_.js"],"OutletBoundary"]
 7:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/worthtracker/_next/static/chunks/25btyucy7nnb4.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"cKtBT0BjyNwqC4x5hqSUJ"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/worthtracker/_next/static/chunks/25btyucy7nnb4.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"zdv9hWWi1obsVdVFvY-h_"}
 4:{}
 5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
 8:null

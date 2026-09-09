@@ -1,3 +1,3 @@
-:HL["/worthtracker/_next/static/chunks/1g6cd6ly6quog.css","style"]
+:HL["/worthtracker/_next/static/chunks/0m4d6pxl9vf8r.css","style"]
 :HL["/worthtracker/_next/static/media/5c285b27cdda1fe8-s.p.2_mbdogr7ni8i.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"cKtBT0BjyNwqC4x5hqSUJ"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"zdv9hWWi1obsVdVFvY-h_"}
