@@ -20,6 +20,7 @@ import { useWorthStore } from "@/lib/store";
 import { AppLock } from "@/components/AppLock";
 import { IntroductionFlow } from "@/components/IntroductionFlow";
 import { WrappedReportFlow } from "@/components/WrappedReportFlow";
+import { StreakCelebration } from "@/components/StreakCelebration";
 import { LocaleSync } from "@/lib/i18n/context";
 import { useI18n } from "@/lib/i18n/context";
 
@@ -175,6 +176,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           Skip onboarding on Privacy — App Store Support URL must be readable. */}
       {!isPrivacyPage ? <IntroductionFlow /> : null}
       {!isPrivacyPage ? <WrappedReportFlow /> : null}
+      {!isPrivacyPage ? <StreakCelebration /> : null}
     </ThemeProvider>
   );
 

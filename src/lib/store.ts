@@ -29,6 +29,12 @@ import {
   oppositeTransactionType,
 } from "./ledger";
 import { categoryAfterTypeFlip } from "./categories";
+import {
+  DEFAULT_STREAK,
+  normalizeStreakState,
+  recordDailyActivity,
+  type StreakState,
+} from "./streak";
 import type {
   Account,
   AccountValueEntry,
@@ -51,12 +57,19 @@ interface WorthState {
   snapshots: HistoricalSnapshot[];
   currencies: Currency[];
   settings: UserSettings;
+  /** Optional daily habit streak (local-only helper — not portfolio data). */
+  streak: StreakState;
+  /** Ephemeral — show celebration sheet after a streak extension. */
+  pendingStreakCelebration: { day: number; usedFreeze: boolean } | null;
   hydrated: boolean;
 
   setHydrated: (value: boolean) => void;
   resyncAccounts: () => void;
   loadDemoData: () => void;
   resetAll: () => void;
+  /** Manual Settings check-in (same as updating a balance / ledger). */
+  recordStreakActivity: () => void;
+  clearStreakCelebration: () => void;
   importBackup: (payload: WorthBackupPayload) => void;
   /** Merge accounts / ledger rows from CSV into the current portfolio. */
   importCsvData: (input: {
@@ -508,11 +521,27 @@ export const useWorthStore = create<WorthState>()(
       snapshots: [],
       currencies: DEFAULT_CURRENCIES,
       settings: defaultSettings,
+      streak: { ...DEFAULT_STREAK },
+      pendingStreakCelebration: null,
       hydrated: false,
       wrappedReportTrigger: false,
       sampleWrappedReportTrigger: false,
 
       setHydrated: (value) => set({ hydrated: value }),
+
+      recordStreakActivity: () => {
+        const result = recordDailyActivity(get().streak, todayISO());
+        if (!result.extended) return;
+        set({
+          streak: result.streak,
+          pendingStreakCelebration: {
+            day: result.streak.currentStreak,
+            usedFreeze: result.usedFreeze,
+          },
+        });
+      },
+
+      clearStreakCelebration: () => set({ pendingStreakCelebration: null }),
 
       resyncAccounts: () => {
         set((s) => ({
@@ -546,6 +575,8 @@ export const useWorthStore = create<WorthState>()(
           snapshots: [],
           currencies: DEFAULT_CURRENCIES,
           settings: { ...defaultSettings },
+          streak: { ...DEFAULT_STREAK },
+          pendingStreakCelebration: null,
         }),
 
       importBackup: (payload) => {
@@ -652,6 +683,7 @@ export const useWorthStore = create<WorthState>()(
             ),
           };
         });
+        get().recordStreakActivity();
       },
 
       updateAccount: (accountId, patch) => {
@@ -751,6 +783,9 @@ export const useWorthStore = create<WorthState>()(
             ),
           };
         });
+        if (patch.currentValue !== undefined || patch.asOfDate) {
+          get().recordStreakActivity();
+        }
       },
 
       deleteAccount: (accountId) => {
@@ -931,6 +966,7 @@ export const useWorthStore = create<WorthState>()(
             ),
           };
         });
+        get().recordStreakActivity();
       },
 
       deleteValueEntry: (entryId) => {
@@ -987,6 +1023,7 @@ export const useWorthStore = create<WorthState>()(
             transactions: [tx, ...s.transactions],
           };
         });
+        get().recordStreakActivity();
       },
 
       updateTransaction: (txId, patch) => {
@@ -1152,7 +1189,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 10,
+      version: 11,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -1161,6 +1198,7 @@ export const useWorthStore = create<WorthState>()(
         snapshots: state.snapshots,
         currencies: state.currencies,
         settings: state.settings,
+        streak: state.streak,
       }),
       migrate: (persisted, version) => {
         const state = persisted as {
@@ -1170,6 +1208,7 @@ export const useWorthStore = create<WorthState>()(
           snapshots?: HistoricalSnapshot[];
           currencies?: Currency[];
           settings?: UserSettings;
+          streak?: StreakState;
         };
 
         if (version < 2 && Array.isArray(state.accounts)) {
@@ -1264,6 +1303,10 @@ export const useWorthStore = create<WorthState>()(
               ? "welcome"
               : state.settings?.onboardingStep ?? "welcome",
           };
+        }
+
+        if (version < 11) {
+          state.streak = normalizeStreakState(state.streak);
         }
 
         return state as never;
