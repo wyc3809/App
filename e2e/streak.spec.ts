@@ -63,7 +63,13 @@ test("daily streak: Settings card + celebration, Home stays clean", async ({
 
   const celebration = page.getByText(/Streak extended|連續紀錄已延長|连续记录已延长/i);
   await expect(celebration).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Day 1!|第 1 日！|第 1 天！/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Share$/i })).toHaveCount(0);
+
+  const sheet = page.locator('[role="dialog"]').filter({ has: celebration });
+  await sheet.screenshot({
+    path: path.join(artifactsDir, "streak-celebration-sheet.png"),
+  });
   await page.screenshot({
     path: path.join(artifactsDir, "streak-celebration.png"),
   });
@@ -73,4 +79,9 @@ test("daily streak: Settings card + celebration, Home stays clean", async ({
   await expect(
     page.getByRole("button", { name: /Done today|今日已完成/i }),
   ).toBeVisible();
+  await page.locator("text=/Done today|今日已完成/i").scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: path.join(artifactsDir, "streak-settings-after-checkin.png"),
+    fullPage: true,
+  });
 });
