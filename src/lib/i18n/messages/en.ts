@@ -184,7 +184,7 @@ export const en: MessageTree = {
     sectionDesc:
       "A light habit helper — update a balance, log ledger, or check in here. Does not change your portfolio numbers.",
     best: "Best {n}",
-    freezesLeft: "{n} freeze left",
+    freezesLeft: "{n} freezes left",
     checkIn: "Check in today",
     checkedIn: "Done today",
     milestones: "Milestones",
