@@ -18,6 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
+import { StreakSettingsCard } from "@/components/StreakSettingsCard";
 import { SegmentControl } from "@/components/ui/SegmentControl";
 import { formatLastBackupLabel } from "@/lib/backup-meta";
 import { useI18n } from "@/lib/i18n/context";
@@ -408,6 +409,8 @@ export default function SettingsPage() {
           {t("settings.reportsNativeHint")}
         </p>
       </section>
+
+      <StreakSettingsCard />
 
       <section className="card-surface animate-fade-up-delay space-y-4 p-4">
         <h2 className="font-display text-lg">Currency</h2>
