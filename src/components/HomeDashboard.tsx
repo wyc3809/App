@@ -37,6 +37,7 @@ import {
   buildNetWorthSeries,
   chartDomainForRange,
   filterNetWorthSeries,
+  withYtdComparisonAnchor,
   type ChartRange,
 } from "@/lib/net-worth-series";
 import { useWorthStore } from "@/lib/store";
@@ -160,8 +161,19 @@ export function HomeDashboard() {
       currencies,
       snapshots,
     );
-    const filtered = filterNetWorthSeries(series, range as ChartRange);
-    const domain = chartDomainForRange(range as ChartRange, filtered);
+    let filtered = filterNetWorthSeries(series, range as ChartRange);
+    let domainRange = range as ChartRange;
+    if (filtered.length === 1) {
+      filtered = withYtdComparisonAnchor(
+        filtered,
+        accounts,
+        valueEntries,
+        currencies,
+        snapshots,
+      );
+      domainRange = "YTD";
+    }
+    const domain = chartDomainForRange(domainRange, filtered);
     const domainMs: [number, number] | ["dataMin", "dataMax"] =
       domain[0] === "dataMin"
         ? ["dataMin", "dataMax"]
@@ -342,7 +354,7 @@ export function HomeDashboard() {
       </section>
 
       <section className="relative z-0 animate-fade-up-delay">
-        {chartData.points.length < 2 ? (
+        {chartData.points.length === 0 ? (
           <div
             className="flex h-48 items-center justify-center rounded-2xl text-sm"
             style={{ background: "var(--bg-muted)", color: "var(--fg-muted)" }}

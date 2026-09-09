@@ -36,6 +36,48 @@ export function rangeCutoffISO(range: ChartRange, now = new Date()): string | nu
   return cutoff.toISOString().slice(0, 10);
 }
 
+/** Portfolio net worth on a calendar date (carry-forward). 0 if nothing existed yet. */
+export function netWorthOnDate(
+  accounts: Account[],
+  valueEntries: AccountValueEntry[],
+  currencies: Currency[],
+  date: string,
+  snapshots: HistoricalSnapshot[] = [],
+): number {
+  let totalAssets = 0;
+  let totalLiabilities = 0;
+  let any = false;
+
+  for (const account of accounts) {
+    const hasHistory = valueEntries.some(
+      (e) => e.accountId === account.id && e.date <= date,
+    );
+    if (!hasHistory) continue;
+    any = true;
+    const bal = balanceOnDate(valueEntries, account.id, date, account.currentValue);
+    const isLiability = liabilityStateOnDate(
+      valueEntries,
+      account.id,
+      date,
+      account.isLiability,
+    );
+    const magnitude = isLiability ? Math.abs(bal) : bal;
+    const base = toBaseCurrency(magnitude, account.currency, currencies);
+    if (isLiability) totalLiabilities += base;
+    else totalAssets += base;
+  }
+
+  if (any) {
+    return Number((totalAssets - totalLiabilities).toFixed(2));
+  }
+
+  const onOrBefore = snapshots
+    .filter((s) => s.date <= date)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (onOrBefore[0]) return onOrBefore[0].netWorthBaseCurrency;
+  return 0;
+}
+
 /**
  * Rebuild portfolio net worth on every date that appears in value history
  * (carry-forward per account). Falls back to snapshots when no entries exist.
@@ -56,40 +98,20 @@ export function buildNetWorthSeries(
   const points: NetWorthPoint[] = [];
 
   for (const date of sortedDates) {
-    let totalAssets = 0;
-    let totalLiabilities = 0;
-    let any = false;
-
-    for (const account of accounts) {
-      const hasHistory = valueEntries.some(
-        (e) => e.accountId === account.id && e.date <= date,
-      );
-      if (!hasHistory) continue;
-      any = true;
-      const bal = balanceOnDate(valueEntries, account.id, date, account.currentValue);
-      const isLiability = liabilityStateOnDate(
-        valueEntries,
-        account.id,
-        date,
-        account.isLiability,
-      );
-      const magnitude = isLiability ? Math.abs(bal) : bal;
-      const base = toBaseCurrency(magnitude, account.currency, currencies);
-      if (isLiability) totalLiabilities += base;
-      else totalAssets += base;
-    }
-
-    if (any) {
+    const hasEntryHistory = accounts.some((account) =>
+      valueEntries.some((e) => e.accountId === account.id && e.date <= date),
+    );
+    if (hasEntryHistory || snapshots.some((s) => s.date === date)) {
       points.push({
         date,
-        netWorth: Number((totalAssets - totalLiabilities).toFixed(2)),
+        netWorth: netWorthOnDate(
+          accounts,
+          valueEntries,
+          currencies,
+          date,
+          snapshots,
+        ),
       });
-      continue;
-    }
-
-    const snap = snapshots.find((s) => s.date === date);
-    if (snap) {
-      points.push({ date, netWorth: snap.netWorthBaseCurrency });
     }
   }
 
@@ -106,6 +128,44 @@ export function filterNetWorthSeries(
   if (!cutoff) return points;
   const filtered = points.filter((p) => p.date >= cutoff);
   return filtered.length > 0 ? filtered : points.slice(-1);
+}
+
+/**
+ * With only one history point the home chart used to stay empty.
+ * Anchor against calendar YTD (Jan 1 → today) so a single update still draws a line.
+ */
+export function withYtdComparisonAnchor(
+  points: NetWorthPoint[],
+  accounts: Account[],
+  valueEntries: AccountValueEntry[],
+  currencies: Currency[],
+  snapshots: HistoricalSnapshot[] = [],
+  now = new Date(),
+): NetWorthPoint[] {
+  if (points.length !== 1) return points;
+
+  const alone = points[0];
+  const ytdStart = rangeCutoffISO("YTD", now);
+  const today = now.toISOString().slice(0, 10);
+  if (!ytdStart) return points;
+
+  if (alone.date > ytdStart) {
+    const baseline = netWorthOnDate(
+      accounts,
+      valueEntries,
+      currencies,
+      ytdStart,
+      snapshots,
+    );
+    return [{ date: ytdStart, netWorth: baseline }, alone];
+  }
+
+  // Only point is on/before Jan 1 — stretch forward to today for a comparable line.
+  if (alone.date < today) {
+    return [alone, { date: today, netWorth: alone.netWorth }];
+  }
+
+  return points;
 }
 
 /** Domain for the chart X axis so year ranges keep a truthful time scale. */

@@ -271,23 +271,31 @@ function AccountFormDialog({
             <label className="label" htmlFor="account-value">
               {t("accountForm.currentValue")}
             </label>
-            <div className="grid grid-cols-[3.25rem_1fr] gap-2">
-              <button
-                type="button"
-                className="field flex items-center justify-center px-0 text-lg font-bold tabular-nums"
-                style={{
-                  color: isNegative ? "var(--danger)" : "var(--positive)",
-                  background: isNegative
-                    ? "var(--danger-soft)"
-                    : "var(--accent-soft)",
-                }}
-                aria-label={isNegative ? "Negative value" : "Positive value"}
-                aria-pressed={isNegative}
-                title="Toggle + / −"
-                onClick={() => setSign((s) => flipAmountSign(s))}
-              >
-                {isNegative ? "−" : "+"}
-              </button>
+            <div
+              className={
+                isLiability
+                  ? "grid grid-cols-1 gap-2"
+                  : "grid grid-cols-[3.25rem_1fr] gap-2"
+              }
+            >
+              {!isLiability ? (
+                <button
+                  type="button"
+                  className="field flex items-center justify-center px-0 text-lg font-bold tabular-nums"
+                  style={{
+                    color: isNegative ? "var(--danger)" : "var(--positive)",
+                    background: isNegative
+                      ? "var(--danger-soft)"
+                      : "var(--accent-soft)",
+                  }}
+                  aria-label={isNegative ? "Negative value" : "Positive value"}
+                  aria-pressed={isNegative}
+                  title="Toggle + / −"
+                  onClick={() => setSign((s) => flipAmountSign(s))}
+                >
+                  {isNegative ? "−" : "+"}
+                </button>
+              ) : null}
               <input
                 id="account-value"
                 className="field"
@@ -307,7 +315,9 @@ function AccountFormDialog({
             </div>
             {errors.value ? <p className="field-error">{errors.value}</p> : null}
             <p className="mt-1.5 text-xs" style={{ color: "var(--fg-subtle)" }}>
-              {t("accountForm.valueSignHint")}
+              {isLiability
+                ? t("accountForm.liabilityValueHint")
+                : t("accountForm.valueSignHint")}
             </p>
           </div>
 
