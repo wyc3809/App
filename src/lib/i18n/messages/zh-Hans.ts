@@ -44,6 +44,8 @@ export const zhHans: MessageTree = {
     viewAll: "查看全部",
     noAccounts: "尚无账户",
     addFirstAccount: "添加第一个账户",
+    filteredNetWorth: "筛选后净资产",
+    filteredBadge: "已筛选",
   },
   appLock: {
     title: "WorthBook 已锁定",
