@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>下載 · 江湖一生水墨素材包</title>
+  <style>
+    :root {
+      --paper: #f3ebdc;
+      --paper-aged: #e6d9c4;
+      --ink: #1a1a1a;
+      --ink-wash: #8a8278;
+      --cinnabar: #a33a32;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 18px;
+      background:
+        linear-gradient(168deg, #faf6ee 0%, var(--paper) 48%, var(--paper-aged) 100%);
+      color: var(--ink);
+      font-family: "Noto Serif TC", "Songti TC", "STSong", serif;
+    }
+    main {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.65rem;
+      letter-spacing: 0.28em;
+      font-weight: 500;
+    }
+    p {
+      margin: 0 0 28px;
+      color: var(--ink-wash);
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+    a.dl {
+      display: block;
+      width: 100%;
+      padding: 16px 18px;
+      text-decoration: none;
+      color: var(--paper);
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      letter-spacing: 0.12em;
+      font-size: 1.05rem;
+      min-height: 52px;
+      line-height: 1.4;
+    }
+    a.dl:active { opacity: 0.88; }
+    .hint {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      color: var(--ink-wash);
+      line-height: 1.6;
+    }
+    .seal {
+      display: inline-block;
+      margin-top: 22px;
+      padding: 4px 8px;
+      border: 2px solid var(--cinnabar);
+      color: var(--cinnabar);
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>江湖一生</h1>
+    <p>水墨文字遊戲素材包<br />風格聖經 · SVG · 文案 · AI 接手提示</p>
+    <a class="dl" href="./jianghu-ink-pack.zip" download="jianghu-ink-pack.zip">點此下載 ZIP</a>
+    <p class="hint">約 34 KB。下載後可上傳到另一個 AI 對話；請先打開包內 <code>00-AI-HANDOFF.md</code>。</p>
+    <div class="seal">墨包</div>
+  </main>
+</body>
+</html>
