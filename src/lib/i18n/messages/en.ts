@@ -45,6 +45,8 @@ export const en: MessageTree = {
     viewAll: "View all",
     noAccounts: "No accounts yet",
     addFirstAccount: "Add your first account",
+    filteredNetWorth: "Filtered net worth",
+    filteredBadge: "Filtered",
   },
   appLock: {
     title: "WorthBook is locked",

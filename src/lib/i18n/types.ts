@@ -39,6 +39,8 @@ export type TranslationKey =
   | "home.viewAll"
   | "home.noAccounts"
   | "home.addFirstAccount"
+  | "home.filteredNetWorth"
+  | "home.filteredBadge"
   | "appLock.title"
   | "appLock.unlock"
   | "appLock.failed"

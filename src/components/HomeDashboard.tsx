@@ -151,25 +151,51 @@ export function HomeDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<AccountGroup | null>(null);
 
-  const totals = computeTotals(accounts, currencies);
   const privacy = settings.isPrivacyMode;
+
+  const filteredAccounts = useMemo(() => {
+    let list = [...accounts];
+    if (filter.kind === "assets") list = list.filter((a) => !a.isLiability);
+    if (filter.kind === "liabilities") list = list.filter((a) => a.isLiability);
+    if (filter.categories.length > 0) {
+      list = list.filter((a) => filter.categories.includes(a.category));
+    }
+
+    list.sort((a, b) => {
+      if (filter.sort === "name") return a.name.localeCompare(b.name);
+      if (filter.sort === "updated") return b.asOfDate.localeCompare(a.asOfDate);
+      const av = toBaseCurrency(a.currentValue, a.currency, currencies);
+      const bv = toBaseCurrency(b.currentValue, b.currency, currencies);
+      return bv - av;
+    });
+    return list;
+  }, [accounts, filter, currencies]);
+
+  /** Kind/category filters change portfolio math; sort-only does not. */
+  const isPortfolioFiltered =
+    filter.kind !== "all" || filter.categories.length > 0;
+
+  const totals = useMemo(
+    () => computeTotals(filteredAccounts, currencies),
+    [filteredAccounts, currencies],
+  );
 
   const chartData = useMemo(() => {
     const series = buildNetWorthSeries(
-      accounts,
+      filteredAccounts,
       valueEntries,
       currencies,
-      snapshots,
+      isPortfolioFiltered ? [] : snapshots,
     );
     let filtered = filterNetWorthSeries(series, range as ChartRange);
     let domainRange = range as ChartRange;
     if (filtered.length === 1) {
       filtered = withYtdComparisonAnchor(
         filtered,
-        accounts,
+        filteredAccounts,
         valueEntries,
         currencies,
-        snapshots,
+        isPortfolioFiltered ? [] : snapshots,
       );
       domainRange = "YTD";
     }
@@ -189,25 +215,14 @@ export function HomeDashboard() {
       domainMs,
       useTimeScale: domain[0] !== "dataMin",
     };
-  }, [accounts, valueEntries, currencies, snapshots, range]);
-
-  const filteredAccounts = useMemo(() => {
-    let list = [...accounts];
-    if (filter.kind === "assets") list = list.filter((a) => !a.isLiability);
-    if (filter.kind === "liabilities") list = list.filter((a) => a.isLiability);
-    if (filter.categories.length > 0) {
-      list = list.filter((a) => filter.categories.includes(a.category));
-    }
-
-    list.sort((a, b) => {
-      if (filter.sort === "name") return a.name.localeCompare(b.name);
-      if (filter.sort === "updated") return b.asOfDate.localeCompare(a.asOfDate);
-      const av = toBaseCurrency(a.currentValue, a.currency, currencies);
-      const bv = toBaseCurrency(b.currentValue, b.currency, currencies);
-      return bv - av;
-    });
-    return list;
-  }, [accounts, filter, currencies]);
+  }, [
+    filteredAccounts,
+    valueEntries,
+    currencies,
+    snapshots,
+    range,
+    isPortfolioFiltered,
+  ]);
 
   const assetAccounts = useMemo(
     () => filteredAccounts.filter((a) => !a.isLiability),
@@ -323,12 +338,27 @@ export function HomeDashboard() {
       </header>
 
       <section className="hero-card relative z-0 animate-fade-up px-4 py-3.5 text-center">
-        <p
-          className="text-[10px] font-bold uppercase tracking-[0.14em]"
-          style={{ color: "var(--hero-muted)" }}
-        >
-          {t("home.netWorthProfile")}
-        </p>
+        <div className="flex items-center justify-center gap-2">
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.14em]"
+            style={{ color: "var(--hero-muted)" }}
+          >
+            {isPortfolioFiltered
+              ? t("home.filteredNetWorth")
+              : t("home.netWorthProfile")}
+          </p>
+          {isPortfolioFiltered ? (
+            <span
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+              style={{
+                background: "color-mix(in srgb, var(--hero-fg) 14%, transparent)",
+                color: "var(--hero-fg)",
+              }}
+            >
+              {t("home.filteredBadge")}
+            </span>
+          ) : null}
+        </div>
         <p
           className="mt-1.5 text-2xl font-bold leading-none tracking-tight tabular-nums sm:text-[1.75rem]"
           style={{ color: "var(--hero-fg)" }}
