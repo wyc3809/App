@@ -292,6 +292,7 @@ test.describe("WorthBook E2E", () => {
     await expect(addBtn).toBeInViewport();
     await addBtn.click();
     await expect(dialog).toHaveCount(0);
+    await dismissStreakCelebration(page);
     await revealAccountRows(page);
     await expect(page.getByText("Tap Test Bank")).toBeVisible();
   });
