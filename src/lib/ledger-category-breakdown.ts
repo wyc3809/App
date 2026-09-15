@@ -30,6 +30,7 @@ export interface LedgerCategoryBreakdown {
 export const LEDGER_CATEGORY_TINT: Record<LedgerCategory, string> = {
   food: "#f59e0b",
   transport: "#3b82f6",
+  travel: "#0ea5e9",
   housing: "#f97316",
   shopping: "#ec4899",
   entertainment: "#a855f7",
@@ -48,6 +49,7 @@ export const LEDGER_CATEGORY_TINT: Record<LedgerCategory, string> = {
 export const LEDGER_CATEGORY_SHORT: Record<LedgerCategory, string> = {
   food: "Food",
   transport: "Transport",
+  travel: "Travel",
   housing: "Home",
   shopping: "Shopping",
   entertainment: "Fun",

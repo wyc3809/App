@@ -21,6 +21,7 @@ export const INCOME_CATEGORIES: { value: LedgerCategory; label: string }[] = [
 export const EXPENSE_CATEGORIES: { value: LedgerCategory; label: string }[] = [
   { value: "food", label: "Food" },
   { value: "transport", label: "Transport" },
+  { value: "travel", label: "Travel" },
   { value: "housing", label: "Housing" },
   { value: "shopping", label: "Shopping" },
   { value: "entertainment", label: "Entertainment" },

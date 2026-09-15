@@ -117,6 +117,7 @@ export type LedgerCategory =
   | "gift"
   | "food"
   | "transport"
+  | "travel"
   | "housing"
   | "shopping"
   | "entertainment"
