@@ -239,7 +239,7 @@ export function InsightsDashboard() {
         >
           Chart
         </p>
-        <div className="flex flex-wrap gap-2 pb-1">
+        <div className="chip-scroll -mx-1 px-1 pb-1">
           {CHARTS.map((chart) => {
             const Icon = chart.icon;
             const selected = chart.id === chartId;

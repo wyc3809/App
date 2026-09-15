@@ -193,6 +193,7 @@ const LEDGER_CATEGORIES = new Set([
   "gift",
   "food",
   "transport",
+  "travel",
   "housing",
   "shopping",
   "entertainment",

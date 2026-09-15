@@ -38,6 +38,33 @@ async function dismissWrappedReports(page: Page) {
   }
 }
 
+/** Dismiss daily-streak celebration sheet (blocks nav after save / demo load). */
+async function dismissStreakCelebration(page: Page) {
+  // Allow React to paint the celebration after a store mutation.
+  await page
+    .getByRole("button", { name: /^Nice$|^好$/i })
+    .waitFor({ state: "visible", timeout: 1_500 })
+    .catch(() => undefined);
+
+  for (let i = 0; i < 10; i++) {
+    await page.evaluate(() => {
+      const w = window as Window & { __worthClearStreakCelebration?: () => void };
+      w.__worthClearStreakCelebration?.();
+    });
+    const nice = page.getByRole("button", { name: /^Nice$|^好$/i });
+    if (await nice.isVisible().catch(() => false)) {
+      await nice.click({ force: true });
+      await page.waitForTimeout(150);
+      continue;
+    }
+    // Confirm gone
+    if (!(await page.getByText(/Streak extended/i).isVisible().catch(() => false))) {
+      return;
+    }
+    await page.waitForTimeout(100);
+  }
+}
+
 /** Wait until Zustand persist finishes and the shell is interactive. */
 async function waitForAppReady(page: Page) {
   await page.waitForFunction(
@@ -51,6 +78,7 @@ async function waitForAppReady(page: Page) {
     { timeout: 20_000 },
   );
   await dismissWrappedReports(page);
+  await dismissStreakCelebration(page);
   await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible({
     timeout: 20_000,
   });
@@ -87,6 +115,7 @@ async function dismissIntro(page: Page) {
   }
 
   await dismissWrappedReports(page);
+  await dismissStreakCelebration(page);
 }
 
 /** Expand collapsed Assets/Liabilities groups until account rows are visible. */
@@ -117,7 +146,14 @@ async function loadDemo(page: Page) {
   await expect(page.getByText(/Net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
+  // Demo seeding triggers streak + wrapped overlays; wait a beat for paint.
+  await page
+    .getByRole("button", { name: /^Nice$|^好$/i })
+    .waitFor({ state: "visible", timeout: 3_000 })
+    .catch(() => undefined);
+  await dismissStreakCelebration(page);
   await dismissWrappedReports(page);
+  await dismissStreakCelebration(page);
 }
 
 /** Open the Add Account sheet after onboarding is out of the way. */
@@ -257,6 +293,7 @@ test.describe("WorthBook E2E", () => {
     await expect(addBtn).toBeInViewport();
     await addBtn.click();
     await expect(dialog).toHaveCount(0);
+    await dismissStreakCelebration(page);
     await revealAccountRows(page);
     await expect(page.getByText("Tap Test Bank")).toBeVisible();
   });
@@ -332,6 +369,7 @@ test.describe("WorthBook E2E", () => {
     await expect(page.getByText(/Added .+ ledger/i)).toBeVisible({
       timeout: 10_000,
     });
+    await dismissStreakCelebration(page);
 
     await page.getByRole("link", { name: "Ledger" }).click();
     await page.getByRole("tab", { name: "YTD" }).click();
@@ -400,6 +438,7 @@ test.describe("WorthBook E2E", () => {
     await dialog.locator("#account-value").fill("1000");
     await dialog.getByRole("button", { name: "Add Account" }).click();
     await expect(dialog).toHaveCount(0);
+    await dismissStreakCelebration(page);
 
     await page.getByRole("link", { name: "Ledger" }).click();
     await page.getByRole("tab", { name: "Expense" }).click();

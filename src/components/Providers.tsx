@@ -145,6 +145,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const w = window as Window & {
       __worthLoadDemo?: () => void;
       __worthSetTheme?: (theme: "light" | "dark" | "system") => void;
+      __worthClearStreakCelebration?: () => void;
     };
     w.__worthLoadDemo = () => {
       const store = useWorthStore.getState();
@@ -155,9 +156,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     w.__worthSetTheme = (theme) => {
       useWorthStore.getState().updateSettings({ theme });
     };
+    w.__worthClearStreakCelebration = () => {
+      useWorthStore.getState().clearStreakCelebration();
+    };
     return () => {
       delete w.__worthLoadDemo;
       delete w.__worthSetTheme;
+      delete w.__worthClearStreakCelebration;
     };
   }, []);
 

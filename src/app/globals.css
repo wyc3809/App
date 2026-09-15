@@ -114,6 +114,14 @@ button {
   max-width: 100%;
 }
 
+/* iOS Safari zooms the page when focused inputs are < 16px and often
+   does not restore zoom after blur — keep interactive fields at ≥16px. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+textarea,
+select {
+  font-size: 16px;
+}
+
 input[type="date"],
 input[type="datetime-local"],
 input[type="time"],
@@ -386,7 +394,7 @@ h3,
   }
 
   .chip-scroll {
-    @apply flex gap-2 overflow-x-auto pb-1;
+    @apply flex flex-nowrap gap-2 overflow-x-auto pb-1;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;

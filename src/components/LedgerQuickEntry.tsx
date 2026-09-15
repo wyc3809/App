@@ -14,6 +14,7 @@ import {
   Home,
   Link2,
   PiggyBank,
+  Plane,
   ShoppingBag,
   Sparkles,
   UtensilsCrossed,
@@ -41,6 +42,7 @@ const CATEGORY_META: Record<
 > = {
   food: { icon: UtensilsCrossed, tint: "#f59e0b", short: "Food" },
   transport: { icon: Bus, tint: "#3b82f6", short: "Transport" },
+  travel: { icon: Plane, tint: "#0ea5e9", short: "Travel" },
   housing: { icon: Home, tint: "#8b5cf6", short: "Housing" },
   shopping: { icon: ShoppingBag, tint: "#ec4899", short: "Shopping" },
   entertainment: { icon: Clapperboard, tint: "#ef4444", short: "Fun" },
@@ -337,12 +339,14 @@ export function LedgerQuickEntry() {
           style={{ background: "var(--bg-muted)" }}
         >
           <input
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-            style={{ color: "var(--fg)" }}
+            className="min-w-0 flex-1 bg-transparent text-base outline-none"
+            style={{ color: "var(--fg)", fontSize: "16px" }}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note…"
             aria-label="Note"
+            enterKeyHint="done"
+            autoCapitalize="sentences"
           />
           <button
             type="button"

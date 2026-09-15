@@ -11,6 +11,7 @@ import {
   HeartPulse,
   Home,
   PiggyBank,
+  Plane,
   ShoppingBag,
   Sparkles,
   UtensilsCrossed,
@@ -54,6 +55,7 @@ const PERIODS: { value: LedgerSummaryPeriod; label: string }[] = [
 const ICONS: Record<LedgerCategory, ComponentType<{ size?: number; strokeWidth?: number }>> = {
   food: UtensilsCrossed,
   transport: Bus,
+  travel: Plane,
   housing: Home,
   shopping: ShoppingBag,
   entertainment: Clapperboard,
