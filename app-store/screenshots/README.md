@@ -2,24 +2,18 @@
 
 Ready-to-upload **light-mode** marketing screenshots for **App Store Connect**.
 
-> Captured in light theme. Marketing headlines stay in the top band so they never overlap the phone UI.
+> Captured in light theme. Marketing headlines stay in the top band so they never overlap the phone UI. Bottom tab bar is fully visible.
 
-## Accepted sizes (this listing slot)
+## Sizes
 
-App Store Connect for this app expects one of:
-
-| Orientation | Size |
-|-------------|------|
-| Portrait | **1206 × 2622** |
-| Landscape | 2622 × 1206 |
-| Portrait | **1179 × 2556** |
-| Landscape | 2556 × 1179 |
-
-We ship the two portrait sizes below.
+| Folder | Size | Slot |
+|--------|------|------|
+| `6.7/` | **1242 × 2688** | iPhone 6.5" Display |
+| `6.1/` | **1179 × 2556** | iPhone 6.1" Display |
 
 ## Upload these (recommended first)
 
-### 1206 × 2622 — `app-store/screenshots/6.7/`
+### 1242 × 2688 — `app-store/screenshots/6.7/`
 
 English (`6.7/en/`):
 
@@ -43,13 +37,13 @@ Same three files under `6.1/{en,zh-Hant}/`.
 
 In App Store Connect → **Previews and Screenshots**:
 
-1. Upload the three `6.7/en` images (**1206 × 2622**) into the size class that accepts that dimension.
+1. Upload the three `6.7/en` images (**1242 × 2688**) into the **6.5" Display** slot.
 2. If you localized **繁體中文**, upload `6.7/zh-Hant`.
-3. For the **1179 × 2556** class, upload `6.1/{locale}/`.
+3. For the **6.1"** class, upload `6.1/{locale}/`.
 
 ## Also included
 
-- `raw/` — unframed device captures (1206 × 2622)
+- `raw/` — unframed device captures (1242 × 2688)
 - `manifest.json` — generation metadata
 - Regenerator: `scripts/generate-app-store-screenshots.mjs`
 
@@ -57,13 +51,3 @@ In App Store Connect → **Previews and Screenshots**:
 npm run build
 npm run screenshots:app-store
 ```
-
-## Suggested listing copy (short)
-
-**Subtitle (≤30):** `Private net worth tracker` / `私密淨值與記帳`
-
-**Promotional text (EN):**  
-Track net worth, accounts, and a daily ledger — 100% on your iPhone. No account. No cloud.
-
-**推廣文字：**  
-追蹤淨值、帳戶與日常記帳——資料只留在你的 iPhone。無需註冊、無雲端。

@@ -6,8 +6,8 @@
  *   node scripts/generate-app-store-screenshots.mjs
  *
  * Outputs under app-store/screenshots/:
- *   raw/                 — device UI captures (1206×2622)
- *   6.7/{en,zh-Hant}/    — 1206×2622 marketing frames (iPhone 6.3"/6.5" slot)
+ *   raw/                 — device UI captures (1242×2688)
+ *   6.7/{en,zh-Hant}/    — 1242×2688 marketing frames (iPhone 6.5" slot)
  *   6.1/{en,zh-Hant}/    — 1179×2556 marketing frames (iPhone 6.1" slot)
  */
 import { createServer } from "node:http";
@@ -27,9 +27,9 @@ const STATIC = join(ROOT, "out");
 const OUT = join(ROOT, "app-store", "screenshots");
 
 const SIZE = {
-  // App Store Connect accepted portrait sizes (see error for this listing slot):
-  // 1206×2622, 1179×2556 (and their landscape swaps).
-  "6.7": { w: 1206, h: 2622 },
+  // Primary upload size requested: 1242×2688 (classic 6.5" Display).
+  // Also ship 1179×2556 for the 6.1" slot.
+  "6.7": { w: 1242, h: 2688 },
   "6.1": { w: 1179, h: 2556 },
 };
 
@@ -378,7 +378,7 @@ async function composeFrame({ sizeKey, locale, copy, rawPng, destPath }) {
   const bgSvg = frameBackgroundSvg(w, h, copy, locale);
 
   // Prefer fitting the full screen (incl. tab bar). Contain avoids cropping
-  // when 6.1" target aspect differs slightly from the 1206×2622 raw capture.
+  // when 6.1" target aspect differs slightly from the 1242×2688 raw capture.
   const resizedScreen = await sharp(rawPng)
     .resize(innerW, innerH, {
       fit: "contain",
@@ -471,9 +471,9 @@ async function main() {
   }
 
   const browser = await chromium.launch({ headless: true });
-  // 402×874 @3x → 1206×2622 (App Store Connect accepted size)
+  // 414×896 @3x → 1242×2688 (iPhone 6.5" App Store size)
   const context = await browser.newContext({
-    viewport: { width: 402, height: 874 },
+    viewport: { width: 414, height: 896 },
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
