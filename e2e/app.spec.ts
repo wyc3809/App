@@ -40,14 +40,16 @@ async function dismissWrappedReports(page: Page) {
 
 /** Dismiss daily-streak celebration sheet (blocks nav after save / demo load). */
 async function dismissStreakCelebration(page: Page) {
-  for (let i = 0; i < 8; i++) {
-    const cleared = await page.evaluate(() => {
+  // Allow React to paint the celebration after a store mutation.
+  await page
+    .getByRole("button", { name: /^Nice$|^好$/i })
+    .waitFor({ state: "visible", timeout: 1_500 })
+    .catch(() => undefined);
+
+  for (let i = 0; i < 10; i++) {
+    await page.evaluate(() => {
       const w = window as Window & { __worthClearStreakCelebration?: () => void };
-      if (typeof w.__worthClearStreakCelebration === "function") {
-        w.__worthClearStreakCelebration();
-        return true;
-      }
-      return false;
+      w.__worthClearStreakCelebration?.();
     });
     const nice = page.getByRole("button", { name: /^Nice$|^好$/i });
     if (await nice.isVisible().catch(() => false)) {
@@ -55,12 +57,11 @@ async function dismissStreakCelebration(page: Page) {
       await page.waitForTimeout(150);
       continue;
     }
-    if (cleared) {
-      await page.waitForTimeout(100);
-      if (!(await nice.isVisible().catch(() => false))) return;
-      continue;
+    // Confirm gone
+    if (!(await page.getByText(/Streak extended/i).isVisible().catch(() => false))) {
+      return;
     }
-    return;
+    await page.waitForTimeout(100);
   }
 }
 
@@ -368,6 +369,7 @@ test.describe("WorthBook E2E", () => {
     await expect(page.getByText(/Added .+ ledger/i)).toBeVisible({
       timeout: 10_000,
     });
+    await dismissStreakCelebration(page);
 
     await page.getByRole("link", { name: "Ledger" }).click();
     await page.getByRole("tab", { name: "YTD" }).click();
