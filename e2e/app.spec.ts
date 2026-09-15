@@ -38,6 +38,30 @@ async function dismissWrappedReports(page: Page) {
   }
 }
 
+/** Dismiss daily-streak celebration sheet (blocks nav after save / demo load). */
+async function dismissStreakCelebration(page: Page) {
+  for (let i = 0; i < 6; i++) {
+    const sheet = page
+      .getByRole("dialog")
+      .filter({ hasText: /Streak extended|連續紀錄已延長|连续记录已延长/i });
+    if (!(await sheet.isVisible().catch(() => false))) {
+      const nice = page.getByRole("button", { name: /^Nice$|^好$/i });
+      if (!(await nice.isVisible().catch(() => false))) return;
+      await nice.click({ force: true });
+      await page.waitForTimeout(200);
+      continue;
+    }
+    const nice = sheet.getByRole("button", { name: /^Nice$|^好$/i });
+    if (await nice.isVisible().catch(() => false)) {
+      await nice.click({ force: true });
+    } else {
+      await page.keyboard.press("Escape");
+    }
+    await expect(sheet).toHaveCount(0, { timeout: 5_000 }).catch(() => undefined);
+    await page.waitForTimeout(150);
+  }
+}
+
 /** Wait until Zustand persist finishes and the shell is interactive. */
 async function waitForAppReady(page: Page) {
   await page.waitForFunction(
@@ -51,6 +75,7 @@ async function waitForAppReady(page: Page) {
     { timeout: 20_000 },
   );
   await dismissWrappedReports(page);
+  await dismissStreakCelebration(page);
   await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible({
     timeout: 20_000,
   });
@@ -118,6 +143,7 @@ async function loadDemo(page: Page) {
     timeout: 15_000,
   });
   await dismissWrappedReports(page);
+  await dismissStreakCelebration(page);
 }
 
 /** Open the Add Account sheet after onboarding is out of the way. */
