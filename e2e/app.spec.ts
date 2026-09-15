@@ -112,6 +112,7 @@ async function dismissIntro(page: Page) {
   }
 
   await dismissWrappedReports(page);
+  await dismissStreakCelebration(page);
 }
 
 /** Expand collapsed Assets/Liabilities groups until account rows are visible. */
@@ -142,6 +143,12 @@ async function loadDemo(page: Page) {
   await expect(page.getByText(/Net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
+  // Demo seeding triggers streak + wrapped overlays; wait a beat for paint.
+  await page
+    .getByRole("button", { name: /^Nice$|^好$/i })
+    .waitFor({ state: "visible", timeout: 3_000 })
+    .catch(() => undefined);
+  await dismissStreakCelebration(page);
   await dismissWrappedReports(page);
   await dismissStreakCelebration(page);
 }
@@ -426,6 +433,7 @@ test.describe("WorthBook E2E", () => {
     await dialog.locator("#account-value").fill("1000");
     await dialog.getByRole("button", { name: "Add Account" }).click();
     await expect(dialog).toHaveCount(0);
+    await dismissStreakCelebration(page);
 
     await page.getByRole("link", { name: "Ledger" }).click();
     await page.getByRole("tab", { name: "Expense" }).click();
