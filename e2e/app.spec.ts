@@ -40,25 +40,27 @@ async function dismissWrappedReports(page: Page) {
 
 /** Dismiss daily-streak celebration sheet (blocks nav after save / demo load). */
 async function dismissStreakCelebration(page: Page) {
-  for (let i = 0; i < 6; i++) {
-    const sheet = page
-      .getByRole("dialog")
-      .filter({ hasText: /Streak extended|連續紀錄已延長|连续记录已延长/i });
-    if (!(await sheet.isVisible().catch(() => false))) {
-      const nice = page.getByRole("button", { name: /^Nice$|^好$/i });
-      if (!(await nice.isVisible().catch(() => false))) return;
-      await nice.click({ force: true });
-      await page.waitForTimeout(200);
-      continue;
-    }
-    const nice = sheet.getByRole("button", { name: /^Nice$|^好$/i });
+  for (let i = 0; i < 8; i++) {
+    const cleared = await page.evaluate(() => {
+      const w = window as Window & { __worthClearStreakCelebration?: () => void };
+      if (typeof w.__worthClearStreakCelebration === "function") {
+        w.__worthClearStreakCelebration();
+        return true;
+      }
+      return false;
+    });
+    const nice = page.getByRole("button", { name: /^Nice$|^好$/i });
     if (await nice.isVisible().catch(() => false)) {
       await nice.click({ force: true });
-    } else {
-      await page.keyboard.press("Escape");
+      await page.waitForTimeout(150);
+      continue;
     }
-    await expect(sheet).toHaveCount(0, { timeout: 5_000 }).catch(() => undefined);
-    await page.waitForTimeout(150);
+    if (cleared) {
+      await page.waitForTimeout(100);
+      if (!(await nice.isVisible().catch(() => false))) return;
+      continue;
+    }
+    return;
   }
 }
 
