@@ -4,24 +4,55 @@ import { Flame } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { useI18n } from "@/lib/i18n/context";
 import { hapticSuccess } from "@/lib/haptic";
+import { isNativePlatform } from "@/lib/platform";
 import { useWorthStore } from "@/lib/store";
+import {
+  requestNativeStoreReview,
+  shouldRequestStoreReview,
+} from "@/lib/store-review";
 
 /** Ephemeral celebration after a streak extension — no share, no home chrome. */
 export function StreakCelebration() {
   const { t } = useI18n();
   const pending = useWorthStore((s) => s.pendingStreakCelebration);
   const clear = useWorthStore((s) => s.clearStreakCelebration);
+  const updateSettings = useWorthStore((s) => s.updateSettings);
+  const alreadyPrompted = useWorthStore(
+    (s) => s.settings.storeReviewPromptedForStreak3 === true,
+  );
 
   if (!pending) return null;
 
+  const maybeRequestStoreReview = (day: number) => {
+    if (
+      !shouldRequestStoreReview({
+        celebrationDay: day,
+        alreadyPromptedForStreak3: alreadyPrompted,
+        isNative: isNativePlatform(),
+      })
+    ) {
+      return;
+    }
+    // Mark prompted before the async call so a double-dismiss cannot re-fire.
+    updateSettings({ storeReviewPromptedForStreak3: true });
+    void requestNativeStoreReview();
+  };
+
   const dismiss = () => {
+    const day = pending.day;
     hapticSuccess();
     clear();
+    // After the win moment (not on launch / failure) — Day 3 streak only.
+    maybeRequestStoreReview(day);
   };
 
   return (
     <BottomSheet
-      onClose={clear}
+      onClose={() => {
+        const day = pending.day;
+        clear();
+        maybeRequestStoreReview(day);
+      }}
       titleId="streak-celebration-title"
       zIndex={120}
       showClose={false}

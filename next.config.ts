@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
     "@capacitor/local-notifications",
     "@capacitor/status-bar",
     "@capgo/capacitor-native-biometric",
+    "@capacitor-community/in-app-review",
   ],
   ...(isGithubPages
     ? {
