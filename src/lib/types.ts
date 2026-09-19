@@ -102,6 +102,11 @@ export interface UserSettings {
   weeklyReportNotifications?: boolean;
   /** Native local notification for monthly net worth recap. */
   monthlyReportNotifications?: boolean;
+  /**
+   * True after we requested a native in-app review for the 3-day streak win.
+   * Prevents repeat prompts (Apple also rate-limits the system dialog).
+   */
+  storeReviewPromptedForStreak3?: boolean;
 }
 
 export type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";

@@ -510,6 +510,7 @@ const defaultSettings: UserSettings = {
   lastMonthlyReportSeenKey: null,
   weeklyReportNotifications: true,
   monthlyReportNotifications: true,
+  storeReviewPromptedForStreak3: false,
 };
 
 export const useWorthStore = create<WorthState>()(
@@ -1189,7 +1190,7 @@ export const useWorthStore = create<WorthState>()(
     }),
     {
       name: "worthtracker-v1",
-      version: 11,
+      version: 12,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accounts: state.accounts,
@@ -1307,6 +1308,15 @@ export const useWorthStore = create<WorthState>()(
 
         if (version < 11) {
           state.streak = normalizeStreakState(state.streak);
+        }
+
+        if (version < 12) {
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            storeReviewPromptedForStreak3:
+              state.settings?.storeReviewPromptedForStreak3 ?? false,
+          };
         }
 
         return state as never;
